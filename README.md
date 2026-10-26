@@ -14,7 +14,7 @@ proto/aipay/
 gen/go/                           Go / gRPC 生成代码
 ```
 
-IAM 初版契约包含三个接口：网关每个请求只调用 `AuthorizationService.Authorize`，一次完成认证与授权；`IdentityService.Authenticate` 用于只需确认身份的场景；`AuthorizationService.CheckPermission` 供已持有认证证明的下游服务使用。这些仅是接口定义，不表示服务已运行。身份凭据、组织归属、角色策略在 IAM 仓库管理；金融服务只预留 package，不编造资金字段或 RPC。
+IAM 初版契约包含三个接口：网关每个请求只调用 `AuthorizationService.Authorize`，一次完成认证与授权；`IdentityService.Authenticate` 用于只需确认身份的场景；`AuthorizationService.CheckPermission` 供已持有认证证明的下游服务使用。这些仅是接口定义，不表示服务已运行。身份凭据、组织归属、角色策略在 IAM 仓库管理。金融服务目前只有 package 占位；资金字段、签名事件与 RPC 按 docs 仓库的[跨服务契约设计](https://github.com/aipay-dev/docs/blob/main/design/contracts.md)在 M0 落地，设计之外不新增。
 
 认证证明的签发格式、密钥托管、调用方绑定与撤销机制尚待 IAM 实现；EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 
