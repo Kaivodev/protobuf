@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/common/v1/context.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+enum PrincipalType {
+  PRINCIPAL_TYPE_UNSPECIFIED = 0;
+  PRINCIPAL_TYPE_USER = 1;
+  PRINCIPAL_TYPE_MERCHANT_APPLICATION = 2;
+  PRINCIPAL_TYPE_SERVICE = 3;
+}
+
+message Principal {
+  string id = 1;
+  PrincipalType type = 2;
+  // Merchant applications must be bound to an authoritative business scope.
+  aipay.common.v1.Scope bound_scope = 3;
+}
+
+message BearerCredential {
+  // Sensitive. Never include this value in logs or audit payloads.
+  string token = 1;
+}
+
+// Preserve decoded scalar bytes and include extension parameters. Duplicate
+// names are rejected by IAM; canonicalization is specific to the EPay version.
+message EPayParameter {
+  string name = 1;
+  string value = 2;
+}
+
+message EPayV1SignatureCredential {
+  repeated EPayParameter parameters = 1;
+}
+
+message EPayV1KeyCredential {
+  string pid = 1;
+  // Sensitive. Never log or echo the shared key.
+  string key = 2;
+}
+
+message EPayV2SignatureCredential {
+  repeated EPayParameter parameters = 1;
+}
+
+// Explicit workload authentication uses the verified transport identity and IAM
+// service registry. It never accepts a caller-selected service ID in the body.
+message WorkloadIdentityCredential {}
+
+// The authenticated gateway supplies these route facts over its private service
+// channel. IAM validates the protocol/operation pairing before issuing proof.
+message RequestBinding {
+  string http_method = 1;
+  string http_path = 2;
+  string permission = 3;
+}
+
+message AuthenticateRequest {
+  aipay.common.v1.RequestContext context = 1;
+  oneof credential {
+    BearerCredential bearer = 2;
+    EPayV1SignatureCredential epay_v1_signature = 3;
+    EPayV1KeyCredential epay_v1_key = 4;
+    EPayV2SignatureCredential epay_v2_signature = 5;
+    WorkloadIdentityCredential workload_identity = 8;
+  }
+  string audience = 6;
+  RequestBinding request_binding = 7;
+}
+
+message AuthenticateResponse {
+  Principal principal = 1;
+  // IAM-issued, short-lived proof bound to the authenticated principal and
+  // permitted caller/audience. This is not a client-supplied subject ID.
+  string identity_assertion = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  string credential_id = 4;
+  // IAM-computed request binding. EPay proof must not become a reusable bearer
+  // credential for a different operation or financial command.
+  bytes request_fingerprint = 5;
+}
+
+// Internal only. The transport authenticates the calling service. Invalid,
+// disabled, expired or revoked credentials fail with a gRPC error, not a
+// successful response containing an anonymous principal.
+service IdentityService {
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+}

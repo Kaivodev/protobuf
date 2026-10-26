@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package aipay.reconciliation.v1;
+
+option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1";
+
+// Reserved for the separately maintained reconciliation service. Statement and
+// discrepancy RPCs will be defined when their business contracts are agreed.

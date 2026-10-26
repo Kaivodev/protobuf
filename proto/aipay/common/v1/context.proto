@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package aipay.common.v1;
+
+option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/common/v1;commonv1";
+
+// Correlation metadata is not an identity or authorization credential.
+message RequestContext {
+  string request_id = 1;
+  string trace_id = 2;
+}
+
+enum ScopeType {
+  SCOPE_TYPE_UNSPECIFIED = 0;
+  SCOPE_TYPE_PLATFORM = 1;
+  SCOPE_TYPE_ORGANIZATION = 2;
+  SCOPE_TYPE_BUSINESS = 3;
+}
+
+// Platform scope has no IDs; organization scope requires organization_id;
+// business scope requires both IDs. The service validates every scope.
+message Scope {
+  ScopeType type = 1;
+  string organization_id = 2;
+  string business_id = 3;
+}
+
+// Resource ownership must be resolved by the resource owner, not trusted from
+// client headers. IDs and scope in requests are selectors requiring validation.
+message ResourceRef {
+  string type = 1;
+  string id = 2;
+  Scope scope = 3;
+}

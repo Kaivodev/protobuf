@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/common/v1/context.proto";
+import "aipay/iam/v1/identity.proto";
+
+option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+enum DataScope {
+  DATA_SCOPE_UNSPECIFIED = 0;
+  DATA_SCOPE_ASSIGNED = 1;
+  DATA_SCOPE_SELF = 2;
+  // Cross-organization access requires an explicit platform-scoped grant.
+  DATA_SCOPE_PLATFORM_ALL = 3;
+}
+
+message PermissionGrant {
+  // Stable catalog key, e.g. payment.order.create. No wildcard implication.
+  string permission = 1;
+  DataScope data_scope = 2;
+}
+
+message Role {
+  string id = 1;
+  string name = 2;
+  aipay.common.v1.ScopeType scope_type = 3;
+  repeated PermissionGrant grants = 4;
+}
+
+message RoleBinding {
+  string principal_id = 1;
+  PrincipalType principal_type = 2;
+  string role_id = 3;
+  aipay.common.v1.Scope scope = 4;
+}
+
+message CheckPermissionRequest {
+  aipay.common.v1.RequestContext context = 1;
+  // Sensitive IAM-issued proof; IAM resolves the principal from this value.
+  string identity_assertion = 2;
+  // Explicit active role context. Platform access is never inferred from an
+  // organization selection or an administrator-looking role name.
+  aipay.common.v1.Scope acting_scope = 3;
+  string permission = 4;
+  aipay.common.v1.ResourceRef resource = 5;
+  // Must match the authenticated request binding for EPay-originated commands.
+  bytes request_fingerprint = 6;
+}
+
+enum DenialReason {
+  DENIAL_REASON_UNSPECIFIED = 0;
+  DENIAL_REASON_NO_GRANT = 1;
+  DENIAL_REASON_INACTIVE_PRINCIPAL = 2;
+  DENIAL_REASON_SCOPE_MISMATCH = 3;
+  DENIAL_REASON_RESOURCE_OWNERSHIP = 4;
+}
+
+message CheckPermissionResponse {
+  // The default is deny. Transport errors, empty responses and invalid proof
+  // must also be treated as denial by consumers.
+  bool allowed = 1;
+  string decision_id = 2;
+  string policy_revision = 3;
+  DenialReason denial_reason = 4;
+  // Required for an allowed decision. Consumers must apply the constraint to
+  // canonical resource attributes or to every row of a list query.
+  AccessConstraint constraint = 5;
+  string granted_role_id = 6;
+}
+
+message AccessConstraint {
+  DataScope data_scope = 1;
+  aipay.common.v1.Scope scope = 2;
+  // Required when data_scope is SELF. Resolve actual ownership in the resource
+  // service; do not accept owner IDs supplied by an external caller.
+  Principal owner = 3;
+}
+
+// Internal only. An allowed decision is not a transferable money-operation
+// capability. Resource services independently enforce ownership and state.
+service AuthorizationService {
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+}

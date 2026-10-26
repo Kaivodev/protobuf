@@ -1,0 +1,27 @@
+name: Protobuf
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go install github.com/bufbuild/buf/cmd/buf@v1.57.2
+      - run: make check
+      - name: Check generated bindings are committed
+        run: |
+          git diff --exit-code -- gen/go
+          test -z "$(git ls-files --others --exclude-standard gen/go)"
+      - name: Check compatibility against pull request base
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: buf breaking --against ".git#ref=${BASE_SHA}"
