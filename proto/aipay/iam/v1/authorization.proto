@@ -4,6 +4,7 @@ package aipay.iam.v1;
 
 import "aipay/common/v1/context.proto";
 import "aipay/iam/v1/identity.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/iam/v1;iamv1";
 
@@ -77,8 +78,45 @@ message AccessConstraint {
   Principal owner = 3;
 }
 
+// Gateway hot path: authenticate the credential and authorize the bound
+// operation in one call, so each public request needs a single IAM round trip.
+message AuthorizeRequest {
+  aipay.common.v1.RequestContext context = 1;
+  oneof credential {
+    BearerCredential bearer = 2;
+    EPayV1SignatureCredential epay_v1_signature = 3;
+    EPayV1KeyCredential epay_v1_key = 4;
+    EPayV2SignatureCredential epay_v2_signature = 5;
+    WorkloadIdentityCredential workload_identity = 6;
+  }
+  string audience = 7;
+  // Route facts including the required permission. IAM validates the
+  // protocol/operation pairing before evaluating any grant.
+  RequestBinding request_binding = 8;
+  // Explicit active role context; never inferred from the credential alone.
+  aipay.common.v1.Scope acting_scope = 9;
+  aipay.common.v1.ResourceRef resource = 10;
+}
+
+message AuthorizeResponse {
+  Principal principal = 1;
+  // Short-lived proof bound to this request for downstream resource services.
+  string identity_assertion = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  string credential_id = 4;
+  bytes request_fingerprint = 5;
+  // Same semantics as CheckPermission: missing or denied means deny, and an
+  // allowed decision is usable only together with its constraint.
+  CheckPermissionResponse decision = 6;
+}
+
 // Internal only. An allowed decision is not a transferable money-operation
 // capability. Resource services independently enforce ownership and state.
+// Authorize is the gateway's per-request call. Invalid, disabled, expired or
+// revoked credentials fail with a gRPC error; an authenticated principal
+// without a grant receives a denied decision. CheckPermission serves callers
+// that already hold an identity assertion.
 service AuthorizationService {
   rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
 }

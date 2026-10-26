@@ -10,6 +10,7 @@ import (
 	v1 "github.com/aipay-dev/protobuf/gen/go/aipay/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -557,11 +558,273 @@ func (x *AccessConstraint) GetOwner() *Principal {
 	return nil
 }
 
+// Gateway hot path: authenticate the credential and authorize the bound
+// operation in one call, so each public request needs a single IAM round trip.
+type AuthorizeRequest struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Context *v1.RequestContext     `protobuf:"bytes,1,opt,name=context,proto3" json:"context,omitempty"`
+	// Types that are valid to be assigned to Credential:
+	//
+	//	*AuthorizeRequest_Bearer
+	//	*AuthorizeRequest_EpayV1Signature
+	//	*AuthorizeRequest_EpayV1Key
+	//	*AuthorizeRequest_EpayV2Signature
+	//	*AuthorizeRequest_WorkloadIdentity
+	Credential isAuthorizeRequest_Credential `protobuf_oneof:"credential"`
+	Audience   string                        `protobuf:"bytes,7,opt,name=audience,proto3" json:"audience,omitempty"`
+	// Route facts including the required permission. IAM validates the
+	// protocol/operation pairing before evaluating any grant.
+	RequestBinding *RequestBinding `protobuf:"bytes,8,opt,name=request_binding,json=requestBinding,proto3" json:"request_binding,omitempty"`
+	// Explicit active role context; never inferred from the credential alone.
+	ActingScope   *v1.Scope       `protobuf:"bytes,9,opt,name=acting_scope,json=actingScope,proto3" json:"acting_scope,omitempty"`
+	Resource      *v1.ResourceRef `protobuf:"bytes,10,opt,name=resource,proto3" json:"resource,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuthorizeRequest) Reset() {
+	*x = AuthorizeRequest{}
+	mi := &file_aipay_iam_v1_authorization_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuthorizeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuthorizeRequest) ProtoMessage() {}
+
+func (x *AuthorizeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_authorization_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuthorizeRequest.ProtoReflect.Descriptor instead.
+func (*AuthorizeRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_authorization_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *AuthorizeRequest) GetContext() *v1.RequestContext {
+	if x != nil {
+		return x.Context
+	}
+	return nil
+}
+
+func (x *AuthorizeRequest) GetCredential() isAuthorizeRequest_Credential {
+	if x != nil {
+		return x.Credential
+	}
+	return nil
+}
+
+func (x *AuthorizeRequest) GetBearer() *BearerCredential {
+	if x != nil {
+		if x, ok := x.Credential.(*AuthorizeRequest_Bearer); ok {
+			return x.Bearer
+		}
+	}
+	return nil
+}
+
+func (x *AuthorizeRequest) GetEpayV1Signature() *EPayV1SignatureCredential {
+	if x != nil {
+		if x, ok := x.Credential.(*AuthorizeRequest_EpayV1Signature); ok {
+			return x.EpayV1Signature
+		}
+	}
+	return nil
+}
+
+func (x *AuthorizeRequest) GetEpayV1Key() *EPayV1KeyCredential {
+	if x != nil {
+		if x, ok := x.Credential.(*AuthorizeRequest_EpayV1Key); ok {
+			return x.EpayV1Key
+		}
+	}
+	return nil
+}
+
+func (x *AuthorizeRequest) GetEpayV2Signature() *EPayV2SignatureCredential {
+	if x != nil {
+		if x, ok := x.Credential.(*AuthorizeRequest_EpayV2Signature); ok {
+			return x.EpayV2Signature
+		}
+	}
+	return nil
+}
+
+func (x *AuthorizeRequest) GetWorkloadIdentity() *WorkloadIdentityCredential {
+	if x != nil {
+		if x, ok := x.Credential.(*AuthorizeRequest_WorkloadIdentity); ok {
+			return x.WorkloadIdentity
+		}
+	}
+	return nil
+}
+
+func (x *AuthorizeRequest) GetAudience() string {
+	if x != nil {
+		return x.Audience
+	}
+	return ""
+}
+
+func (x *AuthorizeRequest) GetRequestBinding() *RequestBinding {
+	if x != nil {
+		return x.RequestBinding
+	}
+	return nil
+}
+
+func (x *AuthorizeRequest) GetActingScope() *v1.Scope {
+	if x != nil {
+		return x.ActingScope
+	}
+	return nil
+}
+
+func (x *AuthorizeRequest) GetResource() *v1.ResourceRef {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
+type isAuthorizeRequest_Credential interface {
+	isAuthorizeRequest_Credential()
+}
+
+type AuthorizeRequest_Bearer struct {
+	Bearer *BearerCredential `protobuf:"bytes,2,opt,name=bearer,proto3,oneof"`
+}
+
+type AuthorizeRequest_EpayV1Signature struct {
+	EpayV1Signature *EPayV1SignatureCredential `protobuf:"bytes,3,opt,name=epay_v1_signature,json=epayV1Signature,proto3,oneof"`
+}
+
+type AuthorizeRequest_EpayV1Key struct {
+	EpayV1Key *EPayV1KeyCredential `protobuf:"bytes,4,opt,name=epay_v1_key,json=epayV1Key,proto3,oneof"`
+}
+
+type AuthorizeRequest_EpayV2Signature struct {
+	EpayV2Signature *EPayV2SignatureCredential `protobuf:"bytes,5,opt,name=epay_v2_signature,json=epayV2Signature,proto3,oneof"`
+}
+
+type AuthorizeRequest_WorkloadIdentity struct {
+	WorkloadIdentity *WorkloadIdentityCredential `protobuf:"bytes,6,opt,name=workload_identity,json=workloadIdentity,proto3,oneof"`
+}
+
+func (*AuthorizeRequest_Bearer) isAuthorizeRequest_Credential() {}
+
+func (*AuthorizeRequest_EpayV1Signature) isAuthorizeRequest_Credential() {}
+
+func (*AuthorizeRequest_EpayV1Key) isAuthorizeRequest_Credential() {}
+
+func (*AuthorizeRequest_EpayV2Signature) isAuthorizeRequest_Credential() {}
+
+func (*AuthorizeRequest_WorkloadIdentity) isAuthorizeRequest_Credential() {}
+
+type AuthorizeResponse struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Principal *Principal             `protobuf:"bytes,1,opt,name=principal,proto3" json:"principal,omitempty"`
+	// Short-lived proof bound to this request for downstream resource services.
+	IdentityAssertion  string                 `protobuf:"bytes,2,opt,name=identity_assertion,json=identityAssertion,proto3" json:"identity_assertion,omitempty"`
+	ExpiresAt          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	CredentialId       string                 `protobuf:"bytes,4,opt,name=credential_id,json=credentialId,proto3" json:"credential_id,omitempty"`
+	RequestFingerprint []byte                 `protobuf:"bytes,5,opt,name=request_fingerprint,json=requestFingerprint,proto3" json:"request_fingerprint,omitempty"`
+	// Same semantics as CheckPermission: missing or denied means deny, and an
+	// allowed decision is usable only together with its constraint.
+	Decision      *CheckPermissionResponse `protobuf:"bytes,6,opt,name=decision,proto3" json:"decision,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AuthorizeResponse) Reset() {
+	*x = AuthorizeResponse{}
+	mi := &file_aipay_iam_v1_authorization_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuthorizeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuthorizeResponse) ProtoMessage() {}
+
+func (x *AuthorizeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_authorization_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuthorizeResponse.ProtoReflect.Descriptor instead.
+func (*AuthorizeResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_authorization_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *AuthorizeResponse) GetPrincipal() *Principal {
+	if x != nil {
+		return x.Principal
+	}
+	return nil
+}
+
+func (x *AuthorizeResponse) GetIdentityAssertion() string {
+	if x != nil {
+		return x.IdentityAssertion
+	}
+	return ""
+}
+
+func (x *AuthorizeResponse) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *AuthorizeResponse) GetCredentialId() string {
+	if x != nil {
+		return x.CredentialId
+	}
+	return ""
+}
+
+func (x *AuthorizeResponse) GetRequestFingerprint() []byte {
+	if x != nil {
+		return x.RequestFingerprint
+	}
+	return nil
+}
+
+func (x *AuthorizeResponse) GetDecision() *CheckPermissionResponse {
+	if x != nil {
+		return x.Decision
+	}
+	return nil
+}
+
 var File_aipay_iam_v1_authorization_proto protoreflect.FileDescriptor
 
 const file_aipay_iam_v1_authorization_proto_rawDesc = "" +
 	"\n" +
-	" aipay/iam/v1/authorization.proto\x12\faipay.iam.v1\x1a\x1daipay/common/v1/context.proto\x1a\x1baipay/iam/v1/identity.proto\"i\n" +
+	" aipay/iam/v1/authorization.proto\x12\faipay.iam.v1\x1a\x1daipay/common/v1/context.proto\x1a\x1baipay/iam/v1/identity.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"i\n" +
 	"\x0fPermissionGrant\x12\x1e\n" +
 	"\n" +
 	"permission\x18\x01 \x01(\tR\n" +
@@ -602,7 +865,29 @@ const file_aipay_iam_v1_authorization_proto_rawDesc = "" +
 	"\n" +
 	"data_scope\x18\x01 \x01(\x0e2\x17.aipay.iam.v1.DataScopeR\tdataScope\x12,\n" +
 	"\x05scope\x18\x02 \x01(\v2\x16.aipay.common.v1.ScopeR\x05scope\x12-\n" +
-	"\x05owner\x18\x03 \x01(\v2\x17.aipay.iam.v1.PrincipalR\x05owner*r\n" +
+	"\x05owner\x18\x03 \x01(\v2\x17.aipay.iam.v1.PrincipalR\x05owner\"\xb9\x05\n" +
+	"\x10AuthorizeRequest\x129\n" +
+	"\acontext\x18\x01 \x01(\v2\x1f.aipay.common.v1.RequestContextR\acontext\x128\n" +
+	"\x06bearer\x18\x02 \x01(\v2\x1e.aipay.iam.v1.BearerCredentialH\x00R\x06bearer\x12U\n" +
+	"\x11epay_v1_signature\x18\x03 \x01(\v2'.aipay.iam.v1.EPayV1SignatureCredentialH\x00R\x0fepayV1Signature\x12C\n" +
+	"\vepay_v1_key\x18\x04 \x01(\v2!.aipay.iam.v1.EPayV1KeyCredentialH\x00R\tepayV1Key\x12U\n" +
+	"\x11epay_v2_signature\x18\x05 \x01(\v2'.aipay.iam.v1.EPayV2SignatureCredentialH\x00R\x0fepayV2Signature\x12W\n" +
+	"\x11workload_identity\x18\x06 \x01(\v2(.aipay.iam.v1.WorkloadIdentityCredentialH\x00R\x10workloadIdentity\x12\x1a\n" +
+	"\baudience\x18\a \x01(\tR\baudience\x12E\n" +
+	"\x0frequest_binding\x18\b \x01(\v2\x1c.aipay.iam.v1.RequestBindingR\x0erequestBinding\x129\n" +
+	"\facting_scope\x18\t \x01(\v2\x16.aipay.common.v1.ScopeR\vactingScope\x128\n" +
+	"\bresource\x18\n" +
+	" \x01(\v2\x1c.aipay.common.v1.ResourceRefR\bresourceB\f\n" +
+	"\n" +
+	"credential\"\xcd\x02\n" +
+	"\x11AuthorizeResponse\x125\n" +
+	"\tprincipal\x18\x01 \x01(\v2\x17.aipay.iam.v1.PrincipalR\tprincipal\x12-\n" +
+	"\x12identity_assertion\x18\x02 \x01(\tR\x11identityAssertion\x129\n" +
+	"\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12#\n" +
+	"\rcredential_id\x18\x04 \x01(\tR\fcredentialId\x12/\n" +
+	"\x13request_fingerprint\x18\x05 \x01(\fR\x12requestFingerprint\x12A\n" +
+	"\bdecision\x18\x06 \x01(\v2%.aipay.iam.v1.CheckPermissionResponseR\bdecision*r\n" +
 	"\tDataScope\x12\x1a\n" +
 	"\x16DATA_SCOPE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13DATA_SCOPE_ASSIGNED\x10\x01\x12\x13\n" +
@@ -613,9 +898,10 @@ const file_aipay_iam_v1_authorization_proto_rawDesc = "" +
 	"\x16DENIAL_REASON_NO_GRANT\x10\x01\x12$\n" +
 	" DENIAL_REASON_INACTIVE_PRINCIPAL\x10\x02\x12 \n" +
 	"\x1cDENIAL_REASON_SCOPE_MISMATCH\x10\x03\x12$\n" +
-	" DENIAL_REASON_RESOURCE_OWNERSHIP\x10\x042v\n" +
+	" DENIAL_REASON_RESOURCE_OWNERSHIP\x10\x042\xc4\x01\n" +
 	"\x14AuthorizationService\x12^\n" +
-	"\x0fCheckPermission\x12$.aipay.iam.v1.CheckPermissionRequest\x1a%.aipay.iam.v1.CheckPermissionResponseB9Z7github.com/aipay-dev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
+	"\x0fCheckPermission\x12$.aipay.iam.v1.CheckPermissionRequest\x1a%.aipay.iam.v1.CheckPermissionResponse\x12L\n" +
+	"\tAuthorize\x12\x1e.aipay.iam.v1.AuthorizeRequest\x1a\x1f.aipay.iam.v1.AuthorizeResponseB9Z7github.com/aipay-dev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
 
 var (
 	file_aipay_iam_v1_authorization_proto_rawDescOnce sync.Once
@@ -630,44 +916,67 @@ func file_aipay_iam_v1_authorization_proto_rawDescGZIP() []byte {
 }
 
 var file_aipay_iam_v1_authorization_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_aipay_iam_v1_authorization_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_aipay_iam_v1_authorization_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_aipay_iam_v1_authorization_proto_goTypes = []any{
-	(DataScope)(0),                  // 0: aipay.iam.v1.DataScope
-	(DenialReason)(0),               // 1: aipay.iam.v1.DenialReason
-	(*PermissionGrant)(nil),         // 2: aipay.iam.v1.PermissionGrant
-	(*Role)(nil),                    // 3: aipay.iam.v1.Role
-	(*RoleBinding)(nil),             // 4: aipay.iam.v1.RoleBinding
-	(*CheckPermissionRequest)(nil),  // 5: aipay.iam.v1.CheckPermissionRequest
-	(*CheckPermissionResponse)(nil), // 6: aipay.iam.v1.CheckPermissionResponse
-	(*AccessConstraint)(nil),        // 7: aipay.iam.v1.AccessConstraint
-	(v1.ScopeType)(0),               // 8: aipay.common.v1.ScopeType
-	(PrincipalType)(0),              // 9: aipay.iam.v1.PrincipalType
-	(*v1.Scope)(nil),                // 10: aipay.common.v1.Scope
-	(*v1.RequestContext)(nil),       // 11: aipay.common.v1.RequestContext
-	(*v1.ResourceRef)(nil),          // 12: aipay.common.v1.ResourceRef
-	(*Principal)(nil),               // 13: aipay.iam.v1.Principal
+	(DataScope)(0),                     // 0: aipay.iam.v1.DataScope
+	(DenialReason)(0),                  // 1: aipay.iam.v1.DenialReason
+	(*PermissionGrant)(nil),            // 2: aipay.iam.v1.PermissionGrant
+	(*Role)(nil),                       // 3: aipay.iam.v1.Role
+	(*RoleBinding)(nil),                // 4: aipay.iam.v1.RoleBinding
+	(*CheckPermissionRequest)(nil),     // 5: aipay.iam.v1.CheckPermissionRequest
+	(*CheckPermissionResponse)(nil),    // 6: aipay.iam.v1.CheckPermissionResponse
+	(*AccessConstraint)(nil),           // 7: aipay.iam.v1.AccessConstraint
+	(*AuthorizeRequest)(nil),           // 8: aipay.iam.v1.AuthorizeRequest
+	(*AuthorizeResponse)(nil),          // 9: aipay.iam.v1.AuthorizeResponse
+	(v1.ScopeType)(0),                  // 10: aipay.common.v1.ScopeType
+	(PrincipalType)(0),                 // 11: aipay.iam.v1.PrincipalType
+	(*v1.Scope)(nil),                   // 12: aipay.common.v1.Scope
+	(*v1.RequestContext)(nil),          // 13: aipay.common.v1.RequestContext
+	(*v1.ResourceRef)(nil),             // 14: aipay.common.v1.ResourceRef
+	(*Principal)(nil),                  // 15: aipay.iam.v1.Principal
+	(*BearerCredential)(nil),           // 16: aipay.iam.v1.BearerCredential
+	(*EPayV1SignatureCredential)(nil),  // 17: aipay.iam.v1.EPayV1SignatureCredential
+	(*EPayV1KeyCredential)(nil),        // 18: aipay.iam.v1.EPayV1KeyCredential
+	(*EPayV2SignatureCredential)(nil),  // 19: aipay.iam.v1.EPayV2SignatureCredential
+	(*WorkloadIdentityCredential)(nil), // 20: aipay.iam.v1.WorkloadIdentityCredential
+	(*RequestBinding)(nil),             // 21: aipay.iam.v1.RequestBinding
+	(*timestamppb.Timestamp)(nil),      // 22: google.protobuf.Timestamp
 }
 var file_aipay_iam_v1_authorization_proto_depIdxs = []int32{
 	0,  // 0: aipay.iam.v1.PermissionGrant.data_scope:type_name -> aipay.iam.v1.DataScope
-	8,  // 1: aipay.iam.v1.Role.scope_type:type_name -> aipay.common.v1.ScopeType
+	10, // 1: aipay.iam.v1.Role.scope_type:type_name -> aipay.common.v1.ScopeType
 	2,  // 2: aipay.iam.v1.Role.grants:type_name -> aipay.iam.v1.PermissionGrant
-	9,  // 3: aipay.iam.v1.RoleBinding.principal_type:type_name -> aipay.iam.v1.PrincipalType
-	10, // 4: aipay.iam.v1.RoleBinding.scope:type_name -> aipay.common.v1.Scope
-	11, // 5: aipay.iam.v1.CheckPermissionRequest.context:type_name -> aipay.common.v1.RequestContext
-	10, // 6: aipay.iam.v1.CheckPermissionRequest.acting_scope:type_name -> aipay.common.v1.Scope
-	12, // 7: aipay.iam.v1.CheckPermissionRequest.resource:type_name -> aipay.common.v1.ResourceRef
+	11, // 3: aipay.iam.v1.RoleBinding.principal_type:type_name -> aipay.iam.v1.PrincipalType
+	12, // 4: aipay.iam.v1.RoleBinding.scope:type_name -> aipay.common.v1.Scope
+	13, // 5: aipay.iam.v1.CheckPermissionRequest.context:type_name -> aipay.common.v1.RequestContext
+	12, // 6: aipay.iam.v1.CheckPermissionRequest.acting_scope:type_name -> aipay.common.v1.Scope
+	14, // 7: aipay.iam.v1.CheckPermissionRequest.resource:type_name -> aipay.common.v1.ResourceRef
 	1,  // 8: aipay.iam.v1.CheckPermissionResponse.denial_reason:type_name -> aipay.iam.v1.DenialReason
 	7,  // 9: aipay.iam.v1.CheckPermissionResponse.constraint:type_name -> aipay.iam.v1.AccessConstraint
 	0,  // 10: aipay.iam.v1.AccessConstraint.data_scope:type_name -> aipay.iam.v1.DataScope
-	10, // 11: aipay.iam.v1.AccessConstraint.scope:type_name -> aipay.common.v1.Scope
-	13, // 12: aipay.iam.v1.AccessConstraint.owner:type_name -> aipay.iam.v1.Principal
-	5,  // 13: aipay.iam.v1.AuthorizationService.CheckPermission:input_type -> aipay.iam.v1.CheckPermissionRequest
-	6,  // 14: aipay.iam.v1.AuthorizationService.CheckPermission:output_type -> aipay.iam.v1.CheckPermissionResponse
-	14, // [14:15] is the sub-list for method output_type
-	13, // [13:14] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	12, // 11: aipay.iam.v1.AccessConstraint.scope:type_name -> aipay.common.v1.Scope
+	15, // 12: aipay.iam.v1.AccessConstraint.owner:type_name -> aipay.iam.v1.Principal
+	13, // 13: aipay.iam.v1.AuthorizeRequest.context:type_name -> aipay.common.v1.RequestContext
+	16, // 14: aipay.iam.v1.AuthorizeRequest.bearer:type_name -> aipay.iam.v1.BearerCredential
+	17, // 15: aipay.iam.v1.AuthorizeRequest.epay_v1_signature:type_name -> aipay.iam.v1.EPayV1SignatureCredential
+	18, // 16: aipay.iam.v1.AuthorizeRequest.epay_v1_key:type_name -> aipay.iam.v1.EPayV1KeyCredential
+	19, // 17: aipay.iam.v1.AuthorizeRequest.epay_v2_signature:type_name -> aipay.iam.v1.EPayV2SignatureCredential
+	20, // 18: aipay.iam.v1.AuthorizeRequest.workload_identity:type_name -> aipay.iam.v1.WorkloadIdentityCredential
+	21, // 19: aipay.iam.v1.AuthorizeRequest.request_binding:type_name -> aipay.iam.v1.RequestBinding
+	12, // 20: aipay.iam.v1.AuthorizeRequest.acting_scope:type_name -> aipay.common.v1.Scope
+	14, // 21: aipay.iam.v1.AuthorizeRequest.resource:type_name -> aipay.common.v1.ResourceRef
+	15, // 22: aipay.iam.v1.AuthorizeResponse.principal:type_name -> aipay.iam.v1.Principal
+	22, // 23: aipay.iam.v1.AuthorizeResponse.expires_at:type_name -> google.protobuf.Timestamp
+	6,  // 24: aipay.iam.v1.AuthorizeResponse.decision:type_name -> aipay.iam.v1.CheckPermissionResponse
+	5,  // 25: aipay.iam.v1.AuthorizationService.CheckPermission:input_type -> aipay.iam.v1.CheckPermissionRequest
+	8,  // 26: aipay.iam.v1.AuthorizationService.Authorize:input_type -> aipay.iam.v1.AuthorizeRequest
+	6,  // 27: aipay.iam.v1.AuthorizationService.CheckPermission:output_type -> aipay.iam.v1.CheckPermissionResponse
+	9,  // 28: aipay.iam.v1.AuthorizationService.Authorize:output_type -> aipay.iam.v1.AuthorizeResponse
+	27, // [27:29] is the sub-list for method output_type
+	25, // [25:27] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_aipay_iam_v1_authorization_proto_init() }
@@ -676,13 +985,20 @@ func file_aipay_iam_v1_authorization_proto_init() {
 		return
 	}
 	file_aipay_iam_v1_identity_proto_init()
+	file_aipay_iam_v1_authorization_proto_msgTypes[6].OneofWrappers = []any{
+		(*AuthorizeRequest_Bearer)(nil),
+		(*AuthorizeRequest_EpayV1Signature)(nil),
+		(*AuthorizeRequest_EpayV1Key)(nil),
+		(*AuthorizeRequest_EpayV2Signature)(nil),
+		(*AuthorizeRequest_WorkloadIdentity)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_iam_v1_authorization_proto_rawDesc), len(file_aipay_iam_v1_authorization_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
