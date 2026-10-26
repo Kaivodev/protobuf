@@ -1,7 +1,7 @@
 # AI Pay 契约仓库规则
 
 - 全部服务间 `.proto` 只在本仓库维护。HTTP/EPay Swagger 由 backend 维护，不混为 gRPC 接口。
-- 异步任务使用 Redis + Asynq；跨服务任务的版本化 Protobuf 载荷也由本仓库维护，任务处理器仍归属主服务。具体用例确定前不新增空任务协议。
+- 异步任务使用 Redis + Asynq，但只限同一信任域内部；同域跨服务任务的版本化 Protobuf 载荷由本仓库维护，任务处理器仍归属主服务。跨信任域协作只用 mTLS gRPC 契约（发送方 outbox 中继调用，或接收方拉取签名事件，接收方按事件 ID 幂等），不定义跨信任域的 Asynq 任务载荷。信任域划分见 docs 仓库的 `technical/security.md`。具体用例确定前不新增空协议。
 - package 使用 `aipay.<service>.v1` 等版本化命名，`go_package` 指向本仓库 `gen/go`。
 - 金融服务当前只留契约占位；没有业务设计时不编造记账、结算或对账 RPC。
 - IAM 的身份、组织关系和权限来源必须可验证；请求里的 ID、作用域和跟踪字段本身不是授权证据。未知枚举、缺失约束、过期证明和服务错误均须拒绝。
