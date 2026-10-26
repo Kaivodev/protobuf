@@ -7,6 +7,7 @@ proto/aipay/
   common/v1/context.proto          跟踪信息、平台/组织/业务主体作用域
   iam/v1/identity.proto            认证输入、主体、短期认证证明
   iam/v1/authorization.proto       角色、权限、绑定、授权检查与数据范围约束
+  payment/v1/payment.proto         支付订单契约占位
   ledger/v1/ledger.proto           账务契约占位
   settlement/v1/settlement.proto   结算契约占位
   reconciliation/v1/reconciliation.proto  对账契约占位
