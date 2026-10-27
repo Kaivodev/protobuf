@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package aipay.iam.v1;
 
+import "aipay/authz/v1/policy.proto";
 import "aipay/common/v1/context.proto";
 import "aipay/iam/v1/identity.proto";
 import "google/protobuf/timestamp.proto";
@@ -36,19 +37,6 @@ message RoleBinding {
   aipay.common.v1.Scope scope = 4;
 }
 
-message CheckPermissionRequest {
-  aipay.common.v1.RequestContext context = 1;
-  // Sensitive IAM-issued proof; IAM resolves the principal from this value.
-  string identity_assertion = 2;
-  // Explicit active role context. Platform access is never inferred from an
-  // organization selection or an administrator-looking role name.
-  aipay.common.v1.Scope acting_scope = 3;
-  string permission = 4;
-  aipay.common.v1.ResourceRef resource = 5;
-  // Must match the authenticated request binding for EPay-originated commands.
-  bytes request_fingerprint = 6;
-}
-
 enum DenialReason {
   DENIAL_REASON_UNSPECIFIED = 0;
   DENIAL_REASON_NO_GRANT = 1;
@@ -57,9 +45,10 @@ enum DenialReason {
   DENIAL_REASON_RESOURCE_OWNERSHIP = 4;
 }
 
-message CheckPermissionResponse {
-  // The default is deny. Transport errors, empty responses and invalid proof
-  // must also be treated as denial by consumers.
+// The authorization decision returned by Authorize. The default is deny.
+// Transport errors, empty responses and invalid proof must also be treated as
+// denial by consumers.
+message AuthorizationDecision {
   bool allowed = 1;
   string decision_id = 2;
   string policy_revision = 3;
@@ -105,18 +94,26 @@ message AuthorizeResponse {
   google.protobuf.Timestamp expires_at = 3;
   string credential_id = 4;
   bytes request_fingerprint = 5;
-  // Same semantics as CheckPermission: missing or denied means deny, and an
-  // allowed decision is usable only together with its constraint.
-  CheckPermissionResponse decision = 6;
+  // Missing or denied means deny, and an allowed decision is usable only
+  // together with its constraint.
+  AuthorizationDecision decision = 6;
 }
 
 // Internal only. An allowed decision is not a transferable money-operation
 // capability. Resource services independently enforce ownership and state.
-// Authorize is the gateway's per-request call. Invalid, disabled, expired or
-// revoked credentials fail with a gRPC error; an authenticated principal
-// without a grant receives a denied decision. CheckPermission serves callers
-// that already hold an identity assertion.
+// Authorize is the only authentication and authorization entry point: the
+// gateway calls it once per request, and interfaces that only confirm identity
+// use a permission that stands for "the caller themself" (decision A78).
+// Invalid, disabled, expired or revoked credentials fail with a gRPC error; an
+// authenticated principal without a grant receives a denied decision.
 service AuthorizationService {
-  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
-  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
+  // IAM issues assertions, so the gateway call carries none.
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
 }

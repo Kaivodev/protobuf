@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package aipay.authz.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/authz/v1;authzv1";
+
+// Every RPC in this repository declares exactly one policy; `make check`
+// rejects any method without a valid one. The servicekit server interceptor
+// enforces it: methods without a policy and callers matching no rule are denied.
+extend google.protobuf.MethodOptions {
+  MethodPolicy policy = 51000;
+}
+
+// Identity assertion requirements, from weakest to strongest. Each level
+// includes every check of the levels before it.
+enum AssertionRequirement {
+  ASSERTION_REQUIREMENT_UNSPECIFIED = 0;
+  // Service call without a user context: only the verified mTLS identity is
+  // checked. A request that still carries an assertion is rejected.
+  ASSERTION_REQUIREMENT_NOT_REQUIRED = 1;
+  // An IAM identity assertion in gRPC metadata `x-aipay-assertion`: valid
+  // signature from the configured IAM key registry, issuer, 60-second lifetime,
+  // audience containing the receiving service, and a permission listed in the
+  // rule.
+  ASSERTION_REQUIREMENT_REQUIRED = 2;
+  // Additionally `amr` contains "mfa" and `auth_time` is no older than
+  // `recent_auth_max_age_seconds`.
+  ASSERTION_REQUIREMENT_MFA_RECENT = 3;
+  // Additionally the receiver records `jti` and rejects any reuse.
+  ASSERTION_REQUIREMENT_SINGLE_USE = 4;
+}
+
+message MethodPolicy {
+  // One rule per group of callers sharing a requirement. A caller appears in
+  // at most one rule of a method.
+  repeated CallerRule rules = 1;
+}
+
+message CallerRule {
+  // Verified mTLS service names (spiffe://<trust-domain>/service/<name>).
+  repeated string callers = 1;
+  AssertionRequirement assertion = 2;
+  // Acceptable permission keys from the IAM catalog, e.g. payment.order.create.
+  // Required with an assertion; empty for NOT_REQUIRED. No wildcards.
+  repeated string permissions = 3;
+  // Maximum age of `auth_time`, required for MFA_RECENT and SINGLE_USE and
+  // zero otherwise. At most 3600.
+  uint32 recent_auth_max_age_seconds = 4;
+}

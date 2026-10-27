@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package aipay.approval.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/approval/v1;approvalv1";
+
+// Approval of a funds-affecting administrative operation. The executing service
+// creates the canonical request bytes and computes
+//   request_digest = SHA-256("AIPAY-APPROVAL-V1" || request_bytes)
+// with the 17-byte ASCII domain tag directly followed by the request bytes.
+// Approvers sign it through WebAuthn with a FIDO2 authenticator (hardware
+// security key or synced passkey) using challenge = request_digest. Validity
+// is decided only by the executor's own approver key registry, never by IAM
+// or the management plane.
+enum ApprovalStatus {
+  APPROVAL_STATUS_UNSPECIFIED = 0;
+  APPROVAL_STATUS_PENDING = 1;
+  APPROVAL_STATUS_APPROVED = 2;
+  APPROVAL_STATUS_REJECTED = 3;
+  APPROVAL_STATUS_EXPIRED = 4;
+  // Reached only from APPROVED.
+  APPROVAL_STATUS_EXECUTED = 5;
+}
+
+message ApprovalRequest {
+  // UUIDv7 assigned by the executing service.
+  string id = 1;
+  // Operation kind; values are defined by each executing service.
+  string kind = 2;
+  // Canonical request bytes, stored and returned unchanged.
+  bytes request_bytes = 3;
+  // 32 bytes, computed by the executor from request_bytes.
+  bytes request_digest = 4;
+  // 1 or 2. Two distinct approvers are required except for the operations the
+  // contract lists as single-approver.
+  uint32 required_approvals = 5;
+  // IAM user taken from the requester's identity assertion; the requester can
+  // never approve the request.
+  string requested_by = 6;
+  google.protobuf.Timestamp requested_at = 7;
+  // Expired requests are void.
+  google.protobuf.Timestamp expires_at = 8;
+  ApprovalStatus status = 9;
+}
+
+// A WebAuthn assertion (AuthenticatorAssertionResponse) passed through from
+// the browser unchanged. The executor checks the ES256 signature over
+// authenticator_data || SHA-256(client_data_json) with the registered key,
+// type "webauthn.get", challenge equal to request_digest, the expected origin
+// and RP ID hash, the user-present and user-verified flags, and a signature
+// counter greater than the largest one recorded for the key. A synced passkey
+// that always reports 0 is accepted while the recorded counter is also 0; a
+// counter returning to 0 after a non-zero value is a regression. Only ES256
+// (COSE -7) keys are accepted.
+message WebAuthnAssertion {
+  bytes credential_id = 1;
+  bytes authenticator_data = 2;
+  bytes client_data_json = 3;
+  bytes signature = 4;
+  // Optional; not used for approval decisions.
+  bytes user_handle = 5;
+}
+
+// A verified approval, recorded append-only by the executor. Each approver
+// approves a request at most once.
+message Approval {
+  string request_id = 1;
+  // Natural-person approver identifier from the executor's key registry.
+  string approver_id = 2;
+  // Executor's approver key registry entry.
+  string approver_key_id = 3;
+  WebAuthnAssertion assertion = 4;
+  // Signature counter taken from authenticator_data.
+  uint32 sign_count = 5;
+  google.protobuf.Timestamp verified_at = 6;
+}

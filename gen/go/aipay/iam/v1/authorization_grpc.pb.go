@@ -19,8 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthorizationService_CheckPermission_FullMethodName = "/aipay.iam.v1.AuthorizationService/CheckPermission"
-	AuthorizationService_Authorize_FullMethodName       = "/aipay.iam.v1.AuthorizationService/Authorize"
+	AuthorizationService_Authorize_FullMethodName = "/aipay.iam.v1.AuthorizationService/Authorize"
 )
 
 // AuthorizationServiceClient is the client API for AuthorizationService service.
@@ -29,12 +28,13 @@ const (
 //
 // Internal only. An allowed decision is not a transferable money-operation
 // capability. Resource services independently enforce ownership and state.
-// Authorize is the gateway's per-request call. Invalid, disabled, expired or
-// revoked credentials fail with a gRPC error; an authenticated principal
-// without a grant receives a denied decision. CheckPermission serves callers
-// that already hold an identity assertion.
+// Authorize is the only authentication and authorization entry point: the
+// gateway calls it once per request, and interfaces that only confirm identity
+// use a permission that stands for "the caller themself" (decision A78).
+// Invalid, disabled, expired or revoked credentials fail with a gRPC error; an
+// authenticated principal without a grant receives a denied decision.
 type AuthorizationServiceClient interface {
-	CheckPermission(ctx context.Context, in *CheckPermissionRequest, opts ...grpc.CallOption) (*CheckPermissionResponse, error)
+	// IAM issues assertions, so the gateway call carries none.
 	Authorize(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*AuthorizeResponse, error)
 }
 
@@ -44,16 +44,6 @@ type authorizationServiceClient struct {
 
 func NewAuthorizationServiceClient(cc grpc.ClientConnInterface) AuthorizationServiceClient {
 	return &authorizationServiceClient{cc}
-}
-
-func (c *authorizationServiceClient) CheckPermission(ctx context.Context, in *CheckPermissionRequest, opts ...grpc.CallOption) (*CheckPermissionResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CheckPermissionResponse)
-	err := c.cc.Invoke(ctx, AuthorizationService_CheckPermission_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *authorizationServiceClient) Authorize(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*AuthorizeResponse, error) {
@@ -72,12 +62,13 @@ func (c *authorizationServiceClient) Authorize(ctx context.Context, in *Authoriz
 //
 // Internal only. An allowed decision is not a transferable money-operation
 // capability. Resource services independently enforce ownership and state.
-// Authorize is the gateway's per-request call. Invalid, disabled, expired or
-// revoked credentials fail with a gRPC error; an authenticated principal
-// without a grant receives a denied decision. CheckPermission serves callers
-// that already hold an identity assertion.
+// Authorize is the only authentication and authorization entry point: the
+// gateway calls it once per request, and interfaces that only confirm identity
+// use a permission that stands for "the caller themself" (decision A78).
+// Invalid, disabled, expired or revoked credentials fail with a gRPC error; an
+// authenticated principal without a grant receives a denied decision.
 type AuthorizationServiceServer interface {
-	CheckPermission(context.Context, *CheckPermissionRequest) (*CheckPermissionResponse, error)
+	// IAM issues assertions, so the gateway call carries none.
 	Authorize(context.Context, *AuthorizeRequest) (*AuthorizeResponse, error)
 	mustEmbedUnimplementedAuthorizationServiceServer()
 }
@@ -89,9 +80,6 @@ type AuthorizationServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAuthorizationServiceServer struct{}
 
-func (UnimplementedAuthorizationServiceServer) CheckPermission(context.Context, *CheckPermissionRequest) (*CheckPermissionResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CheckPermission not implemented")
-}
 func (UnimplementedAuthorizationServiceServer) Authorize(context.Context, *AuthorizeRequest) (*AuthorizeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Authorize not implemented")
 }
@@ -114,24 +102,6 @@ func RegisterAuthorizationServiceServer(s grpc.ServiceRegistrar, srv Authorizati
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AuthorizationService_ServiceDesc, srv)
-}
-
-func _AuthorizationService_CheckPermission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CheckPermissionRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthorizationServiceServer).CheckPermission(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthorizationService_CheckPermission_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthorizationServiceServer).CheckPermission(ctx, req.(*CheckPermissionRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _AuthorizationService_Authorize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -159,10 +129,6 @@ var AuthorizationService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "aipay.iam.v1.AuthorizationService",
 	HandlerType: (*AuthorizationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "CheckPermission",
-			Handler:    _AuthorizationService_CheckPermission_Handler,
-		},
 		{
 			MethodName: "Authorize",
 			Handler:    _AuthorizationService_Authorize_Handler,

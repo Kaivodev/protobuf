@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package aipay.common.v1;
+
+import "aipay/common/v1/money.proto";
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/common/v1;commonv1";
+
+// The currency and on-chain asset registry. Values are fixed in these enum
+// options so every service reads the same table from the generated SDK.
+// Adding a currency, chain or contract changes this file and every service's
+// tests; services reject codes and contracts that are not registered here.
+extend google.protobuf.EnumValueOptions {
+  CurrencyInfo currency_info = 51001;
+  ChainInfo chain_info = 51002;
+  AssetInfo asset_info = 51003;
+}
+
+message CurrencyInfo {
+  // Value of Money.currency: an ISO 4217 code for fiat, or USDT, TRX, BNB.
+  string code = 1;
+  // One minor unit is 10^-minor_unit_exponent of the standard unit.
+  uint32 minor_unit_exponent = 2;
+}
+
+enum Currency {
+  CURRENCY_UNSPECIFIED = 0;
+  CURRENCY_CNY = 1 [(currency_info) = {
+    code: "CNY"
+    minor_unit_exponent: 2
+  }];
+  CURRENCY_USDT = 2 [(currency_info) = {
+    code: "USDT"
+    minor_unit_exponent: 6
+  }];
+  CURRENCY_TRX = 3 [(currency_info) = {
+    code: "TRX"
+    minor_unit_exponent: 6
+  }];
+  CURRENCY_BNB = 4 [(currency_info) = {
+    code: "BNB"
+    minor_unit_exponent: 9
+  }];
+}
+
+message ChainInfo {
+  // Stable chain code stored by services, e.g. in wallet account codes.
+  string code = 1;
+  // Currency code of the asset that pays gas on this chain.
+  string gas_currency = 2;
+  // On-chain decimals of the gas asset. When they exceed the currency's
+  // exponent (BNB: 18 on chain, 10^-9 in the ledger), the ledger balance never
+  // exceeds the chain balance: inflows truncate down, gas fees round up, and the
+  // difference accumulates per wallet until it reaches one minor unit.
+  uint32 gas_chain_decimals = 3;
+}
+
+// USDT balances are not split by chain; a chain appears only on wallet
+// accounts and chain events.
+enum Chain {
+  CHAIN_UNSPECIFIED = 0;
+  CHAIN_TRON = 1 [(chain_info) = {
+    code: "TRON"
+    gas_currency: "TRX"
+    gas_chain_decimals: 6
+  }];
+  CHAIN_BSC = 2 [(chain_info) = {
+    code: "BSC"
+    gas_currency: "BNB"
+    gas_chain_decimals: 18
+  }];
+}
+
+// A token contract booked as a registered currency. The ledger amount uses
+// the currency's minor unit (exponent e, chain_decimals d >= e):
+//   inbound:  units = floor(raw / 10^(d - e)); the remainder stays on chain and
+//             is accounted for per wallet by settlement.
+//   outbound: raw = units * 10^(d - e), without loss.
+// TRON addresses compare exactly (Base58Check). BSC addresses compare by their
+// 20 address bytes, ignoring the EIP-55 letter case used below.
+message AssetInfo {
+  Chain chain = 1;
+  string currency = 2;
+  string token_standard = 3;
+  string contract_address = 4;
+  uint32 chain_decimals = 5;
+}
+
+// Transfers from any other contract are unregistered assets and are never
+// booked as USDT.
+enum RegisteredAsset {
+  REGISTERED_ASSET_UNSPECIFIED = 0;
+  REGISTERED_ASSET_TRON_USDT = 1 [(asset_info) = {
+    chain: CHAIN_TRON
+    currency: "USDT"
+    token_standard: "TRC20"
+    contract_address: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+    chain_decimals: 6
+  }];
+  REGISTERED_ASSET_BSC_USDT = 2 [(asset_info) = {
+    chain: CHAIN_BSC
+    currency: "USDT"
+    token_standard: "BEP20"
+    contract_address: "0x55d398326f99059fF775485246999027B3197955"
+    chain_decimals: 18
+  }];
+}
+
+// The amount carried by a chain event: chain, contract, the raw on-chain
+// integer and the ledger amount derived from it by the rules above.
+message ChainAssetAmount {
+  Chain chain = 1;
+  string contract_address = 2;
+  // Unsigned decimal integer string up to uint256, without sign or leading zeros.
+  string raw_amount = 3;
+  Money amount = 4;
+}

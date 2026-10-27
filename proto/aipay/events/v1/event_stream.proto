@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package aipay.events.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/events/v1;eventsv1";
+
+// A business fact crossing a trust domain. The producer chains each stream by
+// sequence and signs every event; receivers verify the chain and signature
+// before storing the envelope unchanged.
+//
+// Signing input (AIPAY-EVENT-V1), with no separators:
+//   "AIPAY-EVENT-V1" (14 ASCII bytes, no length prefix)
+//   str producer || str stream || u64 sequence || str event_id ||
+//   str event_type || u64 schema_version || i64 occurred_at_unix_nanos ||
+//   bytes payload_digest || bytes prev_digest
+// where str and bytes are a u32 big-endian length followed by the UTF-8 or raw
+// bytes, and u64/i64 are 8-byte big-endian (i64 in two's complement).
+// event_digest = SHA-256(signing input). signature is ECDSA P-256 over
+// SHA-256(signing input), ASN.1 DER encoded. recorded_at is not signed.
+//
+// Receivers stop consuming the stream on any gap, broken prev_digest, digest or
+// signature failure, or unknown event_type/schema_version combination.
+message SignedEvent {
+  // UUIDv7 in canonical lowercase form, globally unique.
+  string event_id = 1;
+  // Producer service name; equals the producer's verified mTLS identity.
+  string producer = 2;
+  // Stream name matching ^[a-z]+\.[a-z_]+$, e.g. payment.orders.
+  string stream = 3;
+  // Starts at 1 and increases by one without gaps.
+  uint64 sequence = 4;
+  // Event type matching ^[A-Z][A-Za-z]+$, e.g. OrderPaid.
+  string event_type = 5;
+  // Payload schema version, at least 1.
+  uint32 schema_version = 6;
+  // Microsecond precision; signed as Unix nanoseconds.
+  google.protobuf.Timestamp occurred_at = 7;
+  // When the producer wrote the outbox row.
+  google.protobuf.Timestamp recorded_at = 8;
+  // Protobuf payload bytes, transferred and stored exactly as produced.
+  bytes payload = 9;
+  // SHA-256(payload), 32 bytes.
+  bytes payload_digest = 10;
+  // event_digest of the previous event; 32 zero bytes for sequence 1.
+  bytes prev_digest = 11;
+  // Entry in the receiver's deployment-configured registry of this producer's
+  // public keys. Events never update the registry.
+  string key_id = 12;
+  bytes signature = 13;
+}
+
+message ListEventsRequest {
+  string stream = 1;
+  // Return events with a sequence greater than this cursor; 0 starts at 1.
+  uint64 after_sequence = 2;
+  // 1 to 500; any other value is InvalidArgument.
+  uint32 limit = 3;
+}
+
+message ListEventsResponse {
+  // Consecutive events starting at after_sequence + 1, at most limit of them.
+  repeated SignedEvent events = 1;
+}
+
+message GetStreamHeadRequest {
+  string stream = 1;
+}
+
+message StreamHead {
+  string stream = 1;
+  // Latest signed sequence; 0 when the stream has no events.
+  uint64 sequence = 2;
+  // event_digest of that event; 32 zero bytes when sequence is 0.
+  bytes event_digest = 3;
+}
+
+message GetStreamHeadResponse {
+  StreamHead head = 1;
+}
+
+// Implemented by every event producer. Streams are read by the receivers in
+// the contract's stream list; besides this method policy, the producer
+// authorizes each stream for its listed receivers and holds no receiver
+// credentials. An unknown or unauthorized stream returns PermissionDenied.
+service EventStreamService {
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: [
+          "ledger",
+          "reconciliation",
+          "settlement"
+        ]
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc GetStreamHead(GetStreamHeadRequest) returns (GetStreamHeadResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: [
+          "ledger",
+          "reconciliation",
+          "settlement"
+        ]
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}

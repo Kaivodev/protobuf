@@ -1,0 +1,184 @@
+{
+  "spec": "AIPAY-LEDGER-TX-V1",
+  "description": "Journal transaction hash chain, canonical encoding V1 (docs design/ledger-service.md). hash = SHA-256(\"AIPAY-LEDGER-TX-V1\" || prev_hash || encoding). Integers are decimal strings; byte fields are lowercase hex. encoding is encode(tx) alone, without the tag or prev_hash.",
+  "chains": [
+    {
+      "name": "genesis_chain",
+      "description": "Three consecutive transactions starting from the genesis prev_hash of 32 zero bytes; each prev_hash is the previous hash. The first is a balanced OrderPaid without agents (A = 100.00 CNY, f_u = 2%, f_m = 3%, R_u = 7.20, R_m = 7.25, D = 0). Timestamps have microsecond precision as stored in PostgreSQL.",
+      "transactions": [
+        {
+          "seq": "1",
+          "tx_id": "019a1f40-8b00-7000-8000-000000000001",
+          "kind": "order_paid",
+          "idempotency_key": "payment.orders:1:019a1f40-0000-7000-8000-0000000000a1",
+          "occurred_at_unix_nanos": "1761465600123456000",
+          "recorded_at_unix_nanos": "1761465601234567000",
+          "pricing_version_id": "0199f000-0000-7000-8000-00000000d001",
+          "lines": [
+            {
+              "account_code": "upstream_receivable:USDT:0199f000-0000-7000-8000-00000000a001",
+              "direction": "D",
+              "currency": "USDT",
+              "units": "13611111",
+              "usd_micros": "13608389",
+              "usd_rate_version": "usd-rate-0199f000-0000-7000-8000-00000000e001"
+            },
+            {
+              "account_code": "upstream_fee_cost:USDT",
+              "direction": "D",
+              "currency": "USDT",
+              "units": "277778",
+              "usd_micros": "277722",
+              "usd_rate_version": "usd-rate-0199f000-0000-7000-8000-00000000e001"
+            },
+            {
+              "account_code": "merchant_pending:USDT:0199f000-0000-7000-8000-00000000b001",
+              "direction": "C",
+              "currency": "USDT",
+              "units": "13379310",
+              "usd_micros": "13376634",
+              "usd_rate_version": "usd-rate-0199f000-0000-7000-8000-00000000e001"
+            },
+            {
+              "account_code": "merchant_fee_revenue:USDT",
+              "direction": "C",
+              "currency": "USDT",
+              "units": "416667",
+              "usd_micros": "416584",
+              "usd_rate_version": "usd-rate-0199f000-0000-7000-8000-00000000e001"
+            },
+            {
+              "account_code": "fx_spread_revenue:USDT",
+              "direction": "C",
+              "currency": "USDT",
+              "units": "92912",
+              "usd_micros": "92893",
+              "usd_rate_version": "usd-rate-0199f000-0000-7000-8000-00000000e001"
+            }
+          ],
+          "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "encoding": "0000000000000001019a1f408b00700080000000000000010000000a6f726465725f70616964000000357061796d656e742e6f72646572733a313a30313961316634302d303030302d373030302d383030302d3030303030303030303061311871fba1736dca001871fba1b5a7ff580000002430313939663030302d303030302d373030302d383030302d303030303030303064303031000000050000003d757073747265616d5f72656365697661626c653a555344543a30313939663030302d303030302d373030302d383030302d3030303030303030613030314400000004555344540000000000cfb0670000000000cfa5c50000002d7573642d726174652d30313939663030302d303030302d373030302d383030302d30303030303030306530303100000016757073747265616d5f6665655f636f73743a555344544400000004555344540000000000043d120000000000043cda0000002d7573642d726174652d30313939663030302d303030302d373030302d383030302d3030303030303030653030310000003a6d65726368616e745f70656e64696e673a555344543a30313939663030302d303030302d373030302d383030302d3030303030303030623030314300000004555344540000000000cc26ee0000000000cc1c7a0000002d7573642d726174652d30313939663030302d303030302d373030302d383030302d303030303030303065303031000000196d65726368616e745f6665655f726576656e75653a555344544300000004555344540000000000065b9b0000000000065b480000002d7573642d726174652d30313939663030302d303030302d373030302d383030302d3030303030303030653030310000001666785f7370726561645f726576656e75653a555344544300000004555344540000000000016af00000000000016add0000002d7573642d726174652d30313939663030302d303030302d373030302d383030302d303030303030303065303031",
+          "hash": "851ba4c8e9ccaf309e65cf1b239d5191e7f98b3cfe522c879c047d5f685b685f"
+        },
+        {
+          "seq": "2",
+          "tx_id": "019a1f41-0000-7000-8000-000000000002",
+          "kind": "receipt_confirmed",
+          "idempotency_key": "settlement.chain:1:019a1f41-0000-7000-8000-0000000000b1",
+          "occurred_at_unix_nanos": "1761465900000000000",
+          "recorded_at_unix_nanos": "1761465900500000000",
+          "pricing_version_id": "",
+          "lines": [
+            {
+              "account_code": "collection_wallet:USDT:TRON:0199f000-0000-7000-8000-00000000c001",
+              "direction": "D",
+              "currency": "USDT",
+              "units": "13611111",
+              "usd_micros": "13608389",
+              "usd_rate_version": "usd-rate-0199f000-0000-7000-8000-00000000e001"
+            },
+            {
+              "account_code": "unmatched_receipts:USDT",
+              "direction": "C",
+              "currency": "USDT",
+              "units": "13611111",
+              "usd_micros": "13608389",
+              "usd_rate_version": "usd-rate-0199f000-0000-7000-8000-00000000e001"
+            }
+          ],
+          "prev_hash": "851ba4c8e9ccaf309e65cf1b239d5191e7f98b3cfe522c879c047d5f685b685f",
+          "encoding": "0000000000000002019a1f4100007000800000000000000200000011726563656970745f636f6e6669726d656400000037736574746c656d656e742e636861696e3a313a30313961316634312d303030302d373030302d383030302d3030303030303030303062311871fbe74576b8001871fbe763441d00000000000000000200000040636f6c6c656374696f6e5f77616c6c65743a555344543a54524f4e3a30313939663030302d303030302d373030302d383030302d3030303030303030633030314400000004555344540000000000cfb0670000000000cfa5c50000002d7573642d726174652d30313939663030302d303030302d373030302d383030302d30303030303030306530303100000017756e6d6174636865645f72656365697074733a555344544300000004555344540000000000cfb0670000000000cfa5c50000002d7573642d726174652d30313939663030302d303030302d373030302d383030302d303030303030303065303031",
+          "hash": "0e32a74c7dc09145ee02842f1a0efcb705d70324f21961529b3d318c32fdfc53"
+        },
+        {
+          "seq": "3",
+          "tx_id": "019a1f42-0000-7000-8000-000000000003",
+          "kind": "gas_spent",
+          "idempotency_key": "settlement.withdrawals:3:燃料费",
+          "occurred_at_unix_nanos": "1761466200000001000",
+          "recorded_at_unix_nanos": "1761466200000002000",
+          "pricing_version_id": "",
+          "lines": [
+            {
+              "account_code": "gas_expense:TRX",
+              "direction": "D",
+              "currency": "TRX",
+              "units": "345000",
+              "usd_micros": "101085",
+              "usd_rate_version": "usd-rate-0199f000-0000-7000-8000-00000000e002"
+            },
+            {
+              "account_code": "hot_wallet:TRX:TRON:0199f000-0000-7000-8000-00000000c001",
+              "direction": "C",
+              "currency": "TRX",
+              "units": "345000",
+              "usd_micros": "101085",
+              "usd_rate_version": "usd-rate-0199f000-0000-7000-8000-00000000e002"
+            }
+          ],
+          "prev_hash": "0e32a74c7dc09145ee02842f1a0efcb705d70324f21961529b3d318c32fdfc53",
+          "encoding": "0000000000000003019a1f42000070008000000000000003000000096761735f7370656e7400000022736574746c656d656e742e7769746864726177616c733a333ae78783e69699e8b4b91871fc2d1edb73e81871fc2d1edb77d000000000000000020000000f6761735f657870656e73653a545258440000000354525800000000000543a80000000000018add0000002d7573642d726174652d30313939663030302d303030302d373030302d383030302d30303030303030306530303200000038686f745f77616c6c65743a5452583a54524f4e3a30313939663030302d303030302d373030302d383030302d303030303030303063303031430000000354525800000000000543a80000000000018add0000002d7573642d726174652d30313939663030302d303030302d373030302d383030302d303030303030303065303032",
+          "hash": "2698b788faa5c604dfe1b94ad1f00f954dd5c0290029e3b8a685ec4a70d01ebd"
+        }
+      ]
+    },
+    {
+      "name": "encoding_edge_cases",
+      "description": "Independent transactions with a fixed non-zero prev_hash that exercise encoding limits only: maximum signed 64-bit values, negative two's-complement integers, empty strings and multi-byte UTF-8 (lengths count bytes). They are not valid business entries.",
+      "transactions": [
+        {
+          "seq": "9223372036854775807",
+          "tx_id": "ffffffff-ffff-7fff-bfff-ffffffffffff",
+          "kind": "",
+          "idempotency_key": "退款:幂等键",
+          "occurred_at_unix_nanos": "-1000",
+          "recorded_at_unix_nanos": "0",
+          "pricing_version_id": "",
+          "lines": [
+            {
+              "account_code": "x",
+              "direction": "C",
+              "currency": "BNB",
+              "units": "9223372036854775807",
+              "usd_micros": "-1",
+              "usd_rate_version": ""
+            }
+          ],
+          "prev_hash": "ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100",
+          "encoding": "7fffffffffffffffffffffffffff7fffbfffffffffffffff0000000000000010e98080e6acbe3ae5b982e7ad89e994aefffffffffffffc180000000000000000000000000000000100000001784300000003424e427fffffffffffffffffffffffffffffff00000000",
+          "hash": "d44e914f37882e0920030a289f1b8ac5d7e96099a6af4d612474d06b66b5f956"
+        },
+        {
+          "seq": "4294967296",
+          "tx_id": "00000000-0000-7000-8000-000000000000",
+          "kind": "manual_adjustment",
+          "idempotency_key": "ledger.adjustments:0199f000-0000-7000-8000-00000000f001",
+          "occurred_at_unix_nanos": "-9223372036854775000",
+          "recorded_at_unix_nanos": "9223372036854775000",
+          "pricing_version_id": "",
+          "lines": [
+            {
+              "account_code": "merchant_available:USDT:0199f000-0000-7000-8000-00000000b001",
+              "direction": "D",
+              "currency": "USDT",
+              "units": "1",
+              "usd_micros": "0",
+              "usd_rate_version": "usd-rate-0199f000-0000-7000-8000-00000000e001"
+            },
+            {
+              "account_code": "merchant_reserve:USDT:0199f000-0000-7000-8000-00000000b001",
+              "direction": "C",
+              "currency": "USDT",
+              "units": "1",
+              "usd_micros": "0",
+              "usd_rate_version": "usd-rate-0199f000-0000-7000-8000-00000000e001"
+            }
+          ],
+          "prev_hash": "ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100",
+          "encoding": "000000010000000000000000000070008000000000000000000000116d616e75616c5f61646a7573746d656e74000000376c65646765722e61646a7573746d656e74733a30313939663030302d303030302d373030302d383030302d30303030303030306630303180000000000003287ffffffffffffcd800000000000000020000003c6d65726368616e745f617661696c61626c653a555344543a30313939663030302d303030302d373030302d383030302d303030303030303062303031440000000455534454000000000000000100000000000000000000002d7573642d726174652d30313939663030302d303030302d373030302d383030302d3030303030303030653030310000003a6d65726368616e745f726573657276653a555344543a30313939663030302d303030302d373030302d383030302d303030303030303062303031430000000455534454000000000000000100000000000000000000002d7573642d726174652d30313939663030302d303030302d373030302d383030302d303030303030303065303031",
+          "hash": "90f388ef96d1bfd3673f79b48861b35513a80d8b49a172a9ba1792045cf11c77"
+        }
+      ]
+    }
+  ]
+}

@@ -3,7 +3,6 @@ syntax = "proto3";
 package aipay.iam.v1;
 
 import "aipay/common/v1/context.proto";
-import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/iam/v1;iamv1";
 
@@ -57,36 +56,4 @@ message RequestBinding {
   string http_method = 1;
   string http_path = 2;
   string permission = 3;
-}
-
-message AuthenticateRequest {
-  aipay.common.v1.RequestContext context = 1;
-  oneof credential {
-    BearerCredential bearer = 2;
-    EPayV1SignatureCredential epay_v1_signature = 3;
-    EPayV1KeyCredential epay_v1_key = 4;
-    EPayV2SignatureCredential epay_v2_signature = 5;
-    WorkloadIdentityCredential workload_identity = 8;
-  }
-  string audience = 6;
-  RequestBinding request_binding = 7;
-}
-
-message AuthenticateResponse {
-  Principal principal = 1;
-  // IAM-issued, short-lived proof bound to the authenticated principal and
-  // permitted caller/audience. This is not a client-supplied subject ID.
-  string identity_assertion = 2;
-  google.protobuf.Timestamp expires_at = 3;
-  string credential_id = 4;
-  // IAM-computed request binding. EPay proof must not become a reusable bearer
-  // credential for a different operation or financial command.
-  bytes request_fingerprint = 5;
-}
-
-// Internal only. The transport authenticates the calling service. Invalid,
-// disabled, expired or revoked credentials fail with a gRPC error, not a
-// successful response containing an anonymous principal.
-service IdentityService {
-  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
 }

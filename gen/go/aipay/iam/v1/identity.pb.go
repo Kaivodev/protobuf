@@ -10,7 +10,6 @@ import (
 	v1 "github.com/aipay-dev/protobuf/gen/go/aipay/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -476,245 +475,11 @@ func (x *RequestBinding) GetPermission() string {
 	return ""
 }
 
-type AuthenticateRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	Context *v1.RequestContext     `protobuf:"bytes,1,opt,name=context,proto3" json:"context,omitempty"`
-	// Types that are valid to be assigned to Credential:
-	//
-	//	*AuthenticateRequest_Bearer
-	//	*AuthenticateRequest_EpayV1Signature
-	//	*AuthenticateRequest_EpayV1Key
-	//	*AuthenticateRequest_EpayV2Signature
-	//	*AuthenticateRequest_WorkloadIdentity
-	Credential     isAuthenticateRequest_Credential `protobuf_oneof:"credential"`
-	Audience       string                           `protobuf:"bytes,6,opt,name=audience,proto3" json:"audience,omitempty"`
-	RequestBinding *RequestBinding                  `protobuf:"bytes,7,opt,name=request_binding,json=requestBinding,proto3" json:"request_binding,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *AuthenticateRequest) Reset() {
-	*x = AuthenticateRequest{}
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AuthenticateRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AuthenticateRequest) ProtoMessage() {}
-
-func (x *AuthenticateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AuthenticateRequest.ProtoReflect.Descriptor instead.
-func (*AuthenticateRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *AuthenticateRequest) GetContext() *v1.RequestContext {
-	if x != nil {
-		return x.Context
-	}
-	return nil
-}
-
-func (x *AuthenticateRequest) GetCredential() isAuthenticateRequest_Credential {
-	if x != nil {
-		return x.Credential
-	}
-	return nil
-}
-
-func (x *AuthenticateRequest) GetBearer() *BearerCredential {
-	if x != nil {
-		if x, ok := x.Credential.(*AuthenticateRequest_Bearer); ok {
-			return x.Bearer
-		}
-	}
-	return nil
-}
-
-func (x *AuthenticateRequest) GetEpayV1Signature() *EPayV1SignatureCredential {
-	if x != nil {
-		if x, ok := x.Credential.(*AuthenticateRequest_EpayV1Signature); ok {
-			return x.EpayV1Signature
-		}
-	}
-	return nil
-}
-
-func (x *AuthenticateRequest) GetEpayV1Key() *EPayV1KeyCredential {
-	if x != nil {
-		if x, ok := x.Credential.(*AuthenticateRequest_EpayV1Key); ok {
-			return x.EpayV1Key
-		}
-	}
-	return nil
-}
-
-func (x *AuthenticateRequest) GetEpayV2Signature() *EPayV2SignatureCredential {
-	if x != nil {
-		if x, ok := x.Credential.(*AuthenticateRequest_EpayV2Signature); ok {
-			return x.EpayV2Signature
-		}
-	}
-	return nil
-}
-
-func (x *AuthenticateRequest) GetWorkloadIdentity() *WorkloadIdentityCredential {
-	if x != nil {
-		if x, ok := x.Credential.(*AuthenticateRequest_WorkloadIdentity); ok {
-			return x.WorkloadIdentity
-		}
-	}
-	return nil
-}
-
-func (x *AuthenticateRequest) GetAudience() string {
-	if x != nil {
-		return x.Audience
-	}
-	return ""
-}
-
-func (x *AuthenticateRequest) GetRequestBinding() *RequestBinding {
-	if x != nil {
-		return x.RequestBinding
-	}
-	return nil
-}
-
-type isAuthenticateRequest_Credential interface {
-	isAuthenticateRequest_Credential()
-}
-
-type AuthenticateRequest_Bearer struct {
-	Bearer *BearerCredential `protobuf:"bytes,2,opt,name=bearer,proto3,oneof"`
-}
-
-type AuthenticateRequest_EpayV1Signature struct {
-	EpayV1Signature *EPayV1SignatureCredential `protobuf:"bytes,3,opt,name=epay_v1_signature,json=epayV1Signature,proto3,oneof"`
-}
-
-type AuthenticateRequest_EpayV1Key struct {
-	EpayV1Key *EPayV1KeyCredential `protobuf:"bytes,4,opt,name=epay_v1_key,json=epayV1Key,proto3,oneof"`
-}
-
-type AuthenticateRequest_EpayV2Signature struct {
-	EpayV2Signature *EPayV2SignatureCredential `protobuf:"bytes,5,opt,name=epay_v2_signature,json=epayV2Signature,proto3,oneof"`
-}
-
-type AuthenticateRequest_WorkloadIdentity struct {
-	WorkloadIdentity *WorkloadIdentityCredential `protobuf:"bytes,8,opt,name=workload_identity,json=workloadIdentity,proto3,oneof"`
-}
-
-func (*AuthenticateRequest_Bearer) isAuthenticateRequest_Credential() {}
-
-func (*AuthenticateRequest_EpayV1Signature) isAuthenticateRequest_Credential() {}
-
-func (*AuthenticateRequest_EpayV1Key) isAuthenticateRequest_Credential() {}
-
-func (*AuthenticateRequest_EpayV2Signature) isAuthenticateRequest_Credential() {}
-
-func (*AuthenticateRequest_WorkloadIdentity) isAuthenticateRequest_Credential() {}
-
-type AuthenticateResponse struct {
-	state     protoimpl.MessageState `protogen:"open.v1"`
-	Principal *Principal             `protobuf:"bytes,1,opt,name=principal,proto3" json:"principal,omitempty"`
-	// IAM-issued, short-lived proof bound to the authenticated principal and
-	// permitted caller/audience. This is not a client-supplied subject ID.
-	IdentityAssertion string                 `protobuf:"bytes,2,opt,name=identity_assertion,json=identityAssertion,proto3" json:"identity_assertion,omitempty"`
-	ExpiresAt         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	CredentialId      string                 `protobuf:"bytes,4,opt,name=credential_id,json=credentialId,proto3" json:"credential_id,omitempty"`
-	// IAM-computed request binding. EPay proof must not become a reusable bearer
-	// credential for a different operation or financial command.
-	RequestFingerprint []byte `protobuf:"bytes,5,opt,name=request_fingerprint,json=requestFingerprint,proto3" json:"request_fingerprint,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
-}
-
-func (x *AuthenticateResponse) Reset() {
-	*x = AuthenticateResponse{}
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AuthenticateResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AuthenticateResponse) ProtoMessage() {}
-
-func (x *AuthenticateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AuthenticateResponse.ProtoReflect.Descriptor instead.
-func (*AuthenticateResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *AuthenticateResponse) GetPrincipal() *Principal {
-	if x != nil {
-		return x.Principal
-	}
-	return nil
-}
-
-func (x *AuthenticateResponse) GetIdentityAssertion() string {
-	if x != nil {
-		return x.IdentityAssertion
-	}
-	return ""
-}
-
-func (x *AuthenticateResponse) GetExpiresAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.ExpiresAt
-	}
-	return nil
-}
-
-func (x *AuthenticateResponse) GetCredentialId() string {
-	if x != nil {
-		return x.CredentialId
-	}
-	return ""
-}
-
-func (x *AuthenticateResponse) GetRequestFingerprint() []byte {
-	if x != nil {
-		return x.RequestFingerprint
-	}
-	return nil
-}
-
 var File_aipay_iam_v1_identity_proto protoreflect.FileDescriptor
 
 const file_aipay_iam_v1_identity_proto_rawDesc = "" +
 	"\n" +
-	"\x1baipay/iam/v1/identity.proto\x12\faipay.iam.v1\x1a\x1daipay/common/v1/context.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x85\x01\n" +
+	"\x1baipay/iam/v1/identity.proto\x12\faipay.iam.v1\x1a\x1daipay/common/v1/context.proto\"\x85\x01\n" +
 	"\tPrincipal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x1b.aipay.iam.v1.PrincipalTypeR\x04type\x127\n" +
@@ -743,32 +508,12 @@ const file_aipay_iam_v1_identity_proto_rawDesc = "" +
 	"\thttp_path\x18\x02 \x01(\tR\bhttpPath\x12\x1e\n" +
 	"\n" +
 	"permission\x18\x03 \x01(\tR\n" +
-	"permission\"\xc7\x04\n" +
-	"\x13AuthenticateRequest\x129\n" +
-	"\acontext\x18\x01 \x01(\v2\x1f.aipay.common.v1.RequestContextR\acontext\x128\n" +
-	"\x06bearer\x18\x02 \x01(\v2\x1e.aipay.iam.v1.BearerCredentialH\x00R\x06bearer\x12U\n" +
-	"\x11epay_v1_signature\x18\x03 \x01(\v2'.aipay.iam.v1.EPayV1SignatureCredentialH\x00R\x0fepayV1Signature\x12C\n" +
-	"\vepay_v1_key\x18\x04 \x01(\v2!.aipay.iam.v1.EPayV1KeyCredentialH\x00R\tepayV1Key\x12U\n" +
-	"\x11epay_v2_signature\x18\x05 \x01(\v2'.aipay.iam.v1.EPayV2SignatureCredentialH\x00R\x0fepayV2Signature\x12W\n" +
-	"\x11workload_identity\x18\b \x01(\v2(.aipay.iam.v1.WorkloadIdentityCredentialH\x00R\x10workloadIdentity\x12\x1a\n" +
-	"\baudience\x18\x06 \x01(\tR\baudience\x12E\n" +
-	"\x0frequest_binding\x18\a \x01(\v2\x1c.aipay.iam.v1.RequestBindingR\x0erequestBindingB\f\n" +
-	"\n" +
-	"credential\"\x8d\x02\n" +
-	"\x14AuthenticateResponse\x125\n" +
-	"\tprincipal\x18\x01 \x01(\v2\x17.aipay.iam.v1.PrincipalR\tprincipal\x12-\n" +
-	"\x12identity_assertion\x18\x02 \x01(\tR\x11identityAssertion\x129\n" +
-	"\n" +
-	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12#\n" +
-	"\rcredential_id\x18\x04 \x01(\tR\fcredentialId\x12/\n" +
-	"\x13request_fingerprint\x18\x05 \x01(\fR\x12requestFingerprint*\x8d\x01\n" +
+	"permission*\x8d\x01\n" +
 	"\rPrincipalType\x12\x1e\n" +
 	"\x1aPRINCIPAL_TYPE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PRINCIPAL_TYPE_USER\x10\x01\x12'\n" +
 	"#PRINCIPAL_TYPE_MERCHANT_APPLICATION\x10\x02\x12\x1a\n" +
-	"\x16PRINCIPAL_TYPE_SERVICE\x10\x032h\n" +
-	"\x0fIdentityService\x12U\n" +
-	"\fAuthenticate\x12!.aipay.iam.v1.AuthenticateRequest\x1a\".aipay.iam.v1.AuthenticateResponseB9Z7github.com/aipay-dev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
+	"\x16PRINCIPAL_TYPE_SERVICE\x10\x03B9Z7github.com/aipay-dev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
 
 var (
 	file_aipay_iam_v1_identity_proto_rawDescOnce sync.Once
@@ -783,7 +528,7 @@ func file_aipay_iam_v1_identity_proto_rawDescGZIP() []byte {
 }
 
 var file_aipay_iam_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_aipay_iam_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_aipay_iam_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_aipay_iam_v1_identity_proto_goTypes = []any{
 	(PrincipalType)(0),                 // 0: aipay.iam.v1.PrincipalType
 	(*Principal)(nil),                  // 1: aipay.iam.v1.Principal
@@ -794,33 +539,18 @@ var file_aipay_iam_v1_identity_proto_goTypes = []any{
 	(*EPayV2SignatureCredential)(nil),  // 6: aipay.iam.v1.EPayV2SignatureCredential
 	(*WorkloadIdentityCredential)(nil), // 7: aipay.iam.v1.WorkloadIdentityCredential
 	(*RequestBinding)(nil),             // 8: aipay.iam.v1.RequestBinding
-	(*AuthenticateRequest)(nil),        // 9: aipay.iam.v1.AuthenticateRequest
-	(*AuthenticateResponse)(nil),       // 10: aipay.iam.v1.AuthenticateResponse
-	(*v1.Scope)(nil),                   // 11: aipay.common.v1.Scope
-	(*v1.RequestContext)(nil),          // 12: aipay.common.v1.RequestContext
-	(*timestamppb.Timestamp)(nil),      // 13: google.protobuf.Timestamp
+	(*v1.Scope)(nil),                   // 9: aipay.common.v1.Scope
 }
 var file_aipay_iam_v1_identity_proto_depIdxs = []int32{
-	0,  // 0: aipay.iam.v1.Principal.type:type_name -> aipay.iam.v1.PrincipalType
-	11, // 1: aipay.iam.v1.Principal.bound_scope:type_name -> aipay.common.v1.Scope
-	3,  // 2: aipay.iam.v1.EPayV1SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
-	3,  // 3: aipay.iam.v1.EPayV2SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
-	12, // 4: aipay.iam.v1.AuthenticateRequest.context:type_name -> aipay.common.v1.RequestContext
-	2,  // 5: aipay.iam.v1.AuthenticateRequest.bearer:type_name -> aipay.iam.v1.BearerCredential
-	4,  // 6: aipay.iam.v1.AuthenticateRequest.epay_v1_signature:type_name -> aipay.iam.v1.EPayV1SignatureCredential
-	5,  // 7: aipay.iam.v1.AuthenticateRequest.epay_v1_key:type_name -> aipay.iam.v1.EPayV1KeyCredential
-	6,  // 8: aipay.iam.v1.AuthenticateRequest.epay_v2_signature:type_name -> aipay.iam.v1.EPayV2SignatureCredential
-	7,  // 9: aipay.iam.v1.AuthenticateRequest.workload_identity:type_name -> aipay.iam.v1.WorkloadIdentityCredential
-	8,  // 10: aipay.iam.v1.AuthenticateRequest.request_binding:type_name -> aipay.iam.v1.RequestBinding
-	1,  // 11: aipay.iam.v1.AuthenticateResponse.principal:type_name -> aipay.iam.v1.Principal
-	13, // 12: aipay.iam.v1.AuthenticateResponse.expires_at:type_name -> google.protobuf.Timestamp
-	9,  // 13: aipay.iam.v1.IdentityService.Authenticate:input_type -> aipay.iam.v1.AuthenticateRequest
-	10, // 14: aipay.iam.v1.IdentityService.Authenticate:output_type -> aipay.iam.v1.AuthenticateResponse
-	14, // [14:15] is the sub-list for method output_type
-	13, // [13:14] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	0, // 0: aipay.iam.v1.Principal.type:type_name -> aipay.iam.v1.PrincipalType
+	9, // 1: aipay.iam.v1.Principal.bound_scope:type_name -> aipay.common.v1.Scope
+	3, // 2: aipay.iam.v1.EPayV1SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
+	3, // 3: aipay.iam.v1.EPayV2SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_aipay_iam_v1_identity_proto_init() }
@@ -828,22 +558,15 @@ func file_aipay_iam_v1_identity_proto_init() {
 	if File_aipay_iam_v1_identity_proto != nil {
 		return
 	}
-	file_aipay_iam_v1_identity_proto_msgTypes[8].OneofWrappers = []any{
-		(*AuthenticateRequest_Bearer)(nil),
-		(*AuthenticateRequest_EpayV1Signature)(nil),
-		(*AuthenticateRequest_EpayV1Key)(nil),
-		(*AuthenticateRequest_EpayV2Signature)(nil),
-		(*AuthenticateRequest_WorkloadIdentity)(nil),
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_iam_v1_identity_proto_rawDesc), len(file_aipay_iam_v1_identity_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   8,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   0,
 		},
 		GoTypes:           file_aipay_iam_v1_identity_proto_goTypes,
 		DependencyIndexes: file_aipay_iam_v1_identity_proto_depIdxs,
