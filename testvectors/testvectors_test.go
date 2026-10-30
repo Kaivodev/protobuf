@@ -10,6 +10,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -331,6 +332,190 @@ func TestApprovalV1(t *testing.T) {
 		auth, clientData := unhex(t, a.Assertion.AuthenticatorData), unhex(t, a.Assertion.ClientDataJSON)
 		if !ecdsa.VerifyASN1(pub, sum(auth, sum(clientData)), unhex(t, a.Assertion.Signature)) {
 			t.Fatalf("%s carries a bad signature", a.Name)
+		}
+	}
+}
+
+func TestLedgerCheckpointV1(t *testing.T) {
+	type balance struct {
+		AccountCode string `json:"account_code"`
+		Units       string `json:"units"`
+		USDMicros   string `json:"usd_micros"`
+	}
+	type row struct {
+		GLCode       string `json:"gl_code"`
+		DimensionKey string `json:"dimension_key"`
+		Currency     string `json:"currency"`
+		OpeningUnits string `json:"opening_units"`
+		DebitUnits   string `json:"debit_units"`
+		CreditUnits  string `json:"credit_units"`
+		ClosingUnits string `json:"closing_units"`
+		OpeningUSD   string `json:"opening_usd_micros"`
+		DebitUSD     string `json:"debit_usd_micros"`
+		CreditUSD    string `json:"credit_usd_micros"`
+		ClosingUSD   string `json:"closing_usd_micros"`
+	}
+	type checkpoint struct {
+		ID                 string `json:"id"`
+		Kind               string `json:"kind"`
+		FromSeq            string `json:"from_seq"`
+		ToSeq              string `json:"to_seq"`
+		HeadHash           string `json:"head_hash"`
+		MerkleRoot         string `json:"merkle_root"`
+		BalancesDigest     string `json:"balances_digest"`
+		TrialBalanceDigest string `json:"trial_balance_digest"`
+		BusinessDate       string `json:"business_date"`
+		PeriodID           string `json:"period_id"`
+		PrevDigest         string `json:"prev_checkpoint_digest"`
+		KeyID              string `json:"key_id"`
+		Signature          string `json:"signature"`
+	}
+	var doc struct {
+		Spec, Description string
+		Balances          []struct {
+			Name, Description, Seq string
+			Balances               []balance
+			Input, Digest          string
+		}
+		TrialBalances []struct {
+			Name, Description string
+			PeriodID          string `json:"period_id"`
+			Rows              []row
+			Input, Digest     string
+		} `json:"trial_balances"`
+		Merkle []struct {
+			Leaves            []string
+			Root, Description string
+		}
+		PublicKeys []struct {
+			KeyID   string            `json:"key_id"`
+			JWK     map[string]string `json:"jwk"`
+			SPKIDER string            `json:"spki_der"`
+		} `json:"public_keys"`
+		Checkpoints []struct {
+			Checkpoint   checkpoint
+			SigningInput string `json:"signing_input"`
+			Digest       string
+		}
+		Invalid []struct {
+			Name, Description string
+			Checkpoint        checkpoint
+		} `json:"invalid_checkpoints"`
+	}
+	decodeJSON(t, testvectors.LedgerCheckpointV1(), &doc)
+	for _, c := range doc.Balances {
+		rows := slices.Clone(c.Balances)
+		slices.SortFunc(rows, func(a, b balance) int { return strings.Compare(a.AccountCode, b.AccountCode) })
+		w := &writer{b: []byte("AIPAY-LEDGER-BALANCES-V1")}
+		w.u64(integer(t, c.Seq))
+		w.u64(uint64(len(rows)))
+		for _, r := range rows {
+			w.str(r.AccountCode)
+			w.u64(integer(t, r.Units))
+			w.u64(integer(t, r.USDMicros))
+		}
+		if !equalHex(w.b, c.Input) || !equalHex(sum(w.b), c.Digest) {
+			t.Fatalf("balances %s differ", c.Name)
+		}
+	}
+	for _, c := range doc.TrialBalances {
+		rows := slices.Clone(c.Rows)
+		slices.SortFunc(rows, func(a, b row) int {
+			return strings.Compare(a.GLCode+"\x00"+a.DimensionKey+"\x00"+a.Currency, b.GLCode+"\x00"+b.DimensionKey+"\x00"+b.Currency)
+		})
+		w := &writer{b: []byte("AIPAY-LEDGER-TRIAL-BALANCE-V1")}
+		w.str(c.PeriodID)
+		w.u64(uint64(len(rows)))
+		for _, r := range rows {
+			w.str(r.GLCode)
+			w.str(r.DimensionKey)
+			w.str(r.Currency)
+			for _, v := range []string{r.OpeningUnits, r.DebitUnits, r.CreditUnits, r.ClosingUnits, r.OpeningUSD, r.DebitUSD, r.CreditUSD, r.ClosingUSD} {
+				w.u64(integer(t, v))
+			}
+		}
+		if !equalHex(w.b, c.Input) || !equalHex(sum(w.b), c.Digest) {
+			t.Fatalf("trial balance %s differs", c.Name)
+		}
+	}
+	var merkle func(leaves [][]byte) []byte
+	merkle = func(leaves [][]byte) []byte {
+		switch len(leaves) {
+		case 0:
+			return sum(nil)
+		case 1:
+			return sum([]byte{0}, leaves[0])
+		}
+		k := 1
+		for k*2 < len(leaves) {
+			k *= 2
+		}
+		return sum([]byte{1}, merkle(leaves[:k]), merkle(leaves[k:]))
+	}
+	for i, c := range doc.Merkle {
+		var leaves [][]byte
+		for _, l := range c.Leaves {
+			leaves = append(leaves, unhex(t, l))
+		}
+		if !equalHex(merkle(leaves), c.Root) {
+			t.Fatalf("merkle case %d differs", i)
+		}
+	}
+	keys := map[string]*ecdsa.PublicKey{}
+	for _, key := range doc.PublicKeys {
+		parsed, err := x509.ParsePKIXPublicKey(unhex(t, key.SPKIDER))
+		if err != nil {
+			t.Fatal(err)
+		}
+		keys[key.KeyID] = parsed.(*ecdsa.PublicKey)
+	}
+	input := func(c checkpoint) []byte {
+		w := &writer{b: []byte("AIPAY-LEDGER-CHECKPOINT-V1")}
+		w.u64(integer(t, c.ID))
+		w.str(c.Kind)
+		w.u64(integer(t, c.FromSeq))
+		w.u64(integer(t, c.ToSeq))
+		w.bytes(unhex(t, c.HeadHash))
+		w.bytes(unhex(t, c.MerkleRoot))
+		w.bytes(unhex(t, c.BalancesDigest))
+		w.bytes(unhex(t, c.TrialBalanceDigest))
+		w.str(c.BusinessDate)
+		w.str(c.PeriodID)
+		w.bytes(unhex(t, c.PrevDigest))
+		return w.b
+	}
+	verify := func(c checkpoint, prev []byte) string {
+		key, ok := keys[c.KeyID]
+		switch {
+		case !ok:
+			return "key_id"
+		case !bytes.Equal(unhex(t, c.PrevDigest), prev):
+			return "prev_digest"
+		case !ecdsa.VerifyASN1(key, sum(input(c)), unhex(t, c.Signature)):
+			return "signature"
+		}
+		return ""
+	}
+	prev := make([]byte, 32)
+	digests := map[string][]byte{"0": prev}
+	for _, c := range doc.Checkpoints {
+		in := input(c.Checkpoint)
+		if !equalHex(in, c.SigningInput) || !equalHex(sum(in), c.Digest) {
+			t.Fatalf("checkpoint %s input or digest differs", c.Checkpoint.ID)
+		}
+		if failure := verify(c.Checkpoint, prev); failure != "" {
+			t.Fatalf("checkpoint %s: %s", c.Checkpoint.ID, failure)
+		}
+		prev = sum(in)
+		digests[c.Checkpoint.ID] = prev
+	}
+	if len(doc.Invalid) == 0 {
+		t.Fatal("no invalid checkpoint vectors")
+	}
+	for _, c := range doc.Invalid {
+		previous, _ := strconv.ParseUint(c.Checkpoint.ID, 10, 64)
+		if verify(c.Checkpoint, digests[strconv.FormatUint(previous-1, 10)]) == "" {
+			t.Fatalf("%s verified", c.Name)
 		}
 	}
 }

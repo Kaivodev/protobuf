@@ -20,6 +20,8 @@ var (
 	eventSigningV1 []byte
 	//go:embed approval_v1.json
 	approvalV1 []byte
+	//go:embed ledger_checkpoint_v1.json
+	ledgerCheckpointV1 []byte
 )
 
 // LedgerCanonicalV1 holds journal transactions with their canonical encoding V1
@@ -30,6 +32,11 @@ func LedgerCanonicalV1() []byte { return bytes.Clone(ledgerCanonicalV1) }
 // signing input, event digests, the producer public key, and envelopes that
 // must stop the stream.
 func EventSigningV1() []byte { return bytes.Clone(eventSigningV1) }
+
+// LedgerCheckpointV1 holds balances digests, trial balance digests, RFC 6962
+// Merkle roots and signed checkpoints over the LedgerCanonicalV1 genesis chain,
+// with checkpoints that must be rejected.
+func LedgerCheckpointV1() []byte { return bytes.Clone(ledgerCheckpointV1) }
 
 // ApprovalV1 holds an approval request digest and WebAuthn assertions over it,
 // one valid and the rest invalid.

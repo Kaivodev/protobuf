@@ -2,7 +2,140 @@ syntax = "proto3";
 
 package aipay.ledger.v1;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
 
-// Reserved for the separately maintained ledger service. No account, amount,
-// posting or money-operation RPC is invented before domain design is agreed.
+// Journal data published by the ledger accounting core. Every byte format
+// below is fixed by docs design/ledger-service.md and covered by the
+// testvectors package; settlement and reconciliation verify it with their own
+// implementations (decision A16). In all formats str and bytes carry a u32
+// big-endian length prefix, integers are 8-byte big-endian (u32 where noted)
+// and domain tags have no length prefix.
+
+// Line direction, encoded as the byte 'D' or 'C' in canonical encoding V1.
+enum EntryDirection {
+  ENTRY_DIRECTION_UNSPECIFIED = 0;
+  ENTRY_DIRECTION_DEBIT = 1;
+  ENTRY_DIRECTION_CREDIT = 2;
+}
+
+// One journal line, encoded as
+//   str account_code || u8 direction || str currency || i64 units ||
+//   i64 usd_micros || str usd_rate_version
+message JournalLine {
+  // (type, currency, owner) code, e.g. merchant_available:USDT:<account_id>.
+  // Chain-scoped types also carry the chain, e.g. unmatched_receipts:USDT:TRON,
+  // gas_expense:TRX:TRON or hot_wallet:USDT:TRON:<wallet_id>.
+  string account_code = 1;
+  EntryDirection direction = 2;
+  string currency = 3;
+  // Positive minor units; 0 only on period revaluation lines.
+  int64 units = 4;
+  // Reporting amount in 10^-6 USD at usd_rate_version.
+  int64 usd_micros = 5;
+  string usd_rate_version = 6;
+}
+
+// A sealed journal transaction with every field canonical encoding V1 hashes:
+//   hash      = SHA-256("AIPAY-LEDGER-TX-V1" || prev_hash || encode(tx))
+//   encode(tx) = u64 seq || bytes16 tx_id || str kind || str idempotency_key ||
+//                i64 occurred_at_unix_nanos || i64 recorded_at_unix_nanos ||
+//                str pricing_version_id || u32 line_count || line_1 || … || line_n
+// Verifiers recompute hash from these fields and the previous hash; they
+// never accept prev_hash or hash as given.
+message JournalTransaction {
+  // Global sequence, starting at 1 without gaps.
+  uint64 seq = 1;
+  // UUIDv7 in canonical lowercase form, hashed as its 16 raw bytes.
+  string tx_id = 2;
+  // Lowercase snake case, e.g. order_paid, manual_adjustment.
+  string kind = 3;
+  // Derived from the source: <stream>:<sequence>:<event_id>,
+  // ledger.adjustments:<approval request id>, command:<name>:<key> or
+  // kernel:<operation>:<key>; at most 256 bytes.
+  string idempotency_key = 4;
+  // Microsecond precision; hashed as Unix nanoseconds.
+  google.protobuf.Timestamp occurred_at = 5;
+  google.protobuf.Timestamp recorded_at = 6;
+  // Empty when no pricing version applies.
+  string pricing_version_id = 7;
+  // In line number order; line_count is the number of lines.
+  repeated JournalLine lines = 8;
+  // hash of seq - 1; 32 zero bytes for seq 1.
+  bytes prev_hash = 9;
+  bytes hash = 10;
+
+  // The fields below are sealed with the transaction but are not part of
+  // canonical encoding V1, so they never change hash.
+
+  // True when the occurrence period no longer accepted postings and the
+  // transaction went into the open period containing recorded_at, keeping its
+  // occurred_at (decision A86). Verifiers derive the accounting period from
+  // occurred_at when false and from recorded_at when true.
+  bool late = 11;
+  // Analysis dimensions the posting rule took from the signed source, used by
+  // statements, reports and general ledger dimensions; never recomputed from
+  // current ownership. name=value pairs in the fixed order account, business,
+  // application, upstream_account, payment_method, joined by ';', with empty
+  // dimensions omitted and "" for none, e.g.
+  // "account=<uuid>;business=<uuid>;payment_method=alipay". The first four are
+  // lowercase UUIDs, payment_method matches ^[a-z][a-z0-9_]{0,62}$; a business
+  // needs its account and an application its business.
+  string dimension_key = 12;
+}
+
+// A signed journal checkpoint: the payload of CheckpointSigned events
+// (schema version 1) on the ledger.checkpoints stream and the item returned
+// by JournalService.ListCheckpoints.
+//
+// Signing input:
+//   "AIPAY-LEDGER-CHECKPOINT-V1" || u64 id || str kind || u64 from_seq ||
+//   u64 to_seq || bytes head_hash || bytes merkle_root || bytes balances_digest ||
+//   bytes trial_balance_digest || str business_date || str period_id ||
+//   bytes prev_checkpoint_digest
+// checkpoint digest = SHA-256(signing input); signature is ECDSA P-256 over
+// that digest, ASN.1 DER encoded. key_id and created_at are not signed.
+//
+// balances_digest = SHA-256("AIPAY-LEDGER-BALANCES-V1" || u64 to_seq ||
+//   u64 count || (str account_code || i64 units || i64 usd_micros)*), over every
+//   account with a line up to to_seq, ordered by account code bytes; units and
+//   usd_micros are debit minus credit.
+// trial_balance_digest = SHA-256("AIPAY-LEDGER-TRIAL-BALANCE-V1" ||
+//   str period_id || u64 count || (str gl_code || str dimension_key ||
+//   str currency || 8 × i64)*), rows ordered by GL code, dimension key and
+//   currency bytes, the eight integers being opening, debit, credit and closing
+//   units, then opening, debit, credit and closing USD micros.
+message CheckpointSigned {
+  // The digest is recomputed by every receiver from the signed fields, so it
+  // is not carried.
+  reserved 12;
+  reserved "digest";
+  // Starts at 1 and increases by one.
+  uint64 id = 1;
+  // periodic, daily or period_close.
+  string kind = 2;
+  // Transactions from_seq through to_seq; from_seq is the previous to_seq + 1
+  // (1 for the first checkpoint) and to_seq = from_seq - 1 for an empty range.
+  uint64 from_seq = 3;
+  uint64 to_seq = 4;
+  // hash of transaction to_seq, or the previous head for an empty range;
+  // 32 zero bytes before the first transaction.
+  bytes head_hash = 5;
+  // RFC 6962 Merkle root of the range's transaction hashes (leaf prefix 0x00,
+  // node prefix 0x01); SHA-256 of the empty string for an empty range.
+  bytes merkle_root = 6;
+  bytes balances_digest = 7;
+  // 32 bytes for period_close checkpoints, empty otherwise.
+  bytes trial_balance_digest = 8;
+  // YYYY-MM-DD (UTC+8 business day) when the kind uses it, else empty.
+  string business_date = 9;
+  // Accounting period when the kind uses it, else empty.
+  string period_id = 10;
+  // Digest of checkpoint id - 1; 32 zero bytes for the first checkpoint.
+  bytes prev_checkpoint_digest = 11;
+  // Entry of the ledger checkpoint key in the receiver's key registry.
+  string key_id = 13;
+  bytes signature = 14;
+  google.protobuf.Timestamp created_at = 15;
+}

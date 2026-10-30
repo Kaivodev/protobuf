@@ -9,7 +9,9 @@ package ledgerv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
+	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -20,19 +22,583 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Line direction, encoded as the byte 'D' or 'C' in canonical encoding V1.
+type EntryDirection int32
+
+const (
+	EntryDirection_ENTRY_DIRECTION_UNSPECIFIED EntryDirection = 0
+	EntryDirection_ENTRY_DIRECTION_DEBIT       EntryDirection = 1
+	EntryDirection_ENTRY_DIRECTION_CREDIT      EntryDirection = 2
+)
+
+// Enum value maps for EntryDirection.
+var (
+	EntryDirection_name = map[int32]string{
+		0: "ENTRY_DIRECTION_UNSPECIFIED",
+		1: "ENTRY_DIRECTION_DEBIT",
+		2: "ENTRY_DIRECTION_CREDIT",
+	}
+	EntryDirection_value = map[string]int32{
+		"ENTRY_DIRECTION_UNSPECIFIED": 0,
+		"ENTRY_DIRECTION_DEBIT":       1,
+		"ENTRY_DIRECTION_CREDIT":      2,
+	}
+)
+
+func (x EntryDirection) Enum() *EntryDirection {
+	p := new(EntryDirection)
+	*p = x
+	return p
+}
+
+func (x EntryDirection) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EntryDirection) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_ledger_v1_ledger_proto_enumTypes[0].Descriptor()
+}
+
+func (EntryDirection) Type() protoreflect.EnumType {
+	return &file_aipay_ledger_v1_ledger_proto_enumTypes[0]
+}
+
+func (x EntryDirection) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use EntryDirection.Descriptor instead.
+func (EntryDirection) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_ledger_proto_rawDescGZIP(), []int{0}
+}
+
+// One journal line, encoded as
+//
+//	str account_code || u8 direction || str currency || i64 units ||
+//	i64 usd_micros || str usd_rate_version
+type JournalLine struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// (type, currency, owner) code, e.g. merchant_available:USDT:<account_id>.
+	// Chain-scoped types also carry the chain, e.g. unmatched_receipts:USDT:TRON,
+	// gas_expense:TRX:TRON or hot_wallet:USDT:TRON:<wallet_id>.
+	AccountCode string         `protobuf:"bytes,1,opt,name=account_code,json=accountCode,proto3" json:"account_code,omitempty"`
+	Direction   EntryDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=aipay.ledger.v1.EntryDirection" json:"direction,omitempty"`
+	Currency    string         `protobuf:"bytes,3,opt,name=currency,proto3" json:"currency,omitempty"`
+	// Positive minor units; 0 only on period revaluation lines.
+	Units int64 `protobuf:"varint,4,opt,name=units,proto3" json:"units,omitempty"`
+	// Reporting amount in 10^-6 USD at usd_rate_version.
+	UsdMicros      int64  `protobuf:"varint,5,opt,name=usd_micros,json=usdMicros,proto3" json:"usd_micros,omitempty"`
+	UsdRateVersion string `protobuf:"bytes,6,opt,name=usd_rate_version,json=usdRateVersion,proto3" json:"usd_rate_version,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *JournalLine) Reset() {
+	*x = JournalLine{}
+	mi := &file_aipay_ledger_v1_ledger_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JournalLine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JournalLine) ProtoMessage() {}
+
+func (x *JournalLine) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_ledger_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JournalLine.ProtoReflect.Descriptor instead.
+func (*JournalLine) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_ledger_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *JournalLine) GetAccountCode() string {
+	if x != nil {
+		return x.AccountCode
+	}
+	return ""
+}
+
+func (x *JournalLine) GetDirection() EntryDirection {
+	if x != nil {
+		return x.Direction
+	}
+	return EntryDirection_ENTRY_DIRECTION_UNSPECIFIED
+}
+
+func (x *JournalLine) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
+}
+
+func (x *JournalLine) GetUnits() int64 {
+	if x != nil {
+		return x.Units
+	}
+	return 0
+}
+
+func (x *JournalLine) GetUsdMicros() int64 {
+	if x != nil {
+		return x.UsdMicros
+	}
+	return 0
+}
+
+func (x *JournalLine) GetUsdRateVersion() string {
+	if x != nil {
+		return x.UsdRateVersion
+	}
+	return ""
+}
+
+// A sealed journal transaction with every field canonical encoding V1 hashes:
+//
+//	hash      = SHA-256("AIPAY-LEDGER-TX-V1" || prev_hash || encode(tx))
+//	encode(tx) = u64 seq || bytes16 tx_id || str kind || str idempotency_key ||
+//	             i64 occurred_at_unix_nanos || i64 recorded_at_unix_nanos ||
+//	             str pricing_version_id || u32 line_count || line_1 || … || line_n
+//
+// Verifiers recompute hash from these fields and the previous hash; they
+// never accept prev_hash or hash as given.
+type JournalTransaction struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Global sequence, starting at 1 without gaps.
+	Seq uint64 `protobuf:"varint,1,opt,name=seq,proto3" json:"seq,omitempty"`
+	// UUIDv7 in canonical lowercase form, hashed as its 16 raw bytes.
+	TxId string `protobuf:"bytes,2,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
+	// Lowercase snake case, e.g. order_paid, manual_adjustment.
+	Kind string `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
+	// Derived from the source: <stream>:<sequence>:<event_id>,
+	// ledger.adjustments:<approval request id>, command:<name>:<key> or
+	// kernel:<operation>:<key>; at most 256 bytes.
+	IdempotencyKey string `protobuf:"bytes,4,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	// Microsecond precision; hashed as Unix nanoseconds.
+	OccurredAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	RecordedAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=recorded_at,json=recordedAt,proto3" json:"recorded_at,omitempty"`
+	// Empty when no pricing version applies.
+	PricingVersionId string `protobuf:"bytes,7,opt,name=pricing_version_id,json=pricingVersionId,proto3" json:"pricing_version_id,omitempty"`
+	// In line number order; line_count is the number of lines.
+	Lines []*JournalLine `protobuf:"bytes,8,rep,name=lines,proto3" json:"lines,omitempty"`
+	// hash of seq - 1; 32 zero bytes for seq 1.
+	PrevHash []byte `protobuf:"bytes,9,opt,name=prev_hash,json=prevHash,proto3" json:"prev_hash,omitempty"`
+	Hash     []byte `protobuf:"bytes,10,opt,name=hash,proto3" json:"hash,omitempty"`
+	// True when the occurrence period no longer accepted postings and the
+	// transaction went into the open period containing recorded_at, keeping its
+	// occurred_at (decision A86). Verifiers derive the accounting period from
+	// occurred_at when false and from recorded_at when true.
+	Late bool `protobuf:"varint,11,opt,name=late,proto3" json:"late,omitempty"`
+	// Analysis dimensions the posting rule took from the signed source, used by
+	// statements, reports and general ledger dimensions; never recomputed from
+	// current ownership. name=value pairs in the fixed order account, business,
+	// application, upstream_account, payment_method, joined by ';', with empty
+	// dimensions omitted and "" for none, e.g.
+	// "account=<uuid>;business=<uuid>;payment_method=alipay". The first four are
+	// lowercase UUIDs, payment_method matches ^[a-z][a-z0-9_]{0,62}$; a business
+	// needs its account and an application its business.
+	DimensionKey  string `protobuf:"bytes,12,opt,name=dimension_key,json=dimensionKey,proto3" json:"dimension_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JournalTransaction) Reset() {
+	*x = JournalTransaction{}
+	mi := &file_aipay_ledger_v1_ledger_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JournalTransaction) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JournalTransaction) ProtoMessage() {}
+
+func (x *JournalTransaction) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_ledger_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JournalTransaction.ProtoReflect.Descriptor instead.
+func (*JournalTransaction) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_ledger_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *JournalTransaction) GetSeq() uint64 {
+	if x != nil {
+		return x.Seq
+	}
+	return 0
+}
+
+func (x *JournalTransaction) GetTxId() string {
+	if x != nil {
+		return x.TxId
+	}
+	return ""
+}
+
+func (x *JournalTransaction) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *JournalTransaction) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *JournalTransaction) GetOccurredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.OccurredAt
+	}
+	return nil
+}
+
+func (x *JournalTransaction) GetRecordedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RecordedAt
+	}
+	return nil
+}
+
+func (x *JournalTransaction) GetPricingVersionId() string {
+	if x != nil {
+		return x.PricingVersionId
+	}
+	return ""
+}
+
+func (x *JournalTransaction) GetLines() []*JournalLine {
+	if x != nil {
+		return x.Lines
+	}
+	return nil
+}
+
+func (x *JournalTransaction) GetPrevHash() []byte {
+	if x != nil {
+		return x.PrevHash
+	}
+	return nil
+}
+
+func (x *JournalTransaction) GetHash() []byte {
+	if x != nil {
+		return x.Hash
+	}
+	return nil
+}
+
+func (x *JournalTransaction) GetLate() bool {
+	if x != nil {
+		return x.Late
+	}
+	return false
+}
+
+func (x *JournalTransaction) GetDimensionKey() string {
+	if x != nil {
+		return x.DimensionKey
+	}
+	return ""
+}
+
+// A signed journal checkpoint: the payload of CheckpointSigned events
+// (schema version 1) on the ledger.checkpoints stream and the item returned
+// by JournalService.ListCheckpoints.
+//
+// Signing input:
+//
+//	"AIPAY-LEDGER-CHECKPOINT-V1" || u64 id || str kind || u64 from_seq ||
+//	u64 to_seq || bytes head_hash || bytes merkle_root || bytes balances_digest ||
+//	bytes trial_balance_digest || str business_date || str period_id ||
+//	bytes prev_checkpoint_digest
+//
+// checkpoint digest = SHA-256(signing input); signature is ECDSA P-256 over
+// that digest, ASN.1 DER encoded. key_id and created_at are not signed.
+//
+// balances_digest = SHA-256("AIPAY-LEDGER-BALANCES-V1" || u64 to_seq ||
+//
+//	u64 count || (str account_code || i64 units || i64 usd_micros)*), over every
+//	account with a line up to to_seq, ordered by account code bytes; units and
+//	usd_micros are debit minus credit.
+//
+// trial_balance_digest = SHA-256("AIPAY-LEDGER-TRIAL-BALANCE-V1" ||
+//
+//	str period_id || u64 count || (str gl_code || str dimension_key ||
+//	str currency || 8 × i64)*), rows ordered by GL code, dimension key and
+//	currency bytes, the eight integers being opening, debit, credit and closing
+//	units, then opening, debit, credit and closing USD micros.
+type CheckpointSigned struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Starts at 1 and increases by one.
+	Id uint64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	// periodic, daily or period_close.
+	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	// Transactions from_seq through to_seq; from_seq is the previous to_seq + 1
+	// (1 for the first checkpoint) and to_seq = from_seq - 1 for an empty range.
+	FromSeq uint64 `protobuf:"varint,3,opt,name=from_seq,json=fromSeq,proto3" json:"from_seq,omitempty"`
+	ToSeq   uint64 `protobuf:"varint,4,opt,name=to_seq,json=toSeq,proto3" json:"to_seq,omitempty"`
+	// hash of transaction to_seq, or the previous head for an empty range;
+	// 32 zero bytes before the first transaction.
+	HeadHash []byte `protobuf:"bytes,5,opt,name=head_hash,json=headHash,proto3" json:"head_hash,omitempty"`
+	// RFC 6962 Merkle root of the range's transaction hashes (leaf prefix 0x00,
+	// node prefix 0x01); SHA-256 of the empty string for an empty range.
+	MerkleRoot     []byte `protobuf:"bytes,6,opt,name=merkle_root,json=merkleRoot,proto3" json:"merkle_root,omitempty"`
+	BalancesDigest []byte `protobuf:"bytes,7,opt,name=balances_digest,json=balancesDigest,proto3" json:"balances_digest,omitempty"`
+	// 32 bytes for period_close checkpoints, empty otherwise.
+	TrialBalanceDigest []byte `protobuf:"bytes,8,opt,name=trial_balance_digest,json=trialBalanceDigest,proto3" json:"trial_balance_digest,omitempty"`
+	// YYYY-MM-DD (UTC+8 business day) when the kind uses it, else empty.
+	BusinessDate string `protobuf:"bytes,9,opt,name=business_date,json=businessDate,proto3" json:"business_date,omitempty"`
+	// Accounting period when the kind uses it, else empty.
+	PeriodId string `protobuf:"bytes,10,opt,name=period_id,json=periodId,proto3" json:"period_id,omitempty"`
+	// Digest of checkpoint id - 1; 32 zero bytes for the first checkpoint.
+	PrevCheckpointDigest []byte `protobuf:"bytes,11,opt,name=prev_checkpoint_digest,json=prevCheckpointDigest,proto3" json:"prev_checkpoint_digest,omitempty"`
+	// Entry of the ledger checkpoint key in the receiver's key registry.
+	KeyId         string                 `protobuf:"bytes,13,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+	Signature     []byte                 `protobuf:"bytes,14,opt,name=signature,proto3" json:"signature,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckpointSigned) Reset() {
+	*x = CheckpointSigned{}
+	mi := &file_aipay_ledger_v1_ledger_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckpointSigned) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckpointSigned) ProtoMessage() {}
+
+func (x *CheckpointSigned) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_ledger_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckpointSigned.ProtoReflect.Descriptor instead.
+func (*CheckpointSigned) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_ledger_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CheckpointSigned) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *CheckpointSigned) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *CheckpointSigned) GetFromSeq() uint64 {
+	if x != nil {
+		return x.FromSeq
+	}
+	return 0
+}
+
+func (x *CheckpointSigned) GetToSeq() uint64 {
+	if x != nil {
+		return x.ToSeq
+	}
+	return 0
+}
+
+func (x *CheckpointSigned) GetHeadHash() []byte {
+	if x != nil {
+		return x.HeadHash
+	}
+	return nil
+}
+
+func (x *CheckpointSigned) GetMerkleRoot() []byte {
+	if x != nil {
+		return x.MerkleRoot
+	}
+	return nil
+}
+
+func (x *CheckpointSigned) GetBalancesDigest() []byte {
+	if x != nil {
+		return x.BalancesDigest
+	}
+	return nil
+}
+
+func (x *CheckpointSigned) GetTrialBalanceDigest() []byte {
+	if x != nil {
+		return x.TrialBalanceDigest
+	}
+	return nil
+}
+
+func (x *CheckpointSigned) GetBusinessDate() string {
+	if x != nil {
+		return x.BusinessDate
+	}
+	return ""
+}
+
+func (x *CheckpointSigned) GetPeriodId() string {
+	if x != nil {
+		return x.PeriodId
+	}
+	return ""
+}
+
+func (x *CheckpointSigned) GetPrevCheckpointDigest() []byte {
+	if x != nil {
+		return x.PrevCheckpointDigest
+	}
+	return nil
+}
+
+func (x *CheckpointSigned) GetKeyId() string {
+	if x != nil {
+		return x.KeyId
+	}
+	return ""
+}
+
+func (x *CheckpointSigned) GetSignature() []byte {
+	if x != nil {
+		return x.Signature
+	}
+	return nil
+}
+
+func (x *CheckpointSigned) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
 var File_aipay_ledger_v1_ledger_proto protoreflect.FileDescriptor
 
 const file_aipay_ledger_v1_ledger_proto_rawDesc = "" +
 	"\n" +
-	"\x1caipay/ledger/v1/ledger.proto\x12\x0faipay.ledger.v1B?Z=github.com/aipay-dev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
+	"\x1caipay/ledger/v1/ledger.proto\x12\x0faipay.ledger.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xea\x01\n" +
+	"\vJournalLine\x12!\n" +
+	"\faccount_code\x18\x01 \x01(\tR\vaccountCode\x12=\n" +
+	"\tdirection\x18\x02 \x01(\x0e2\x1f.aipay.ledger.v1.EntryDirectionR\tdirection\x12\x1a\n" +
+	"\bcurrency\x18\x03 \x01(\tR\bcurrency\x12\x14\n" +
+	"\x05units\x18\x04 \x01(\x03R\x05units\x12\x1d\n" +
+	"\n" +
+	"usd_micros\x18\x05 \x01(\x03R\tusdMicros\x12(\n" +
+	"\x10usd_rate_version\x18\x06 \x01(\tR\x0eusdRateVersion\"\xbe\x03\n" +
+	"\x12JournalTransaction\x12\x10\n" +
+	"\x03seq\x18\x01 \x01(\x04R\x03seq\x12\x13\n" +
+	"\x05tx_id\x18\x02 \x01(\tR\x04txId\x12\x12\n" +
+	"\x04kind\x18\x03 \x01(\tR\x04kind\x12'\n" +
+	"\x0fidempotency_key\x18\x04 \x01(\tR\x0eidempotencyKey\x12;\n" +
+	"\voccurred_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAt\x12;\n" +
+	"\vrecorded_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"recordedAt\x12,\n" +
+	"\x12pricing_version_id\x18\a \x01(\tR\x10pricingVersionId\x122\n" +
+	"\x05lines\x18\b \x03(\v2\x1c.aipay.ledger.v1.JournalLineR\x05lines\x12\x1b\n" +
+	"\tprev_hash\x18\t \x01(\fR\bprevHash\x12\x12\n" +
+	"\x04hash\x18\n" +
+	" \x01(\fR\x04hash\x12\x12\n" +
+	"\x04late\x18\v \x01(\bR\x04late\x12#\n" +
+	"\rdimension_key\x18\f \x01(\tR\fdimensionKey\"\xf7\x03\n" +
+	"\x10CheckpointSigned\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x19\n" +
+	"\bfrom_seq\x18\x03 \x01(\x04R\afromSeq\x12\x15\n" +
+	"\x06to_seq\x18\x04 \x01(\x04R\x05toSeq\x12\x1b\n" +
+	"\thead_hash\x18\x05 \x01(\fR\bheadHash\x12\x1f\n" +
+	"\vmerkle_root\x18\x06 \x01(\fR\n" +
+	"merkleRoot\x12'\n" +
+	"\x0fbalances_digest\x18\a \x01(\fR\x0ebalancesDigest\x120\n" +
+	"\x14trial_balance_digest\x18\b \x01(\fR\x12trialBalanceDigest\x12#\n" +
+	"\rbusiness_date\x18\t \x01(\tR\fbusinessDate\x12\x1b\n" +
+	"\tperiod_id\x18\n" +
+	" \x01(\tR\bperiodId\x124\n" +
+	"\x16prev_checkpoint_digest\x18\v \x01(\fR\x14prevCheckpointDigest\x12\x15\n" +
+	"\x06key_id\x18\r \x01(\tR\x05keyId\x12\x1c\n" +
+	"\tsignature\x18\x0e \x01(\fR\tsignature\x129\n" +
+	"\n" +
+	"created_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtJ\x04\b\f\x10\rR\x06digest*h\n" +
+	"\x0eEntryDirection\x12\x1f\n" +
+	"\x1bENTRY_DIRECTION_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15ENTRY_DIRECTION_DEBIT\x10\x01\x12\x1a\n" +
+	"\x16ENTRY_DIRECTION_CREDIT\x10\x02B?Z=github.com/aipay-dev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
 
-var file_aipay_ledger_v1_ledger_proto_goTypes = []any{}
+var (
+	file_aipay_ledger_v1_ledger_proto_rawDescOnce sync.Once
+	file_aipay_ledger_v1_ledger_proto_rawDescData []byte
+)
+
+func file_aipay_ledger_v1_ledger_proto_rawDescGZIP() []byte {
+	file_aipay_ledger_v1_ledger_proto_rawDescOnce.Do(func() {
+		file_aipay_ledger_v1_ledger_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_aipay_ledger_v1_ledger_proto_rawDesc), len(file_aipay_ledger_v1_ledger_proto_rawDesc)))
+	})
+	return file_aipay_ledger_v1_ledger_proto_rawDescData
+}
+
+var file_aipay_ledger_v1_ledger_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_aipay_ledger_v1_ledger_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_aipay_ledger_v1_ledger_proto_goTypes = []any{
+	(EntryDirection)(0),           // 0: aipay.ledger.v1.EntryDirection
+	(*JournalLine)(nil),           // 1: aipay.ledger.v1.JournalLine
+	(*JournalTransaction)(nil),    // 2: aipay.ledger.v1.JournalTransaction
+	(*CheckpointSigned)(nil),      // 3: aipay.ledger.v1.CheckpointSigned
+	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
+}
 var file_aipay_ledger_v1_ledger_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: aipay.ledger.v1.JournalLine.direction:type_name -> aipay.ledger.v1.EntryDirection
+	4, // 1: aipay.ledger.v1.JournalTransaction.occurred_at:type_name -> google.protobuf.Timestamp
+	4, // 2: aipay.ledger.v1.JournalTransaction.recorded_at:type_name -> google.protobuf.Timestamp
+	1, // 3: aipay.ledger.v1.JournalTransaction.lines:type_name -> aipay.ledger.v1.JournalLine
+	4, // 4: aipay.ledger.v1.CheckpointSigned.created_at:type_name -> google.protobuf.Timestamp
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_aipay_ledger_v1_ledger_proto_init() }
@@ -45,13 +611,15 @@ func file_aipay_ledger_v1_ledger_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_ledger_v1_ledger_proto_rawDesc), len(file_aipay_ledger_v1_ledger_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   0,
+			NumEnums:      1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_aipay_ledger_v1_ledger_proto_goTypes,
 		DependencyIndexes: file_aipay_ledger_v1_ledger_proto_depIdxs,
+		EnumInfos:         file_aipay_ledger_v1_ledger_proto_enumTypes,
+		MessageInfos:      file_aipay_ledger_v1_ledger_proto_msgTypes,
 	}.Build()
 	File_aipay_ledger_v1_ledger_proto = out.File
 	file_aipay_ledger_v1_ledger_proto_goTypes = nil

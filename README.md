@@ -13,7 +13,9 @@ proto/aipay/
   iam/v1/identity.proto            认证输入、主体、短期认证证明
   iam/v1/authorization.proto       角色、权限、绑定、授权检查与数据范围约束
   payment/v1/payment.proto         支付订单契约占位
-  ledger/v1/ledger.proto           账务契约占位
+  ledger/v1/ledger.proto           分录交易、分录行与 CheckpointSigned 检查点
+  ledger/v1/journal_service.proto  JournalService：分录与检查点拉取
+  ledger/v1/adjustment_service.proto  AdjustmentService：人工调账申请与审批
   settlement/v1/settlement.proto   结算契约占位
   reconciliation/v1/reconciliation.proto  对账契约占位
 gen/go/                           Go / gRPC 生成代码
@@ -25,7 +27,7 @@ internal/policycheck/             make check 的方法策略检查
 
 IAM 契约只有一个认证授权入口 `AuthorizationService.Authorize`：网关每个请求只调用一次，同时完成认证与授权；只需确认身份的接口使用表示“本人”的权限，同样走 `Authorize`。下游服务自行核验认证证明，不再回调 IAM（决策 A78）。这仅是接口定义，不表示服务已运行。
 
-授权作用域按账户模型（决策 A83、A84）分为 `platform`、`account`、`business`、`application`（`common/v1/context.proto`）。资金只归属 `account_id`（个人或组织账户）；业务、应用作用域依次带上 `business_id`、`application_id` 及其所属账户，但不隐含账户级资金权限。组织账户可附 `org_id`，个人账户不填。旧的组织、业务主体作用域使用过的枚举值与字段号已保留，不再复用，旧版本发出的消息会校验失败。身份凭据、组织归属、角色策略在 IAM 仓库管理。金融服务目前只有 package 占位；业务 RPC、事件载荷与资金字段按 docs 仓库的[跨服务契约设计](https://github.com/aipay-dev/docs/blob/main/design/contracts.md)在 M0 落地，设计之外不新增。
+授权作用域按账户模型（决策 A83、A84）分为 `platform`、`account`、`business`、`application`（`common/v1/context.proto`）。资金只归属 `account_id`（个人或组织账户）；业务、应用作用域依次带上 `business_id`、`application_id` 及其所属账户，但不隐含账户级资金权限。组织账户可附 `org_id`，个人账户不填。旧的组织、业务主体作用域使用过的枚举值与字段号已保留，不再复用，旧版本发出的消息会校验失败。身份凭据、组织归属、角色策略在 IAM 仓库管理。ledger 已有分录拉取、检查点载荷与人工调账契约，其余金融服务目前只有 package 占位；业务 RPC、事件载荷与资金字段按 docs 仓库的[跨服务契约设计](https://github.com/aipay-dev/docs/blob/main/design/contracts.md)在 M0 落地，设计之外不新增。
 
 ## 方法授权策略
 
@@ -35,7 +37,7 @@ IAM 契约只有一个认证授权入口 `AuthorizationService.Authorize`：网�
 
 签名事件的签名输入、摘要与签名格式写在 `events/v1/event_stream.proto` 的注释中：域标签 `AIPAY-EVENT-V1` 不带长度前缀，字符串与字节串带 4 字节大端长度，整数为 8 字节大端，签名为 ASN.1 DER 编码的 ECDSA P-256。审批摘要为 `SHA-256("AIPAY-APPROVAL-V1" || 规范请求)`。
 
-`testvectors` 包以 JSON 发布分录规范编码 V1、签名事件与 WebAuthn 审批断言的测试向量（输入、规范字节、期望哈希、公钥与签名，以及必须被拒绝的篡改样例）。包内只有数据，没有编码器或校验器：settlement 与 reconciliation 按规范自行实现分录哈希校验器（决策 A16），再用这些向量测试。向量中的密钥只为生成向量临时创建，私钥已丢弃。
+`testvectors` 包以 JSON 发布分录规范编码 V1，余额摘要、科目余额表摘要、RFC 6962 Merkle 根与检查点签名，签名事件，以及 WebAuthn 审批断言的测试向量（输入、规范字节、期望哈希、公钥与签名，以及必须被拒绝的篡改样例）。包内只有数据，没有编码器或校验器：settlement 与 reconciliation 按规范自行实现分录哈希校验器（决策 A16），再用这些向量测试。向量中的密钥只为生成向量临时创建，私钥已丢弃。
 
 认证证明的签发格式、密钥托管、调用方绑定与撤销机制尚待 IAM 实现；EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 

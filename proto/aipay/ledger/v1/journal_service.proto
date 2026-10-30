@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package aipay.ledger.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/ledger/v1/ledger.proto";
+
+option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+
+message ListTransactionsRequest {
+  // Return transactions with a seq greater than this; 0 starts at seq 1.
+  uint64 after_seq = 1;
+  // 1 to 1000; any other value is InvalidArgument.
+  uint32 limit = 2;
+}
+
+message ListTransactionsResponse {
+  // Consecutive transactions starting at after_seq + 1, at most limit.
+  repeated JournalTransaction transactions = 1;
+}
+
+message ListCheckpointsRequest {
+  // Return checkpoints with an id greater than this; 0 starts at id 1.
+  uint64 after_id = 1;
+  // 1 to 1000; any other value is InvalidArgument.
+  uint32 limit = 2;
+}
+
+message ListCheckpointsResponse {
+  // Consecutive checkpoints starting at after_id + 1, at most limit.
+  repeated CheckpointSigned checkpoints = 1;
+}
+
+// Pull interface for the independent verifiers. Integrity comes from the hash
+// chain and the signed checkpoints, not from per-transaction signatures:
+// receivers replay from genesis or a verified checkpoint, recompute every
+// hash, Merkle root and balances digest, and compare with their own copies and
+// the external anchor. Any mismatch stops payouts.
+service JournalService {
+  rpc ListTransactions(ListTransactionsRequest) returns (ListTransactionsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: [
+          "reconciliation",
+          "settlement"
+        ]
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc ListCheckpoints(ListCheckpointsRequest) returns (ListCheckpointsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: [
+          "reconciliation",
+          "settlement"
+        ]
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}

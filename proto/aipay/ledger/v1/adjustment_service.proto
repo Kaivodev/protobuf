@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package aipay.ledger.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/authz/v1/policy.proto";
+import "aipay/ledger/v1/ledger.proto";
+
+option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+
+// A requested line; it posts unchanged once approved.
+message AdjustmentLine {
+  string account_code = 1;
+  EntryDirection direction = 2;
+  string currency = 3;
+  // Positive minor units.
+  int64 units = 4;
+}
+
+message SubmitAdjustmentRequest {
+  // The command's request ID: retries reuse it, and the same key with
+  // different content is AlreadyExists.
+  string idempotency_key = 1;
+  // 1 to 1000 characters.
+  string reason = 2;
+  // SHA-256 of the supporting evidence, 32 bytes.
+  bytes evidence_sha256 = 3;
+  // seq of the transaction this adjustment corrects; 0 for none.
+  uint64 corrects_seq = 4;
+  // 2 to 100 lines, balanced per currency.
+  repeated AdjustmentLine lines = 5;
+}
+
+message SubmitAdjustmentResponse {
+  // Kind "adjustment", pending, two required approvals, expiring 24 hours
+  // after requested_at.
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+}
+
+message ApproveAdjustmentRequest {
+  // The command's request ID, as for SubmitAdjustment.
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveAdjustmentResponse {
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+  // Valid approvals recorded so far, including this one.
+  uint32 approvals = 2;
+  // The posted entry, set when this approval reached the required count; its
+  // idempotency key is ledger.adjustments:<approval request id>.
+  JournalTransaction transaction = 3;
+}
+
+// Manual adjustments, submitted and approved through the backend management
+// listener. The requester is the assertion's subject, never a request field;
+// the requester cannot approve, two different approvers are required, and an
+// unfinished request expires after 24 hours. Both methods also require the
+// platform acting scope, which the ledger checks itself.
+//
+// request_bytes of the approval request, whose digest approvers sign:
+//   str "aipay.ledger.adjustment.v1" || bytes16 approval_request_id ||
+//   str requested_by || i64 requested_at_unix_nanos ||
+//   i64 expires_at_unix_nanos || str reason || bytes evidence_sha256 ||
+//   u64 corrects_seq || u32 line_count ||
+//   (str account_code || u8 direction || str currency || i64 units)*
+service AdjustmentService {
+  rpc SubmitAdjustment(SubmitAdjustmentRequest) returns (SubmitAdjustmentResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.adjustment.submit"
+      }
+    };
+  }
+  rpc ApproveAdjustment(ApproveAdjustmentRequest) returns (ApproveAdjustmentResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.adjustment.approve"
+      }
+    };
+  }
+}

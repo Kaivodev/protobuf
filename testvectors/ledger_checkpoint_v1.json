@@ -1,0 +1,403 @@
+{
+  "spec": "AIPAY-LEDGER-BALANCES-V1, AIPAY-LEDGER-TRIAL-BALANCE-V1, AIPAY-LEDGER-CHECKPOINT-V1",
+  "description": "Ledger checkpoint formats (docs design/ledger-service.md). str and bytes carry a u32 big-endian length, integers are 8-byte big-endian (two's complement for signed values), domain tags have no length prefix. balances digest = SHA-256(\"AIPAY-LEDGER-BALANCES-V1\" || u64 seq || u64 count || (str account_code || i64 units || i64 usd_micros)* ordered by account code bytes), with debit-minus-credit totals. trial balance digest = SHA-256(\"AIPAY-LEDGER-TRIAL-BALANCE-V1\" || str period_id || u64 count || (str gl_code || str dimension_key || str currency || opening, debit, credit, closing units, then opening, debit, credit, closing USD micros as i64)* ordered by gl_code, dimension_key, currency bytes). Merkle roots follow RFC 6962 (leaf prefix 0x00, node prefix 0x01, split at the largest power of two below the count, SHA-256 of the empty string for no leaves). checkpoint digest = SHA-256(\"AIPAY-LEDGER-CHECKPOINT-V1\" || u64 id || str kind || u64 from_seq || u64 to_seq || bytes head_hash || bytes merkle_root || bytes balances_digest || bytes trial_balance_digest || str business_date || str period_id || bytes prev_checkpoint_digest); the signature is ASN.1 DER ECDSA P-256 over that digest; key_id is not signed. Integers are decimal strings; bytes are lowercase hex; input fields are the exact digest inputs. The checkpoints cover the genesis_chain of ledger_canonical_v1.json; every invalid checkpoint must be rejected.",
+  "balances": [
+    {
+      "name": "genesis_chain_at_3",
+      "description": "Balances after the three genesis_chain transactions of ledger_canonical_v1.json, listed unsorted; the digest orders them by account code bytes.",
+      "seq": "3",
+      "balances": [
+        {
+          "account_code": "merchant_pending:USDT:0199f000-0000-7000-8000-00000000b001",
+          "units": "-13379310",
+          "usd_micros": "-13376634"
+        },
+        {
+          "account_code": "unmatched_receipts:USDT:TRON",
+          "units": "-13611111",
+          "usd_micros": "-13608389"
+        },
+        {
+          "account_code": "hot_wallet:TRX:TRON:0199f000-0000-7000-8000-00000000c001",
+          "units": "-345000",
+          "usd_micros": "-101085"
+        },
+        {
+          "account_code": "merchant_fee_revenue:USDT",
+          "units": "-416667",
+          "usd_micros": "-416584"
+        },
+        {
+          "account_code": "fx_spread_revenue:USDT",
+          "units": "-92912",
+          "usd_micros": "-92893"
+        },
+        {
+          "account_code": "collection_wallet:USDT:TRON:0199f000-0000-7000-8000-00000000c001",
+          "units": "13611111",
+          "usd_micros": "13608389"
+        },
+        {
+          "account_code": "upstream_receivable:USDT:0199f000-0000-7000-8000-00000000a001",
+          "units": "13611111",
+          "usd_micros": "13608389"
+        },
+        {
+          "account_code": "upstream_fee_cost:USDT",
+          "units": "277778",
+          "usd_micros": "277722"
+        },
+        {
+          "account_code": "gas_expense:TRX:TRON",
+          "units": "345000",
+          "usd_micros": "101085"
+        }
+      ],
+      "input": "41495041592d4c45444745522d42414c414e4345532d56310000000000000003000000000000000900000040636f6c6c656374696f6e5f77616c6c65743a555344543a54524f4e3a30313939663030302d303030302d373030302d383030302d3030303030303030633030310000000000cfb0670000000000cfa5c50000001666785f7370726561645f726576656e75653a55534454fffffffffffe9510fffffffffffe9523000000146761735f657870656e73653a5452583a54524f4e00000000000543a80000000000018add00000038686f745f77616c6c65743a5452583a54524f4e3a30313939663030302d303030302d373030302d383030302d303030303030303063303031fffffffffffabc58fffffffffffe7523000000196d65726368616e745f6665655f726576656e75653a55534454fffffffffff9a465fffffffffff9a4b80000003a6d65726368616e745f70656e64696e673a555344543a30313939663030302d303030302d373030302d383030302d303030303030303062303031ffffffffff33d912ffffffffff33e3860000001c756e6d6174636865645f72656365697074733a555344543a54524f4effffffffff304f99ffffffffff305a3b00000016757073747265616d5f6665655f636f73743a555344540000000000043d120000000000043cda0000003d757073747265616d5f72656365697661626c653a555344543a30313939663030302d303030302d373030302d383030302d3030303030303030613030310000000000cfb0670000000000cfa5c5",
+      "digest": "5e08e2392ae1b7302ba61ff3f01c429db46ea3804482b2a32b3de261c169ad56"
+    },
+    {
+      "name": "empty_journal",
+      "description": "No account has a line yet.",
+      "seq": "0",
+      "balances": [],
+      "input": "41495041592d4c45444745522d42414c414e4345532d563100000000000000000000000000000000",
+      "digest": "375b04dd6f2b05eab9c81cbd7952a3215e806350232f7297d836a2c443c1ec87"
+    },
+    {
+      "name": "ordering_and_signs",
+      "description": "Byte order puts uppercase before lowercase and ':' after digits; negative and maximum values use two's complement.",
+      "seq": "9",
+      "balances": [
+        {
+          "account_code": "merchant_available:USDT:b",
+          "units": "-9223372036854775808",
+          "usd_micros": "-1"
+        },
+        {
+          "account_code": "merchant_available:USDT:B",
+          "units": "9223372036854775807",
+          "usd_micros": "0"
+        },
+        {
+          "account_code": "merchant_available:USDT:1",
+          "units": "1",
+          "usd_micros": "1"
+        },
+        {
+          "account_code": "merchant_available:USDT:1:x",
+          "units": "2",
+          "usd_micros": "2"
+        },
+        {
+          "account_code": "退款预留:USDT",
+          "units": "3",
+          "usd_micros": "3"
+        }
+      ],
+      "input": "41495041592d4c45444745522d42414c414e4345532d563100000000000000090000000000000005000000196d65726368616e745f617661696c61626c653a555344543a31000000000000000100000000000000010000001b6d65726368616e745f617661696c61626c653a555344543a313a7800000000000000020000000000000002000000196d65726368616e745f617661696c61626c653a555344543a427fffffffffffffff0000000000000000000000196d65726368616e745f617661696c61626c653a555344543a628000000000000000ffffffffffffffff00000011e98080e6acbee9a284e795993a5553445400000000000000030000000000000003",
+      "digest": "5f08c3df1173e08f613c145cf92592c591f10c37fa9f16e3f5a06f9533c83216"
+    }
+  ],
+  "trial_balances": [
+    {
+      "name": "period_2026_10",
+      "description": "Rows listed unsorted; the digest orders them by GL code, dimension key and currency bytes. Amounts are illustrative, not a balanced trial balance.",
+      "period_id": "2026-10",
+      "rows": [
+        {
+          "gl_code": "2101",
+          "dimension_key": "account=0199f000-0000-7000-8000-00000000b001",
+          "currency": "USDT",
+          "opening_units": "0",
+          "debit_units": "0",
+          "credit_units": "13379310",
+          "closing_units": "-13379310",
+          "opening_usd_micros": "0",
+          "debit_usd_micros": "0",
+          "credit_usd_micros": "13376634",
+          "closing_usd_micros": "-13376634"
+        },
+        {
+          "gl_code": "1122",
+          "dimension_key": "upstream_account=0199f000-0000-7000-8000-00000000a001",
+          "currency": "USDT",
+          "opening_units": "0",
+          "debit_units": "13611111",
+          "credit_units": "0",
+          "closing_units": "13611111",
+          "opening_usd_micros": "0",
+          "debit_usd_micros": "13608389",
+          "credit_usd_micros": "0",
+          "closing_usd_micros": "13608389"
+        },
+        {
+          "gl_code": "1011",
+          "dimension_key": "",
+          "currency": "USDT",
+          "opening_units": "5000000",
+          "debit_units": "13611111",
+          "credit_units": "0",
+          "closing_units": "18611111",
+          "opening_usd_micros": "4999000",
+          "debit_usd_micros": "13608389",
+          "credit_usd_micros": "0",
+          "closing_usd_micros": "18607389"
+        },
+        {
+          "gl_code": "1011",
+          "dimension_key": "",
+          "currency": "TRX",
+          "opening_units": "0",
+          "debit_units": "0",
+          "credit_units": "345000",
+          "closing_units": "-345000",
+          "opening_usd_micros": "0",
+          "debit_usd_micros": "0",
+          "credit_usd_micros": "101085",
+          "closing_usd_micros": "-101085"
+        },
+        {
+          "gl_code": "1011",
+          "dimension_key": "account=x;business=y",
+          "currency": "USDT",
+          "opening_units": "0",
+          "debit_units": "1",
+          "credit_units": "0",
+          "closing_units": "1",
+          "opening_usd_micros": "0",
+          "debit_usd_micros": "1",
+          "credit_usd_micros": "0",
+          "closing_usd_micros": "1"
+        }
+      ],
+      "input": "41495041592d4c45444745522d545249414c2d42414c414e43452d563100000007323032362d31300000000000000005000000043130313100000000000000035452580000000000000000000000000000000000000000000543a8fffffffffffabc58000000000000000000000000000000000000000000018addfffffffffffe7523000000043130313100000000000000045553445400000000004c4b400000000000cfb067000000000000000000000000011bfba700000000004c47580000000000cfa5c5000000000000000000000000011bed1d0000000431303131000000146163636f756e743d783b627573696e6573733d79000000045553445400000000000000000000000000000001000000000000000000000000000000010000000000000000000000000000000100000000000000000000000000000001000000043131323200000035757073747265616d5f6163636f756e743d30313939663030302d303030302d373030302d383030302d303030303030303061303031000000045553445400000000000000000000000000cfb06700000000000000000000000000cfb06700000000000000000000000000cfa5c500000000000000000000000000cfa5c500000004323130310000002c6163636f756e743d30313939663030302d303030302d373030302d383030302d3030303030303030623030310000000455534454000000000000000000000000000000000000000000cc26eeffffffffff33d912000000000000000000000000000000000000000000cc1c7affffffffff33e386",
+      "digest": "339788ed2299119a56a65af28883bfcdca571058115e1113be833709a0a45cd0"
+    },
+    {
+      "name": "empty_period",
+      "description": "A period without rows.",
+      "period_id": "2026-11",
+      "rows": [],
+      "input": "41495041592d4c45444745522d545249414c2d42414c414e43452d563100000007323032362d31310000000000000000",
+      "digest": "277b2b85c6a77360e9cf56c92197ea2b319e07a129d7648df8bc3199a836c3b2"
+    }
+  ],
+  "merkle": [
+    {
+      "leaves": [],
+      "root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "leaves": [
+        "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d"
+      ],
+      "root": "d9de27625445003d8a9739a851e3ff8d41c0683630b4d63a88327a6aaa37c409"
+    },
+    {
+      "leaves": [
+        "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+        "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a"
+      ],
+      "root": "604d540f09268b91672ab011394d5266ccd7d4484d0d109411a55848126a1b2c"
+    },
+    {
+      "leaves": [
+        "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+        "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a",
+        "dbc1b4c900ffe48d575b5da5c638040125f65db0fe3e24494b76ea986457d986"
+      ],
+      "root": "d1f13800048f5909d4043fc0c152f6643280cba608b672715e56ce159a20629f"
+    },
+    {
+      "leaves": [
+        "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+        "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a",
+        "dbc1b4c900ffe48d575b5da5c638040125f65db0fe3e24494b76ea986457d986",
+        "084fed08b978af4d7d196a7446a86b58009e636b611db16211b65a9aadff29c5"
+      ],
+      "root": "0dcc2b645c00dfa2338e1c7ac2c4b570beda5a476d58836e55e28bde55e6bee1"
+    },
+    {
+      "leaves": [
+        "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+        "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a",
+        "dbc1b4c900ffe48d575b5da5c638040125f65db0fe3e24494b76ea986457d986",
+        "084fed08b978af4d7d196a7446a86b58009e636b611db16211b65a9aadff29c5",
+        "e52d9c508c502347344d8c07ad91cbd6068afc75ff6292f062a09ca381c89e71"
+      ],
+      "root": "6b313b611b40676b9e1dfd70c4503f2379f88f0f1c2740fb7e1cacc32c113465"
+    },
+    {
+      "leaves": [
+        "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+        "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a",
+        "dbc1b4c900ffe48d575b5da5c638040125f65db0fe3e24494b76ea986457d986",
+        "084fed08b978af4d7d196a7446a86b58009e636b611db16211b65a9aadff29c5",
+        "e52d9c508c502347344d8c07ad91cbd6068afc75ff6292f062a09ca381c89e71",
+        "e77b9a9ae9e30b0dbdb6f510a264ef9de781501d7b6b92ae89eb059c5ab743db",
+        "67586e98fad27da0b9968bc039a1ef34c939b9b8e523a8bef89d478608c5ecf6"
+      ],
+      "root": "bee2275db16667589a4515f63e0d053a2fa602c1d9f9703e98920a5bdad59baf"
+    },
+    {
+      "leaves": [
+        "851ba4c8e9ccaf309e65cf1b239d5191e7f98b3cfe522c879c047d5f685b685f",
+        "0b35a898abddb376e594873108bb488a36ab0017277e9d6f06da14ed377759fb",
+        "534f66b5eb2b4b4bb646ca61129caaebf8c150c1aba3b67e05645ba032e6cbf4"
+      ],
+      "root": "583814a0e9a56cd22261796eaf07a8b443f760c121a678508b587942923eec8f",
+      "description": "the genesis_chain transaction hashes"
+    }
+  ],
+  "public_keys": [
+    {
+      "jwk": {
+        "alg": "ES256",
+        "crv": "P-256",
+        "kty": "EC",
+        "x": "NYaRrOMzplAwoxGS9SOTvIgug1fS9ggqgMsNIsTk2VM",
+        "y": "khr-MPKR0r5_XafWZCL1s2nrU8Q7iM-ACdoA2oncokg"
+      },
+      "key_id": "ledger-checkpoints-vector-1",
+      "spki_der": "3059301306072a8648ce3d020106082a8648ce3d03010703420004358691ace333a65030a31192f52393bc882e8357d2f6082a80cb0d22c4e4d953921afe30f291d2be7f5da7d66422f5b369eb53c43b88cf8009da00da89dca248"
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint": {
+        "id": "1",
+        "kind": "periodic",
+        "from_seq": "1",
+        "to_seq": "3",
+        "head_hash": "534f66b5eb2b4b4bb646ca61129caaebf8c150c1aba3b67e05645ba032e6cbf4",
+        "merkle_root": "583814a0e9a56cd22261796eaf07a8b443f760c121a678508b587942923eec8f",
+        "balances_digest": "5e08e2392ae1b7302ba61ff3f01c429db46ea3804482b2a32b3de261c169ad56",
+        "trial_balance_digest": "",
+        "business_date": "",
+        "period_id": "",
+        "prev_checkpoint_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+        "key_id": "ledger-checkpoints-vector-1",
+        "signature": "304402204e84c766b619d025797024f6985ff0ee8c7ff0bdbf6467afedc0dd10b01692310220393e8e8495847e6db6532ab5acddb4a462193ac354e5e78370941add77798a56"
+      },
+      "signing_input": "41495041592d4c45444745522d434845434b504f494e542d5631000000000000000100000008706572696f6469630000000000000001000000000000000300000020534f66b5eb2b4b4bb646ca61129caaebf8c150c1aba3b67e05645ba032e6cbf400000020583814a0e9a56cd22261796eaf07a8b443f760c121a678508b587942923eec8f000000205e08e2392ae1b7302ba61ff3f01c429db46ea3804482b2a32b3de261c169ad56000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
+      "digest": "c23bba572ee22e65dfc1bf4b6ba54c648a62be760d3c4056ee1c3e7e0a01ff1a"
+    },
+    {
+      "checkpoint": {
+        "id": "2",
+        "kind": "daily",
+        "from_seq": "4",
+        "to_seq": "3",
+        "head_hash": "534f66b5eb2b4b4bb646ca61129caaebf8c150c1aba3b67e05645ba032e6cbf4",
+        "merkle_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "balances_digest": "5e08e2392ae1b7302ba61ff3f01c429db46ea3804482b2a32b3de261c169ad56",
+        "trial_balance_digest": "",
+        "business_date": "2026-10-26",
+        "period_id": "",
+        "prev_checkpoint_digest": "c23bba572ee22e65dfc1bf4b6ba54c648a62be760d3c4056ee1c3e7e0a01ff1a",
+        "key_id": "ledger-checkpoints-vector-1",
+        "signature": "3045022024caeb6d7d0bb84b47b45d7b7644de029eed9735934a7027222c1cca44428596022100d6db5acaf22d02bc1fe86c866cbedb3a49515309b781ce4e807d4c2b85fcc1d9"
+      },
+      "signing_input": "41495041592d4c45444745522d434845434b504f494e542d56310000000000000002000000056461696c790000000000000004000000000000000300000020534f66b5eb2b4b4bb646ca61129caaebf8c150c1aba3b67e05645ba032e6cbf400000020e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855000000205e08e2392ae1b7302ba61ff3f01c429db46ea3804482b2a32b3de261c169ad56000000000000000a323032362d31302d32360000000000000020c23bba572ee22e65dfc1bf4b6ba54c648a62be760d3c4056ee1c3e7e0a01ff1a",
+      "digest": "02e82033d81721f138126a9ed9f09faf8a2471b28eac1a28bec26e4d795fc9d4"
+    },
+    {
+      "checkpoint": {
+        "id": "3",
+        "kind": "period_close",
+        "from_seq": "4",
+        "to_seq": "3",
+        "head_hash": "534f66b5eb2b4b4bb646ca61129caaebf8c150c1aba3b67e05645ba032e6cbf4",
+        "merkle_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "balances_digest": "5e08e2392ae1b7302ba61ff3f01c429db46ea3804482b2a32b3de261c169ad56",
+        "trial_balance_digest": "339788ed2299119a56a65af28883bfcdca571058115e1113be833709a0a45cd0",
+        "business_date": "",
+        "period_id": "2026-10",
+        "prev_checkpoint_digest": "02e82033d81721f138126a9ed9f09faf8a2471b28eac1a28bec26e4d795fc9d4",
+        "key_id": "ledger-checkpoints-vector-1",
+        "signature": "304602210089b22dec12ec6bb2825e4628350c5b61c630771cf02f778c7c6bce90b030b3e702210098626f3bb9861d74635317a7af7226a2092fc1a047ff19d830bafa1b041ac061"
+      },
+      "signing_input": "41495041592d4c45444745522d434845434b504f494e542d563100000000000000030000000c706572696f645f636c6f73650000000000000004000000000000000300000020534f66b5eb2b4b4bb646ca61129caaebf8c150c1aba3b67e05645ba032e6cbf400000020e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855000000205e08e2392ae1b7302ba61ff3f01c429db46ea3804482b2a32b3de261c169ad5600000020339788ed2299119a56a65af28883bfcdca571058115e1113be833709a0a45cd00000000000000007323032362d31300000002002e82033d81721f138126a9ed9f09faf8a2471b28eac1a28bec26e4d795fc9d4",
+      "digest": "eb53d67a5338093a8ecc391862afd24f3ebd4ce8a15b7dfb14e71ab1320c2948"
+    }
+  ],
+  "invalid_checkpoints": [
+    {
+      "name": "merkle_root_tampered",
+      "description": "merkle_root changed after signing; the signature no longer verifies",
+      "checkpoint": {
+        "id": "1",
+        "kind": "periodic",
+        "from_seq": "1",
+        "to_seq": "3",
+        "head_hash": "534f66b5eb2b4b4bb646ca61129caaebf8c150c1aba3b67e05645ba032e6cbf4",
+        "merkle_root": "79bdd227a493570387be0a920e34607e196a13d24d410e2ff2f882f7d39b04cd",
+        "balances_digest": "5e08e2392ae1b7302ba61ff3f01c429db46ea3804482b2a32b3de261c169ad56",
+        "trial_balance_digest": "",
+        "business_date": "",
+        "period_id": "",
+        "prev_checkpoint_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+        "key_id": "ledger-checkpoints-vector-1",
+        "signature": "304402204e84c766b619d025797024f6985ff0ee8c7ff0bdbf6467afedc0dd10b01692310220393e8e8495847e6db6532ab5acddb4a462193ac354e5e78370941add77798a56"
+      }
+    },
+    {
+      "name": "signature_tampered",
+      "description": "last signature byte flipped",
+      "checkpoint": {
+        "id": "2",
+        "kind": "daily",
+        "from_seq": "4",
+        "to_seq": "3",
+        "head_hash": "534f66b5eb2b4b4bb646ca61129caaebf8c150c1aba3b67e05645ba032e6cbf4",
+        "merkle_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "balances_digest": "5e08e2392ae1b7302ba61ff3f01c429db46ea3804482b2a32b3de261c169ad56",
+        "trial_balance_digest": "",
+        "business_date": "2026-10-26",
+        "period_id": "",
+        "prev_checkpoint_digest": "c23bba572ee22e65dfc1bf4b6ba54c648a62be760d3c4056ee1c3e7e0a01ff1a",
+        "key_id": "ledger-checkpoints-vector-1",
+        "signature": "3045022024caeb6d7d0bb84b47b45d7b7644de029eed9735934a7027222c1cca44428596022100d6db5acaf22d02bc1fe86c866cbedb3a49515309b781ce4e807d4c2b85fcc1d8"
+      }
+    },
+    {
+      "name": "wrong_signing_key",
+      "description": "signed by a key that is not registered under key_id",
+      "checkpoint": {
+        "id": "3",
+        "kind": "period_close",
+        "from_seq": "4",
+        "to_seq": "3",
+        "head_hash": "534f66b5eb2b4b4bb646ca61129caaebf8c150c1aba3b67e05645ba032e6cbf4",
+        "merkle_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "balances_digest": "5e08e2392ae1b7302ba61ff3f01c429db46ea3804482b2a32b3de261c169ad56",
+        "trial_balance_digest": "339788ed2299119a56a65af28883bfcdca571058115e1113be833709a0a45cd0",
+        "business_date": "",
+        "period_id": "2026-10",
+        "prev_checkpoint_digest": "02e82033d81721f138126a9ed9f09faf8a2471b28eac1a28bec26e4d795fc9d4",
+        "key_id": "ledger-checkpoints-vector-1",
+        "signature": "3046022100a0a8e730f4f79d799f586bd1d043f08fe1200f5b6971ebed287141cfa27cec0e022100d51890478c95b99c9dd055c5c8664d648374fccab04aec75d959f30aeea8df09"
+      }
+    },
+    {
+      "name": "prev_digest_broken",
+      "description": "validly signed, but prev_checkpoint_digest does not continue checkpoint 1",
+      "checkpoint": {
+        "id": "2",
+        "kind": "daily",
+        "from_seq": "4",
+        "to_seq": "3",
+        "head_hash": "534f66b5eb2b4b4bb646ca61129caaebf8c150c1aba3b67e05645ba032e6cbf4",
+        "merkle_root": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "balances_digest": "5e08e2392ae1b7302ba61ff3f01c429db46ea3804482b2a32b3de261c169ad56",
+        "trial_balance_digest": "",
+        "business_date": "2026-10-26",
+        "period_id": "",
+        "prev_checkpoint_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "key_id": "ledger-checkpoints-vector-1",
+        "signature": "3044022038b03d7c99e7204c5407494ba5556766a5f9213537f20d4eb0348a1ca97a175b02204ffc654fc09afaeb9884d2f2b342be624211989961a12e04ef226a59e5cf761a"
+      }
+    }
+  ]
+}
