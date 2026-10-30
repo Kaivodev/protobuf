@@ -21,13 +21,23 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Authorization scopes of the account model (decisions A83, A84). Values 2 and
+// 3 belonged to the superseded organization and business-entity scopes; they
+// are never reused, so messages from older builds fail validation.
 type ScopeType int32
 
 const (
-	ScopeType_SCOPE_TYPE_UNSPECIFIED  ScopeType = 0
-	ScopeType_SCOPE_TYPE_PLATFORM     ScopeType = 1
-	ScopeType_SCOPE_TYPE_ORGANIZATION ScopeType = 2
-	ScopeType_SCOPE_TYPE_BUSINESS     ScopeType = 3
+	ScopeType_SCOPE_TYPE_UNSPECIFIED ScopeType = 0
+	// Global platform management by platform roles.
+	ScopeType_SCOPE_TYPE_PLATFORM ScopeType = 1
+	// A personal or organization funds account and all of its resources.
+	ScopeType_SCOPE_TYPE_ACCOUNT ScopeType = 4
+	// One business (project group) of an account. Grants no account-wide funds
+	// permissions such as balances, address book or withdrawals.
+	ScopeType_SCOPE_TYPE_BUSINESS ScopeType = 5
+	// One API application of a business; application credentials always act in
+	// this scope.
+	ScopeType_SCOPE_TYPE_APPLICATION ScopeType = 6
 )
 
 // Enum value maps for ScopeType.
@@ -35,14 +45,16 @@ var (
 	ScopeType_name = map[int32]string{
 		0: "SCOPE_TYPE_UNSPECIFIED",
 		1: "SCOPE_TYPE_PLATFORM",
-		2: "SCOPE_TYPE_ORGANIZATION",
-		3: "SCOPE_TYPE_BUSINESS",
+		4: "SCOPE_TYPE_ACCOUNT",
+		5: "SCOPE_TYPE_BUSINESS",
+		6: "SCOPE_TYPE_APPLICATION",
 	}
 	ScopeType_value = map[string]int32{
-		"SCOPE_TYPE_UNSPECIFIED":  0,
-		"SCOPE_TYPE_PLATFORM":     1,
-		"SCOPE_TYPE_ORGANIZATION": 2,
-		"SCOPE_TYPE_BUSINESS":     3,
+		"SCOPE_TYPE_UNSPECIFIED": 0,
+		"SCOPE_TYPE_PLATFORM":    1,
+		"SCOPE_TYPE_ACCOUNT":     4,
+		"SCOPE_TYPE_BUSINESS":    5,
+		"SCOPE_TYPE_APPLICATION": 6,
 	}
 )
 
@@ -71,6 +83,57 @@ func (x ScopeType) Number() protoreflect.EnumNumber {
 // Deprecated: Use ScopeType.Descriptor instead.
 func (ScopeType) EnumDescriptor() ([]byte, []int) {
 	return file_aipay_common_v1_context_proto_rawDescGZIP(), []int{0}
+}
+
+type AccountType int32
+
+const (
+	AccountType_ACCOUNT_TYPE_UNSPECIFIED AccountType = 0
+	// Owned by one global user; never has an organization.
+	AccountType_ACCOUNT_TYPE_PERSONAL AccountType = 1
+	// Owned by one organization.
+	AccountType_ACCOUNT_TYPE_ORGANIZATION AccountType = 2
+)
+
+// Enum value maps for AccountType.
+var (
+	AccountType_name = map[int32]string{
+		0: "ACCOUNT_TYPE_UNSPECIFIED",
+		1: "ACCOUNT_TYPE_PERSONAL",
+		2: "ACCOUNT_TYPE_ORGANIZATION",
+	}
+	AccountType_value = map[string]int32{
+		"ACCOUNT_TYPE_UNSPECIFIED":  0,
+		"ACCOUNT_TYPE_PERSONAL":     1,
+		"ACCOUNT_TYPE_ORGANIZATION": 2,
+	}
+)
+
+func (x AccountType) Enum() *AccountType {
+	p := new(AccountType)
+	*p = x
+	return p
+}
+
+func (x AccountType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AccountType) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_common_v1_context_proto_enumTypes[1].Descriptor()
+}
+
+func (AccountType) Type() protoreflect.EnumType {
+	return &file_aipay_common_v1_context_proto_enumTypes[1]
+}
+
+func (x AccountType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AccountType.Descriptor instead.
+func (AccountType) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_common_v1_context_proto_rawDescGZIP(), []int{1}
 }
 
 // Correlation metadata is not an identity or authorization credential.
@@ -126,15 +189,27 @@ func (x *RequestContext) GetTraceId() string {
 	return ""
 }
 
-// Platform scope has no IDs; organization scope requires organization_id;
-// business scope requires both IDs. The service validates every scope.
+// Required fields by type; anything else is rejected:
+//
+//	platform:    no IDs, except account_id/account_type (and org_id rules) when
+//	             IAM binds a cross-account operation to one target account.
+//	account:     account_id, account_type.
+//	business:    account_id, account_type, business_id.
+//	application: account_id, account_type, business_id, application_id.
+//
+// org_id is optional for organization accounts, resolved by IAM from the
+// trusted account mapping, and must be empty for personal accounts. Funds
+// always belong to account_id, never to a business or application.
 type Scope struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Type           ScopeType              `protobuf:"varint,1,opt,name=type,proto3,enum=aipay.common.v1.ScopeType" json:"type,omitempty"`
-	OrganizationId string                 `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	BusinessId     string                 `protobuf:"bytes,3,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          ScopeType              `protobuf:"varint,1,opt,name=type,proto3,enum=aipay.common.v1.ScopeType" json:"type,omitempty"`
+	AccountId     string                 `protobuf:"bytes,4,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	AccountType   AccountType            `protobuf:"varint,5,opt,name=account_type,json=accountType,proto3,enum=aipay.common.v1.AccountType" json:"account_type,omitempty"`
+	OrgId         string                 `protobuf:"bytes,6,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
+	BusinessId    string                 `protobuf:"bytes,7,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
+	ApplicationId string                 `protobuf:"bytes,8,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Scope) Reset() {
@@ -174,9 +249,23 @@ func (x *Scope) GetType() ScopeType {
 	return ScopeType_SCOPE_TYPE_UNSPECIFIED
 }
 
-func (x *Scope) GetOrganizationId() string {
+func (x *Scope) GetAccountId() string {
 	if x != nil {
-		return x.OrganizationId
+		return x.AccountId
+	}
+	return ""
+}
+
+func (x *Scope) GetAccountType() AccountType {
+	if x != nil {
+		return x.AccountType
+	}
+	return AccountType_ACCOUNT_TYPE_UNSPECIFIED
+}
+
+func (x *Scope) GetOrgId() string {
+	if x != nil {
+		return x.OrgId
 	}
 	return ""
 }
@@ -188,8 +277,16 @@ func (x *Scope) GetBusinessId() string {
 	return ""
 }
 
+func (x *Scope) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
 // Resource ownership must be resolved by the resource owner, not trusted from
-// client headers. IDs and scope in requests are selectors requiring validation.
+// client headers. IDs and scope in requests are selectors requiring validation;
+// IAM checks the full application → business → account chain.
 type ResourceRef struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
@@ -258,21 +355,30 @@ const file_aipay_common_v1_context_proto_rawDesc = "" +
 	"\x0eRequestContext\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x19\n" +
-	"\btrace_id\x18\x02 \x01(\tR\atraceId\"\x81\x01\n" +
+	"\btrace_id\x18\x02 \x01(\tR\atraceId\"\x93\x02\n" +
 	"\x05Scope\x12.\n" +
-	"\x04type\x18\x01 \x01(\x0e2\x1a.aipay.common.v1.ScopeTypeR\x04type\x12'\n" +
-	"\x0forganization_id\x18\x02 \x01(\tR\x0eorganizationId\x12\x1f\n" +
-	"\vbusiness_id\x18\x03 \x01(\tR\n" +
-	"businessId\"_\n" +
+	"\x04type\x18\x01 \x01(\x0e2\x1a.aipay.common.v1.ScopeTypeR\x04type\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x04 \x01(\tR\taccountId\x12?\n" +
+	"\faccount_type\x18\x05 \x01(\x0e2\x1c.aipay.common.v1.AccountTypeR\vaccountType\x12\x15\n" +
+	"\x06org_id\x18\x06 \x01(\tR\x05orgId\x12\x1f\n" +
+	"\vbusiness_id\x18\a \x01(\tR\n" +
+	"businessId\x12%\n" +
+	"\x0eapplication_id\x18\b \x01(\tR\rapplicationIdJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04R\x0forganization_id\"_\n" +
 	"\vResourceRef\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12,\n" +
-	"\x05scope\x18\x03 \x01(\v2\x16.aipay.common.v1.ScopeR\x05scope*v\n" +
+	"\x05scope\x18\x03 \x01(\v2\x16.aipay.common.v1.ScopeR\x05scope*\xb2\x01\n" +
 	"\tScopeType\x12\x1a\n" +
 	"\x16SCOPE_TYPE_UNSPECIFIED\x10\x00\x12\x17\n" +
-	"\x13SCOPE_TYPE_PLATFORM\x10\x01\x12\x1b\n" +
-	"\x17SCOPE_TYPE_ORGANIZATION\x10\x02\x12\x17\n" +
-	"\x13SCOPE_TYPE_BUSINESS\x10\x03B?Z=github.com/aipay-dev/protobuf/gen/go/aipay/common/v1;commonv1b\x06proto3"
+	"\x13SCOPE_TYPE_PLATFORM\x10\x01\x12\x16\n" +
+	"\x12SCOPE_TYPE_ACCOUNT\x10\x04\x12\x17\n" +
+	"\x13SCOPE_TYPE_BUSINESS\x10\x05\x12\x1a\n" +
+	"\x16SCOPE_TYPE_APPLICATION\x10\x06\"\x04\b\x02\x10\x02\"\x04\b\x03\x10\x03*\x17SCOPE_TYPE_ORGANIZATION*e\n" +
+	"\vAccountType\x12\x1c\n" +
+	"\x18ACCOUNT_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15ACCOUNT_TYPE_PERSONAL\x10\x01\x12\x1d\n" +
+	"\x19ACCOUNT_TYPE_ORGANIZATION\x10\x02B?Z=github.com/aipay-dev/protobuf/gen/go/aipay/common/v1;commonv1b\x06proto3"
 
 var (
 	file_aipay_common_v1_context_proto_rawDescOnce sync.Once
@@ -286,22 +392,24 @@ func file_aipay_common_v1_context_proto_rawDescGZIP() []byte {
 	return file_aipay_common_v1_context_proto_rawDescData
 }
 
-var file_aipay_common_v1_context_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_aipay_common_v1_context_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_aipay_common_v1_context_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_aipay_common_v1_context_proto_goTypes = []any{
 	(ScopeType)(0),         // 0: aipay.common.v1.ScopeType
-	(*RequestContext)(nil), // 1: aipay.common.v1.RequestContext
-	(*Scope)(nil),          // 2: aipay.common.v1.Scope
-	(*ResourceRef)(nil),    // 3: aipay.common.v1.ResourceRef
+	(AccountType)(0),       // 1: aipay.common.v1.AccountType
+	(*RequestContext)(nil), // 2: aipay.common.v1.RequestContext
+	(*Scope)(nil),          // 3: aipay.common.v1.Scope
+	(*ResourceRef)(nil),    // 4: aipay.common.v1.ResourceRef
 }
 var file_aipay_common_v1_context_proto_depIdxs = []int32{
 	0, // 0: aipay.common.v1.Scope.type:type_name -> aipay.common.v1.ScopeType
-	2, // 1: aipay.common.v1.ResourceRef.scope:type_name -> aipay.common.v1.Scope
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	1, // 1: aipay.common.v1.Scope.account_type:type_name -> aipay.common.v1.AccountType
+	3, // 2: aipay.common.v1.ResourceRef.scope:type_name -> aipay.common.v1.Scope
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_aipay_common_v1_context_proto_init() }
@@ -314,7 +422,7 @@ func file_aipay_common_v1_context_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_common_v1_context_proto_rawDesc), len(file_aipay_common_v1_context_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,

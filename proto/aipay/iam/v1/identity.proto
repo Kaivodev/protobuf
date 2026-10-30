@@ -16,7 +16,8 @@ enum PrincipalType {
 message Principal {
   string id = 1;
   PrincipalType type = 2;
-  // Merchant applications must be bound to an authoritative business scope.
+  // Merchant applications are bound to their application scope, carrying the
+  // trusted business and account of the application.
   aipay.common.v1.Scope bound_scope = 3;
 }
 

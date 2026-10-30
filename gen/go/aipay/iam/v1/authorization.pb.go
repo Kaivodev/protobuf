@@ -30,7 +30,7 @@ const (
 	DataScope_DATA_SCOPE_UNSPECIFIED DataScope = 0
 	DataScope_DATA_SCOPE_ASSIGNED    DataScope = 1
 	DataScope_DATA_SCOPE_SELF        DataScope = 2
-	// Cross-organization access requires an explicit platform-scoped grant.
+	// Cross-account access requires an explicit platform-scoped grant.
 	DataScope_DATA_SCOPE_PLATFORM_ALL DataScope = 3
 )
 
@@ -413,7 +413,10 @@ func (x *AuthorizationDecision) GetGrantedRoleId() string {
 type AccessConstraint struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	DataScope DataScope              `protobuf:"varint,1,opt,name=data_scope,json=dataScope,proto3,enum=aipay.iam.v1.DataScope" json:"data_scope,omitempty"`
-	Scope     *v1.Scope              `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	// The resource scope the decision is limited to, with the trusted account_id
+	// for any funds or account resource. Business and application scopes never
+	// imply account-wide funds permissions.
+	Scope *v1.Scope `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
 	// Required when data_scope is SELF. Resolve actual ownership in the resource
 	// service; do not accept owner IDs supplied by an external caller.
 	Owner         *Principal `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
@@ -489,7 +492,11 @@ type AuthorizeRequest struct {
 	// Route facts including the required permission. IAM validates the
 	// protocol/operation pairing before evaluating any grant.
 	RequestBinding *RequestBinding `protobuf:"bytes,8,opt,name=request_binding,json=requestBinding,proto3" json:"request_binding,omitempty"`
-	// Explicit active role context; never inferred from the credential alone.
+	// Explicit active role context selected by the website: platform, account,
+	// business or application, with the full ID chain of that scope. Never
+	// inferred from the credential alone; empty or equal to the bound scope for
+	// merchant applications. IAM verifies ownership, membership and the chain,
+	// and rejects any mismatch.
 	ActingScope   *v1.Scope       `protobuf:"bytes,9,opt,name=acting_scope,json=actingScope,proto3" json:"acting_scope,omitempty"`
 	Resource      *v1.ResourceRef `protobuf:"bytes,10,opt,name=resource,proto3" json:"resource,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -657,7 +664,11 @@ type AuthorizeResponse struct {
 	RequestFingerprint []byte                 `protobuf:"bytes,5,opt,name=request_fingerprint,json=requestFingerprint,proto3" json:"request_fingerprint,omitempty"`
 	// Missing or denied means deny, and an allowed decision is usable only
 	// together with its constraint.
-	Decision      *AuthorizationDecision `protobuf:"bytes,6,opt,name=decision,proto3" json:"decision,omitempty"`
+	Decision *AuthorizationDecision `protobuf:"bytes,6,opt,name=decision,proto3" json:"decision,omitempty"`
+	// The trusted acting scope IAM resolved, identical to the assertion's
+	// acting_scope; carries the funds account_id for account, business and
+	// application scopes.
+	ActingScope   *v1.Scope `protobuf:"bytes,7,opt,name=acting_scope,json=actingScope,proto3" json:"acting_scope,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -734,6 +745,13 @@ func (x *AuthorizeResponse) GetDecision() *AuthorizationDecision {
 	return nil
 }
 
+func (x *AuthorizeResponse) GetActingScope() *v1.Scope {
+	if x != nil {
+		return x.ActingScope
+	}
+	return nil
+}
+
 var File_aipay_iam_v1_authorization_proto protoreflect.FileDescriptor
 
 const file_aipay_iam_v1_authorization_proto_rawDesc = "" +
@@ -784,7 +802,7 @@ const file_aipay_iam_v1_authorization_proto_rawDesc = "" +
 	"\bresource\x18\n" +
 	" \x01(\v2\x1c.aipay.common.v1.ResourceRefR\bresourceB\f\n" +
 	"\n" +
-	"credential\"\xcb\x02\n" +
+	"credential\"\x86\x03\n" +
 	"\x11AuthorizeResponse\x125\n" +
 	"\tprincipal\x18\x01 \x01(\v2\x17.aipay.iam.v1.PrincipalR\tprincipal\x12-\n" +
 	"\x12identity_assertion\x18\x02 \x01(\tR\x11identityAssertion\x129\n" +
@@ -792,7 +810,8 @@ const file_aipay_iam_v1_authorization_proto_rawDesc = "" +
 	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12#\n" +
 	"\rcredential_id\x18\x04 \x01(\tR\fcredentialId\x12/\n" +
 	"\x13request_fingerprint\x18\x05 \x01(\fR\x12requestFingerprint\x12?\n" +
-	"\bdecision\x18\x06 \x01(\v2#.aipay.iam.v1.AuthorizationDecisionR\bdecision*r\n" +
+	"\bdecision\x18\x06 \x01(\v2#.aipay.iam.v1.AuthorizationDecisionR\bdecision\x129\n" +
+	"\facting_scope\x18\a \x01(\v2\x16.aipay.common.v1.ScopeR\vactingScope*r\n" +
 	"\tDataScope\x12\x1a\n" +
 	"\x16DATA_SCOPE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13DATA_SCOPE_ASSIGNED\x10\x01\x12\x13\n" +
@@ -870,13 +889,14 @@ var file_aipay_iam_v1_authorization_proto_depIdxs = []int32{
 	12, // 19: aipay.iam.v1.AuthorizeResponse.principal:type_name -> aipay.iam.v1.Principal
 	21, // 20: aipay.iam.v1.AuthorizeResponse.expires_at:type_name -> google.protobuf.Timestamp
 	5,  // 21: aipay.iam.v1.AuthorizeResponse.decision:type_name -> aipay.iam.v1.AuthorizationDecision
-	7,  // 22: aipay.iam.v1.AuthorizationService.Authorize:input_type -> aipay.iam.v1.AuthorizeRequest
-	8,  // 23: aipay.iam.v1.AuthorizationService.Authorize:output_type -> aipay.iam.v1.AuthorizeResponse
-	23, // [23:24] is the sub-list for method output_type
-	22, // [22:23] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	11, // 22: aipay.iam.v1.AuthorizeResponse.acting_scope:type_name -> aipay.common.v1.Scope
+	7,  // 23: aipay.iam.v1.AuthorizationService.Authorize:input_type -> aipay.iam.v1.AuthorizeRequest
+	8,  // 24: aipay.iam.v1.AuthorizationService.Authorize:output_type -> aipay.iam.v1.AuthorizeResponse
+	24, // [24:25] is the sub-list for method output_type
+	23, // [23:24] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_aipay_iam_v1_authorization_proto_init() }

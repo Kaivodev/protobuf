@@ -10,23 +10,56 @@ message RequestContext {
   string trace_id = 2;
 }
 
+// Authorization scopes of the account model (decisions A83, A84). Values 2 and
+// 3 belonged to the superseded organization and business-entity scopes; they
+// are never reused, so messages from older builds fail validation.
 enum ScopeType {
+  reserved 2, 3;
+  reserved "SCOPE_TYPE_ORGANIZATION";
   SCOPE_TYPE_UNSPECIFIED = 0;
+  // Global platform management by platform roles.
   SCOPE_TYPE_PLATFORM = 1;
-  SCOPE_TYPE_ORGANIZATION = 2;
-  SCOPE_TYPE_BUSINESS = 3;
+  // A personal or organization funds account and all of its resources.
+  SCOPE_TYPE_ACCOUNT = 4;
+  // One business (project group) of an account. Grants no account-wide funds
+  // permissions such as balances, address book or withdrawals.
+  SCOPE_TYPE_BUSINESS = 5;
+  // One API application of a business; application credentials always act in
+  // this scope.
+  SCOPE_TYPE_APPLICATION = 6;
 }
 
-// Platform scope has no IDs; organization scope requires organization_id;
-// business scope requires both IDs. The service validates every scope.
+enum AccountType {
+  ACCOUNT_TYPE_UNSPECIFIED = 0;
+  // Owned by one global user; never has an organization.
+  ACCOUNT_TYPE_PERSONAL = 1;
+  // Owned by one organization.
+  ACCOUNT_TYPE_ORGANIZATION = 2;
+}
+
+// Required fields by type; anything else is rejected:
+//   platform:    no IDs, except account_id/account_type (and org_id rules) when
+//                IAM binds a cross-account operation to one target account.
+//   account:     account_id, account_type.
+//   business:    account_id, account_type, business_id.
+//   application: account_id, account_type, business_id, application_id.
+// org_id is optional for organization accounts, resolved by IAM from the
+// trusted account mapping, and must be empty for personal accounts. Funds
+// always belong to account_id, never to a business or application.
 message Scope {
+  reserved 2, 3;
+  reserved "organization_id";
   ScopeType type = 1;
-  string organization_id = 2;
-  string business_id = 3;
+  string account_id = 4;
+  AccountType account_type = 5;
+  string org_id = 6;
+  string business_id = 7;
+  string application_id = 8;
 }
 
 // Resource ownership must be resolved by the resource owner, not trusted from
-// client headers. IDs and scope in requests are selectors requiring validation.
+// client headers. IDs and scope in requests are selectors requiring validation;
+// IAM checks the full application → business → account chain.
 message ResourceRef {
   string type = 1;
   string id = 2;

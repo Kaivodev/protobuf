@@ -78,7 +78,8 @@ type Principal struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Type  PrincipalType          `protobuf:"varint,2,opt,name=type,proto3,enum=aipay.iam.v1.PrincipalType" json:"type,omitempty"`
-	// Merchant applications must be bound to an authoritative business scope.
+	// Merchant applications are bound to their application scope, carrying the
+	// trusted business and account of the application.
 	BoundScope    *v1.Scope `protobuf:"bytes,3,opt,name=bound_scope,json=boundScope,proto3" json:"bound_scope,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -13,7 +13,7 @@ enum DataScope {
   DATA_SCOPE_UNSPECIFIED = 0;
   DATA_SCOPE_ASSIGNED = 1;
   DATA_SCOPE_SELF = 2;
-  // Cross-organization access requires an explicit platform-scoped grant.
+  // Cross-account access requires an explicit platform-scoped grant.
   DATA_SCOPE_PLATFORM_ALL = 3;
 }
 
@@ -61,6 +61,9 @@ message AuthorizationDecision {
 
 message AccessConstraint {
   DataScope data_scope = 1;
+  // The resource scope the decision is limited to, with the trusted account_id
+  // for any funds or account resource. Business and application scopes never
+  // imply account-wide funds permissions.
   aipay.common.v1.Scope scope = 2;
   // Required when data_scope is SELF. Resolve actual ownership in the resource
   // service; do not accept owner IDs supplied by an external caller.
@@ -82,7 +85,11 @@ message AuthorizeRequest {
   // Route facts including the required permission. IAM validates the
   // protocol/operation pairing before evaluating any grant.
   RequestBinding request_binding = 8;
-  // Explicit active role context; never inferred from the credential alone.
+  // Explicit active role context selected by the website: platform, account,
+  // business or application, with the full ID chain of that scope. Never
+  // inferred from the credential alone; empty or equal to the bound scope for
+  // merchant applications. IAM verifies ownership, membership and the chain,
+  // and rejects any mismatch.
   aipay.common.v1.Scope acting_scope = 9;
   aipay.common.v1.ResourceRef resource = 10;
 }
@@ -97,6 +104,10 @@ message AuthorizeResponse {
   // Missing or denied means deny, and an allowed decision is usable only
   // together with its constraint.
   AuthorizationDecision decision = 6;
+  // The trusted acting scope IAM resolved, identical to the assertion's
+  // acting_scope; carries the funds account_id for account, business and
+  // application scopes.
+  aipay.common.v1.Scope acting_scope = 7;
 }
 
 // Internal only. An allowed decision is not a transferable money-operation

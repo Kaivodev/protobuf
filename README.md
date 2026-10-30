@@ -23,7 +23,9 @@ internal/policycheck/             make check 的方法策略检查
 
 币种与链上资产以枚举值选项登记（`currency_info`、`chain_info`、`asset_info`），各服务从生成 SDK 读取同一张表；新增币种、链或合约需同时修改本仓库与各服务测试。
 
-IAM 契约只有一个认证授权入口 `AuthorizationService.Authorize`：网关每个请求只调用一次，同时完成认证与授权；只需确认身份的接口使用表示“本人”的权限，同样走 `Authorize`。下游服务自行核验认证证明，不再回调 IAM（决策 A78）。这仅是接口定义，不表示服务已运行。身份凭据、组织归属、角色策略在 IAM 仓库管理。金融服务目前只有 package 占位；业务 RPC、事件载荷与资金字段按 docs 仓库的[跨服务契约设计](https://github.com/aipay-dev/docs/blob/main/design/contracts.md)在 M0 落地，设计之外不新增。
+IAM 契约只有一个认证授权入口 `AuthorizationService.Authorize`：网关每个请求只调用一次，同时完成认证与授权；只需确认身份的接口使用表示“本人”的权限，同样走 `Authorize`。下游服务自行核验认证证明，不再回调 IAM（决策 A78）。这仅是接口定义，不表示服务已运行。
+
+授权作用域按账户模型（决策 A83、A84）分为 `platform`、`account`、`business`、`application`（`common/v1/context.proto`）。资金只归属 `account_id`（个人或组织账户）；业务、应用作用域依次带上 `business_id`、`application_id` 及其所属账户，但不隐含账户级资金权限。组织账户可附 `org_id`，个人账户不填。旧的组织、业务主体作用域使用过的枚举值与字段号已保留，不再复用，旧版本发出的消息会校验失败。身份凭据、组织归属、角色策略在 IAM 仓库管理。金融服务目前只有 package 占位；业务 RPC、事件载荷与资金字段按 docs 仓库的[跨服务契约设计](https://github.com/aipay-dev/docs/blob/main/design/contracts.md)在 M0 落地，设计之外不新增。
 
 ## 方法授权策略
 
