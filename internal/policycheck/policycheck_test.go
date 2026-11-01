@@ -83,7 +83,7 @@ func TestPolicyRules(t *testing.T) {
 
 func TestEmptyImageRejected(t *testing.T) {
 	if problems := Check(&descriptorpb.FileDescriptorSet{}); len(problems) == 0 {
-		t.Fatal("an image without AI Pay RPCs passed")
+		t.Fatal("an image without Kaivo RPCs passed")
 	}
 }
 

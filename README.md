@@ -1,6 +1,6 @@
-# AI Pay Protobuf 契约
+# Kaivo Protobuf 契约
 
-本仓库集中维护 AI Pay 服务间的 `.proto`，与用户侧 HTTP/EPay 的 Swagger 文档分开管理。各服务引用生成 SDK，不维护协议副本。
+本仓库集中维护 Kaivo 服务间的 `.proto`，与用户侧 HTTP/EPay 的 Swagger 文档分开管理。各服务引用生成 SDK，不维护协议副本。
 
 ```text
 proto/aipay/
@@ -27,7 +27,7 @@ internal/policycheck/             make check 的方法策略检查
 
 IAM 契约只有一个认证授权入口 `AuthorizationService.Authorize`：网关每个请求只调用一次，同时完成认证与授权；只需确认身份的接口使用表示“本人”的权限，同样走 `Authorize`。下游服务自行核验认证证明，不再回调 IAM（决策 A78）。这仅是接口定义，不表示服务已运行。
 
-授权作用域按账户模型（决策 A83、A84）分为 `platform`、`account`、`business`、`application`（`common/v1/context.proto`）。资金只归属 `account_id`（个人或组织账户）；业务、应用作用域依次带上 `business_id`、`application_id` 及其所属账户，但不隐含账户级资金权限。组织账户可附 `org_id`，个人账户不填。旧的组织、业务主体作用域使用过的枚举值与字段号已保留，不再复用，旧版本发出的消息会校验失败。身份凭据、组织归属、角色策略在 IAM 仓库管理。ledger 已有分录拉取、检查点载荷与人工调账契约，其余金融服务目前只有 package 占位；业务 RPC、事件载荷与资金字段按 docs 仓库的[跨服务契约设计](https://github.com/aipay-dev/docs/blob/main/design/contracts.md)在 M0 落地，设计之外不新增。
+授权作用域按账户模型（决策 A83、A84）分为 `platform`、`account`、`business`、`application`（`common/v1/context.proto`）。资金只归属 `account_id`（个人或组织账户）；业务、应用作用域依次带上 `business_id`、`application_id` 及其所属账户，但不隐含账户级资金权限。组织账户可附 `org_id`，个人账户不填。旧的组织、业务主体作用域使用过的枚举值与字段号已保留，不再复用，旧版本发出的消息会校验失败。身份凭据、组织归属、角色策略在 IAM 仓库管理。ledger 已有分录拉取、检查点载荷与人工调账契约，其余金融服务目前只有 package 占位；业务 RPC、事件载荷与资金字段按 docs 仓库的[跨服务契约设计](https://github.com/Kaivodev/docs/blob/main/design/contracts.md)在 M0 落地，设计之外不新增。
 
 ## 方法授权策略
 
@@ -60,3 +60,7 @@ make check
 ## 发布与本地联调
 
 Go module 为 `github.com/aipay-dev/protobuf`。当前是尚未发布的本地草案；各服务正式导入前先提交、推送并发布可解析的版本，再固定该版本依赖。工作区 `go.work` 可用于联合开发，但不能替代单仓库 `GOWORK=off` 检查，不在 `go.mod` 写绝对路径 `replace`。
+
+## 名称与兼容性
+
+项目品牌统一为 **Kaivo**，GitHub 组织为 **Kaivodev**。已发布 Go module、协议/签名标识及现有配置键暂时保留原值，属于兼容接口；改名不修改历史账本或协议语义。范围与迁移规则见[命名约定](https://github.com/Kaivodev/docs/blob/main/design/naming.md)。

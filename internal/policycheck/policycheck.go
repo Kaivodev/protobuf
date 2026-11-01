@@ -1,4 +1,4 @@
-// Package policycheck verifies that every AI Pay RPC declares a well-formed
+// Package policycheck verifies that every Kaivo RPC declares a well-formed
 // (aipay.authz.v1.policy) method option. It runs from `make check` against the
 // image built from proto/, so a method without a policy fails the build.
 package policycheck
@@ -22,7 +22,7 @@ var (
 	permissionPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$`)
 )
 
-// Check returns one error per invalid or missing policy in AI Pay packages.
+// Check returns one error per invalid or missing policy in Kaivo packages.
 func Check(set *descriptorpb.FileDescriptorSet) []error {
 	var problems []error
 	methods := 0
@@ -41,7 +41,7 @@ func Check(set *descriptorpb.FileDescriptorSet) []error {
 		}
 	}
 	if methods == 0 {
-		problems = append(problems, fmt.Errorf("no AI Pay RPC methods found; the descriptor image is incomplete"))
+		problems = append(problems, fmt.Errorf("no Kaivo RPC methods found; the descriptor image is incomplete"))
 	}
 	return problems
 }
