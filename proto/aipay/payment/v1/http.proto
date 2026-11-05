@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// Allowlisted HTTP headers only. Preserve duplicate values for upstream
+// verification; this is transport data, never a trusted identity. Raw callback
+// headers/query/body and signed delivery material must not enter logs.
+message HttpHeader {
+  string name = 1;
+  repeated string values = 2;
+}

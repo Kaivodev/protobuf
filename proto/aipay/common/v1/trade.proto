@@ -29,8 +29,13 @@ message TradeQuoteSnapshot {
   int64 spread_usdt = 9;
   string rate_snapshot_id = 10;
   // Each rate is positive, has a nonempty version_id, base USDT and quote
-  // fiat_currency. Decimal strings have at most 12 integer and 10 fractional
-  // digits; receivers reject malformed, missing or incompatible rates.
+  // fiat_currency, and is a normalized decimal string (no sign, exponent,
+  // redundant leading zeros or trailing fractional zeros). base_rate has at
+  // most 12 integer and 10 fractional digits and carries the market snapshot's
+  // version. channel_rate/merchant_rate are exactly base_rate x (1 + side
+  // markup_ppm / 10^6), unrounded, so they may need up to 16 fractional
+  // digits; their version_id is that side's pricing version. Receivers reject
+  // malformed, missing, incompatible or non-recomputable rates.
   ExchangeRate base_rate = 11;
   ExchangeRate channel_rate = 12;
   ExchangeRate merchant_rate = 13;

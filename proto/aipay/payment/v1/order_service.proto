@@ -1,0 +1,245 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/money.proto";
+import "aipay/common/v1/trade.proto";
+import "aipay/ledger/v1/trade.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// Payment workflow, not ledger's TradeReservationStatus. Receivers reject
+// UNSPECIFIED (0) and unknown values. Normal path: RESERVING ->
+// AWAITING_PAYMENT -> RISK_HELD -> RELEASING -> COMPLETED. UNKNOWN is
+// recoverable; TTL, callbacks and EPay success never prove funds available.
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_RESERVING = 1;
+  ORDER_STATUS_AWAITING_PAYMENT = 2;
+  ORDER_STATUS_RISK_HELD = 3;
+  ORDER_STATUS_RELEASING = 4;
+  ORDER_STATUS_COMPLETED = 5;
+  ORDER_STATUS_REJECTED = 6;
+  ORDER_STATUS_CANCELLED = 7;
+  ORDER_STATUS_UNKNOWN = 8;
+  ORDER_STATUS_DISPUTED = 9;
+  ORDER_STATUS_REFUNDING = 10;
+  ORDER_STATUS_REFUNDED = 11;
+}
+
+// Independent upstream fiat state. Receivers reject UNSPECIFIED (0)/unknown.
+// PAID requires active query verification, never a client or callback claim.
+enum UpstreamPaymentStatus {
+  UPSTREAM_PAYMENT_STATUS_UNSPECIFIED = 0;
+  UPSTREAM_PAYMENT_STATUS_PENDING = 1;
+  UPSTREAM_PAYMENT_STATUS_PAID = 2;
+  UPSTREAM_PAYMENT_STATUS_CLOSED = 3;
+  UPSTREAM_PAYMENT_STATUS_FAILED = 4;
+  UPSTREAM_PAYMENT_STATUS_UNKNOWN = 5;
+}
+
+// Independent risk projection. Receivers reject UNSPECIFIED (0)/unknown.
+// ELIGIBLE means only the time condition is met, not authorization to release.
+enum OrderRiskStatus {
+  ORDER_RISK_STATUS_UNSPECIFIED = 0;
+  ORDER_RISK_STATUS_NOT_STARTED = 1;
+  ORDER_RISK_STATUS_HELD = 2;
+  ORDER_RISK_STATUS_ELIGIBLE = 3;
+  ORDER_RISK_STATUS_RESTRICTED = 4;
+}
+
+// Historical notification format. Receivers reject UNSPECIFIED (0)/unknown.
+enum MerchantNotificationProtocol {
+  MERCHANT_NOTIFICATION_PROTOCOL_UNSPECIFIED = 0;
+  MERCHANT_NOTIFICATION_PROTOCOL_EPAY_V1 = 1;
+  MERCHANT_NOTIFICATION_PROTOCOL_EPAY_V2 = 2;
+}
+
+// Required original application configuration, verified by payment. No keys or
+// assertions. Historical targets/credential versions survive business transfer;
+// an old credential is usable only for restricted historical notifications.
+message OrderNotificationSnapshot {
+  MerchantNotificationProtocol protocol = 1;
+  // Required registered controlled HTTP(S) target; independently SSRF checked.
+  string notify_url = 2;
+  // Optional registered return target; browser redirects require HTTPS.
+  string return_url = 3;
+  string credential_version = 4;
+}
+
+// Stored unchanged after creation. Required IDs, versions, messages and digest
+// must be present. TradeSnapshot includes every original owner, quote/rate/ppm,
+// seller/channel, risk policy and explicit hold duration (possibly approved 0).
+message OrderSnapshot {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  // External platform number: 14 UTC time digits + 12 random digits, unique.
+  string trade_no = 2;
+  string out_trade_no = 3;
+  string payment_access_id = 4;
+  uint64 payment_access_version = 5;
+  // 32-byte digest of approved materials, ownership, applications and domains.
+  bytes approved_scope_sha256 = 6;
+  OrderNotificationSnapshot notification = 7;
+  // Required EPay name and optional param, preserved for original notifications.
+  string title = 8;
+  string merchant_parameter = 9;
+  string plugin_version = 10;
+}
+
+message PaymentInstruction {
+  // Exactly one nonempty instruction; raw upstream HTML is unsupported.
+  oneof instruction {
+    string url = 1; // HTTPS only.
+    string qrcode = 2;
+  }
+  // Payment-entry expiry, never proof of nonpayment or authority to unfreeze.
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+message Order {
+  OrderSnapshot snapshot = 1;
+  OrderStatus status = 2;
+  UpstreamPaymentStatus upstream_payment_status = 3;
+  // All three absent until the same ledger reservation is confirmed; then
+  // nonempty ID, positive version and known status are required. These are
+  // last-verified projections, not release evidence or caller-controlled state.
+  optional string escrow_reservation_id = 4;
+  optional uint64 control_version = 5;
+  optional aipay.ledger.v1.TradeReservationStatus escrow_status = 6;
+  // All absent before payment verification. Thereafter all are required:
+  // risk_release_at = paid_verified_at + original hold_duration_seconds;
+  // effective_risk_release_at includes approved extensions and cannot be earlier.
+  google.protobuf.Timestamp paid_verified_at = 7;
+  google.protobuf.Timestamp risk_release_at = 8;
+  google.protobuf.Timestamp effective_risk_release_at = 9;
+  OrderRiskStatus risk_status = 10;
+  // Absent/empty before upstream acceptance is confirmed.
+  string upstream_order_id = 11;
+  // Present only after confirmed escrow AND serialized dispatch permission.
+  PaymentInstruction payment_instruction = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+message OrderSelector {
+  // Required even for internal/external platform IDs; all selectors verify
+  // original application and account access, not the application's current owner.
+  string application_id = 1;
+  // Exactly one nonempty selector is required. Unknown resources are NotFound.
+  oneof selector {
+    string order_id = 2;
+    string trade_no = 3;
+    string out_trade_no = 4;
+  }
+}
+
+message CreateOrderRequest {
+  // Selectors checked against verified IAM ownership and trusted records.
+  // They are never authorization evidence; personal accounts need no org_id.
+  string account_id = 1;
+  string business_id = 2;
+  string application_id = 3;
+  uint64 ownership_version = 4;
+  // With application_id, globally historical idempotency across V1/V2/transfer.
+  string out_trade_no = 5;
+  string payment_method = 6;
+  // Positive original fiat minor units, not a customer funds balance.
+  aipay.common.v1.Money fiat_amount = 7;
+  string title = 8;
+  string merchant_parameter = 9;
+  OrderNotificationSnapshot notification = 10;
+}
+
+message CreateOrderResponse {
+  Order order = 1;
+}
+
+message GetOrderRequest {
+  OrderSelector selector = 1;
+}
+
+message GetOrderResponse {
+  Order order = 1;
+}
+
+message CloseOrderRequest {
+  string idempotency_key = 1;
+  OrderSelector selector = 2;
+  string escrow_reservation_id = 3;
+  uint64 expected_control_version = 4;
+  // Required, 1 to 1000 characters; initiating identity comes from IAM proof.
+  string reason = 5;
+}
+
+message CloseOrderResponse {
+  // Acceptance is not cancellation. CANCELLED requires the independently
+  // authorized ledger fact: no payment, channel closed and late risk handled.
+  Order order = 1;
+}
+
+message ListOrdersRequest {
+  // Required account, optional narrowing filters. Every row must match the
+  // verified constraint; omission never grants account-wide application access.
+  string account_id = 1;
+  string business_id = 2;
+  string application_id = 3;
+  // Absent means no state filter; present UNSPECIFIED (0)/unknown is rejected.
+  optional OrderStatus status = 4;
+  // 1 to 500. Opaque cursor binds filters and the verified access scope.
+  uint32 limit = 5;
+  string page_token = 6;
+}
+
+message ListOrdersResponse {
+  repeated Order orders = 1;
+  // Empty at the end.
+  string next_page_token = 2;
+}
+
+// User/application calls via backend, with independently verified IAM proof.
+// payment checks original ownership, current eligibility and transfer barriers;
+// then freezes seller USDT before upstream dispatch. Reject self-trades (A113).
+// Same key with different business content is AlreadyExists; identical retries
+// return the original result after access checks, never a repriced/new escrow.
+// Unknown outcomes keep funds occupied. Only independent reconciliation
+// authorization and ledger facts determine release/cancellation/refund posting.
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.order.create"
+      }
+    };
+  }
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.order.read"
+      }
+    };
+  }
+  rpc CloseOrder(CloseOrderRequest) returns (CloseOrderResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.order.close"
+      }
+    };
+  }
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.order.read"
+      }
+    };
+  }
+}

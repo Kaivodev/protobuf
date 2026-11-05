@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/common/v1/trade.proto";
+import "aipay/ledger/v1/trade.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// Payloads on payment.orders, producer payment, receivers ledger and
+// reconciliation. event_type equals the message name; ALL FOUR use
+// schema_version=2. Version 1 remains historical and must never enter C2C rules.
+// Original snapshots/IDs, positive control versions, UTC microsecond times and
+// 32-byte evidence digests are required. Refund branch UNSPECIFIED (0)/unknown
+// is rejected. Each fact and outbox row commit together; signatures/digests
+// alone do not establish external truth or authorize a ledger funds movement.
+
+// OrderPaid v2 confirms ONLY actively queried fiat payment (A111), never
+// upstream USDT receivables, recipient balance availability or release.
+message OrderPaid {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  uint64 control_version = 3;
+  string upstream_order_id = 4;
+  google.protobuf.Timestamp paid_verified_at = 5;
+  // Original base deadline = paid_verified_at + locked hold_duration_seconds.
+  google.protobuf.Timestamp risk_release_at = 6;
+  // Query evidence binds original channel/platform/upstream IDs, original fiat
+  // currency/amount and paid terminal result; no raw credentials in the event.
+  bytes query_evidence_sha256 = 7;
+}
+
+// RefundSucceeded v2: verified original-route FULL fiat refund only. The
+// reconciliation authorization and ledger posting still settle/restore USDT.
+// Post-release, A112 reverses N and all three F components, restoring seller Q.
+message RefundSucceeded {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  uint64 control_version = 3;
+  string refund_id = 4;
+  string out_refund_no = 5;
+  string refund_reservation_id = 6;
+  aipay.ledger.v1.RefundReservationBranch branch = 7;
+  string upstream_refund_id = 8;
+  google.protobuf.Timestamp verified_at = 9;
+  bytes query_evidence_sha256 = 10;
+}
+
+// RefundFailed v2 requires a definitive actively verified failure. Pending or
+// unknown refunds emit no terminal fact and keep funds occupied. Independent
+// authorization restores only this refund's source, preserving other barriers.
+message RefundFailed {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  uint64 control_version = 3;
+  string refund_id = 4;
+  string out_refund_no = 5;
+  string refund_reservation_id = 6;
+  aipay.ledger.v1.RefundReservationBranch branch = 7;
+  string upstream_refund_id = 8;
+  google.protobuf.Timestamp verified_at = 9;
+  bytes query_evidence_sha256 = 10;
+  string failure_reason = 11;
+}
+
+// OrderReversed v2 binds the approved original-order correction and evidence.
+// No arbitrary amount/account override. A chargeback callback never directly
+// takes released funds; this fact cannot substitute for independent funds
+// authorization, escrow barriers or approved posting rules.
+message OrderReversed {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  uint64 control_version = 3;
+  string original_event_id = 4;
+  string approval_request_id = 5;
+  // Required, 1 to 1000 characters.
+  string reason = 6;
+  bytes evidence_sha256 = 7;
+  google.protobuf.Timestamp reversed_at = 8;
+}

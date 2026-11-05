@@ -47,8 +47,13 @@ type TradeQuoteSnapshot struct {
 	SpreadUsdt     int64  `protobuf:"varint,9,opt,name=spread_usdt,json=spreadUsdt,proto3" json:"spread_usdt,omitempty"`
 	RateSnapshotId string `protobuf:"bytes,10,opt,name=rate_snapshot_id,json=rateSnapshotId,proto3" json:"rate_snapshot_id,omitempty"`
 	// Each rate is positive, has a nonempty version_id, base USDT and quote
-	// fiat_currency. Decimal strings have at most 12 integer and 10 fractional
-	// digits; receivers reject malformed, missing or incompatible rates.
+	// fiat_currency, and is a normalized decimal string (no sign, exponent,
+	// redundant leading zeros or trailing fractional zeros). base_rate has at
+	// most 12 integer and 10 fractional digits and carries the market snapshot's
+	// version. channel_rate/merchant_rate are exactly base_rate x (1 + side
+	// markup_ppm / 10^6), unrounded, so they may need up to 16 fractional
+	// digits; their version_id is that side's pricing version. Receivers reject
+	// malformed, missing, incompatible or non-recomputable rates.
 	BaseRate     *ExchangeRate `protobuf:"bytes,11,opt,name=base_rate,json=baseRate,proto3" json:"base_rate,omitempty"`
 	ChannelRate  *ExchangeRate `protobuf:"bytes,12,opt,name=channel_rate,json=channelRate,proto3" json:"channel_rate,omitempty"`
 	MerchantRate *ExchangeRate `protobuf:"bytes,13,opt,name=merchant_rate,json=merchantRate,proto3" json:"merchant_rate,omitempty"`

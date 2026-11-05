@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/payment/v1/http.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// Raw upstream request forwarded by backend; no user assertion. payment owns
+// signature verification. Never normalize query/body before verifying signatures,
+// and never log credentials, raw query/body or sensitive headers.
+message HandleUpstreamCallbackRequest {
+  string channel_code = 1;
+  string http_method = 2;
+  bytes raw_query = 3;
+  repeated HttpHeader headers = 4;
+  // At most 64 KiB; encrypted evidence is retained only by payment.
+  bytes body = 5;
+  // Resolved using the trusted proxy chain, not an arbitrary forwarded header.
+  string source_ip = 6;
+}
+
+message HandleUpstreamCallbackResponse {
+  // Valid HTTP status (100 to 599), content type and exact upstream reply.
+  uint32 http_status_code = 1;
+  string content_type = 2;
+  bytes body = 3;
+}
+
+// Only backend's mTLS service identity. Deduplicate by original channel and
+// upstream order number. payment verifies the callback and triggers active
+// query verification of original IDs, fiat amount/currency and terminal state.
+// A callback or its acknowledgement is never payment evidence (A111), never
+// confirms USDT availability, and never directly changes ledger balances.
+service CallbackService {
+  rpc HandleUpstreamCallback(HandleUpstreamCallbackRequest) returns (HandleUpstreamCallbackResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}

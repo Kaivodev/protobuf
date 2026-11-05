@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/payment/v1/http.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// Receivers reject UNSPECIFIED (0)/unknown. ACKNOWLEDGED requires the EPay
+// protocol's success reply, not just an HTTP success code. Delivery is wholly
+// independent of payment confirmation and USDT availability.
+enum DeliveryOutcome {
+  DELIVERY_OUTCOME_UNSPECIFIED = 0;
+  DELIVERY_OUTCOME_ACKNOWLEDGED = 1;
+  DELIVERY_OUTCOME_FAILED = 2;
+}
+
+message NotificationLease {
+  string notification_id = 1;
+  // Positive sequence assigned by payment; never selected by notifier.
+  uint64 delivery_sequence = 2;
+  string lease_id = 3;
+  google.protobuf.Timestamp lease_expires_at = 4;
+  string order_id = 5;
+  string application_id = 6;
+  // Already signed using original notification/credential snapshot. Notifier
+  // receives no keys. Independently check SSRF, DNS/IP and egress allowlists.
+  string target_url = 7;
+  string http_method = 8;
+  repeated HttpHeader headers = 9;
+  bytes body = 10;
+}
+
+message LeaseNotificationsRequest {
+  // Scoped to the verified notifier identity. Replay returns the same batch
+  // and original deadlines, even after expiry; use a new ID for a new batch.
+  string idempotency_key = 1;
+  // 1 to 500.
+  uint32 limit = 2;
+}
+
+message LeaseNotificationsResponse {
+  repeated NotificationLease leases = 1;
+}
+
+message ReportDeliveryRequest {
+  string notification_id = 1;
+  uint64 delivery_sequence = 2;
+  string lease_id = 3;
+  DeliveryOutcome outcome = 4;
+  // 100 to 599 if a response arrived, else 0 and an empty response digest.
+  uint32 http_status_code = 5;
+  bytes response_sha256 = 6;
+  // Redacted stable failure identifier only, never raw response or secrets.
+  // Required for FAILED, empty for ACKNOWLEDGED.
+  string failure_reason = 7;
+}
+
+message ReportDeliveryResponse {}
+
+// notifier service identity only, no IAM user assertion. Leases serialize per
+// notification; retries cannot create multiple live attempts. ReportDelivery
+// is idempotent by notification_id/delivery_sequence and binds the lease ID;
+// changed content is AlreadyExists. First reports require a matching unexpired
+// lease; expired/stale leases cannot overwrite a newer attempt. Identical
+// accepted reports can be replayed after expiry. Leases do not guarantee
+// exactly-once HTTP delivery: merchants still deduplicate original orders.
+// payment owns A76's ten-attempt retry schedule and archive decisions. A report
+// changes delivery state only; notifier cannot sign, refund or move funds.
+// Signed request material and raw HTTP data must never be logged.
+service NotificationDeliveryService {
+  rpc LeaseNotifications(LeaseNotificationsRequest) returns (LeaseNotificationsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "notifier"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc ReportDelivery(ReportDeliveryRequest) returns (ReportDeliveryResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "notifier"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}

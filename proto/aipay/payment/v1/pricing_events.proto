@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// Quote side, independent of configuration target. Receivers reject
+// UNSPECIFIED (0) and unknown values.
+enum PricingSide {
+  PRICING_SIDE_UNSPECIFIED = 0;
+  PRICING_SIDE_CHANNEL = 1;
+  PRICING_SIDE_MERCHANT = 2;
+}
+
+// Presence selects the platform default for the explicitly declared side.
+message PlatformPricingDefault {}
+
+// Versioned A110 configuration, not an order quote. Historical orders always
+// retain their TradeQuoteSnapshot and actual selected configuration versions.
+message PricingConfiguration {
+  string version = 1;
+  PricingSide side = 2;
+  // Exactly one: CHANNEL permits channel_account_id or platform_default;
+  // MERCHANT permits account_id or platform_default. IDs must be nonempty.
+  // A missing dedicated config selects the approved default of the SAME side.
+  oneof target {
+    string channel_account_id = 3;
+    string account_id = 4;
+    PlatformPricingDefault platform_default = 5;
+  }
+  // Registered quote currency; current real C2C pricing is CNY per USDT.
+  string fiat_currency = 6;
+  // Both require presence: explicit 0 is valid, absence is not a free default.
+  // Signed markup must exceed -1,000,000; fee is 0 to 1,000,000 inclusive.
+  optional int32 markup_ppm = 7;
+  optional int32 fee_rate_ppm = 8;
+}
+
+// payment.pricing, producer payment, receivers ledger/reconciliation.
+// event_type=PricingVersionApproved, schema_version=2. Version 1 retains only
+// historical fee semantics. Two distinct WebAuthn approvers, neither initiator,
+// must approve immutable material before this fact enters the local outbox.
+// IDs/config/times and a 32-byte approval evidence digest are required. Times
+// are UTC with microsecond precision; effective_at >= approved_at. Independent
+// consumers still verify approved evidence and recompute original quote math.
+message PricingVersionApproved {
+  PricingConfiguration configuration = 1;
+  string approval_request_id = 2;
+  bytes approval_sha256 = 3;
+  google.protobuf.Timestamp approved_at = 4;
+  google.protobuf.Timestamp effective_at = 5;
+}
+
+// payment.pricing, event_type=RiskPolicyApproved, schema_version=1 (new type).
+// Same producer/receivers, approval, required fields/digest and time checks as
+// PricingVersionApproved. No implicit platform risk default. Missing policy or
+// duration rejects orders; changes never shorten old orders' locked deadlines.
+// This event does not itself grant an exceptional extension or resolve disputes.
+message RiskPolicyApproved {
+  string risk_policy_version = 1;
+  string channel_account_id = 2;
+  // Presence required. Explicit 0 seconds is valid ONLY after approval (A111).
+  optional uint64 hold_duration_seconds = 3;
+  // Explicit positive configured durations. Extensions retain reason/operator/
+  // version/audit; dispute timeout never automatically releases/unfreezes funds.
+  optional uint64 exceptional_extension_seconds = 4;
+  optional uint64 dispute_handling_timeout_seconds = 5;
+  string approval_request_id = 6;
+  bytes approval_sha256 = 7;
+  google.protobuf.Timestamp approved_at = 8;
+  google.protobuf.Timestamp effective_at = 9;
+}

@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/money.proto";
+import "aipay/common/v1/trade.proto";
+import "aipay/ledger/v1/trade.proto";
+import "aipay/payment/v1/order_service.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// Independent original-route fiat refund workflow. Receivers reject
+// UNSPECIFIED (0)/unknown. SUCCEEDED/FAILED require active verification of a
+// definitive upstream outcome; neither means ledger has settled/restored funds.
+enum RefundStatus {
+  REFUND_STATUS_UNSPECIFIED = 0;
+  REFUND_STATUS_RESERVING = 1;
+  REFUND_STATUS_PENDING = 2;
+  REFUND_STATUS_SUCCEEDED = 3;
+  REFUND_STATUS_FAILED = 4;
+  REFUND_STATUS_UNKNOWN = 5;
+}
+
+message Refund {
+  string refund_id = 1;
+  string out_refund_no = 2;
+  // Original account/quote only; never replace with the current app owner.
+  aipay.common.v1.TradeSnapshot trade = 3;
+  string escrow_reservation_id = 4;
+  RefundStatus status = 5;
+  // Absent until confirmed. PRE_RELEASE occupies existing Q without another
+  // debit; POST_RELEASE first reserves N from the original recipient only.
+  aipay.ledger.v1.RefundReservation reservation = 6;
+  string upstream_refund_id = 7;
+  // Full original fiat amount only; partial allocation is deferred to D18.
+  aipay.common.v1.Money fiat_amount = 8;
+  string reason = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+  // Both required only for verified terminal fiat outcomes; otherwise absent.
+  google.protobuf.Timestamp verified_at = 12;
+  bytes evidence_sha256 = 13;
+}
+
+message RefundSelector {
+  string application_id = 1;
+  // Required nonempty selection; verify original account/application access.
+  oneof selector {
+    string refund_id = 2;
+    string out_refund_no = 3;
+  }
+}
+
+message CreateRefundRequest {
+  OrderSelector order = 1;
+  // Idempotent with order.application_id over all history, including transfers.
+  string out_refund_no = 2;
+  // Required, must exactly equal original fiat currency and full amount.
+  // Partial refunds are rejected until D18; no caller repricing is accepted.
+  aipay.common.v1.Money fiat_amount = 3;
+  string escrow_reservation_id = 4;
+  uint64 expected_control_version = 5;
+  // Required, 1 to 1000 characters.
+  string reason = 6;
+}
+
+message CreateRefundResponse {
+  Refund refund = 1;
+}
+
+message GetRefundRequest {
+  RefundSelector selector = 1;
+}
+
+message GetRefundResponse {
+  Refund refund = 1;
+}
+
+// backend carries a user/application IAM proof. payment verifies authority
+// against the original order before reserving. Same key/different parameters
+// is AlreadyExists; an identical retry returns the original refund after access
+// checks, before fresh CAS checks. Unmatched current versions/states fail.
+// Full refunds only: unsupported upstream capability is explicitly rejected.
+// No fiat refund before the matching ledger hold/reservation is confirmed;
+// insufficient original-recipient funds fail. Unknown outcomes keep occupation.
+// Reconciliation independently verifies outcomes and authorizes ledger action.
+// A112 restores seller Q, reverses ALL three platform fee components F and
+// settles recipient reserve N after release; wallet coverage is required.
+service RefundService {
+  rpc CreateRefund(CreateRefundRequest) returns (CreateRefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.refund.create"
+      }
+    };
+  }
+  rpc GetRefund(GetRefundRequest) returns (GetRefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.refund.read"
+      }
+    };
+  }
+}
