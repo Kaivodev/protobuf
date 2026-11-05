@@ -8,6 +8,7 @@ proto/aipay/
   common/v1/context.proto          跟踪信息、平台/组织/业务主体作用域
   common/v1/money.proto            Money、汇率；标识、时间与金额约定
   common/v1/asset.proto            币种表、链与资产登记（TRON/BSC USDT、TRX、BNB）
+  common/v1/trade.proto            C2C 完整报价与不可变订单快照
   events/v1/event_stream.proto     签名事件信封与 EventStreamService 拉取接口
   approval/v1/approval.proto       审批请求与 WebAuthn 断言
   iam/v1/identity.proto            认证输入、主体、短期认证证明
@@ -16,8 +17,13 @@ proto/aipay/
   ledger/v1/ledger.proto           分录交易、分录行与 CheckpointSigned 检查点
   ledger/v1/journal_service.proto  JournalService：分录与检查点拉取
   ledger/v1/adjustment_service.proto  AdjustmentService：人工调账申请与审批
+  ledger/v1/trade.proto            担保状态、退款分支与预留凭证
+  ledger/v1/reservation_service.proto  ReservationService：担保冻结、屏障与退款预留
+  ledger/v1/trade_events.proto     ledger.trades 的四类账本事实
+  ledger/v1/control_service.proto  LedgerControlService：只读退出与结转说明审批
   settlement/v1/settlement.proto   结算契约占位
   reconciliation/v1/reconciliation.proto  对账契约占位
+  reconciliation/v1/trade_events.proto  预存核实、释放/取消/退款授权
 gen/go/                           Go / gRPC 生成代码
 testvectors/                      规范编码与签名测试向量（只含数据）
 internal/policycheck/             make check 的方法策略检查
@@ -27,7 +33,9 @@ internal/policycheck/             make check 的方法策略检查
 
 IAM 契约只有一个认证授权入口 `AuthorizationService.Authorize`：网关每个请求只调用一次，同时完成认证与授权；只需确认身份的接口使用表示“本人”的权限，同样走 `Authorize`。下游服务自行核验认证证明，不再回调 IAM（决策 A78）。这仅是接口定义，不表示服务已运行。
 
-授权作用域按账户模型（决策 A83、A84）分为 `platform`、`account`、`business`、`application`（`common/v1/context.proto`）。资金只归属 `account_id`（个人或组织账户）；业务、应用作用域依次带上 `business_id`、`application_id` 及其所属账户，但不隐含账户级资金权限。组织账户可附 `org_id`，个人账户不填。旧的组织、业务主体作用域使用过的枚举值与字段号已保留，不再复用，旧版本发出的消息会校验失败。身份凭据、组织归属、角色策略在 IAM 仓库管理。ledger 已有分录拉取、检查点载荷与人工调账契约，其余金融服务目前只有 package 占位；业务 RPC、事件载荷与资金字段按 docs 仓库的[跨服务契约设计](https://github.com/Kaivodev/docs/blob/main/design/contracts.md)在 M0 落地，设计之外不新增。
+授权作用域按账户模型（决策 A83、A84）分为 `platform`、`account`、`business`、`application`（`common/v1/context.proto`）。资金只归属 `account_id`（个人或组织账户）；业务、应用作用域依次带上 `business_id`、`application_id` 及其所属账户，但不隐含账户级资金权限。组织账户可附 `org_id`，个人账户不填。旧的组织、业务主体作用域使用过的枚举值与字段号已保留，不再复用，旧版本发出的消息会校验失败。身份凭据、组织归属、角色策略在 IAM 仓库管理。ledger 契约包括分录拉取、检查点、人工调账、C2C 担保与运行控制；reconciliation 定义预存核实和担保授权事件。payment、settlement 的业务 RPC 仍为占位。字段按 docs 仓库的[跨服务契约设计](https://github.com/Kaivodev/docs/blob/main/design/contracts.md)维护，设计之外不新增。
+
+C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。放币、取消与退款终态只由 reconciliation 签名授权驱动，payment 无单方放币 RPC；每次变化绑定原快照和控制版本，授权 ID 单次消费。退款暂只支持全额，部分退款待 D18。`ledger.trades` 事实与分录同事务发布，流名/类型及 schema_version 在载荷注释中登记。运行控制只经 backend 管理监听，ledger 还须检查平台作用域、请求幂等与独立 WebAuthn 审批；契约与生成 SDK 不代表这些运行时校验已实现。
 
 ## 方法授权策略
 

@@ -489,17 +489,19 @@ const file_aipay_events_v1_event_stream_proto_rawDesc = "" +
 	"\bsequence\x18\x02 \x01(\x04R\bsequence\x12!\n" +
 	"\fevent_digest\x18\x03 \x01(\fR\veventDigest\"H\n" +
 	"\x15GetStreamHeadResponse\x12/\n" +
-	"\x04head\x18\x01 \x01(\v2\x1b.aipay.events.v1.StreamHeadR\x04head2\xa9\x02\n" +
-	"\x12EventStreamService\x12\x83\x01\n" +
+	"\x04head\x18\x01 \x01(\v2\x1b.aipay.events.v1.StreamHeadR\x04head2\xbb\x02\n" +
+	"\x12EventStreamService\x12\x8c\x01\n" +
 	"\n" +
-	"ListEvents\x12\".aipay.events.v1.ListEventsRequest\x1a#.aipay.events.v1.ListEventsResponse\",\xc2\xf3\x18(\n" +
-	"&\n" +
+	"ListEvents\x12\".aipay.events.v1.ListEventsRequest\x1a#.aipay.events.v1.ListEventsResponse\"5\xc2\xf3\x181\n" +
+	"/\n" +
+	"\apayment\n" +
 	"\x06ledger\n" +
 	"\x0ereconciliation\n" +
 	"\n" +
-	"settlement\x10\x01\x12\x8c\x01\n" +
-	"\rGetStreamHead\x12%.aipay.events.v1.GetStreamHeadRequest\x1a&.aipay.events.v1.GetStreamHeadResponse\",\xc2\xf3\x18(\n" +
-	"&\n" +
+	"settlement\x10\x01\x12\x95\x01\n" +
+	"\rGetStreamHead\x12%.aipay.events.v1.GetStreamHeadRequest\x1a&.aipay.events.v1.GetStreamHeadResponse\"5\xc2\xf3\x181\n" +
+	"/\n" +
+	"\apayment\n" +
 	"\x06ledger\n" +
 	"\x0ereconciliation\n" +
 	"\n" +

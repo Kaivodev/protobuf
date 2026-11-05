@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+package aipay.ledger.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/trade.proto";
+import "aipay/ledger/v1/trade.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+
+message ReserveTradeRequest {
+  // Required original snapshot. Idempotent by trade.order_id: same order with
+  // different content is AlreadyExists. Ledger rejects self-trades where the
+  // seller equals the original recipient (A113), and verifies both equalities:
+  // escrow_usdt = recipient_usdt + platform_fee_usdt;
+  // platform_fee_usdt = channel_fee_usdt + merchant_fee_usdt + spread_usdt (A110).
+  aipay.common.v1.TradeSnapshot trade = 1;
+}
+
+message ReserveTradeResponse {
+  string escrow_reservation_id = 1;
+  uint64 control_version = 2;
+  // Global journal sequence of the escrow posting.
+  uint64 seq = 3;
+}
+
+message GetTradeReservationRequest {
+  // Exactly one nonempty selector is required; unknown IDs return NotFound.
+  oneof selector {
+    string order_id = 1;
+    string escrow_reservation_id = 2;
+  }
+}
+
+message GetTradeReservationResponse {
+  TradeReservation reservation = 1;
+}
+
+message HoldTradeForRefundRequest {
+  // Command request ID; retry unchanged to retrieve the original result.
+  string idempotency_key = 1;
+  string order_id = 2;
+  string escrow_reservation_id = 3;
+  // Positive CAS version of the same escrow row used by release processing.
+  uint64 expected_control_version = 4;
+  string refund_id = 5;
+  // 1 to 1000 characters; payment retains verified initiating authority/audit.
+  string reason = 6;
+}
+
+message HoldTradeForRefundResponse {
+  // New version, returned only after the refund barrier has been persisted.
+  uint64 control_version = 1;
+}
+
+message HoldTradeForDisputeRequest {
+  string idempotency_key = 1;
+  string order_id = 2;
+  string escrow_reservation_id = 3;
+  uint64 expected_control_version = 4;
+  string dispute_id = 5;
+  // 1 to 1000 characters; payment retains verified initiating authority/audit.
+  string reason = 6;
+}
+
+message HoldTradeForDisputeResponse {
+  // New version, returned only after the dispute barrier has been persisted.
+  uint64 control_version = 1;
+}
+
+message ReserveRefundRequest {
+  // Idempotency key. Full refund only until D18 defines partial allocation.
+  string refund_id = 1;
+  string order_id = 2;
+  string escrow_reservation_id = 3;
+  uint64 expected_control_version = 4;
+  // Required; PRE_RELEASE occupies Q in the existing escrow (also after a
+  // HoldTradeForRefund for this refund), POST_RELEASE reserves N from the
+  // original recipient's available balance. Never substitutes the current
+  // application owner. Amounts come only from the stored original quote.
+  RefundReservationBranch branch = 5;
+  // Must match the stored original recipient account; not an authority claim.
+  string account_id = 6;
+}
+
+message ReserveRefundResponse {
+  RefundReservation reservation = 1;
+}
+
+// Service-only commands, with no user assertion. Payment first checks the
+// initiating refund/dispute authority. Queries also allow reconciliation to
+// independently verify the actual escrow. Every change serializes on the
+// escrow row, persists its request digest and CAS/state/funds atomically.
+// Same key and different parameters is AlreadyExists; an unmatched current
+// control version or incompatible state is FailedPrecondition. Replays of
+// identical commands return their original result before a fresh CAS check.
+//
+// Holds cannot claim control of funds already released or clear other barriers.
+// An unresolved dispute blocks refund reservation. Unknown outcomes and TTLs
+// never release funds. Release, cancellation and refund settlement/restoration
+// are driven only by independently verified reconciliation signed events;
+// payment has no unilateral release RPC. ReserveWithdrawal is deferred to M5.
+// Command digests use the field-order encoding in docs contracts.md, not proto
+// serialization.
+service ReservationService {
+  rpc ReserveTrade(ReserveTradeRequest) returns (ReserveTradeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc GetTradeReservation(GetTradeReservationRequest) returns (GetTradeReservationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: [
+          "payment",
+          "reconciliation"
+        ]
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc HoldTradeForRefund(HoldTradeForRefundRequest) returns (HoldTradeForRefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc HoldTradeForDispute(HoldTradeForDisputeRequest) returns (HoldTradeForDisputeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc ReserveRefund(ReserveRefundRequest) returns (ReserveRefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}

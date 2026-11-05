@@ -90,6 +90,7 @@ service EventStreamService {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: [
+          "payment",
           "ledger",
           "reconciliation",
           "settlement"
@@ -102,6 +103,7 @@ service EventStreamService {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: [
+          "payment",
           "ledger",
           "reconciliation",
           "settlement"

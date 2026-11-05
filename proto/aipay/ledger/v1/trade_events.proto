@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package aipay.ledger.v1;
+
+import "aipay/common/v1/trade.proto";
+import "aipay/ledger/v1/trade.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+
+// Payloads on ledger.trades, producer ledger, receivers payment,
+// reconciliation and settlement. event_type is the message name and
+// schema_version is 1. Each fact and the corresponding posting/state change
+// enter the outbox in the same local transaction. Times are carried by the
+// SignedEvent envelope; seq below always means the global journal seq, not the
+// event stream sequence. Every snapshot is the original immutable trade.
+
+// TradeReserved, schema version 1 on ledger.trades.
+message TradeReserved {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  uint64 control_version = 3;
+  uint64 seq = 4;
+}
+
+// TradeReleased, schema version 1 on ledger.trades: Q debited from escrow,
+// N credited to the original recipient and F to the three revenue accounts.
+message TradeReleased {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  // Version after execution, not the consumed authorization's expected version.
+  uint64 control_version = 3;
+  uint64 seq = 4;
+  string authorization_id = 5;
+}
+
+// TradeCancelled, schema version 1 on ledger.trades: unpaid cancellation
+// independently verified, Q restored only to the original seller.
+message TradeCancelled {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  uint64 control_version = 3;
+  uint64 seq = 4;
+  string authorization_id = 5;
+}
+
+// TradeRefunded, schema version 1 on ledger.trades, only for a verified
+// successful full refund. Before release, return escrow Q to the seller.
+// After release, settle recipient refund reserve N, reverse all three revenue
+// components F and restore seller Q (A112), after verifying wallet coverage.
+message TradeRefunded {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  uint64 control_version = 3;
+  uint64 seq = 4;
+  string authorization_id = 5;
+  string refund_id = 6;
+  string refund_reservation_id = 7;
+  RefundReservationBranch branch = 8;
+}

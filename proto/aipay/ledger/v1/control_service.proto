@@ -1,0 +1,151 @@
+syntax = "proto3";
+
+package aipay.ledger.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/authz/v1/policy.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+
+// Server-derived state bound by a read-only exit approval. Clients cannot
+// supply a replacement state. Times are UTC with microsecond precision.
+message ReadOnlyExitSnapshot {
+  string read_only_reason = 1;
+  google.protobuf.Timestamp read_only_since = 2;
+  // The requester's investigation note, 1 to 1000 characters.
+  string note = 3;
+  uint64 head_seq = 4;
+  // 32 bytes; all zeros before the first journal transaction (head_seq = 0).
+  bytes head_hash = 5;
+  // 0 when no checkpoint exists.
+  uint64 last_checkpoint_id = 6;
+}
+
+message RequestReadOnlyExitRequest {
+  // Command request ID; same key/content returns the first result, changed
+  // content is AlreadyExists. IAM metadata is not part of the command content.
+  string idempotency_key = 1;
+  // Investigation findings, 1 to 1000 characters.
+  string note = 2;
+}
+
+message RequestReadOnlyExitResponse {
+  // Kind read_only_exit, two distinct approvers, expires after 24 hours.
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+  ReadOnlyExitSnapshot snapshot = 2;
+}
+
+message ApproveReadOnlyExitRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  // Raw browser assertion, as in AdjustmentService. Never log the assertion.
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveReadOnlyExitResponse {
+  // EXECUTED means exit took effect; recording the first approval does not.
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+  uint32 approvals = 2;
+}
+
+message RecordCarryoverRequest {
+  string idempotency_key = 1;
+  // Accounting period, currently YYYY-MM in UTC+8.
+  string period_id = 2;
+  // Registered suspense account code, not an IAM funds account UUID.
+  string account_code = 3;
+  // Nonzero, signed debit-positive period-end balance in the account's minor
+  // units (10^-6 for USDT), not a USD reporting amount. May be negative.
+  int64 units = 4;
+  // 1 to 1000 characters.
+  string reason = 5;
+}
+
+message RecordCarryoverResponse {
+  // Kind carryover, one independent approver, expires after 24 hours.
+  // Submission alone never satisfies a period-close precondition.
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+}
+
+message ApproveCarryoverRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveCarryoverResponse {
+  // EXECUTED means the note is effective, never that balances were changed.
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+  uint32 approvals = 2;
+}
+
+// Administrative control, only through the backend management listener. All
+// methods require a verified IAM assertion and platform acting scope; ledger
+// itself checks that scope. Identity is taken from verified assertions, never
+// client-supplied requester/approver fields. Approval additionally requires a
+// valid WebAuthn signature from ledger's independent approver key registry,
+// bound to the current verified user. The requester cannot approve.
+//
+// Every method persists its command request ID and content atomically with its
+// result. Identical retries return the first result; changed content under the
+// same key is AlreadyExists. Approval content includes the approval_request_id
+// and the complete raw WebAuthn assertion, excluding renewable IAM metadata.
+//
+// Exit first cuts due checkpoints, retries anchoring and reruns trial balance
+// and balance recomputation. Only a passed check permits an exit request. The
+// final approval rechecks and exits atomically, bound to this read-only episode;
+// an older episode's approval can never clear a later read-only state.
+// Carryover approval only records the note; closing still requires exact
+// equality of the noted amount and the account's actual period-end balance.
+//
+// request_bytes (str/bytes have u32 big-endian lengths, integers big-endian,
+// UUID bytes16 raw; signed times are Unix nanoseconds, microsecond precision):
+//   read_only_exit:
+//     str "aipay.ledger.read_only_exit.v1" || bytes16 approval_request_id ||
+//     str requested_by || i64 requested_at || i64 expires_at ||
+//     str read_only_reason || i64 read_only_since || str note ||
+//     u64 head_seq || bytes head_hash || u64 last_checkpoint_id
+//   carryover:
+//     str "aipay.ledger.carryover.v1" || bytes16 approval_request_id ||
+//     str requested_by || i64 requested_at || i64 expires_at ||
+//     str period_id || str account_code || i64 units || str reason
+// As in approval/v1, challenge is SHA-256("AIPAY-APPROVAL-V1" || request_bytes).
+service LedgerControlService {
+  rpc RequestReadOnlyExit(RequestReadOnlyExitRequest) returns (RequestReadOnlyExitResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.control.request"
+      }
+    };
+  }
+  rpc ApproveReadOnlyExit(ApproveReadOnlyExitRequest) returns (ApproveReadOnlyExitResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.control.approve"
+      }
+    };
+  }
+  rpc RecordCarryover(RecordCarryoverRequest) returns (RecordCarryoverResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.control.request"
+      }
+    };
+  }
+  rpc ApproveCarryover(ApproveCarryoverRequest) returns (ApproveCarryoverResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.control.approve"
+      }
+    };
+  }
+}

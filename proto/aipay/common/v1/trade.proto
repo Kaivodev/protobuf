@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package aipay.common.v1;
+
+import "aipay/common/v1/money.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1;commonv1";
+
+// Immutable C2C quote, shared by commands and signed events. Every *_usdt is
+// an int64 count of 10^-6 USDT, never a floating-point amount. Receivers check
+// overflow, recompute using the locked versions and exact rational arithmetic,
+// and reject missing fields/versions or a quote violating decision A110:
+//   escrow_usdt = recipient_usdt + platform_fee_usdt
+//   platform_fee_usdt = channel_fee_usdt + merchant_fee_usdt + spread_usdt
+// Escrow and recipient are positive; all fees are nonnegative, except that
+// spread may be negative. Seller escrow rounds up; recipient and both fees
+// round down; spread includes the rounding remainder. Retries never reprice.
+message TradeQuoteSnapshot {
+  string quote_version = 1;
+  string fiat_currency = 2;
+  // Positive minor units of fiat_currency, not a user balance.
+  int64 fiat_amount = 3;
+  int64 escrow_usdt = 4;
+  int64 recipient_usdt = 5;
+  int64 platform_fee_usdt = 6;
+  int64 channel_fee_usdt = 7;
+  int64 merchant_fee_usdt = 8;
+  // Signed; may be negative, provided platform_fee_usdt remains nonnegative.
+  int64 spread_usdt = 9;
+  string rate_snapshot_id = 10;
+  // Each rate is positive, has a nonempty version_id, base USDT and quote
+  // fiat_currency. Decimal strings have at most 12 integer and 10 fractional
+  // digits; receivers reject malformed, missing or incompatible rates.
+  ExchangeRate base_rate = 11;
+  ExchangeRate channel_rate = 12;
+  ExchangeRate merchant_rate = 13;
+  // Signed ppm, each greater than -1,000,000 to keep the rate positive.
+  int32 channel_markup_ppm = 14;
+  int32 merchant_markup_ppm = 15;
+  // Each fee rate is 0 to 1,000,000 ppm inclusive.
+  int32 channel_fee_rate_ppm = 16;
+  int32 merchant_fee_rate_ppm = 17;
+  // Approved effective configurations, including a platform default's version
+  // when that default was selected. Neither version may be empty.
+  string channel_pricing_version = 18;
+  string merchant_pricing_version = 19;
+}
+
+// Original order ownership and controls, stored unchanged with the reservation.
+// IDs select resources; they are not authorization evidence. Receivers check
+// the original trusted ownership/configuration records, never the application's
+// current owner. All IDs, versions and quote are required. Decision A113:
+// seller_account_id == account_id is rejected, including by ReserveTrade.
+message TradeSnapshot {
+  string order_id = 1;
+  string seller_account_id = 2;
+  // Original recipient funds account (personal or organization).
+  string account_id = 3;
+  string business_id = 4;
+  string application_id = 5;
+  // Positive original ownership version.
+  uint64 ownership_version = 6;
+  // Payment channel configuration, not the seller's funds account.
+  string channel_account_id = 7;
+  string payment_method = 8;
+  TradeQuoteSnapshot quote = 9;
+  string risk_policy_version = 10;
+  // Required presence: explicitly configured seconds from the locked risk
+  // policy, possibly 0. An absent duration or missing/unapproved policy is
+  // rejected; there is no implicit default.
+  optional uint64 hold_duration_seconds = 11;
+}

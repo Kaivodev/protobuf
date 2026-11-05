@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package aipay.ledger.v1;
+
+import "aipay/common/v1/trade.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+
+// Reservation state, distinct from payment's order/payment state. Receivers
+// reject UNSPECIFIED (0) and unknown values.
+enum TradeReservationStatus {
+  TRADE_RESERVATION_STATUS_UNSPECIFIED = 0;
+  TRADE_RESERVATION_STATUS_RESERVED = 1;
+  TRADE_RESERVATION_STATUS_REFUND_PENDING = 2;
+  TRADE_RESERVATION_STATUS_DISPUTED = 3;
+  TRADE_RESERVATION_STATUS_RELEASED = 4;
+  TRADE_RESERVATION_STATUS_CANCELLED = 5;
+  TRADE_RESERVATION_STATUS_REFUNDED = 6;
+}
+
+// Full-refund funding source. Receivers reject UNSPECIFIED (0) and unknown
+// values, and verify the branch against the original reservation history.
+enum RefundReservationBranch {
+  REFUND_RESERVATION_BRANCH_UNSPECIFIED = 0;
+  // Occupy the original seller escrow Q; do not reserve a second balance.
+  REFUND_RESERVATION_BRANCH_PRE_RELEASE = 1;
+  // Reserve N from the original recipient account's available USDT.
+  REFUND_RESERVATION_BRANCH_POST_RELEASE = 2;
+}
+
+message TradeReservation {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  // Starts at 1, increases with every control/state change. Not a stream seq.
+  uint64 control_version = 3;
+  TradeReservationStatus status = 4;
+  // Global journal seq of the initial escrow posting; immutable.
+  uint64 reserve_seq = 5;
+  // Most recent funds posting; a pure barrier change creates no journal entry.
+  uint64 latest_seq = 6;
+  // Both absent until trusted payment confirmation. UTC, microsecond precision.
+  google.protobuf.Timestamp paid_verified_at = 7;
+  // Actual risk deadline, never earlier than paid_verified_at + locked duration;
+  // approved extensions cannot be shortened by later channel configuration.
+  google.protobuf.Timestamp risk_release_at = 8;
+}
+
+// Logical refund occupation. PRE_RELEASE points to the original escrow and
+// does not add a second liability; POST_RELEASE is a new recipient reservation.
+message RefundReservation {
+  string refund_id = 1;
+  string refund_reservation_id = 2;
+  string order_id = 3;
+  string escrow_reservation_id = 4;
+  RefundReservationBranch branch = 5;
+  // Original recipient, even when ownership has subsequently transferred.
+  string account_id = 6;
+  // 10^-6 USDT: Q (escrow) before release, N (recipient) after release.
+  int64 reserved_usdt = 7;
+  // Escrow control version after this refund occupation was persisted.
+  uint64 control_version = 8;
+  // Original escrow seq before release; new refund posting seq after release.
+  uint64 reserve_seq = 9;
+}

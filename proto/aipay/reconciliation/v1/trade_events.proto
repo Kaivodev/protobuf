@@ -1,0 +1,159 @@
+syntax = "proto3";
+
+package aipay.reconciliation.v1;
+
+import "aipay/common/v1/asset.proto";
+import "aipay/common/v1/trade.proto";
+import "aipay/ledger/v1/trade.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1";
+
+// Payloads on reconciliation.matches, producer reconciliation, receivers
+// ledger and settlement. event_type is the message name, schema_version is 1.
+// Receivers verify the existing SignedEvent envelope and then independent
+// business evidence: signatures and digests alone do not prove external facts.
+// Required snapshots/IDs/versions/times and 32-byte evidence digests must be
+// present and match trusted original records. All signed times are UTC with
+// microsecond precision. Unknown enum values, including 0, are rejected.
+
+// SellerDepositVerified, schema version 1 on reconciliation.matches.
+// Independent evidence covers chain finality, contract, seller ownership,
+// amount and screening. The chain/transaction/transfer_index tuple identifies
+// a unique transfer across producers; event_id alone cannot prevent double
+// booking. A transfer previously booked to suspense is reclassified, never
+// counted as another wallet asset or another deposit.
+message SellerDepositVerified {
+  string collection_event_id = 1;
+  string seller_account_id = 2;
+  string address_id = 3;
+  string chain_transaction_id = 4;
+  // Chain transfer/log index; 0 is valid.
+  uint32 transfer_index = 5;
+  // Registered USDT contract only; chain UNSPECIFIED (0)/unknown is rejected.
+  // Raw integer string and ledger USDT minor units must agree with the registry.
+  aipay.common.v1.ChainAssetAmount asset = 6;
+  // Independently verified customer-funds wallet account, resolved by ledger.
+  string wallet_account_code = 7;
+  bytes evidence_sha256 = 8;
+  google.protobuf.Timestamp verified_at = 9;
+}
+
+// Optional ruling evidence shared by the three existing authorizations below,
+// not a separate authorization event. The platform management interface starts
+// the ruling; payment owns its approval workflow and verifies the signatures.
+// Before signing an authorization, reconciliation independently verifies the
+// WebAuthn approval signatures, two distinct approvers neither of whom is the
+// initiator, ruling material/evidence digests, and current actual escrow freeze,
+// dispute barrier and control version. Missing evidence, failed verification or
+// service errors prevent authorization; payment's success flag is insufficient.
+// Payment's ruling RPC contract is deferred to the payment task.
+//
+// For a new authorization, ledger requires this message iff the escrow is
+// DISPUTED and rejects a missing or mismatched dispute_id. It also rejects this
+// message when the escrow is not disputed. All four fields are required when
+// present; an empty message is invalid. In one transaction ledger validates the
+// ruling and original authorization conditions, clears exactly the matching
+// dispute barrier, executes the corresponding postings/state change and
+// increments control_version. Other barriers and all original payment, refund,
+// risk deadline, CAS and validity checks remain in force. Identical replays of
+// an already consumed authorization still return the original result.
+//
+// A ruling permits only the original three directions: release to the original
+// recipient, original-route return to the original seller, or the existing
+// refund settlement/restoration flow. It cannot specify another account or any
+// amount; amounts come only from the stored original quote snapshot.
+message DisputeResolution {
+  // Must equal the currently effective dispute barrier's ID.
+  string dispute_id = 1;
+  // Approval request ID of this dispute ruling, owned by payment.
+  string ruling_id = 2;
+  // 32-byte digest of ruling material approved by two distinct WebAuthn
+  // approvers, neither of whom is the initiator.
+  bytes ruling_sha256 = 3;
+  // Approval completion time, UTC with microsecond precision.
+  google.protobuf.Timestamp approved_at = 4;
+}
+
+// TradeReleaseAuthorized, schema version 1 on reconciliation.matches.
+// In one transaction ledger verifies original snapshot/escrow, full funding,
+// current control version, authoritative time and absence of refund/other
+// restrictions; a dispute requires the matching DisputeResolution below.
+// Ledger then consumes authorization_id once and posts Q = N + F.
+// Evidence covers independent payment facts, independent base-rate comparison,
+// exact quote recomputation, controls and customer-funds coverage.
+message TradeReleaseAuthorized {
+  // Single-use ID, independently deduplicated in addition to envelope event_id.
+  // Identical replays return the original result; changed content is quarantined.
+  string authorization_id = 1;
+  // All original accounts/ownership, six amounts including the three revenue
+  // components, quote/config/rate versions and locked risk policy/duration.
+  aipay.common.v1.TradeSnapshot trade = 2;
+  string escrow_reservation_id = 3;
+  // Expected current escrow version; an old authorization cannot cross a hold.
+  uint64 control_version = 4;
+  google.protobuf.Timestamp paid_verified_at = 5;
+  // Actual risk deadline, including approved extensions; at least
+  // paid_verified_at + trade.hold_duration_seconds. Never trust a local TTL.
+  google.protobuf.Timestamp effective_at = 6;
+  // Require effective_at <= ledger time < expires_at; expiry must be later.
+  google.protobuf.Timestamp expires_at = 7;
+  bytes evidence_sha256 = 8;
+  // Optional message presence; required iff DISPUTED. See DisputeResolution
+  // for rejection rules and atomic barrier clearing with the release posting.
+  DisputeResolution dispute_resolution = 9;
+}
+
+// TradeCancellationAuthorized, schema version 1 on reconciliation.matches.
+// Independent evidence confirms no payment, channel closure and handled late
+// payment risk. Returns Q only to the original seller; timeout is no evidence.
+// The same single-use, original snapshot, CAS and validity checks apply as for
+// TradeReleaseAuthorized, but this event never authorizes recipient release.
+message TradeCancellationAuthorized {
+  string authorization_id = 1;
+  aipay.common.v1.TradeSnapshot trade = 2;
+  string escrow_reservation_id = 3;
+  uint64 control_version = 4;
+  google.protobuf.Timestamp effective_at = 5;
+  google.protobuf.Timestamp expires_at = 6;
+  bytes evidence_sha256 = 7;
+  // Optional message presence; required iff DISPUTED. See DisputeResolution
+  // for rejection rules and atomic barrier clearing with the seller return.
+  DisputeResolution dispute_resolution = 8;
+}
+
+// Verified upstream original-route refund outcome. Receivers reject
+// UNSPECIFIED (0) and unknown values. Unknown/pending outcomes produce no
+// authorization and keep funds occupied.
+enum RefundVerificationOutcome {
+  REFUND_VERIFICATION_OUTCOME_UNSPECIFIED = 0;
+  REFUND_VERIFICATION_OUTCOME_SUCCEEDED = 1;
+  REFUND_VERIFICATION_OUTCOME_FAILED = 2;
+}
+
+// TradeRefundAuthorized, schema version 1 on reconciliation.matches.
+// Binds the exact logical refund occupation, original quote and verified
+// original-route fiat outcome. The same single-use/CAS/validity checks apply.
+// SUCCEEDED: before release restore seller escrow Q; after release settle
+// recipient reserve N, reverse all three fees F and restore seller Q (A112).
+// Customer wallets must cover the increased liability; replenish from
+// operating funds first if necessary. FAILED: restore only this refund's
+// original source/risk wait, preserving all barriers/restrictions except the
+// dispute resolved by a valid DisputeResolution. Both advance the control
+// version; neither permits reusing a stale release authorization.
+message TradeRefundAuthorized {
+  string authorization_id = 1;
+  aipay.common.v1.TradeSnapshot trade = 2;
+  string escrow_reservation_id = 3;
+  uint64 control_version = 4;
+  string refund_id = 5;
+  string refund_reservation_id = 6;
+  aipay.ledger.v1.RefundReservationBranch branch = 7;
+  RefundVerificationOutcome outcome = 8;
+  google.protobuf.Timestamp effective_at = 9;
+  google.protobuf.Timestamp expires_at = 10;
+  bytes evidence_sha256 = 11;
+  // Optional message presence; required iff DISPUTED. See DisputeResolution
+  // for rejection rules and atomic clearing with refund settlement/restoration.
+  DisputeResolution dispute_resolution = 12;
+}
