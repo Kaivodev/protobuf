@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"testing"
 
-	commonv1 "github.com/aipay-dev/protobuf/gen/go/aipay/common/v1"
+	commonv1 "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )

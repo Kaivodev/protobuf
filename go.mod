@@ -1,4 +1,4 @@
-module github.com/aipay-dev/protobuf
+module github.com/Kaivodev/protobuf
 
 go 1.27.0
 

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package aipay.payment.v1;
 
-option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
 
 // Reserved for the separately maintained payment service. No order, amount,
 // routing or upstream RPC is invented before domain design is agreed.

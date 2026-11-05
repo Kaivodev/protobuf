@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aipay-dev/protobuf/internal/policycheck"
+	"github.com/Kaivodev/protobuf/internal/policycheck"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )

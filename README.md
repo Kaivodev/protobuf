@@ -59,8 +59,8 @@ make check
 
 ## 发布与本地联调
 
-Go module 为 `github.com/aipay-dev/protobuf`。当前是尚未发布的本地草案；各服务正式导入前先提交、推送并发布可解析的版本，再固定该版本依赖。工作区 `go.work` 可用于联合开发，但不能替代单仓库 `GOWORK=off` 检查，不在 `go.mod` 写绝对路径 `replace`。
+Go module 为 `github.com/Kaivodev/protobuf`。当前是尚未发布的本地草案；各服务正式导入前先提交、推送并发布可解析的版本，再固定该版本依赖。工作区 `go.work` 可用于联合开发，但不能替代单仓库 `GOWORK=off` 检查，不在 `go.mod` 写绝对路径 `replace`。
 
 ## 名称与兼容性
 
-项目品牌统一为 **Kaivo**，GitHub 组织为 **Kaivodev**。已发布 Go module、协议/签名标识及现有配置键暂时保留原值，属于兼容接口；改名不修改历史账本或协议语义。范围与迁移规则见[命名约定](https://github.com/Kaivodev/docs/blob/main/design/naming.md)。
+项目品牌统一为 **Kaivo**，GitHub 组织为 **Kaivodev**。Go module 已迁到 `github.com/Kaivodev/protobuf`，`GOPRIVATE` 使用同样大小写的 `github.com/Kaivodev/*`；协议/签名标识及现有配置键暂时保留原值，属于兼容接口；改名不修改历史账本或协议语义。范围与迁移规则见[命名约定](https://github.com/Kaivodev/docs/blob/main/design/naming.md)。

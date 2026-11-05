@@ -5,7 +5,7 @@ package aipay.events.v1;
 import "aipay/authz/v1/policy.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/events/v1;eventsv1";
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/events/v1;eventsv1";
 
 // A business fact crossing a trust domain. The producer chains each stream by
 // sequence and signs every event; receivers verify the chain and signature

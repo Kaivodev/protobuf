@@ -7,8 +7,8 @@
 package iamv1
 
 import (
-	_ "github.com/aipay-dev/protobuf/gen/go/aipay/authz/v1"
-	v1 "github.com/aipay-dev/protobuf/gen/go/aipay/common/v1"
+	_ "github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1"
+	v1 "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -826,7 +826,7 @@ const file_aipay_iam_v1_authorization_proto_rawDesc = "" +
 	"\x14AuthorizationService\x12_\n" +
 	"\tAuthorize\x12\x1e.aipay.iam.v1.AuthorizeRequest\x1a\x1f.aipay.iam.v1.AuthorizeResponse\"\x11\xc2\xf3\x18\r\n" +
 	"\v\n" +
-	"\abackend\x10\x01B9Z7github.com/aipay-dev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
+	"\abackend\x10\x01B8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
 
 var (
 	file_aipay_iam_v1_authorization_proto_rawDescOnce sync.Once

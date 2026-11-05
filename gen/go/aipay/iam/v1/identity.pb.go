@@ -7,7 +7,7 @@
 package iamv1
 
 import (
-	v1 "github.com/aipay-dev/protobuf/gen/go/aipay/common/v1"
+	v1 "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -514,7 +514,7 @@ const file_aipay_iam_v1_identity_proto_rawDesc = "" +
 	"\x1aPRINCIPAL_TYPE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PRINCIPAL_TYPE_USER\x10\x01\x12'\n" +
 	"#PRINCIPAL_TYPE_MERCHANT_APPLICATION\x10\x02\x12\x1a\n" +
-	"\x16PRINCIPAL_TYPE_SERVICE\x10\x03B9Z7github.com/aipay-dev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
+	"\x16PRINCIPAL_TYPE_SERVICE\x10\x03B8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
 
 var (
 	file_aipay_iam_v1_identity_proto_rawDescOnce sync.Once

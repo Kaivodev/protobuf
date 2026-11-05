@@ -4,7 +4,7 @@ package aipay.ledger.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
 
 // Journal data published by the ledger accounting core. Every byte format
 // below is fixed by docs design/ledger-service.md and covered by the

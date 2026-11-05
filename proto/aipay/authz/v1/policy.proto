@@ -4,7 +4,7 @@ package aipay.authz.v1;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/authz/v1;authzv1";
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1;authzv1";
 
 // Every RPC in this repository declares exactly one policy; `make check`
 // rejects any method without a valid one. The servicekit server interceptor

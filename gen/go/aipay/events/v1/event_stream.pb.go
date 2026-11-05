@@ -7,7 +7,7 @@
 package eventsv1
 
 import (
-	_ "github.com/aipay-dev/protobuf/gen/go/aipay/authz/v1"
+	_ "github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -503,7 +503,7 @@ const file_aipay_events_v1_event_stream_proto_rawDesc = "" +
 	"\x06ledger\n" +
 	"\x0ereconciliation\n" +
 	"\n" +
-	"settlement\x10\x01B?Z=github.com/aipay-dev/protobuf/gen/go/aipay/events/v1;eventsv1b\x06proto3"
+	"settlement\x10\x01B>Z<github.com/Kaivodev/protobuf/gen/go/aipay/events/v1;eventsv1b\x06proto3"
 
 var (
 	file_aipay_events_v1_event_stream_proto_rawDescOnce sync.Once

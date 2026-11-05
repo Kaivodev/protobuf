@@ -243,7 +243,7 @@ const file_aipay_authz_v1_policy_proto_rawDesc = "" +
 	"\x1eASSERTION_REQUIREMENT_REQUIRED\x10\x02\x12$\n" +
 	" ASSERTION_REQUIREMENT_MFA_RECENT\x10\x03\x12$\n" +
 	" ASSERTION_REQUIREMENT_SINGLE_USE\x10\x04:V\n" +
-	"\x06policy\x12\x1e.google.protobuf.MethodOptions\x18\xb8\x8e\x03 \x01(\v2\x1c.aipay.authz.v1.MethodPolicyR\x06policyB=Z;github.com/aipay-dev/protobuf/gen/go/aipay/authz/v1;authzv1b\x06proto3"
+	"\x06policy\x12\x1e.google.protobuf.MethodOptions\x18\xb8\x8e\x03 \x01(\v2\x1c.aipay.authz.v1.MethodPolicyR\x06policyB<Z:github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1;authzv1b\x06proto3"
 
 var (
 	file_aipay_authz_v1_policy_proto_rawDescOnce sync.Once

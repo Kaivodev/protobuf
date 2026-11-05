@@ -4,7 +4,7 @@ package aipay.approval.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/approval/v1;approvalv1";
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/approval/v1;approvalv1";
 
 // Approval of a funds-affecting administrative operation. The executing service
 // creates the canonical request bytes and computes

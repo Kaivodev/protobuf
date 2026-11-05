@@ -24,7 +24,7 @@ var File_aipay_reconciliation_v1_reconciliation_proto protoreflect.FileDescripto
 
 const file_aipay_reconciliation_v1_reconciliation_proto_rawDesc = "" +
 	"\n" +
-	",aipay/reconciliation/v1/reconciliation.proto\x12\x17aipay.reconciliation.v1BOZMgithub.com/aipay-dev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1b\x06proto3"
+	",aipay/reconciliation/v1/reconciliation.proto\x12\x17aipay.reconciliation.v1BNZLgithub.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1b\x06proto3"
 
 var file_aipay_reconciliation_v1_reconciliation_proto_goTypes = []any{}
 var file_aipay_reconciliation_v1_reconciliation_proto_depIdxs = []int32{

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package aipay.settlement.v1;
 
-option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/settlement/v1;settlementv1";
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/settlement/v1;settlementv1";
 
 // Reserved for the separately maintained settlement service. Settlement rules,
 // execution commands and state transitions require separate domain design.

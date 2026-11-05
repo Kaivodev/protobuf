@@ -5,7 +5,7 @@ package aipay.common.v1;
 import "aipay/common/v1/money.proto";
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/common/v1;commonv1";
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1;commonv1";
 
 // The currency and on-chain asset registry. Values are fixed in these enum
 // options so every service reads the same table from the generated SDK.

@@ -423,7 +423,7 @@ const file_aipay_approval_v1_approval_proto_rawDesc = "" +
 	"\x18APPROVAL_STATUS_APPROVED\x10\x02\x12\x1c\n" +
 	"\x18APPROVAL_STATUS_REJECTED\x10\x03\x12\x1b\n" +
 	"\x17APPROVAL_STATUS_EXPIRED\x10\x04\x12\x1c\n" +
-	"\x18APPROVAL_STATUS_EXECUTED\x10\x05BCZAgithub.com/aipay-dev/protobuf/gen/go/aipay/approval/v1;approvalv1b\x06proto3"
+	"\x18APPROVAL_STATUS_EXECUTED\x10\x05BBZ@github.com/Kaivodev/protobuf/gen/go/aipay/approval/v1;approvalv1b\x06proto3"
 
 var (
 	file_aipay_approval_v1_approval_proto_rawDescOnce sync.Once

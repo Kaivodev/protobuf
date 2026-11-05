@@ -5,7 +5,7 @@ package aipay.ledger.v1;
 import "aipay/authz/v1/policy.proto";
 import "aipay/ledger/v1/ledger.proto";
 
-option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
 
 message ListTransactionsRequest {
   // Return transactions with a seq greater than this; 0 starts at seq 1.

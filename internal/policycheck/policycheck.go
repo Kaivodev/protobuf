@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	authzv1 "github.com/aipay-dev/protobuf/gen/go/aipay/authz/v1"
+	authzv1 "github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )

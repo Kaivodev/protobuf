@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package aipay.common.v1;
 
-option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/common/v1;commonv1";
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1;commonv1";
 
 // Conventions shared by every Kaivo contract:
 //   - Internal IDs (orders, events, journal transactions, payouts, approval

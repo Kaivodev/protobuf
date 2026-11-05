@@ -7,7 +7,7 @@
 package ledgerv1
 
 import (
-	_ "github.com/aipay-dev/protobuf/gen/go/aipay/authz/v1"
+	_ "github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -245,7 +245,7 @@ const file_aipay_ledger_v1_journal_service_proto_rawDesc = "" +
 	"\x1e\n" +
 	"\x0ereconciliation\n" +
 	"\n" +
-	"settlement\x10\x01B?Z=github.com/aipay-dev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
+	"settlement\x10\x01B>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
 
 var (
 	file_aipay_ledger_v1_journal_service_proto_rawDescOnce sync.Once

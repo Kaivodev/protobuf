@@ -7,8 +7,8 @@
 package ledgerv1
 
 import (
-	v1 "github.com/aipay-dev/protobuf/gen/go/aipay/approval/v1"
-	_ "github.com/aipay-dev/protobuf/gen/go/aipay/authz/v1"
+	v1 "github.com/Kaivodev/protobuf/gen/go/aipay/approval/v1"
+	_ "github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -377,7 +377,7 @@ const file_aipay_ledger_v1_adjustment_service_proto_rawDesc = "" +
 	"\abackend\x10\x02\x1a\x18ledger.adjustment.submit\x12\x98\x01\n" +
 	"\x11ApproveAdjustment\x12).aipay.ledger.v1.ApproveAdjustmentRequest\x1a*.aipay.ledger.v1.ApproveAdjustmentResponse\",\xc2\xf3\x18(\n" +
 	"&\n" +
-	"\abackend\x10\x02\x1a\x19ledger.adjustment.approveB?Z=github.com/aipay-dev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
+	"\abackend\x10\x02\x1a\x19ledger.adjustment.approveB>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
 
 var (
 	file_aipay_ledger_v1_adjustment_service_proto_rawDescOnce sync.Once

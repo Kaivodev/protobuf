@@ -24,7 +24,7 @@ var File_aipay_payment_v1_payment_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_payment_proto_rawDesc = "" +
 	"\n" +
-	"\x1eaipay/payment/v1/payment.proto\x12\x10aipay.payment.v1BAZ?github.com/aipay-dev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"\x1eaipay/payment/v1/payment.proto\x12\x10aipay.payment.v1B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var file_aipay_payment_v1_payment_proto_goTypes = []any{}
 var file_aipay_payment_v1_payment_proto_depIdxs = []int32{

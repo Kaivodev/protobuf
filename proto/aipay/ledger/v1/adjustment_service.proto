@@ -6,7 +6,7 @@ import "aipay/approval/v1/approval.proto";
 import "aipay/authz/v1/policy.proto";
 import "aipay/ledger/v1/ledger.proto";
 
-option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
 
 // A requested line; it posts unchanged once approved.
 message AdjustmentLine {

@@ -24,7 +24,7 @@ var File_aipay_settlement_v1_settlement_proto protoreflect.FileDescriptor
 
 const file_aipay_settlement_v1_settlement_proto_rawDesc = "" +
 	"\n" +
-	"$aipay/settlement/v1/settlement.proto\x12\x13aipay.settlement.v1BGZEgithub.com/aipay-dev/protobuf/gen/go/aipay/settlement/v1;settlementv1b\x06proto3"
+	"$aipay/settlement/v1/settlement.proto\x12\x13aipay.settlement.v1BFZDgithub.com/Kaivodev/protobuf/gen/go/aipay/settlement/v1;settlementv1b\x06proto3"
 
 var file_aipay_settlement_v1_settlement_proto_goTypes = []any{}
 var file_aipay_settlement_v1_settlement_proto_depIdxs = []int32{

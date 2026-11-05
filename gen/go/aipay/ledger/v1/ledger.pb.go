@@ -565,7 +565,7 @@ const file_aipay_ledger_v1_ledger_proto_rawDesc = "" +
 	"\x0eEntryDirection\x12\x1f\n" +
 	"\x1bENTRY_DIRECTION_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15ENTRY_DIRECTION_DEBIT\x10\x01\x12\x1a\n" +
-	"\x16ENTRY_DIRECTION_CREDIT\x10\x02B?Z=github.com/aipay-dev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
+	"\x16ENTRY_DIRECTION_CREDIT\x10\x02B>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
 
 var (
 	file_aipay_ledger_v1_ledger_proto_rawDescOnce sync.Once

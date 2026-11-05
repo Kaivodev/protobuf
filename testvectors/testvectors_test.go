@@ -15,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aipay-dev/protobuf/testvectors"
+	"github.com/Kaivodev/protobuf/testvectors"
 )
 
 // This file re-derives every vector so the published data stays consistent.

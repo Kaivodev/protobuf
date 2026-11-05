@@ -541,7 +541,7 @@ const file_aipay_common_v1_asset_proto_rawDesc = "" +
 	"\n" +
 	"chain_info\x12!.google.protobuf.EnumValueOptions\x18\xba\x8e\x03 \x01(\v2\x1a.aipay.common.v1.ChainInfoR\tchainInfo:^\n" +
 	"\n" +
-	"asset_info\x12!.google.protobuf.EnumValueOptions\x18\xbb\x8e\x03 \x01(\v2\x1a.aipay.common.v1.AssetInfoR\tassetInfoB?Z=github.com/aipay-dev/protobuf/gen/go/aipay/common/v1;commonv1b\x06proto3"
+	"asset_info\x12!.google.protobuf.EnumValueOptions\x18\xbb\x8e\x03 \x01(\v2\x1a.aipay.common.v1.AssetInfoR\tassetInfoB>Z<github.com/Kaivodev/protobuf/gen/go/aipay/common/v1;commonv1b\x06proto3"
 
 var (
 	file_aipay_common_v1_asset_proto_rawDescOnce sync.Once

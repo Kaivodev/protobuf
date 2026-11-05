@@ -163,7 +163,7 @@ const file_aipay_common_v1_money_proto_rawDesc = "" +
 	"\x0equote_currency\x18\x02 \x01(\tR\rquoteCurrency\x12\x14\n" +
 	"\x05value\x18\x03 \x01(\tR\x05value\x12\x1d\n" +
 	"\n" +
-	"version_id\x18\x04 \x01(\tR\tversionIdB?Z=github.com/aipay-dev/protobuf/gen/go/aipay/common/v1;commonv1b\x06proto3"
+	"version_id\x18\x04 \x01(\tR\tversionIdB>Z<github.com/Kaivodev/protobuf/gen/go/aipay/common/v1;commonv1b\x06proto3"
 
 var (
 	file_aipay_common_v1_money_proto_rawDescOnce sync.Once

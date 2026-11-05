@@ -4,7 +4,7 @@ package aipay.iam.v1;
 
 import "aipay/common/v1/context.proto";
 
-option go_package = "github.com/aipay-dev/protobuf/gen/go/aipay/iam/v1;iamv1";
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
 
 enum PrincipalType {
   PRINCIPAL_TYPE_UNSPECIFIED = 0;

@@ -378,7 +378,7 @@ const file_aipay_common_v1_context_proto_rawDesc = "" +
 	"\vAccountType\x12\x1c\n" +
 	"\x18ACCOUNT_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15ACCOUNT_TYPE_PERSONAL\x10\x01\x12\x1d\n" +
-	"\x19ACCOUNT_TYPE_ORGANIZATION\x10\x02B?Z=github.com/aipay-dev/protobuf/gen/go/aipay/common/v1;commonv1b\x06proto3"
+	"\x19ACCOUNT_TYPE_ORGANIZATION\x10\x02B>Z<github.com/Kaivodev/protobuf/gen/go/aipay/common/v1;commonv1b\x06proto3"
 
 var (
 	file_aipay_common_v1_context_proto_rawDescOnce sync.Once
