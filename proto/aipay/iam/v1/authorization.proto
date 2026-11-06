@@ -80,6 +80,7 @@ message AuthorizeRequest {
     EPayV1KeyCredential epay_v1_key = 4;
     EPayV2SignatureCredential epay_v2_signature = 5;
     WorkloadIdentityCredential workload_identity = 6;
+    TelegramCredential telegram = 11;
   }
   string audience = 7;
   // Route facts including the required permission. IAM validates the
@@ -92,6 +93,15 @@ message AuthorizeRequest {
   // and rejects any mismatch.
   aipay.common.v1.Scope acting_scope = 9;
   aipay.common.v1.ResourceRef resource = 10;
+  // Sensitive, never logged. Allowed only with telegram; exactly six decimal
+  // digits when present. Required for each withdrawal, address change,
+  // credential creation/rotation and other catalog-defined sensitive action.
+  // IAM checks the enrolled secret, account rate limit and consumes the actual
+  // matched TOTP time step once per key version, including clock-skew windows.
+  // Success adds telegram/totp/mfa to amr and sets auth_time to IAM's current
+  // verification time. It never trusts backend's MFA claims or an earlier bot
+  // session's MFA; failure, missing enrollment or state errors deny the action.
+  string totp_code = 12;
 }
 
 message AuthorizeResponse {
@@ -117,6 +127,15 @@ message AuthorizeResponse {
 // use a permission that stands for "the caller themself" (decision A78).
 // Invalid, disabled, expired or revoked credentials fail with a gRPC error; an
 // authenticated principal without a grant receives a denied decision.
+// Telegram resolves USER/account/session solely from the unique binding;
+// reject inactive, expired/revoked sessions and invalid scope/ownership. Normal
+// proof has amr=[telegram]. Group operations require the effective group owner;
+// sensitive actions are PRIVATE only. Include the update facts/body digest,
+// route, permission, acting scope and resource in request_fingerprint. An
+// identical update/request may return only its unexpired original response,
+// never consume TOTP twice or issue fresh proof; expired replays are rejected.
+// Revoked/expired bot sessions need a new explicit private /start or binding,
+// never implicit recreation by Authorize.
 service AuthorizationService {
   // IAM issues assertions, so the gateway call carries none.
   rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse) {

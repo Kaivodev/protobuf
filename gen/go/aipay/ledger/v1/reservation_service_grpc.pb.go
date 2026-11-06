@@ -19,11 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ReservationService_ReserveTrade_FullMethodName        = "/aipay.ledger.v1.ReservationService/ReserveTrade"
-	ReservationService_GetTradeReservation_FullMethodName = "/aipay.ledger.v1.ReservationService/GetTradeReservation"
-	ReservationService_HoldTradeForRefund_FullMethodName  = "/aipay.ledger.v1.ReservationService/HoldTradeForRefund"
-	ReservationService_HoldTradeForDispute_FullMethodName = "/aipay.ledger.v1.ReservationService/HoldTradeForDispute"
-	ReservationService_ReserveRefund_FullMethodName       = "/aipay.ledger.v1.ReservationService/ReserveRefund"
+	ReservationService_ReserveTrade_FullMethodName                = "/aipay.ledger.v1.ReservationService/ReserveTrade"
+	ReservationService_GetTradeReservation_FullMethodName         = "/aipay.ledger.v1.ReservationService/GetTradeReservation"
+	ReservationService_HoldTradeForRefund_FullMethodName          = "/aipay.ledger.v1.ReservationService/HoldTradeForRefund"
+	ReservationService_HoldTradeForDispute_FullMethodName         = "/aipay.ledger.v1.ReservationService/HoldTradeForDispute"
+	ReservationService_ReserveRefund_FullMethodName               = "/aipay.ledger.v1.ReservationService/ReserveRefund"
+	ReservationService_HoldReleasedTradeForDispute_FullMethodName = "/aipay.ledger.v1.ReservationService/HoldReleasedTradeForDispute"
+	ReservationService_ResolveReleasedTradeDispute_FullMethodName = "/aipay.ledger.v1.ReservationService/ResolveReleasedTradeDispute"
 )
 
 // ReservationServiceClient is the client API for ReservationService service.
@@ -38,19 +40,40 @@ const (
 // control version or incompatible state is FailedPrecondition. Replays of
 // identical commands return their original result before a fresh CAS check.
 //
-// Holds cannot claim control of funds already released or clear other barriers.
-// An unresolved dispute blocks refund reservation. Unknown outcomes and TTLs
-// never release funds. Release, cancellation and refund settlement/restoration
-// are driven only by independently verified reconciliation signed events;
-// payment has no unilateral release RPC. ReserveWithdrawal is deferred to M5.
+// Pre-release holds cannot claim control of already released funds. A118 alone
+// permits an approved matching REFUND ruling to atomically replace DISPUTED
+// with a PRE_RELEASE refund occupation. No command clears unrelated barriers.
+// Unknown outcomes and TTLs never release funds. Inter-account release,
+// cancellation and refund settlement/restoration are driven only by verified
+// reconciliation signed events; payment has no unilateral inter-account release
+// RPC. ReserveWithdrawal is deferred to M5.
 // Command digests use the field-order encoding in docs contracts.md, not proto
 // serialization.
+//
+// A119 HoldReleasedTradeForDispute requires original escrow RELEASED, no other
+// active dispute/refund occupation and positive matching CAS. Reserve H=min(N,
+// original recipient's available balance) from its user_available into its own
+// user_risk_held, bind dispute_id and retain original RELEASED escrow history.
+// GetTradeReservation exposes this hold and actual dispute ID for independent
+// checks. Resolve requires this current hold, matching approved ruling and CAS.
+// RELEASE_TO_ORIGINAL_RECIPIENT returns only actual H to that same account and
+// leaves original escrow RELEASED. RESERVE_POST_RELEASE_REFUND moves H into a
+// refund occupation, supplements N-H only from that account's available funds
+// atomically, then sets REFUND_PENDING; insufficient funds fail without any
+// partial conversion or fiat refund. Preserve the ruling on the full N refund.
+// These two methods never move funds outside the original account, so payment
+// may invoke them as a service. No arbitrary account, transferred business's
+// new account, amount or direct seller return is accepted. Final refund funds
+// movement/fee reversal/seller return still requires reconciliation's existing
+// TradeRefundAuthorized and independent ruling/fiat/wallet checks.
 type ReservationServiceClient interface {
 	ReserveTrade(ctx context.Context, in *ReserveTradeRequest, opts ...grpc.CallOption) (*ReserveTradeResponse, error)
 	GetTradeReservation(ctx context.Context, in *GetTradeReservationRequest, opts ...grpc.CallOption) (*GetTradeReservationResponse, error)
 	HoldTradeForRefund(ctx context.Context, in *HoldTradeForRefundRequest, opts ...grpc.CallOption) (*HoldTradeForRefundResponse, error)
 	HoldTradeForDispute(ctx context.Context, in *HoldTradeForDisputeRequest, opts ...grpc.CallOption) (*HoldTradeForDisputeResponse, error)
 	ReserveRefund(ctx context.Context, in *ReserveRefundRequest, opts ...grpc.CallOption) (*ReserveRefundResponse, error)
+	HoldReleasedTradeForDispute(ctx context.Context, in *HoldReleasedTradeForDisputeRequest, opts ...grpc.CallOption) (*HoldReleasedTradeForDisputeResponse, error)
+	ResolveReleasedTradeDispute(ctx context.Context, in *ResolveReleasedTradeDisputeRequest, opts ...grpc.CallOption) (*ResolveReleasedTradeDisputeResponse, error)
 }
 
 type reservationServiceClient struct {
@@ -111,6 +134,26 @@ func (c *reservationServiceClient) ReserveRefund(ctx context.Context, in *Reserv
 	return out, nil
 }
 
+func (c *reservationServiceClient) HoldReleasedTradeForDispute(ctx context.Context, in *HoldReleasedTradeForDisputeRequest, opts ...grpc.CallOption) (*HoldReleasedTradeForDisputeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HoldReleasedTradeForDisputeResponse)
+	err := c.cc.Invoke(ctx, ReservationService_HoldReleasedTradeForDispute_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reservationServiceClient) ResolveReleasedTradeDispute(ctx context.Context, in *ResolveReleasedTradeDisputeRequest, opts ...grpc.CallOption) (*ResolveReleasedTradeDisputeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResolveReleasedTradeDisputeResponse)
+	err := c.cc.Invoke(ctx, ReservationService_ResolveReleasedTradeDispute_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReservationServiceServer is the server API for ReservationService service.
 // All implementations must embed UnimplementedReservationServiceServer
 // for forward compatibility.
@@ -123,19 +166,40 @@ func (c *reservationServiceClient) ReserveRefund(ctx context.Context, in *Reserv
 // control version or incompatible state is FailedPrecondition. Replays of
 // identical commands return their original result before a fresh CAS check.
 //
-// Holds cannot claim control of funds already released or clear other barriers.
-// An unresolved dispute blocks refund reservation. Unknown outcomes and TTLs
-// never release funds. Release, cancellation and refund settlement/restoration
-// are driven only by independently verified reconciliation signed events;
-// payment has no unilateral release RPC. ReserveWithdrawal is deferred to M5.
+// Pre-release holds cannot claim control of already released funds. A118 alone
+// permits an approved matching REFUND ruling to atomically replace DISPUTED
+// with a PRE_RELEASE refund occupation. No command clears unrelated barriers.
+// Unknown outcomes and TTLs never release funds. Inter-account release,
+// cancellation and refund settlement/restoration are driven only by verified
+// reconciliation signed events; payment has no unilateral inter-account release
+// RPC. ReserveWithdrawal is deferred to M5.
 // Command digests use the field-order encoding in docs contracts.md, not proto
 // serialization.
+//
+// A119 HoldReleasedTradeForDispute requires original escrow RELEASED, no other
+// active dispute/refund occupation and positive matching CAS. Reserve H=min(N,
+// original recipient's available balance) from its user_available into its own
+// user_risk_held, bind dispute_id and retain original RELEASED escrow history.
+// GetTradeReservation exposes this hold and actual dispute ID for independent
+// checks. Resolve requires this current hold, matching approved ruling and CAS.
+// RELEASE_TO_ORIGINAL_RECIPIENT returns only actual H to that same account and
+// leaves original escrow RELEASED. RESERVE_POST_RELEASE_REFUND moves H into a
+// refund occupation, supplements N-H only from that account's available funds
+// atomically, then sets REFUND_PENDING; insufficient funds fail without any
+// partial conversion or fiat refund. Preserve the ruling on the full N refund.
+// These two methods never move funds outside the original account, so payment
+// may invoke them as a service. No arbitrary account, transferred business's
+// new account, amount or direct seller return is accepted. Final refund funds
+// movement/fee reversal/seller return still requires reconciliation's existing
+// TradeRefundAuthorized and independent ruling/fiat/wallet checks.
 type ReservationServiceServer interface {
 	ReserveTrade(context.Context, *ReserveTradeRequest) (*ReserveTradeResponse, error)
 	GetTradeReservation(context.Context, *GetTradeReservationRequest) (*GetTradeReservationResponse, error)
 	HoldTradeForRefund(context.Context, *HoldTradeForRefundRequest) (*HoldTradeForRefundResponse, error)
 	HoldTradeForDispute(context.Context, *HoldTradeForDisputeRequest) (*HoldTradeForDisputeResponse, error)
 	ReserveRefund(context.Context, *ReserveRefundRequest) (*ReserveRefundResponse, error)
+	HoldReleasedTradeForDispute(context.Context, *HoldReleasedTradeForDisputeRequest) (*HoldReleasedTradeForDisputeResponse, error)
+	ResolveReleasedTradeDispute(context.Context, *ResolveReleasedTradeDisputeRequest) (*ResolveReleasedTradeDisputeResponse, error)
 	mustEmbedUnimplementedReservationServiceServer()
 }
 
@@ -160,6 +224,12 @@ func (UnimplementedReservationServiceServer) HoldTradeForDispute(context.Context
 }
 func (UnimplementedReservationServiceServer) ReserveRefund(context.Context, *ReserveRefundRequest) (*ReserveRefundResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReserveRefund not implemented")
+}
+func (UnimplementedReservationServiceServer) HoldReleasedTradeForDispute(context.Context, *HoldReleasedTradeForDisputeRequest) (*HoldReleasedTradeForDisputeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method HoldReleasedTradeForDispute not implemented")
+}
+func (UnimplementedReservationServiceServer) ResolveReleasedTradeDispute(context.Context, *ResolveReleasedTradeDisputeRequest) (*ResolveReleasedTradeDisputeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResolveReleasedTradeDispute not implemented")
 }
 func (UnimplementedReservationServiceServer) mustEmbedUnimplementedReservationServiceServer() {}
 func (UnimplementedReservationServiceServer) testEmbeddedByValue()                            {}
@@ -272,6 +342,42 @@ func _ReservationService_ReserveRefund_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReservationService_HoldReleasedTradeForDispute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HoldReleasedTradeForDisputeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReservationServiceServer).HoldReleasedTradeForDispute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReservationService_HoldReleasedTradeForDispute_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReservationServiceServer).HoldReleasedTradeForDispute(ctx, req.(*HoldReleasedTradeForDisputeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReservationService_ResolveReleasedTradeDispute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResolveReleasedTradeDisputeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReservationServiceServer).ResolveReleasedTradeDispute(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReservationService_ResolveReleasedTradeDispute_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReservationServiceServer).ResolveReleasedTradeDispute(ctx, req.(*ResolveReleasedTradeDisputeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReservationService_ServiceDesc is the grpc.ServiceDesc for ReservationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -298,6 +404,14 @@ var ReservationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReserveRefund",
 			Handler:    _ReservationService_ReserveRefund_Handler,
+		},
+		{
+			MethodName: "HoldReleasedTradeForDispute",
+			Handler:    _ReservationService_HoldReleasedTradeForDispute_Handler,
+		},
+		{
+			MethodName: "ResolveReleasedTradeDispute",
+			Handler:    _ReservationService_ResolveReleasedTradeDispute_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

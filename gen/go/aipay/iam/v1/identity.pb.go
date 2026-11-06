@@ -74,6 +74,59 @@ func (PrincipalType) EnumDescriptor() ([]byte, []int) {
 	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{0}
 }
 
+// Receivers reject UNSPECIFIED (0), unknown values and channel identities.
+type TelegramChatType int32
+
+const (
+	TelegramChatType_TELEGRAM_CHAT_TYPE_UNSPECIFIED TelegramChatType = 0
+	TelegramChatType_TELEGRAM_CHAT_TYPE_PRIVATE     TelegramChatType = 1
+	TelegramChatType_TELEGRAM_CHAT_TYPE_GROUP       TelegramChatType = 2
+	TelegramChatType_TELEGRAM_CHAT_TYPE_SUPERGROUP  TelegramChatType = 3
+)
+
+// Enum value maps for TelegramChatType.
+var (
+	TelegramChatType_name = map[int32]string{
+		0: "TELEGRAM_CHAT_TYPE_UNSPECIFIED",
+		1: "TELEGRAM_CHAT_TYPE_PRIVATE",
+		2: "TELEGRAM_CHAT_TYPE_GROUP",
+		3: "TELEGRAM_CHAT_TYPE_SUPERGROUP",
+	}
+	TelegramChatType_value = map[string]int32{
+		"TELEGRAM_CHAT_TYPE_UNSPECIFIED": 0,
+		"TELEGRAM_CHAT_TYPE_PRIVATE":     1,
+		"TELEGRAM_CHAT_TYPE_GROUP":       2,
+		"TELEGRAM_CHAT_TYPE_SUPERGROUP":  3,
+	}
+)
+
+func (x TelegramChatType) Enum() *TelegramChatType {
+	p := new(TelegramChatType)
+	*p = x
+	return p
+}
+
+func (x TelegramChatType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TelegramChatType) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_iam_v1_identity_proto_enumTypes[1].Descriptor()
+}
+
+func (TelegramChatType) Type() protoreflect.EnumType {
+	return &file_aipay_iam_v1_identity_proto_enumTypes[1]
+}
+
+func (x TelegramChatType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TelegramChatType.Descriptor instead.
+func (TelegramChatType) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{1}
+}
+
 type Principal struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -181,6 +234,177 @@ func (x *BearerCredential) GetToken() string {
 	return ""
 }
 
+// Update facts supplied only by backend's configured bot module after webhook
+// secret validation. Reject sender_chat, anonymous administrators and channels;
+// never infer the sender from forwarded content. These facts and their digest
+// are not an independent Telegram signature or caller-selected user authority.
+// Deduplicate update_id in the configured bot namespace, bind it to these facts
+// and reject changed content; out-of-order updates cannot overwrite new state.
+type TelegramCredential struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Positive Telegram user ID, resolved through IAM's unique binding.
+	TelegramUserId int64 `protobuf:"varint,1,opt,name=telegram_user_id,json=telegramUserId,proto3" json:"telegram_user_id,omitempty"`
+	// Nonzero signed ID; group IDs can be negative.
+	ChatId   int64            `protobuf:"varint,2,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
+	ChatType TelegramChatType `protobuf:"varint,3,opt,name=chat_type,json=chatType,proto3,enum=aipay.iam.v1.TelegramChatType" json:"chat_type,omitempty"`
+	// Required presence; nonnegative, including valid update ID 0.
+	UpdateId *int64 `protobuf:"varint,4,opt,name=update_id,json=updateId,proto3,oneof" json:"update_id,omitempty"`
+	// Exactly 32 bytes: SHA-256 of the original webhook HTTP body bytes.
+	UpdateBodySha256 []byte `protobuf:"bytes,5,opt,name=update_body_sha256,json=updateBodySha256,proto3" json:"update_body_sha256,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *TelegramCredential) Reset() {
+	*x = TelegramCredential{}
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TelegramCredential) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TelegramCredential) ProtoMessage() {}
+
+func (x *TelegramCredential) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TelegramCredential.ProtoReflect.Descriptor instead.
+func (*TelegramCredential) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *TelegramCredential) GetTelegramUserId() int64 {
+	if x != nil {
+		return x.TelegramUserId
+	}
+	return 0
+}
+
+func (x *TelegramCredential) GetChatId() int64 {
+	if x != nil {
+		return x.ChatId
+	}
+	return 0
+}
+
+func (x *TelegramCredential) GetChatType() TelegramChatType {
+	if x != nil {
+		return x.ChatType
+	}
+	return TelegramChatType_TELEGRAM_CHAT_TYPE_UNSPECIFIED
+}
+
+func (x *TelegramCredential) GetUpdateId() int64 {
+	if x != nil && x.UpdateId != nil {
+		return *x.UpdateId
+	}
+	return 0
+}
+
+func (x *TelegramCredential) GetUpdateBodySha256() []byte {
+	if x != nil {
+		return x.UpdateBodySha256
+	}
+	return nil
+}
+
+// IAM validates the credential itself. Only a human user's session or unique
+// Telegram binding is accepted, never an API application/workload. Telegram
+// security settings require PRIVATE; IDs in the request confer no authority.
+type UserAuthentication struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Credential:
+	//
+	//	*UserAuthentication_Bearer
+	//	*UserAuthentication_Telegram
+	Credential    isUserAuthentication_Credential `protobuf_oneof:"credential"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserAuthentication) Reset() {
+	*x = UserAuthentication{}
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserAuthentication) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserAuthentication) ProtoMessage() {}
+
+func (x *UserAuthentication) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserAuthentication.ProtoReflect.Descriptor instead.
+func (*UserAuthentication) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *UserAuthentication) GetCredential() isUserAuthentication_Credential {
+	if x != nil {
+		return x.Credential
+	}
+	return nil
+}
+
+func (x *UserAuthentication) GetBearer() *BearerCredential {
+	if x != nil {
+		if x, ok := x.Credential.(*UserAuthentication_Bearer); ok {
+			return x.Bearer
+		}
+	}
+	return nil
+}
+
+func (x *UserAuthentication) GetTelegram() *TelegramCredential {
+	if x != nil {
+		if x, ok := x.Credential.(*UserAuthentication_Telegram); ok {
+			return x.Telegram
+		}
+	}
+	return nil
+}
+
+type isUserAuthentication_Credential interface {
+	isUserAuthentication_Credential()
+}
+
+type UserAuthentication_Bearer struct {
+	Bearer *BearerCredential `protobuf:"bytes,1,opt,name=bearer,proto3,oneof"`
+}
+
+type UserAuthentication_Telegram struct {
+	Telegram *TelegramCredential `protobuf:"bytes,2,opt,name=telegram,proto3,oneof"`
+}
+
+func (*UserAuthentication_Bearer) isUserAuthentication_Credential() {}
+
+func (*UserAuthentication_Telegram) isUserAuthentication_Credential() {}
+
 // Preserve decoded scalar bytes and include extension parameters. Duplicate
 // names are rejected by IAM; canonicalization is specific to the EPay version.
 type EPayParameter struct {
@@ -193,7 +417,7 @@ type EPayParameter struct {
 
 func (x *EPayParameter) Reset() {
 	*x = EPayParameter{}
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[2]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -205,7 +429,7 @@ func (x *EPayParameter) String() string {
 func (*EPayParameter) ProtoMessage() {}
 
 func (x *EPayParameter) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[2]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -218,7 +442,7 @@ func (x *EPayParameter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EPayParameter.ProtoReflect.Descriptor instead.
 func (*EPayParameter) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{2}
+	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *EPayParameter) GetName() string {
@@ -244,7 +468,7 @@ type EPayV1SignatureCredential struct {
 
 func (x *EPayV1SignatureCredential) Reset() {
 	*x = EPayV1SignatureCredential{}
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[3]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -256,7 +480,7 @@ func (x *EPayV1SignatureCredential) String() string {
 func (*EPayV1SignatureCredential) ProtoMessage() {}
 
 func (x *EPayV1SignatureCredential) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[3]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -269,7 +493,7 @@ func (x *EPayV1SignatureCredential) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EPayV1SignatureCredential.ProtoReflect.Descriptor instead.
 func (*EPayV1SignatureCredential) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{3}
+	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *EPayV1SignatureCredential) GetParameters() []*EPayParameter {
@@ -290,7 +514,7 @@ type EPayV1KeyCredential struct {
 
 func (x *EPayV1KeyCredential) Reset() {
 	*x = EPayV1KeyCredential{}
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[4]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -302,7 +526,7 @@ func (x *EPayV1KeyCredential) String() string {
 func (*EPayV1KeyCredential) ProtoMessage() {}
 
 func (x *EPayV1KeyCredential) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[4]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -315,7 +539,7 @@ func (x *EPayV1KeyCredential) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EPayV1KeyCredential.ProtoReflect.Descriptor instead.
 func (*EPayV1KeyCredential) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{4}
+	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *EPayV1KeyCredential) GetPid() string {
@@ -341,7 +565,7 @@ type EPayV2SignatureCredential struct {
 
 func (x *EPayV2SignatureCredential) Reset() {
 	*x = EPayV2SignatureCredential{}
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[5]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -353,7 +577,7 @@ func (x *EPayV2SignatureCredential) String() string {
 func (*EPayV2SignatureCredential) ProtoMessage() {}
 
 func (x *EPayV2SignatureCredential) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[5]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -366,7 +590,7 @@ func (x *EPayV2SignatureCredential) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EPayV2SignatureCredential.ProtoReflect.Descriptor instead.
 func (*EPayV2SignatureCredential) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{5}
+	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *EPayV2SignatureCredential) GetParameters() []*EPayParameter {
@@ -386,7 +610,7 @@ type WorkloadIdentityCredential struct {
 
 func (x *WorkloadIdentityCredential) Reset() {
 	*x = WorkloadIdentityCredential{}
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[6]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -398,7 +622,7 @@ func (x *WorkloadIdentityCredential) String() string {
 func (*WorkloadIdentityCredential) ProtoMessage() {}
 
 func (x *WorkloadIdentityCredential) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[6]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -411,7 +635,7 @@ func (x *WorkloadIdentityCredential) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkloadIdentityCredential.ProtoReflect.Descriptor instead.
 func (*WorkloadIdentityCredential) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{6}
+	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{8}
 }
 
 // The authenticated gateway supplies these route facts over its private service
@@ -427,7 +651,7 @@ type RequestBinding struct {
 
 func (x *RequestBinding) Reset() {
 	*x = RequestBinding{}
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[7]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -439,7 +663,7 @@ func (x *RequestBinding) String() string {
 func (*RequestBinding) ProtoMessage() {}
 
 func (x *RequestBinding) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_identity_proto_msgTypes[7]
+	mi := &file_aipay_iam_v1_identity_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -452,7 +676,7 @@ func (x *RequestBinding) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestBinding.ProtoReflect.Descriptor instead.
 func (*RequestBinding) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{7}
+	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RequestBinding) GetHttpMethod() string {
@@ -487,7 +711,20 @@ const file_aipay_iam_v1_identity_proto_rawDesc = "" +
 	"\vbound_scope\x18\x03 \x01(\v2\x16.aipay.common.v1.ScopeR\n" +
 	"boundScope\"(\n" +
 	"\x10BearerCredential\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"9\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"\xf2\x01\n" +
+	"\x12TelegramCredential\x12(\n" +
+	"\x10telegram_user_id\x18\x01 \x01(\x03R\x0etelegramUserId\x12\x17\n" +
+	"\achat_id\x18\x02 \x01(\x03R\x06chatId\x12;\n" +
+	"\tchat_type\x18\x03 \x01(\x0e2\x1e.aipay.iam.v1.TelegramChatTypeR\bchatType\x12 \n" +
+	"\tupdate_id\x18\x04 \x01(\x03H\x00R\bupdateId\x88\x01\x01\x12,\n" +
+	"\x12update_body_sha256\x18\x05 \x01(\fR\x10updateBodySha256B\f\n" +
+	"\n" +
+	"_update_id\"\x9c\x01\n" +
+	"\x12UserAuthentication\x128\n" +
+	"\x06bearer\x18\x01 \x01(\v2\x1e.aipay.iam.v1.BearerCredentialH\x00R\x06bearer\x12>\n" +
+	"\btelegram\x18\x02 \x01(\v2 .aipay.iam.v1.TelegramCredentialH\x00R\btelegramB\f\n" +
+	"\n" +
+	"credential\"9\n" +
 	"\rEPayParameter\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\"X\n" +
@@ -514,7 +751,12 @@ const file_aipay_iam_v1_identity_proto_rawDesc = "" +
 	"\x1aPRINCIPAL_TYPE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PRINCIPAL_TYPE_USER\x10\x01\x12'\n" +
 	"#PRINCIPAL_TYPE_MERCHANT_APPLICATION\x10\x02\x12\x1a\n" +
-	"\x16PRINCIPAL_TYPE_SERVICE\x10\x03B8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
+	"\x16PRINCIPAL_TYPE_SERVICE\x10\x03*\x97\x01\n" +
+	"\x10TelegramChatType\x12\"\n" +
+	"\x1eTELEGRAM_CHAT_TYPE_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aTELEGRAM_CHAT_TYPE_PRIVATE\x10\x01\x12\x1c\n" +
+	"\x18TELEGRAM_CHAT_TYPE_GROUP\x10\x02\x12!\n" +
+	"\x1dTELEGRAM_CHAT_TYPE_SUPERGROUP\x10\x03B8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
 
 var (
 	file_aipay_iam_v1_identity_proto_rawDescOnce sync.Once
@@ -528,30 +770,36 @@ func file_aipay_iam_v1_identity_proto_rawDescGZIP() []byte {
 	return file_aipay_iam_v1_identity_proto_rawDescData
 }
 
-var file_aipay_iam_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_aipay_iam_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_aipay_iam_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_aipay_iam_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_aipay_iam_v1_identity_proto_goTypes = []any{
 	(PrincipalType)(0),                 // 0: aipay.iam.v1.PrincipalType
-	(*Principal)(nil),                  // 1: aipay.iam.v1.Principal
-	(*BearerCredential)(nil),           // 2: aipay.iam.v1.BearerCredential
-	(*EPayParameter)(nil),              // 3: aipay.iam.v1.EPayParameter
-	(*EPayV1SignatureCredential)(nil),  // 4: aipay.iam.v1.EPayV1SignatureCredential
-	(*EPayV1KeyCredential)(nil),        // 5: aipay.iam.v1.EPayV1KeyCredential
-	(*EPayV2SignatureCredential)(nil),  // 6: aipay.iam.v1.EPayV2SignatureCredential
-	(*WorkloadIdentityCredential)(nil), // 7: aipay.iam.v1.WorkloadIdentityCredential
-	(*RequestBinding)(nil),             // 8: aipay.iam.v1.RequestBinding
-	(*v1.Scope)(nil),                   // 9: aipay.common.v1.Scope
+	(TelegramChatType)(0),              // 1: aipay.iam.v1.TelegramChatType
+	(*Principal)(nil),                  // 2: aipay.iam.v1.Principal
+	(*BearerCredential)(nil),           // 3: aipay.iam.v1.BearerCredential
+	(*TelegramCredential)(nil),         // 4: aipay.iam.v1.TelegramCredential
+	(*UserAuthentication)(nil),         // 5: aipay.iam.v1.UserAuthentication
+	(*EPayParameter)(nil),              // 6: aipay.iam.v1.EPayParameter
+	(*EPayV1SignatureCredential)(nil),  // 7: aipay.iam.v1.EPayV1SignatureCredential
+	(*EPayV1KeyCredential)(nil),        // 8: aipay.iam.v1.EPayV1KeyCredential
+	(*EPayV2SignatureCredential)(nil),  // 9: aipay.iam.v1.EPayV2SignatureCredential
+	(*WorkloadIdentityCredential)(nil), // 10: aipay.iam.v1.WorkloadIdentityCredential
+	(*RequestBinding)(nil),             // 11: aipay.iam.v1.RequestBinding
+	(*v1.Scope)(nil),                   // 12: aipay.common.v1.Scope
 }
 var file_aipay_iam_v1_identity_proto_depIdxs = []int32{
-	0, // 0: aipay.iam.v1.Principal.type:type_name -> aipay.iam.v1.PrincipalType
-	9, // 1: aipay.iam.v1.Principal.bound_scope:type_name -> aipay.common.v1.Scope
-	3, // 2: aipay.iam.v1.EPayV1SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
-	3, // 3: aipay.iam.v1.EPayV2SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	0,  // 0: aipay.iam.v1.Principal.type:type_name -> aipay.iam.v1.PrincipalType
+	12, // 1: aipay.iam.v1.Principal.bound_scope:type_name -> aipay.common.v1.Scope
+	1,  // 2: aipay.iam.v1.TelegramCredential.chat_type:type_name -> aipay.iam.v1.TelegramChatType
+	3,  // 3: aipay.iam.v1.UserAuthentication.bearer:type_name -> aipay.iam.v1.BearerCredential
+	4,  // 4: aipay.iam.v1.UserAuthentication.telegram:type_name -> aipay.iam.v1.TelegramCredential
+	6,  // 5: aipay.iam.v1.EPayV1SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
+	6,  // 6: aipay.iam.v1.EPayV2SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
+	7,  // [7:7] is the sub-list for method output_type
+	7,  // [7:7] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_aipay_iam_v1_identity_proto_init() }
@@ -559,13 +807,18 @@ func file_aipay_iam_v1_identity_proto_init() {
 	if File_aipay_iam_v1_identity_proto != nil {
 		return
 	}
+	file_aipay_iam_v1_identity_proto_msgTypes[2].OneofWrappers = []any{}
+	file_aipay_iam_v1_identity_proto_msgTypes[3].OneofWrappers = []any{
+		(*UserAuthentication_Bearer)(nil),
+		(*UserAuthentication_Telegram)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_iam_v1_identity_proto_rawDesc), len(file_aipay_iam_v1_identity_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   8,
+			NumEnums:      2,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

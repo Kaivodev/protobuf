@@ -33,6 +33,15 @@ const (
 // use a permission that stands for "the caller themself" (decision A78).
 // Invalid, disabled, expired or revoked credentials fail with a gRPC error; an
 // authenticated principal without a grant receives a denied decision.
+// Telegram resolves USER/account/session solely from the unique binding;
+// reject inactive, expired/revoked sessions and invalid scope/ownership. Normal
+// proof has amr=[telegram]. Group operations require the effective group owner;
+// sensitive actions are PRIVATE only. Include the update facts/body digest,
+// route, permission, acting scope and resource in request_fingerprint. An
+// identical update/request may return only its unexpired original response,
+// never consume TOTP twice or issue fresh proof; expired replays are rejected.
+// Revoked/expired bot sessions need a new explicit private /start or binding,
+// never implicit recreation by Authorize.
 type AuthorizationServiceClient interface {
 	// IAM issues assertions, so the gateway call carries none.
 	Authorize(ctx context.Context, in *AuthorizeRequest, opts ...grpc.CallOption) (*AuthorizeResponse, error)
@@ -67,6 +76,15 @@ func (c *authorizationServiceClient) Authorize(ctx context.Context, in *Authoriz
 // use a permission that stands for "the caller themself" (decision A78).
 // Invalid, disabled, expired or revoked credentials fail with a gRPC error; an
 // authenticated principal without a grant receives a denied decision.
+// Telegram resolves USER/account/session solely from the unique binding;
+// reject inactive, expired/revoked sessions and invalid scope/ownership. Normal
+// proof has amr=[telegram]. Group operations require the effective group owner;
+// sensitive actions are PRIVATE only. Include the update facts/body digest,
+// route, permission, acting scope and resource in request_fingerprint. An
+// identical update/request may return only its unexpired original response,
+// never consume TOTP twice or issue fresh proof; expired replays are rejected.
+// Revoked/expired bot sessions need a new explicit private /start or binding,
+// never implicit recreation by Authorize.
 type AuthorizationServiceServer interface {
 	// IAM issues assertions, so the gateway call carries none.
 	Authorize(context.Context, *AuthorizeRequest) (*AuthorizeResponse, error)

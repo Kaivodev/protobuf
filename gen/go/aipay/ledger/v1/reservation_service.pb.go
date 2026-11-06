@@ -218,10 +218,14 @@ func (*GetTradeReservationRequest_OrderId) isGetTradeReservationRequest_Selector
 func (*GetTradeReservationRequest_EscrowReservationId) isGetTradeReservationRequest_Selector() {}
 
 type GetTradeReservationResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Reservation   *TradeReservation      `protobuf:"bytes,1,opt,name=reservation,proto3" json:"reservation,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Reservation *TradeReservation      `protobuf:"bytes,1,opt,name=reservation,proto3" json:"reservation,omitempty"`
+	// Present while a refund occupation is active. Exposes original funding and
+	// any retained ruling to payment/reconciliation for independent verification
+	// after the active dispute has atomically become REFUND_PENDING.
+	RefundReservation *RefundReservation `protobuf:"bytes,2,opt,name=refund_reservation,json=refundReservation,proto3" json:"refund_reservation,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GetTradeReservationResponse) Reset() {
@@ -257,6 +261,13 @@ func (*GetTradeReservationResponse) Descriptor() ([]byte, []int) {
 func (x *GetTradeReservationResponse) GetReservation() *TradeReservation {
 	if x != nil {
 		return x.Reservation
+	}
+	return nil
+}
+
+func (x *GetTradeReservationResponse) GetRefundReservation() *RefundReservation {
+	if x != nil {
+		return x.RefundReservation
 	}
 	return nil
 }
@@ -536,7 +547,17 @@ type ReserveRefundRequest struct {
 	// application owner. Amounts come only from the stored original quote.
 	Branch RefundReservationBranch `protobuf:"varint,5,opt,name=branch,proto3,enum=aipay.ledger.v1.RefundReservationBranch" json:"branch,omitempty"`
 	// Must match the stored original recipient account; not an authority claim.
-	AccountId     string `protobuf:"bytes,6,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	AccountId string `protobuf:"bytes,6,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	// Optional presence. When DISPUTED, only PRE_RELEASE with the approved REFUND
+	// ruling matching the current dispute/order/escrow is accepted (A118).
+	// Payment verifies approval/direction; ledger checks complete reference,
+	// current dispute and CAS, then atomically replaces DISPUTED with
+	// REFUND_PENDING and occupies original Q without any available-funds window.
+	// Persist the ruling on RefundReservation for reconciliation's independent
+	// verification. First execution with a ruling when not disputed is rejected;
+	// identical completed retries still return the original result.
+	// Cannot bypass an active released_dispute_hold; use ResolveReleasedTradeDispute.
+	DisputeRuling *DisputeRulingReference `protobuf:"bytes,7,opt,name=dispute_ruling,json=disputeRuling,proto3" json:"dispute_ruling,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -613,6 +634,13 @@ func (x *ReserveRefundRequest) GetAccountId() string {
 	return ""
 }
 
+func (x *ReserveRefundRequest) GetDisputeRuling() *DisputeRulingReference {
+	if x != nil {
+		return x.DisputeRuling
+	}
+	return nil
+}
+
 type ReserveRefundResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Reservation   *RefundReservation     `protobuf:"bytes,1,opt,name=reservation,proto3" json:"reservation,omitempty"`
@@ -657,6 +685,287 @@ func (x *ReserveRefundResponse) GetReservation() *RefundReservation {
 	return nil
 }
 
+type HoldReleasedTradeForDisputeRequest struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey         string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	OrderId                string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	EscrowReservationId    string                 `protobuf:"bytes,3,opt,name=escrow_reservation_id,json=escrowReservationId,proto3" json:"escrow_reservation_id,omitempty"`
+	ExpectedControlVersion uint64                 `protobuf:"varint,4,opt,name=expected_control_version,json=expectedControlVersion,proto3" json:"expected_control_version,omitempty"`
+	DisputeId              string                 `protobuf:"bytes,5,opt,name=dispute_id,json=disputeId,proto3" json:"dispute_id,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *HoldReleasedTradeForDisputeRequest) Reset() {
+	*x = HoldReleasedTradeForDisputeRequest{}
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HoldReleasedTradeForDisputeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HoldReleasedTradeForDisputeRequest) ProtoMessage() {}
+
+func (x *HoldReleasedTradeForDisputeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HoldReleasedTradeForDisputeRequest.ProtoReflect.Descriptor instead.
+func (*HoldReleasedTradeForDisputeRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *HoldReleasedTradeForDisputeRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *HoldReleasedTradeForDisputeRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *HoldReleasedTradeForDisputeRequest) GetEscrowReservationId() string {
+	if x != nil {
+		return x.EscrowReservationId
+	}
+	return ""
+}
+
+func (x *HoldReleasedTradeForDisputeRequest) GetExpectedControlVersion() uint64 {
+	if x != nil {
+		return x.ExpectedControlVersion
+	}
+	return 0
+}
+
+func (x *HoldReleasedTradeForDisputeRequest) GetDisputeId() string {
+	if x != nil {
+		return x.DisputeId
+	}
+	return ""
+}
+
+type HoldReleasedTradeForDisputeResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Actual H and N-H from the stored original quote, not caller amounts.
+	// A nonzero shortfall is a successful partial protective hold; payment MUST
+	// alert. Even H=0 records the barrier. Replays never add a second hold.
+	Hold           *ReleasedTradeDisputeHold `protobuf:"bytes,1,opt,name=hold,proto3" json:"hold,omitempty"`
+	ControlVersion uint64                    `protobuf:"varint,2,opt,name=control_version,json=controlVersion,proto3" json:"control_version,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *HoldReleasedTradeForDisputeResponse) Reset() {
+	*x = HoldReleasedTradeForDisputeResponse{}
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HoldReleasedTradeForDisputeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HoldReleasedTradeForDisputeResponse) ProtoMessage() {}
+
+func (x *HoldReleasedTradeForDisputeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HoldReleasedTradeForDisputeResponse.ProtoReflect.Descriptor instead.
+func (*HoldReleasedTradeForDisputeResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *HoldReleasedTradeForDisputeResponse) GetHold() *ReleasedTradeDisputeHold {
+	if x != nil {
+		return x.Hold
+	}
+	return nil
+}
+
+func (x *HoldReleasedTradeForDisputeResponse) GetControlVersion() uint64 {
+	if x != nil {
+		return x.ControlVersion
+	}
+	return 0
+}
+
+type ResolveReleasedTradeDisputeRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	// Resolves the unique original order/account/hold; no destination selector.
+	DisputeId              string `protobuf:"bytes,2,opt,name=dispute_id,json=disputeId,proto3" json:"dispute_id,omitempty"`
+	ExpectedControlVersion uint64 `protobuf:"varint,3,opt,name=expected_control_version,json=expectedControlVersion,proto3" json:"expected_control_version,omitempty"`
+	// Required, same dispute; payment verifies completed approval and direction.
+	DisputeRuling *DisputeRulingReference     `protobuf:"bytes,4,opt,name=dispute_ruling,json=disputeRuling,proto3" json:"dispute_ruling,omitempty"`
+	Outcome       ReleasedTradeDisputeOutcome `protobuf:"varint,5,opt,name=outcome,proto3,enum=aipay.ledger.v1.ReleasedTradeDisputeOutcome" json:"outcome,omitempty"`
+	// Required only for RESERVE_POST_RELEASE_REFUND, forbidden for release.
+	RefundId      string `protobuf:"bytes,6,opt,name=refund_id,json=refundId,proto3" json:"refund_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResolveReleasedTradeDisputeRequest) Reset() {
+	*x = ResolveReleasedTradeDisputeRequest{}
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResolveReleasedTradeDisputeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResolveReleasedTradeDisputeRequest) ProtoMessage() {}
+
+func (x *ResolveReleasedTradeDisputeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResolveReleasedTradeDisputeRequest.ProtoReflect.Descriptor instead.
+func (*ResolveReleasedTradeDisputeRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ResolveReleasedTradeDisputeRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *ResolveReleasedTradeDisputeRequest) GetDisputeId() string {
+	if x != nil {
+		return x.DisputeId
+	}
+	return ""
+}
+
+func (x *ResolveReleasedTradeDisputeRequest) GetExpectedControlVersion() uint64 {
+	if x != nil {
+		return x.ExpectedControlVersion
+	}
+	return 0
+}
+
+func (x *ResolveReleasedTradeDisputeRequest) GetDisputeRuling() *DisputeRulingReference {
+	if x != nil {
+		return x.DisputeRuling
+	}
+	return nil
+}
+
+func (x *ResolveReleasedTradeDisputeRequest) GetOutcome() ReleasedTradeDisputeOutcome {
+	if x != nil {
+		return x.Outcome
+	}
+	return ReleasedTradeDisputeOutcome_RELEASED_TRADE_DISPUTE_OUTCOME_UNSPECIFIED
+}
+
+func (x *ResolveReleasedTradeDisputeRequest) GetRefundId() string {
+	if x != nil {
+		return x.RefundId
+	}
+	return ""
+}
+
+type ResolveReleasedTradeDisputeResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ControlVersion uint64                 `protobuf:"varint,1,opt,name=control_version,json=controlVersion,proto3" json:"control_version,omitempty"`
+	// Present only for the refund branch, full N, POST_RELEASE, original account,
+	// with the exact dispute_ruling retained for independent reconciliation.
+	RefundReservation *RefundReservation `protobuf:"bytes,2,opt,name=refund_reservation,json=refundReservation,proto3" json:"refund_reservation,omitempty"`
+	// This command's posting seq; 0 only when no funds changed.
+	Seq           uint64 `protobuf:"varint,3,opt,name=seq,proto3" json:"seq,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResolveReleasedTradeDisputeResponse) Reset() {
+	*x = ResolveReleasedTradeDisputeResponse{}
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResolveReleasedTradeDisputeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResolveReleasedTradeDisputeResponse) ProtoMessage() {}
+
+func (x *ResolveReleasedTradeDisputeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResolveReleasedTradeDisputeResponse.ProtoReflect.Descriptor instead.
+func (*ResolveReleasedTradeDisputeResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ResolveReleasedTradeDisputeResponse) GetControlVersion() uint64 {
+	if x != nil {
+		return x.ControlVersion
+	}
+	return 0
+}
+
+func (x *ResolveReleasedTradeDisputeResponse) GetRefundReservation() *RefundReservation {
+	if x != nil {
+		return x.RefundReservation
+	}
+	return nil
+}
+
+func (x *ResolveReleasedTradeDisputeResponse) GetSeq() uint64 {
+	if x != nil {
+		return x.Seq
+	}
+	return 0
+}
+
 var File_aipay_ledger_v1_reservation_service_proto protoreflect.FileDescriptor
 
 const file_aipay_ledger_v1_reservation_service_proto_rawDesc = "" +
@@ -672,9 +981,10 @@ const file_aipay_ledger_v1_reservation_service_proto_rawDesc = "" +
 	"\border_id\x18\x01 \x01(\tH\x00R\aorderId\x124\n" +
 	"\x15escrow_reservation_id\x18\x02 \x01(\tH\x00R\x13escrowReservationIdB\n" +
 	"\n" +
-	"\bselector\"b\n" +
+	"\bselector\"\xb5\x01\n" +
 	"\x1bGetTradeReservationResponse\x12C\n" +
-	"\vreservation\x18\x01 \x01(\v2!.aipay.ledger.v1.TradeReservationR\vreservation\"\x82\x02\n" +
+	"\vreservation\x18\x01 \x01(\v2!.aipay.ledger.v1.TradeReservationR\vreservation\x12Q\n" +
+	"\x12refund_reservation\x18\x02 \x01(\v2\".aipay.ledger.v1.RefundReservationR\x11refundReservation\"\x82\x02\n" +
 	"\x19HoldTradeForRefundRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12\x19\n" +
 	"\border_id\x18\x02 \x01(\tR\aorderId\x122\n" +
@@ -693,7 +1003,7 @@ const file_aipay_ledger_v1_reservation_service_proto_rawDesc = "" +
 	"dispute_id\x18\x05 \x01(\tR\tdisputeId\x12\x16\n" +
 	"\x06reason\x18\x06 \x01(\tR\x06reason\"F\n" +
 	"\x1bHoldTradeForDisputeResponse\x12'\n" +
-	"\x0fcontrol_version\x18\x01 \x01(\x04R\x0econtrolVersion\"\x9d\x02\n" +
+	"\x0fcontrol_version\x18\x01 \x01(\x04R\x0econtrolVersion\"\xed\x02\n" +
 	"\x14ReserveRefundRequest\x12\x1b\n" +
 	"\trefund_id\x18\x01 \x01(\tR\brefundId\x12\x19\n" +
 	"\border_id\x18\x02 \x01(\tR\aorderId\x122\n" +
@@ -701,9 +1011,32 @@ const file_aipay_ledger_v1_reservation_service_proto_rawDesc = "" +
 	"\x18expected_control_version\x18\x04 \x01(\x04R\x16expectedControlVersion\x12@\n" +
 	"\x06branch\x18\x05 \x01(\x0e2(.aipay.ledger.v1.RefundReservationBranchR\x06branch\x12\x1d\n" +
 	"\n" +
-	"account_id\x18\x06 \x01(\tR\taccountId\"]\n" +
+	"account_id\x18\x06 \x01(\tR\taccountId\x12N\n" +
+	"\x0edispute_ruling\x18\a \x01(\v2'.aipay.ledger.v1.DisputeRulingReferenceR\rdisputeRuling\"]\n" +
 	"\x15ReserveRefundResponse\x12D\n" +
-	"\vreservation\x18\x01 \x01(\v2\".aipay.ledger.v1.RefundReservationR\vreservation2\x96\x05\n" +
+	"\vreservation\x18\x01 \x01(\v2\".aipay.ledger.v1.RefundReservationR\vreservation\"\xf5\x01\n" +
+	"\"HoldReleasedTradeForDisputeRequest\x12'\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12\x19\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x122\n" +
+	"\x15escrow_reservation_id\x18\x03 \x01(\tR\x13escrowReservationId\x128\n" +
+	"\x18expected_control_version\x18\x04 \x01(\x04R\x16expectedControlVersion\x12\x1d\n" +
+	"\n" +
+	"dispute_id\x18\x05 \x01(\tR\tdisputeId\"\x8d\x01\n" +
+	"#HoldReleasedTradeForDisputeResponse\x12=\n" +
+	"\x04hold\x18\x01 \x01(\v2).aipay.ledger.v1.ReleasedTradeDisputeHoldR\x04hold\x12'\n" +
+	"\x0fcontrol_version\x18\x02 \x01(\x04R\x0econtrolVersion\"\xdb\x02\n" +
+	"\"ResolveReleasedTradeDisputeRequest\x12'\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12\x1d\n" +
+	"\n" +
+	"dispute_id\x18\x02 \x01(\tR\tdisputeId\x128\n" +
+	"\x18expected_control_version\x18\x03 \x01(\x04R\x16expectedControlVersion\x12N\n" +
+	"\x0edispute_ruling\x18\x04 \x01(\v2'.aipay.ledger.v1.DisputeRulingReferenceR\rdisputeRuling\x12F\n" +
+	"\aoutcome\x18\x05 \x01(\x0e2,.aipay.ledger.v1.ReleasedTradeDisputeOutcomeR\aoutcome\x12\x1b\n" +
+	"\trefund_id\x18\x06 \x01(\tR\brefundId\"\xb3\x01\n" +
+	"#ResolveReleasedTradeDisputeResponse\x12'\n" +
+	"\x0fcontrol_version\x18\x01 \x01(\x04R\x0econtrolVersion\x12Q\n" +
+	"\x12refund_reservation\x18\x02 \x01(\v2\".aipay.ledger.v1.RefundReservationR\x11refundReservation\x12\x10\n" +
+	"\x03seq\x18\x03 \x01(\x04R\x03seq2\xd2\a\n" +
 	"\x12ReservationService\x12n\n" +
 	"\fReserveTrade\x12$.aipay.ledger.v1.ReserveTradeRequest\x1a%.aipay.ledger.v1.ReserveTradeResponse\"\x11\xc2\xf3\x18\r\n" +
 	"\v\n" +
@@ -720,6 +1053,12 @@ const file_aipay_ledger_v1_reservation_service_proto_rawDesc = "" +
 	"\apayment\x10\x01\x12q\n" +
 	"\rReserveRefund\x12%.aipay.ledger.v1.ReserveRefundRequest\x1a&.aipay.ledger.v1.ReserveRefundResponse\"\x11\xc2\xf3\x18\r\n" +
 	"\v\n" +
+	"\apayment\x10\x01\x12\x9b\x01\n" +
+	"\x1bHoldReleasedTradeForDispute\x123.aipay.ledger.v1.HoldReleasedTradeForDisputeRequest\x1a4.aipay.ledger.v1.HoldReleasedTradeForDisputeResponse\"\x11\xc2\xf3\x18\r\n" +
+	"\v\n" +
+	"\apayment\x10\x01\x12\x9b\x01\n" +
+	"\x1bResolveReleasedTradeDispute\x123.aipay.ledger.v1.ResolveReleasedTradeDisputeRequest\x1a4.aipay.ledger.v1.ResolveReleasedTradeDisputeResponse\"\x11\xc2\xf3\x18\r\n" +
+	"\v\n" +
 	"\apayment\x10\x01B>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
 
 var (
@@ -734,43 +1073,60 @@ func file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP() []byte {
 	return file_aipay_ledger_v1_reservation_service_proto_rawDescData
 }
 
-var file_aipay_ledger_v1_reservation_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_aipay_ledger_v1_reservation_service_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_aipay_ledger_v1_reservation_service_proto_goTypes = []any{
-	(*ReserveTradeRequest)(nil),         // 0: aipay.ledger.v1.ReserveTradeRequest
-	(*ReserveTradeResponse)(nil),        // 1: aipay.ledger.v1.ReserveTradeResponse
-	(*GetTradeReservationRequest)(nil),  // 2: aipay.ledger.v1.GetTradeReservationRequest
-	(*GetTradeReservationResponse)(nil), // 3: aipay.ledger.v1.GetTradeReservationResponse
-	(*HoldTradeForRefundRequest)(nil),   // 4: aipay.ledger.v1.HoldTradeForRefundRequest
-	(*HoldTradeForRefundResponse)(nil),  // 5: aipay.ledger.v1.HoldTradeForRefundResponse
-	(*HoldTradeForDisputeRequest)(nil),  // 6: aipay.ledger.v1.HoldTradeForDisputeRequest
-	(*HoldTradeForDisputeResponse)(nil), // 7: aipay.ledger.v1.HoldTradeForDisputeResponse
-	(*ReserveRefundRequest)(nil),        // 8: aipay.ledger.v1.ReserveRefundRequest
-	(*ReserveRefundResponse)(nil),       // 9: aipay.ledger.v1.ReserveRefundResponse
-	(*v1.TradeSnapshot)(nil),            // 10: aipay.common.v1.TradeSnapshot
-	(*TradeReservation)(nil),            // 11: aipay.ledger.v1.TradeReservation
-	(RefundReservationBranch)(0),        // 12: aipay.ledger.v1.RefundReservationBranch
-	(*RefundReservation)(nil),           // 13: aipay.ledger.v1.RefundReservation
+	(*ReserveTradeRequest)(nil),                 // 0: aipay.ledger.v1.ReserveTradeRequest
+	(*ReserveTradeResponse)(nil),                // 1: aipay.ledger.v1.ReserveTradeResponse
+	(*GetTradeReservationRequest)(nil),          // 2: aipay.ledger.v1.GetTradeReservationRequest
+	(*GetTradeReservationResponse)(nil),         // 3: aipay.ledger.v1.GetTradeReservationResponse
+	(*HoldTradeForRefundRequest)(nil),           // 4: aipay.ledger.v1.HoldTradeForRefundRequest
+	(*HoldTradeForRefundResponse)(nil),          // 5: aipay.ledger.v1.HoldTradeForRefundResponse
+	(*HoldTradeForDisputeRequest)(nil),          // 6: aipay.ledger.v1.HoldTradeForDisputeRequest
+	(*HoldTradeForDisputeResponse)(nil),         // 7: aipay.ledger.v1.HoldTradeForDisputeResponse
+	(*ReserveRefundRequest)(nil),                // 8: aipay.ledger.v1.ReserveRefundRequest
+	(*ReserveRefundResponse)(nil),               // 9: aipay.ledger.v1.ReserveRefundResponse
+	(*HoldReleasedTradeForDisputeRequest)(nil),  // 10: aipay.ledger.v1.HoldReleasedTradeForDisputeRequest
+	(*HoldReleasedTradeForDisputeResponse)(nil), // 11: aipay.ledger.v1.HoldReleasedTradeForDisputeResponse
+	(*ResolveReleasedTradeDisputeRequest)(nil),  // 12: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest
+	(*ResolveReleasedTradeDisputeResponse)(nil), // 13: aipay.ledger.v1.ResolveReleasedTradeDisputeResponse
+	(*v1.TradeSnapshot)(nil),                    // 14: aipay.common.v1.TradeSnapshot
+	(*TradeReservation)(nil),                    // 15: aipay.ledger.v1.TradeReservation
+	(*RefundReservation)(nil),                   // 16: aipay.ledger.v1.RefundReservation
+	(RefundReservationBranch)(0),                // 17: aipay.ledger.v1.RefundReservationBranch
+	(*DisputeRulingReference)(nil),              // 18: aipay.ledger.v1.DisputeRulingReference
+	(*ReleasedTradeDisputeHold)(nil),            // 19: aipay.ledger.v1.ReleasedTradeDisputeHold
+	(ReleasedTradeDisputeOutcome)(0),            // 20: aipay.ledger.v1.ReleasedTradeDisputeOutcome
 }
 var file_aipay_ledger_v1_reservation_service_proto_depIdxs = []int32{
-	10, // 0: aipay.ledger.v1.ReserveTradeRequest.trade:type_name -> aipay.common.v1.TradeSnapshot
-	11, // 1: aipay.ledger.v1.GetTradeReservationResponse.reservation:type_name -> aipay.ledger.v1.TradeReservation
-	12, // 2: aipay.ledger.v1.ReserveRefundRequest.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
-	13, // 3: aipay.ledger.v1.ReserveRefundResponse.reservation:type_name -> aipay.ledger.v1.RefundReservation
-	0,  // 4: aipay.ledger.v1.ReservationService.ReserveTrade:input_type -> aipay.ledger.v1.ReserveTradeRequest
-	2,  // 5: aipay.ledger.v1.ReservationService.GetTradeReservation:input_type -> aipay.ledger.v1.GetTradeReservationRequest
-	4,  // 6: aipay.ledger.v1.ReservationService.HoldTradeForRefund:input_type -> aipay.ledger.v1.HoldTradeForRefundRequest
-	6,  // 7: aipay.ledger.v1.ReservationService.HoldTradeForDispute:input_type -> aipay.ledger.v1.HoldTradeForDisputeRequest
-	8,  // 8: aipay.ledger.v1.ReservationService.ReserveRefund:input_type -> aipay.ledger.v1.ReserveRefundRequest
-	1,  // 9: aipay.ledger.v1.ReservationService.ReserveTrade:output_type -> aipay.ledger.v1.ReserveTradeResponse
-	3,  // 10: aipay.ledger.v1.ReservationService.GetTradeReservation:output_type -> aipay.ledger.v1.GetTradeReservationResponse
-	5,  // 11: aipay.ledger.v1.ReservationService.HoldTradeForRefund:output_type -> aipay.ledger.v1.HoldTradeForRefundResponse
-	7,  // 12: aipay.ledger.v1.ReservationService.HoldTradeForDispute:output_type -> aipay.ledger.v1.HoldTradeForDisputeResponse
-	9,  // 13: aipay.ledger.v1.ReservationService.ReserveRefund:output_type -> aipay.ledger.v1.ReserveRefundResponse
-	9,  // [9:14] is the sub-list for method output_type
-	4,  // [4:9] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	14, // 0: aipay.ledger.v1.ReserveTradeRequest.trade:type_name -> aipay.common.v1.TradeSnapshot
+	15, // 1: aipay.ledger.v1.GetTradeReservationResponse.reservation:type_name -> aipay.ledger.v1.TradeReservation
+	16, // 2: aipay.ledger.v1.GetTradeReservationResponse.refund_reservation:type_name -> aipay.ledger.v1.RefundReservation
+	17, // 3: aipay.ledger.v1.ReserveRefundRequest.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
+	18, // 4: aipay.ledger.v1.ReserveRefundRequest.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
+	16, // 5: aipay.ledger.v1.ReserveRefundResponse.reservation:type_name -> aipay.ledger.v1.RefundReservation
+	19, // 6: aipay.ledger.v1.HoldReleasedTradeForDisputeResponse.hold:type_name -> aipay.ledger.v1.ReleasedTradeDisputeHold
+	18, // 7: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
+	20, // 8: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest.outcome:type_name -> aipay.ledger.v1.ReleasedTradeDisputeOutcome
+	16, // 9: aipay.ledger.v1.ResolveReleasedTradeDisputeResponse.refund_reservation:type_name -> aipay.ledger.v1.RefundReservation
+	0,  // 10: aipay.ledger.v1.ReservationService.ReserveTrade:input_type -> aipay.ledger.v1.ReserveTradeRequest
+	2,  // 11: aipay.ledger.v1.ReservationService.GetTradeReservation:input_type -> aipay.ledger.v1.GetTradeReservationRequest
+	4,  // 12: aipay.ledger.v1.ReservationService.HoldTradeForRefund:input_type -> aipay.ledger.v1.HoldTradeForRefundRequest
+	6,  // 13: aipay.ledger.v1.ReservationService.HoldTradeForDispute:input_type -> aipay.ledger.v1.HoldTradeForDisputeRequest
+	8,  // 14: aipay.ledger.v1.ReservationService.ReserveRefund:input_type -> aipay.ledger.v1.ReserveRefundRequest
+	10, // 15: aipay.ledger.v1.ReservationService.HoldReleasedTradeForDispute:input_type -> aipay.ledger.v1.HoldReleasedTradeForDisputeRequest
+	12, // 16: aipay.ledger.v1.ReservationService.ResolveReleasedTradeDispute:input_type -> aipay.ledger.v1.ResolveReleasedTradeDisputeRequest
+	1,  // 17: aipay.ledger.v1.ReservationService.ReserveTrade:output_type -> aipay.ledger.v1.ReserveTradeResponse
+	3,  // 18: aipay.ledger.v1.ReservationService.GetTradeReservation:output_type -> aipay.ledger.v1.GetTradeReservationResponse
+	5,  // 19: aipay.ledger.v1.ReservationService.HoldTradeForRefund:output_type -> aipay.ledger.v1.HoldTradeForRefundResponse
+	7,  // 20: aipay.ledger.v1.ReservationService.HoldTradeForDispute:output_type -> aipay.ledger.v1.HoldTradeForDisputeResponse
+	9,  // 21: aipay.ledger.v1.ReservationService.ReserveRefund:output_type -> aipay.ledger.v1.ReserveRefundResponse
+	11, // 22: aipay.ledger.v1.ReservationService.HoldReleasedTradeForDispute:output_type -> aipay.ledger.v1.HoldReleasedTradeForDisputeResponse
+	13, // 23: aipay.ledger.v1.ReservationService.ResolveReleasedTradeDispute:output_type -> aipay.ledger.v1.ResolveReleasedTradeDisputeResponse
+	17, // [17:24] is the sub-list for method output_type
+	10, // [10:17] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_aipay_ledger_v1_reservation_service_proto_init() }
@@ -789,7 +1145,7 @@ func file_aipay_ledger_v1_reservation_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_ledger_v1_reservation_service_proto_rawDesc), len(file_aipay_ledger_v1_reservation_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

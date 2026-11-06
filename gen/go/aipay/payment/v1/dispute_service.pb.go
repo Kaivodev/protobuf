@@ -26,8 +26,9 @@ const (
 )
 
 // Fact recorded only after ledger confirms the matching dispute barrier.
-// Amounts/owners are original; no claim to funds already released. Evidence is
-// immutable; SHA-256(canonical DisputeEvidence) is recomputed independently.
+// Amounts/owners are original; a post-release hold controls only H actually
+// recovered into the original recipient's risk account, never the old seller
+// escrow. Evidence is immutable; its canonical SHA-256 is recomputed independently.
 type RegisteredDispute struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	DisputeId           string                 `protobuf:"bytes,1,opt,name=dispute_id,json=disputeId,proto3" json:"dispute_id,omitempty"`

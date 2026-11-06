@@ -44,6 +44,49 @@ message TradeReservation {
   // Actual risk deadline, never earlier than paid_verified_at + locked duration;
   // approved extensions cannot be shortened by later channel configuration.
   google.protobuf.Timestamp risk_release_at = 8;
+  // Current effective dispute ID, empty if none. PRE_RELEASE DISPUTED and an
+  // active released_dispute_hold require it; clear only the matching dispute.
+  string dispute_id = 9;
+  // Present only while a post-release dispute hold is active, including H=0.
+  // The original escrow stays RELEASED; this must not imply seller escrow Q
+  // has been recovered. Its dispute_id must match the field above.
+  ReleasedTradeDisputeHold released_dispute_hold = 10;
+}
+
+// Ledger-owned counterpart to reconciliation's DisputeResolution; never import
+// reconciliation here, since its package already imports ledger. Reference
+// only, not a funds authorization. Payment verifies an approved ruling and its
+// direction; reconciliation independently verifies original WebAuthn evidence
+// before any final inter-account funds movement. No account/amount overrides.
+// All four fields required when present; an empty message is invalid.
+message DisputeRulingReference {
+  // Must match the current effective dispute and original order/escrow.
+  string dispute_id = 1;
+  // Payment's immutable ruling approval request ID.
+  string ruling_id = 2;
+  // Exactly 32 bytes; digest of the material approved by two distinct WebAuthn
+  // approvers, neither the initiator. A digest alone is not approval proof.
+  bytes ruling_sha256 = 3;
+  // Approval completion time, UTC with microsecond precision.
+  google.protobuf.Timestamp approved_at = 4;
+}
+
+// Actual original-recipient risk occupation for A119, not recovered seller
+// escrow. Amounts are int64 in 10^-6 USDT: H=min(N, available), shortfall=N-H;
+// both nonnegative and H=0 is valid. Does not change funds ownership.
+message ReleasedTradeDisputeHold {
+  string dispute_id = 1;
+  int64 held_usdt = 2;
+  int64 shortfall_usdt = 3;
+  // Hold posting seq, or 0 if only a zero-funded dispute barrier was created.
+  uint64 reserve_seq = 4;
+}
+
+// Only original-account control changes; reject UNSPECIFIED (0)/unknown.
+enum ReleasedTradeDisputeOutcome {
+  RELEASED_TRADE_DISPUTE_OUTCOME_UNSPECIFIED = 0;
+  RELEASED_TRADE_DISPUTE_OUTCOME_RELEASE_TO_ORIGINAL_RECIPIENT = 1;
+  RELEASED_TRADE_DISPUTE_OUTCOME_RESERVE_POST_RELEASE_REFUND = 2;
 }
 
 // Logical refund occupation. PRE_RELEASE points to the original escrow and
@@ -62,4 +105,10 @@ message RefundReservation {
   uint64 control_version = 8;
   // Original escrow seq before release; new refund posting seq after release.
   uint64 reserve_seq = 9;
+  // Present only for an A118/A119 dispute-to-refund handoff. Persist unchanged
+  // for reconciliation to verify the original ruling/approvals independently,
+  // even though the active dispute was already replaced by REFUND_PENDING.
+  // Subsequent TradeRefundAuthorized omits dispute_resolution because it is
+  // no longer DISPUTED; this stored ruling must still be checked independently.
+  DisputeRulingReference dispute_ruling = 10;
 }

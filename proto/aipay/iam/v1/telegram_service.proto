@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/iam/v1/identity.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+// Facts resolved by IAM, never credentials. Each Telegram user and global user
+// has at most one binding. account_id is the user's original personal account.
+message TelegramBinding {
+  int64 telegram_user_id = 1;
+  string user_id = 2;
+  string account_id = 3;
+  // Internal bot session ID, not an authentication token.
+  string session_id = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+message RegisterRequest {
+  string idempotency_key = 1;
+  // PRIVATE /start only. Rate limited by Telegram user and globally.
+  TelegramCredential telegram = 2;
+}
+
+message RegisterResponse {
+  TelegramBinding binding = 1;
+}
+
+message CreateBindingCodeRequest {
+  string idempotency_key = 1;
+  // Sensitive. IAM directly verifies the invited upstream's portal session,
+  // ownership and recent TOTP authentication; never a caller-selected user ID.
+  BearerCredential portal_session = 2;
+  // Sensitive six-digit code; IAM rate limits and consumes its time step once.
+  string totp_code = 3;
+}
+
+message CreateBindingCodeResponse {
+  // Sensitive 256-bit opaque, expiring, single-use code; IAM stores only a hash.
+  string binding_code = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message BindRequest {
+  string idempotency_key = 1;
+  TelegramCredential telegram = 2;
+  // Sensitive. PRIVATE only; atomically consume the portal-issued code and
+  // establish a bot session for that same global user/personal account.
+  string binding_code = 3;
+}
+
+message BindResponse {
+  TelegramBinding binding = 1;
+}
+
+message UnbindRequest {
+  string idempotency_key = 1;
+  UserAuthentication authentication = 2;
+}
+
+message UnbindResponse {
+  google.protobuf.Timestamp unbound_at = 1;
+}
+
+message BeginGroupBindingRequest {
+  string idempotency_key = 1;
+  // GROUP/SUPERGROUP, initiated by the currently bound account owner.
+  TelegramCredential telegram = 2;
+}
+
+message BeginGroupBindingResponse {
+  // Sensitive, single use; binds the original group, user, account and update.
+  // Deliver only to that user's private chat. Cannot replace another owner.
+  string confirmation_token = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message ConfirmGroupBindingRequest {
+  string idempotency_key = 1;
+  // PRIVATE confirmation by the same user. Backend must check current group
+  // membership before forwarding; IAM rechecks active binding/account and
+  // recorded membership invalidations. The token alone is not user identity.
+  TelegramCredential telegram = 2;
+  string confirmation_token = 3;
+}
+
+message ConfirmGroupBindingResponse {
+  // Comes only from the consumed challenge, not from the confirming chat ID.
+  int64 group_chat_id = 1;
+}
+
+message InvalidateGroupBindingRequest {
+  string idempotency_key = 1;
+  // Verified membership update that the stored owner left this group, never
+  // another member's ordinary message. Backend checks webhook/member facts.
+  TelegramCredential telegram = 2;
+}
+
+message InvalidateGroupBindingResponse {
+  google.protobuf.Timestamp invalidated_at = 1;
+}
+
+message GetGroupBindingRequest {
+  // Valid GROUP/SUPERGROUP update from a bound active user. This query need not
+  // already pass the group-owner check; it grants no business-operation right.
+  TelegramCredential telegram = 1;
+}
+
+message GetGroupBindingResponse {
+  bool bound = 1;
+  // True only if bound and the authenticated sender owns the current binding.
+  // Return no other user's identity. Bot ignores non-owner messages.
+  bool is_owner = 2;
+}
+
+// backend includes the bot module (A116); no separate bot service identity.
+// IAM checks credentials directly, so no metadata assertion is accepted.
+// Required IDs/messages/timestamps/digests must be present, enum 0/unknown is
+// rejected. Never log credentials, codes, tokens or original update bodies.
+// Writes are idempotent per method/verified identity/key; changed content is
+// AlreadyExists. Revalidate current access before returning an original result.
+// If success revoked the binding/session, an exact original request matching
+// its stored credential hash/digest may retrieve only that original result;
+// the revoked credential cannot authenticate a new command.
+// Persist identity/binding/session changes and the result in one transaction.
+// Unknown outcomes retry the original key; do not create a second identity.
+//
+// Register creates the global user, unique personal account, binding and bot
+// session atomically; only cryptocurrency acceptance is enabled by default.
+// Existing bindings retain their user/account and only an explicit new /start
+// may reopen a session under IAM policy. Disabled users/accounts always fail.
+// Bind rejects either side already bound; never merges two global users.
+// Unbind revokes bot sessions, all group bindings and pending challenges while
+// preserving the global user/account. Account disable also invalidates groups.
+// Group notifications/queries are owner-only; TOTP, API keys and enrollment
+// links always move to PRIVATE. Owner departure invalidates its group promptly.
+service TelegramService {
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc CreateBindingCode(CreateBindingCodeRequest) returns (CreateBindingCodeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc Bind(BindRequest) returns (BindResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc Unbind(UnbindRequest) returns (UnbindResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc BeginGroupBinding(BeginGroupBindingRequest) returns (BeginGroupBindingResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc ConfirmGroupBinding(ConfirmGroupBindingRequest) returns (ConfirmGroupBindingResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc InvalidateGroupBinding(InvalidateGroupBindingRequest) returns (InvalidateGroupBindingResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc GetGroupBinding(GetGroupBindingRequest) returns (GetGroupBindingResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}

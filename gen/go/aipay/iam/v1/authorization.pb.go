@@ -487,6 +487,7 @@ type AuthorizeRequest struct {
 	//	*AuthorizeRequest_EpayV1Key
 	//	*AuthorizeRequest_EpayV2Signature
 	//	*AuthorizeRequest_WorkloadIdentity
+	//	*AuthorizeRequest_Telegram
 	Credential isAuthorizeRequest_Credential `protobuf_oneof:"credential"`
 	Audience   string                        `protobuf:"bytes,7,opt,name=audience,proto3" json:"audience,omitempty"`
 	// Route facts including the required permission. IAM validates the
@@ -497,8 +498,17 @@ type AuthorizeRequest struct {
 	// inferred from the credential alone; empty or equal to the bound scope for
 	// merchant applications. IAM verifies ownership, membership and the chain,
 	// and rejects any mismatch.
-	ActingScope   *v1.Scope       `protobuf:"bytes,9,opt,name=acting_scope,json=actingScope,proto3" json:"acting_scope,omitempty"`
-	Resource      *v1.ResourceRef `protobuf:"bytes,10,opt,name=resource,proto3" json:"resource,omitempty"`
+	ActingScope *v1.Scope       `protobuf:"bytes,9,opt,name=acting_scope,json=actingScope,proto3" json:"acting_scope,omitempty"`
+	Resource    *v1.ResourceRef `protobuf:"bytes,10,opt,name=resource,proto3" json:"resource,omitempty"`
+	// Sensitive, never logged. Allowed only with telegram; exactly six decimal
+	// digits when present. Required for each withdrawal, address change,
+	// credential creation/rotation and other catalog-defined sensitive action.
+	// IAM checks the enrolled secret, account rate limit and consumes the actual
+	// matched TOTP time step once per key version, including clock-skew windows.
+	// Success adds telegram/totp/mfa to amr and sets auth_time to IAM's current
+	// verification time. It never trusts backend's MFA claims or an earlier bot
+	// session's MFA; failure, missing enrollment or state errors deny the action.
+	TotpCode      string `protobuf:"bytes,12,opt,name=totp_code,json=totpCode,proto3" json:"totp_code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -592,6 +602,15 @@ func (x *AuthorizeRequest) GetWorkloadIdentity() *WorkloadIdentityCredential {
 	return nil
 }
 
+func (x *AuthorizeRequest) GetTelegram() *TelegramCredential {
+	if x != nil {
+		if x, ok := x.Credential.(*AuthorizeRequest_Telegram); ok {
+			return x.Telegram
+		}
+	}
+	return nil
+}
+
 func (x *AuthorizeRequest) GetAudience() string {
 	if x != nil {
 		return x.Audience
@@ -620,6 +639,13 @@ func (x *AuthorizeRequest) GetResource() *v1.ResourceRef {
 	return nil
 }
 
+func (x *AuthorizeRequest) GetTotpCode() string {
+	if x != nil {
+		return x.TotpCode
+	}
+	return ""
+}
+
 type isAuthorizeRequest_Credential interface {
 	isAuthorizeRequest_Credential()
 }
@@ -644,6 +670,10 @@ type AuthorizeRequest_WorkloadIdentity struct {
 	WorkloadIdentity *WorkloadIdentityCredential `protobuf:"bytes,6,opt,name=workload_identity,json=workloadIdentity,proto3,oneof"`
 }
 
+type AuthorizeRequest_Telegram struct {
+	Telegram *TelegramCredential `protobuf:"bytes,11,opt,name=telegram,proto3,oneof"`
+}
+
 func (*AuthorizeRequest_Bearer) isAuthorizeRequest_Credential() {}
 
 func (*AuthorizeRequest_EpayV1Signature) isAuthorizeRequest_Credential() {}
@@ -653,6 +683,8 @@ func (*AuthorizeRequest_EpayV1Key) isAuthorizeRequest_Credential() {}
 func (*AuthorizeRequest_EpayV2Signature) isAuthorizeRequest_Credential() {}
 
 func (*AuthorizeRequest_WorkloadIdentity) isAuthorizeRequest_Credential() {}
+
+func (*AuthorizeRequest_Telegram) isAuthorizeRequest_Credential() {}
 
 type AuthorizeResponse struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
@@ -788,19 +820,21 @@ const file_aipay_iam_v1_authorization_proto_rawDesc = "" +
 	"\n" +
 	"data_scope\x18\x01 \x01(\x0e2\x17.aipay.iam.v1.DataScopeR\tdataScope\x12,\n" +
 	"\x05scope\x18\x02 \x01(\v2\x16.aipay.common.v1.ScopeR\x05scope\x12-\n" +
-	"\x05owner\x18\x03 \x01(\v2\x17.aipay.iam.v1.PrincipalR\x05owner\"\xb9\x05\n" +
+	"\x05owner\x18\x03 \x01(\v2\x17.aipay.iam.v1.PrincipalR\x05owner\"\x96\x06\n" +
 	"\x10AuthorizeRequest\x129\n" +
 	"\acontext\x18\x01 \x01(\v2\x1f.aipay.common.v1.RequestContextR\acontext\x128\n" +
 	"\x06bearer\x18\x02 \x01(\v2\x1e.aipay.iam.v1.BearerCredentialH\x00R\x06bearer\x12U\n" +
 	"\x11epay_v1_signature\x18\x03 \x01(\v2'.aipay.iam.v1.EPayV1SignatureCredentialH\x00R\x0fepayV1Signature\x12C\n" +
 	"\vepay_v1_key\x18\x04 \x01(\v2!.aipay.iam.v1.EPayV1KeyCredentialH\x00R\tepayV1Key\x12U\n" +
 	"\x11epay_v2_signature\x18\x05 \x01(\v2'.aipay.iam.v1.EPayV2SignatureCredentialH\x00R\x0fepayV2Signature\x12W\n" +
-	"\x11workload_identity\x18\x06 \x01(\v2(.aipay.iam.v1.WorkloadIdentityCredentialH\x00R\x10workloadIdentity\x12\x1a\n" +
+	"\x11workload_identity\x18\x06 \x01(\v2(.aipay.iam.v1.WorkloadIdentityCredentialH\x00R\x10workloadIdentity\x12>\n" +
+	"\btelegram\x18\v \x01(\v2 .aipay.iam.v1.TelegramCredentialH\x00R\btelegram\x12\x1a\n" +
 	"\baudience\x18\a \x01(\tR\baudience\x12E\n" +
 	"\x0frequest_binding\x18\b \x01(\v2\x1c.aipay.iam.v1.RequestBindingR\x0erequestBinding\x129\n" +
 	"\facting_scope\x18\t \x01(\v2\x16.aipay.common.v1.ScopeR\vactingScope\x128\n" +
 	"\bresource\x18\n" +
-	" \x01(\v2\x1c.aipay.common.v1.ResourceRefR\bresourceB\f\n" +
+	" \x01(\v2\x1c.aipay.common.v1.ResourceRefR\bresource\x12\x1b\n" +
+	"\ttotp_code\x18\f \x01(\tR\btotpCodeB\f\n" +
 	"\n" +
 	"credential\"\x86\x03\n" +
 	"\x11AuthorizeResponse\x125\n" +
@@ -862,9 +896,10 @@ var file_aipay_iam_v1_authorization_proto_goTypes = []any{
 	(*EPayV1KeyCredential)(nil),        // 16: aipay.iam.v1.EPayV1KeyCredential
 	(*EPayV2SignatureCredential)(nil),  // 17: aipay.iam.v1.EPayV2SignatureCredential
 	(*WorkloadIdentityCredential)(nil), // 18: aipay.iam.v1.WorkloadIdentityCredential
-	(*RequestBinding)(nil),             // 19: aipay.iam.v1.RequestBinding
-	(*v1.ResourceRef)(nil),             // 20: aipay.common.v1.ResourceRef
-	(*timestamppb.Timestamp)(nil),      // 21: google.protobuf.Timestamp
+	(*TelegramCredential)(nil),         // 19: aipay.iam.v1.TelegramCredential
+	(*RequestBinding)(nil),             // 20: aipay.iam.v1.RequestBinding
+	(*v1.ResourceRef)(nil),             // 21: aipay.common.v1.ResourceRef
+	(*timestamppb.Timestamp)(nil),      // 22: google.protobuf.Timestamp
 }
 var file_aipay_iam_v1_authorization_proto_depIdxs = []int32{
 	0,  // 0: aipay.iam.v1.PermissionGrant.data_scope:type_name -> aipay.iam.v1.DataScope
@@ -883,20 +918,21 @@ var file_aipay_iam_v1_authorization_proto_depIdxs = []int32{
 	16, // 13: aipay.iam.v1.AuthorizeRequest.epay_v1_key:type_name -> aipay.iam.v1.EPayV1KeyCredential
 	17, // 14: aipay.iam.v1.AuthorizeRequest.epay_v2_signature:type_name -> aipay.iam.v1.EPayV2SignatureCredential
 	18, // 15: aipay.iam.v1.AuthorizeRequest.workload_identity:type_name -> aipay.iam.v1.WorkloadIdentityCredential
-	19, // 16: aipay.iam.v1.AuthorizeRequest.request_binding:type_name -> aipay.iam.v1.RequestBinding
-	11, // 17: aipay.iam.v1.AuthorizeRequest.acting_scope:type_name -> aipay.common.v1.Scope
-	20, // 18: aipay.iam.v1.AuthorizeRequest.resource:type_name -> aipay.common.v1.ResourceRef
-	12, // 19: aipay.iam.v1.AuthorizeResponse.principal:type_name -> aipay.iam.v1.Principal
-	21, // 20: aipay.iam.v1.AuthorizeResponse.expires_at:type_name -> google.protobuf.Timestamp
-	5,  // 21: aipay.iam.v1.AuthorizeResponse.decision:type_name -> aipay.iam.v1.AuthorizationDecision
-	11, // 22: aipay.iam.v1.AuthorizeResponse.acting_scope:type_name -> aipay.common.v1.Scope
-	7,  // 23: aipay.iam.v1.AuthorizationService.Authorize:input_type -> aipay.iam.v1.AuthorizeRequest
-	8,  // 24: aipay.iam.v1.AuthorizationService.Authorize:output_type -> aipay.iam.v1.AuthorizeResponse
-	24, // [24:25] is the sub-list for method output_type
-	23, // [23:24] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	19, // 16: aipay.iam.v1.AuthorizeRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
+	20, // 17: aipay.iam.v1.AuthorizeRequest.request_binding:type_name -> aipay.iam.v1.RequestBinding
+	11, // 18: aipay.iam.v1.AuthorizeRequest.acting_scope:type_name -> aipay.common.v1.Scope
+	21, // 19: aipay.iam.v1.AuthorizeRequest.resource:type_name -> aipay.common.v1.ResourceRef
+	12, // 20: aipay.iam.v1.AuthorizeResponse.principal:type_name -> aipay.iam.v1.Principal
+	22, // 21: aipay.iam.v1.AuthorizeResponse.expires_at:type_name -> google.protobuf.Timestamp
+	5,  // 22: aipay.iam.v1.AuthorizeResponse.decision:type_name -> aipay.iam.v1.AuthorizationDecision
+	11, // 23: aipay.iam.v1.AuthorizeResponse.acting_scope:type_name -> aipay.common.v1.Scope
+	7,  // 24: aipay.iam.v1.AuthorizationService.Authorize:input_type -> aipay.iam.v1.AuthorizeRequest
+	8,  // 25: aipay.iam.v1.AuthorizationService.Authorize:output_type -> aipay.iam.v1.AuthorizeResponse
+	25, // [25:26] is the sub-list for method output_type
+	24, // [24:25] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_aipay_iam_v1_authorization_proto_init() }
@@ -911,6 +947,7 @@ func file_aipay_iam_v1_authorization_proto_init() {
 		(*AuthorizeRequest_EpayV1Key)(nil),
 		(*AuthorizeRequest_EpayV2Signature)(nil),
 		(*AuthorizeRequest_WorkloadIdentity)(nil),
+		(*AuthorizeRequest_Telegram)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

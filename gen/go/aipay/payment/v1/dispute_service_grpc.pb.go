@@ -37,7 +37,8 @@ const (
 // required; unknown enum values and UNSPECIFIED (0) are rejected.
 //
 // Register persists intent/evidence and a stable dispute ID before calling
-// HoldTradeForDispute with key payment.disputes:<dispute_id>. Only a confirmed
+// HoldTradeForDispute before release, or HoldReleasedTradeForDispute after
+// release, with key payment.disputes:<dispute_id>. Only a confirmed
 // ledger barrier permits a success response and atomic local OrderDisputed v1
 // outbox registration. Unknown/recovery retries query/reuse the same hold; no
 // second dispute/hold. Registration itself is protective, not a funds ruling.
@@ -64,9 +65,14 @@ const (
 //
 // Outcomes map only to existing release/cancellation/refund authorizations;
 // all original checks remain. No new accounts or amounts. REFUND is fail-closed
-// if no matching confirmed refund occupation or safe ledger handoff exists:
-// current ledger forbids reserving against an unresolved dispute. This contract
-// does not invent that handoff or a hold over already released funds.
+// without a confirmed full refund occupation. v0.6.0 adds the A118 ReserveRefund
+// ruling handoff and the A119 HoldReleasedTradeForDispute/ResolveReleasedTradeDispute
+// original-account controls. Registration selects the hold matching the actual
+// release history; a post-release shortfall must be reported, never counted as
+// a full reservation. These commands do not authorize inter-account movement.
+// Reconciliation independently checks the ruling saved on RefundReservation;
+// its material version must equal the occupation's control_version minus one,
+// while the funds authorization still binds the current ledger control version.
 type DisputeServiceClient interface {
 	RegisterDispute(ctx context.Context, in *RegisterDisputeRequest, opts ...grpc.CallOption) (*RegisterDisputeResponse, error)
 	SubmitDisputeRuling(ctx context.Context, in *SubmitDisputeRulingRequest, opts ...grpc.CallOption) (*SubmitDisputeRulingResponse, error)
@@ -134,7 +140,8 @@ func (c *disputeServiceClient) GetDisputeRuling(ctx context.Context, in *GetDisp
 // required; unknown enum values and UNSPECIFIED (0) are rejected.
 //
 // Register persists intent/evidence and a stable dispute ID before calling
-// HoldTradeForDispute with key payment.disputes:<dispute_id>. Only a confirmed
+// HoldTradeForDispute before release, or HoldReleasedTradeForDispute after
+// release, with key payment.disputes:<dispute_id>. Only a confirmed
 // ledger barrier permits a success response and atomic local OrderDisputed v1
 // outbox registration. Unknown/recovery retries query/reuse the same hold; no
 // second dispute/hold. Registration itself is protective, not a funds ruling.
@@ -161,9 +168,14 @@ func (c *disputeServiceClient) GetDisputeRuling(ctx context.Context, in *GetDisp
 //
 // Outcomes map only to existing release/cancellation/refund authorizations;
 // all original checks remain. No new accounts or amounts. REFUND is fail-closed
-// if no matching confirmed refund occupation or safe ledger handoff exists:
-// current ledger forbids reserving against an unresolved dispute. This contract
-// does not invent that handoff or a hold over already released funds.
+// without a confirmed full refund occupation. v0.6.0 adds the A118 ReserveRefund
+// ruling handoff and the A119 HoldReleasedTradeForDispute/ResolveReleasedTradeDispute
+// original-account controls. Registration selects the hold matching the actual
+// release history; a post-release shortfall must be reported, never counted as
+// a full reservation. These commands do not authorize inter-account movement.
+// Reconciliation independently checks the ruling saved on RefundReservation;
+// its material version must equal the occupation's control_version minus one,
+// while the funds authorization still binds the current ledger control version.
 type DisputeServiceServer interface {
 	RegisterDispute(context.Context, *RegisterDisputeRequest) (*RegisterDisputeResponse, error)
 	SubmitDisputeRuling(context.Context, *SubmitDisputeRulingRequest) (*SubmitDisputeRulingResponse, error)

@@ -1,0 +1,159 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/iam/v1/identity.proto";
+import "aipay/iam/v1/security_events.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+// Sensitive, scoped only to this user's TOTP setup. A 256-bit opaque token,
+// hashed at rest, expiring and single use; not a session or money-operation
+// capability. Expiry is returned from IAM's configured enrollment policy.
+message TotpEnrollmentToken {
+  string token = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message IssueTotpEnrollmentTokenRequest {
+  string idempotency_key = 1;
+  // Own user only; a restricted first-time security-settings session is valid.
+  // Telegram must be PRIVATE. Existing active TOTP cannot be replaced here.
+  UserAuthentication authentication = 2;
+}
+
+message IssueTotpEnrollmentTokenResponse {
+  TotpEnrollmentToken enrollment = 1;
+}
+
+message GetTotpEnrollmentRequest {
+  string idempotency_key = 1;
+  // Sensitive single-use page token, redeemed only by backend's browser path.
+  string token = 2;
+}
+
+message GetTotpEnrollmentResponse {
+  string enrollment_id = 1;
+  // Sensitive browser-only completion capability, not an authentication token.
+  string completion_token = 2;
+  // Sensitive. IAM generates the QR code and recovery codes; backend displays
+  // them directly to the browser, never via bot handlers, Telegram or storage.
+  bytes qr_code_png = 3;
+  repeated string recovery_codes = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+message CompleteTotpEnrollmentRequest {
+  string idempotency_key = 1;
+  string enrollment_id = 2;
+  string completion_token = 3;
+  // Sensitive six-digit code. IAM rate limits, validates pending enrollment
+  // and consumes this matched time step before activating TOTP/recovery codes.
+  string totp_code = 4;
+}
+
+message CompleteTotpEnrollmentResponse {
+  google.protobuf.Timestamp bound_at = 1;
+}
+
+message UseRecoveryCodeRequest {
+  string idempotency_key = 1;
+  UserAuthentication authentication = 2;
+  // Sensitive; verify own unused hashed code and atomically consume once.
+  // It cannot substitute for a TOTP on a funds operation.
+  string recovery_code = 3;
+}
+
+message UseRecoveryCodeResponse {
+  TotpReset reset = 1;
+  // Restricted re-enrollment only, issued after all old capabilities revoke.
+  TotpEnrollmentToken enrollment = 2;
+}
+
+message ResetTotpRequest {
+  string idempotency_key = 1;
+  // Sensitive. IAM verifies a platform USER session, FIDO2 MFA, auth_time no
+  // older than five minutes and the internal permission iam.mfa.reset.
+  BearerCredential administrator_session = 2;
+  // Target selector, never authorization. IAM resolves its personal account.
+  string user_id = 3;
+  // Selector for an authoritative completed identity-verification record,
+  // independently checked by IAM and bound to this user; not proof by itself.
+  string identity_verification_id = 4;
+  // 1 to 1000 characters; no credentials or authentication assertions.
+  string reason = 5;
+}
+
+message ResetTotpResponse {
+  TotpReset reset = 1;
+}
+
+// backend-only; IAM directly verifies body credentials, never metadata proof.
+// Enrollment material/confirmation RPCs are browser-only: the bot can deliver
+// an enrollment link but must never receive QR/secret/recovery material. Backend
+// enforces Cookie/CSRF/Origin and isolates those routes from bot processing.
+// Required credentials/IDs/times are checked; never log sensitive material.
+// Tokens/challenges/recovery codes are hashed at rest; TOTP secrets use KMS
+// envelope encryption. Pending/expired enrollment is never authentication.
+//
+// Idempotency is per method/verified subject/key; changed content AlreadyExists.
+// Authorized identical retries return the original result without regenerating
+// secrets or consuming codes again; expired setup capabilities are rejected.
+// When success itself revokes the authenticating session/code, only an exact
+// original request matching its persisted credential hash/command digest may
+// retrieve that result; consumed credentials cannot authenticate a new command.
+// IAM verifies rates/expiry/revocation and atomically records changes/results.
+// Complete enables one pending secret, consumes the matched time step, revokes
+// other pending flows and never upgrades a restricted session to full access.
+//
+// Recovery and platform reset disable old TOTP/recovery codes and revoke ALL
+// web/portal/bot sessions, cached auth and pending setup capabilities. In the
+// same IAM transaction advance security_version and enqueue TotpReset on
+// iam.security; recovery may then issue only a new restricted enrollment token.
+// settlement resets address cooling from that signed event; no settlement
+// implementation or permission to bypass cooling is provided by this contract.
+// Platform reset returns no new secret/recovery code to the administrator.
+service MfaService {
+  rpc IssueTotpEnrollmentToken(IssueTotpEnrollmentTokenRequest) returns (IssueTotpEnrollmentTokenResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc GetTotpEnrollment(GetTotpEnrollmentRequest) returns (GetTotpEnrollmentResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc CompleteTotpEnrollment(CompleteTotpEnrollmentRequest) returns (CompleteTotpEnrollmentResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc UseRecoveryCode(UseRecoveryCodeRequest) returns (UseRecoveryCodeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc ResetTotp(ResetTotpRequest) returns (ResetTotpResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}

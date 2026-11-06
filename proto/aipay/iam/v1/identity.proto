@@ -26,6 +26,42 @@ message BearerCredential {
   string token = 1;
 }
 
+// Receivers reject UNSPECIFIED (0), unknown values and channel identities.
+enum TelegramChatType {
+  TELEGRAM_CHAT_TYPE_UNSPECIFIED = 0;
+  TELEGRAM_CHAT_TYPE_PRIVATE = 1;
+  TELEGRAM_CHAT_TYPE_GROUP = 2;
+  TELEGRAM_CHAT_TYPE_SUPERGROUP = 3;
+}
+
+// Update facts supplied only by backend's configured bot module after webhook
+// secret validation. Reject sender_chat, anonymous administrators and channels;
+// never infer the sender from forwarded content. These facts and their digest
+// are not an independent Telegram signature or caller-selected user authority.
+// Deduplicate update_id in the configured bot namespace, bind it to these facts
+// and reject changed content; out-of-order updates cannot overwrite new state.
+message TelegramCredential {
+  // Positive Telegram user ID, resolved through IAM's unique binding.
+  int64 telegram_user_id = 1;
+  // Nonzero signed ID; group IDs can be negative.
+  int64 chat_id = 2;
+  TelegramChatType chat_type = 3;
+  // Required presence; nonnegative, including valid update ID 0.
+  optional int64 update_id = 4;
+  // Exactly 32 bytes: SHA-256 of the original webhook HTTP body bytes.
+  bytes update_body_sha256 = 5;
+}
+
+// IAM validates the credential itself. Only a human user's session or unique
+// Telegram binding is accepted, never an API application/workload. Telegram
+// security settings require PRIVATE; IDs in the request confer no authority.
+message UserAuthentication {
+  oneof credential {
+    BearerCredential bearer = 1;
+    TelegramCredential telegram = 2;
+  }
+}
+
 // Preserve decoded scalar bytes and include extension parameters. Duplicate
 // names are rejected by IAM; canonicalization is specific to the EPay version.
 message EPayParameter {

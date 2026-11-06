@@ -30,11 +30,13 @@ func TestC2CMethodAuthorization(t *testing.T) {
 		{
 			ledgerv1.File_aipay_ledger_v1_reservation_service_proto.Services().ByName("ReservationService"),
 			map[string]expected{
-				"ReserveTrade":        {[]string{"payment"}, serviceOnly, ""},
-				"GetTradeReservation": {[]string{"payment", "reconciliation"}, serviceOnly, ""},
-				"HoldTradeForRefund":  {[]string{"payment"}, serviceOnly, ""},
-				"HoldTradeForDispute": {[]string{"payment"}, serviceOnly, ""},
-				"ReserveRefund":       {[]string{"payment"}, serviceOnly, ""},
+				"ReserveTrade":                {[]string{"payment"}, serviceOnly, ""},
+				"GetTradeReservation":         {[]string{"payment", "reconciliation"}, serviceOnly, ""},
+				"HoldTradeForRefund":          {[]string{"payment"}, serviceOnly, ""},
+				"HoldTradeForDispute":         {[]string{"payment"}, serviceOnly, ""},
+				"ReserveRefund":               {[]string{"payment"}, serviceOnly, ""},
+				"HoldReleasedTradeForDispute": {[]string{"payment"}, serviceOnly, ""},
+				"ResolveReleasedTradeDispute": {[]string{"payment"}, serviceOnly, ""},
 			},
 		},
 		{
@@ -84,6 +86,83 @@ func TestC2CMethodAuthorization(t *testing.T) {
 					t.Fatalf("permissions %v, want %v", rule.GetPermissions(), permissions)
 				}
 			})
+		}
+	}
+}
+
+// A118 must retain the ledger-owned ruling without a reconciliation import or
+// destination override; A119 may only control the original account's funds.
+func TestLedgerDisputeHandoffBoundary(t *testing.T) {
+	ruling := (&ledgerv1.DisputeRulingReference{}).ProtoReflect().Descriptor()
+	reference := (&reconciliationv1.DisputeResolution{}).ProtoReflect().Descriptor()
+	if ruling.Fields().Len() != 4 || ruling.Fields().Len() != reference.Fields().Len() {
+		t.Fatal("ruling reference must have only the four reviewed evidence fields")
+	}
+	for i := 0; i < reference.Fields().Len(); i++ {
+		want, got := reference.Fields().Get(i), ruling.Fields().Get(i)
+		if got.Name() != want.Name() || got.Number() != want.Number() || got.Kind() != want.Kind() || got.Cardinality() != want.Cardinality() || got.HasPresence() != want.HasPresence() || got.ContainingOneof() != nil {
+			t.Fatalf("ruling reference changed evidence shape: %v", got)
+		}
+		if want.Kind() == protoreflect.MessageKind && got.Message().FullName() != want.Message().FullName() {
+			t.Fatalf("ruling timestamp type: %v", got)
+		}
+	}
+	for _, file := range []protoreflect.FileDescriptor{
+		ledgerv1.File_aipay_ledger_v1_trade_proto,
+		ledgerv1.File_aipay_ledger_v1_reservation_service_proto,
+	} {
+		for i := 0; i < file.Imports().Len(); i++ {
+			if file.Imports().Get(i).Package() == "aipay.reconciliation.v1" {
+				t.Fatal("ledger must not reverse the reconciliation dependency")
+			}
+		}
+	}
+	for _, want := range []struct {
+		message proto.Message
+		field   protoreflect.Name
+		number  protoreflect.FieldNumber
+		typ     protoreflect.FullName
+	}{
+		{&ledgerv1.ReserveRefundRequest{}, "dispute_ruling", 7, ruling.FullName()},
+		{&ledgerv1.RefundReservation{}, "dispute_ruling", 10, ruling.FullName()},
+		{&ledgerv1.GetTradeReservationResponse{}, "refund_reservation", 2, "aipay.ledger.v1.RefundReservation"},
+		{&ledgerv1.ResolveReleasedTradeDisputeRequest{}, "dispute_ruling", 4, ruling.FullName()},
+		{&ledgerv1.TradeReservation{}, "released_dispute_hold", 10, "aipay.ledger.v1.ReleasedTradeDisputeHold"},
+	} {
+		field := want.message.ProtoReflect().Descriptor().Fields().ByName(want.field)
+		if field == nil || field.Number() != want.number || field.Kind() != protoreflect.MessageKind || !field.HasPresence() || field.IsList() || field.ContainingOneof() != nil || field.Message().FullName() != want.typ {
+			t.Fatalf("missing presence-aware handoff evidence: %s.%s", want.message.ProtoReflect().Descriptor().FullName(), want.field)
+		}
+	}
+	for _, want := range []struct {
+		message proto.Message
+		fields  []protoreflect.Name
+	}{
+		{&ledgerv1.HoldReleasedTradeForDisputeRequest{}, []protoreflect.Name{"idempotency_key", "order_id", "escrow_reservation_id", "expected_control_version", "dispute_id"}},
+		{&ledgerv1.ResolveReleasedTradeDisputeRequest{}, []protoreflect.Name{"idempotency_key", "dispute_id", "expected_control_version", "dispute_ruling", "outcome", "refund_id"}},
+	} {
+		message := want.message.ProtoReflect().Descriptor()
+		if message.Fields().Len() != len(want.fields) {
+			t.Fatalf("%s must not gain an account/amount override", message.FullName())
+		}
+		for i, name := range want.fields {
+			if message.Fields().Get(i).Name() != name || message.Fields().Get(i).Number() != protoreflect.FieldNumber(i+1) {
+				t.Fatalf("unexpected %s field %d", message.FullName(), i+1)
+			}
+		}
+	}
+	outcomes := ledgerv1.ReleasedTradeDisputeOutcome(0).Descriptor().Values()
+	wantOutcomes := []protoreflect.Name{
+		"RELEASED_TRADE_DISPUTE_OUTCOME_UNSPECIFIED",
+		"RELEASED_TRADE_DISPUTE_OUTCOME_RELEASE_TO_ORIGINAL_RECIPIENT",
+		"RELEASED_TRADE_DISPUTE_OUTCOME_RESERVE_POST_RELEASE_REFUND",
+	}
+	if outcomes.Len() != len(wantOutcomes) {
+		t.Fatal("unreviewed post-release dispute funds direction")
+	}
+	for i, name := range wantOutcomes {
+		if outcomes.Get(i).Name() != name || outcomes.Get(i).Number() != protoreflect.EnumNumber(i) {
+			t.Fatalf("unexpected outcome at %d: %v", i, outcomes.Get(i))
 		}
 	}
 }

@@ -34,6 +34,10 @@ message GetTradeReservationRequest {
 
 message GetTradeReservationResponse {
   TradeReservation reservation = 1;
+  // Present while a refund occupation is active. Exposes original funding and
+  // any retained ruling to payment/reconciliation for independent verification
+  // after the active dispute has atomically become REFUND_PENDING.
+  RefundReservation refund_reservation = 2;
 }
 
 message HoldTradeForRefundRequest {
@@ -81,10 +85,57 @@ message ReserveRefundRequest {
   RefundReservationBranch branch = 5;
   // Must match the stored original recipient account; not an authority claim.
   string account_id = 6;
+  // Optional presence. When DISPUTED, only PRE_RELEASE with the approved REFUND
+  // ruling matching the current dispute/order/escrow is accepted (A118).
+  // Payment verifies approval/direction; ledger checks complete reference,
+  // current dispute and CAS, then atomically replaces DISPUTED with
+  // REFUND_PENDING and occupies original Q without any available-funds window.
+  // Persist the ruling on RefundReservation for reconciliation's independent
+  // verification. First execution with a ruling when not disputed is rejected;
+  // identical completed retries still return the original result.
+  // Cannot bypass an active released_dispute_hold; use ResolveReleasedTradeDispute.
+  DisputeRulingReference dispute_ruling = 7;
 }
 
 message ReserveRefundResponse {
   RefundReservation reservation = 1;
+}
+
+message HoldReleasedTradeForDisputeRequest {
+  string idempotency_key = 1;
+  string order_id = 2;
+  string escrow_reservation_id = 3;
+  uint64 expected_control_version = 4;
+  string dispute_id = 5;
+}
+
+message HoldReleasedTradeForDisputeResponse {
+  // Actual H and N-H from the stored original quote, not caller amounts.
+  // A nonzero shortfall is a successful partial protective hold; payment MUST
+  // alert. Even H=0 records the barrier. Replays never add a second hold.
+  ReleasedTradeDisputeHold hold = 1;
+  uint64 control_version = 2;
+}
+
+message ResolveReleasedTradeDisputeRequest {
+  string idempotency_key = 1;
+  // Resolves the unique original order/account/hold; no destination selector.
+  string dispute_id = 2;
+  uint64 expected_control_version = 3;
+  // Required, same dispute; payment verifies completed approval and direction.
+  DisputeRulingReference dispute_ruling = 4;
+  ReleasedTradeDisputeOutcome outcome = 5;
+  // Required only for RESERVE_POST_RELEASE_REFUND, forbidden for release.
+  string refund_id = 6;
+}
+
+message ResolveReleasedTradeDisputeResponse {
+  uint64 control_version = 1;
+  // Present only for the refund branch, full N, POST_RELEASE, original account,
+  // with the exact dispute_ruling retained for independent reconciliation.
+  RefundReservation refund_reservation = 2;
+  // This command's posting seq; 0 only when no funds changed.
+  uint64 seq = 3;
 }
 
 // Service-only commands, with no user assertion. Payment first checks the
@@ -95,13 +146,32 @@ message ReserveRefundResponse {
 // control version or incompatible state is FailedPrecondition. Replays of
 // identical commands return their original result before a fresh CAS check.
 //
-// Holds cannot claim control of funds already released or clear other barriers.
-// An unresolved dispute blocks refund reservation. Unknown outcomes and TTLs
-// never release funds. Release, cancellation and refund settlement/restoration
-// are driven only by independently verified reconciliation signed events;
-// payment has no unilateral release RPC. ReserveWithdrawal is deferred to M5.
+// Pre-release holds cannot claim control of already released funds. A118 alone
+// permits an approved matching REFUND ruling to atomically replace DISPUTED
+// with a PRE_RELEASE refund occupation. No command clears unrelated barriers.
+// Unknown outcomes and TTLs never release funds. Inter-account release,
+// cancellation and refund settlement/restoration are driven only by verified
+// reconciliation signed events; payment has no unilateral inter-account release
+// RPC. ReserveWithdrawal is deferred to M5.
 // Command digests use the field-order encoding in docs contracts.md, not proto
 // serialization.
+//
+// A119 HoldReleasedTradeForDispute requires original escrow RELEASED, no other
+// active dispute/refund occupation and positive matching CAS. Reserve H=min(N,
+// original recipient's available balance) from its user_available into its own
+// user_risk_held, bind dispute_id and retain original RELEASED escrow history.
+// GetTradeReservation exposes this hold and actual dispute ID for independent
+// checks. Resolve requires this current hold, matching approved ruling and CAS.
+// RELEASE_TO_ORIGINAL_RECIPIENT returns only actual H to that same account and
+// leaves original escrow RELEASED. RESERVE_POST_RELEASE_REFUND moves H into a
+// refund occupation, supplements N-H only from that account's available funds
+// atomically, then sets REFUND_PENDING; insufficient funds fail without any
+// partial conversion or fiat refund. Preserve the ruling on the full N refund.
+// These two methods never move funds outside the original account, so payment
+// may invoke them as a service. No arbitrary account, transferred business's
+// new account, amount or direct seller return is accepted. Final refund funds
+// movement/fee reversal/seller return still requires reconciliation's existing
+// TradeRefundAuthorized and independent ruling/fiat/wallet checks.
 service ReservationService {
   rpc ReserveTrade(ReserveTradeRequest) returns (ReserveTradeResponse) {
     option (aipay.authz.v1.policy) = {
@@ -139,6 +209,22 @@ service ReservationService {
     };
   }
   rpc ReserveRefund(ReserveRefundRequest) returns (ReserveRefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc HoldReleasedTradeForDispute(HoldReleasedTradeForDisputeRequest) returns (HoldReleasedTradeForDisputeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc ResolveReleasedTradeDispute(ResolveReleasedTradeDisputeRequest) returns (ResolveReleasedTradeDisputeResponse) {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: "payment"

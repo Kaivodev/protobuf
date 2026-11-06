@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+// Receivers reject UNSPECIFIED (0) and unknown values.
+enum TotpResetReason {
+  TOTP_RESET_REASON_UNSPECIFIED = 0;
+  TOTP_RESET_REASON_RECOVERY_CODE = 1;
+  TOTP_RESET_REASON_PLATFORM_RESET = 2;
+}
+
+// iam.security, producer iam, sole receiver settlement; event_type TotpReset,
+// schema_version 1. Transport uses the existing SignedEvent/EventStreamService,
+// verified mTLS service identity, IAM signing registry and per-stream ACL.
+// All fields required; positive security_version, UUIDv7 internal IDs and UTC
+// microsecond reset_at. Payload/identity selectors alone are not trusted proof.
+// Atomically enqueue with disabling TOTP/recovery codes, revoking all sessions
+// and pending setup capabilities, cache invalidation and version advancement.
+// settlement deduplicates by event ID and prevents security-version rollback;
+// restart this personal account's address cooling at least from reset_at for
+// the existing A32 24-hour period, never shortening another restriction. A new
+// enrollment or recovery code cannot waive it. This contract does not implement
+// settlement's cooling/withdrawal gate or claim immediate cross-domain delivery.
+message TotpReset {
+  string reset_id = 1;
+  string user_id = 2;
+  // IAM-resolved original personal funds account, never bot/caller selected.
+  string account_id = 3;
+  uint64 security_version = 4;
+  TotpResetReason reason = 5;
+  google.protobuf.Timestamp reset_at = 6;
+}
