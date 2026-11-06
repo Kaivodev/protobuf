@@ -79,3 +79,23 @@ message OrderReversed {
   bytes evidence_sha256 = 7;
   google.protobuf.Timestamp reversed_at = 8;
 }
+
+// payment.orders, event_type=OrderDisputed, schema_version=1 (new type; the
+// four existing event types above remain v2). Producer payment; receivers
+// ledger/reconciliation. Original snapshots/IDs and a positive post-hold
+// control_version are required. Record only after ledger confirms the matching
+// dispute barrier; payment registration and outbox commit in one transaction.
+// This reports the existing hold, never creates a second hold, clears a barrier
+// or authorizes funds movement. Registered actor comes from verified authority;
+// UTC microsecond timestamp and 32-byte evidence digest are required. No raw
+// party evidence, assertions or keys. Ruling approval is NOT funds settlement.
+message OrderDisputed {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  uint64 control_version = 3;
+  string dispute_id = 4;
+  string reason = 5;
+  bytes evidence_sha256 = 6;
+  string registered_by = 7;
+  google.protobuf.Timestamp registered_at = 8;
+}

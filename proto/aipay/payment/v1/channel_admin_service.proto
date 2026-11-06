@@ -1,0 +1,375 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/authz/v1/policy.proto";
+import "aipay/payment/v1/admin_approval.proto";
+import "aipay/payment/v1/pricing_events.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+message SubmitChannelAccountRequest {
+  string idempotency_key = 1;
+  ChannelAccountChange change = 2;
+}
+
+message SubmitChannelAccountResponse {
+  PaymentApproval approval = 1;
+}
+
+message ApproveChannelAccountRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  // Original browser assertion, not an IAM identity assertion or public key.
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveChannelAccountResponse {
+  PaymentApproval approval = 1;
+}
+
+message DisableChannelAccountRequest {
+  string idempotency_key = 1;
+  string channel_account_id = 2;
+  uint64 expected_control_version = 3;
+  string reason = 4;
+}
+
+message DisableChannelAccountResponse {
+  string channel_account_id = 1;
+  // Positive routing control version after disabling; old approvals cannot resume.
+  uint64 control_version = 2;
+  google.protobuf.Timestamp disabled_at = 3;
+}
+
+message SubmitPaymentMethodRequest {
+  string idempotency_key = 1;
+  PaymentMethodChange change = 2;
+}
+
+message SubmitPaymentMethodResponse {
+  PaymentApproval approval = 1;
+}
+
+message ApprovePaymentMethodRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  // Original browser assertion, not an IAM identity assertion or public key.
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApprovePaymentMethodResponse {
+  PaymentApproval approval = 1;
+}
+
+message SubmitRiskPolicyRequest {
+  string idempotency_key = 1;
+  RiskPolicyChange change = 2;
+}
+
+message SubmitRiskPolicyResponse {
+  PaymentApproval approval = 1;
+}
+
+message ApproveRiskPolicyRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  // Original browser assertion, not an IAM identity assertion or public key.
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveRiskPolicyResponse {
+  PaymentApproval approval = 1;
+}
+
+message SavePricingDraftRequest {
+  string idempotency_key = 1;
+  // Empty only on creation; payment assigns draft_id/configuration.version.
+  string draft_id = 2;
+  // 0 only on creation, otherwise positive current revision of an editable draft.
+  uint64 expected_revision = 3;
+  PricingConfiguration configuration = 4;
+  google.protobuf.Timestamp effective_at = 5;
+}
+
+message SavePricingDraftResponse {
+  PricingDraft draft = 1;
+}
+
+message SubmitPricingVersionRequest {
+  string idempotency_key = 1;
+  string draft_id = 2;
+  uint64 expected_revision = 3;
+  uint64 expected_control_version = 4;
+}
+
+message SubmitPricingVersionResponse {
+  PaymentApproval approval = 1;
+}
+
+message ApprovePricingVersionRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  // Original browser assertion, not an IAM identity assertion or public key.
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApprovePricingVersionResponse {
+  PaymentApproval approval = 1;
+}
+
+message UploadPluginRequest {
+  string idempotency_key = 1;
+  // Must describe a payment plugin; no statement plugins or secret values.
+  bytes manifest_json = 2;
+  bytes plugin_js = 3;
+  repeated PluginFixture fixtures = 4;
+  // Recompute from normalized manifest_json || plugin_js and compare to CI.
+  bytes package_sha256 = 5;
+}
+
+message UploadPluginResponse {
+  PaymentApproval approval = 1;
+}
+
+message ApprovePluginRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  // Original browser assertion, not an IAM identity assertion or public key.
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApprovePluginResponse {
+  PaymentApproval approval = 1;
+}
+
+message RequestPluginEnableRequest {
+  string idempotency_key = 1;
+  string channel_account_id = 2;
+  uint64 expected_control_version = 3;
+  // payment loads the immutable approved package/hash/publication evidence.
+  string plugin_version_id = 4;
+}
+
+message RequestPluginEnableResponse {
+  PaymentApproval approval = 1;
+}
+
+message ApprovePluginEnableRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  // Original browser assertion, not an IAM identity assertion or public key.
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApprovePluginEnableResponse {
+  PaymentApproval approval = 1;
+}
+
+message SubmitReversalRequest {
+  string idempotency_key = 1;
+  string order_id = 2;
+  string escrow_reservation_id = 3;
+  uint64 expected_control_version = 4;
+  string original_event_id = 5;
+  string reason = 6;
+  bytes evidence_sha256 = 7;
+}
+
+message SubmitReversalResponse {
+  PaymentApproval approval = 1;
+}
+
+message ApproveReversalRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  // Original browser assertion, not an IAM identity assertion or public key.
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveReversalResponse {
+  PaymentApproval approval = 1;
+}
+
+// backend management listener ONLY, with USER proof and platform acting scope.
+// payment checks these constraints itself: policy options cannot encode them.
+// All normal funds-affecting changes require a pending request followed by two
+// distinct registered natural-person WebAuthn approvers, neither the initiator.
+// Credential-to-user/person mapping is payment's own, never supplied by backend.
+// All requests expire after 24h; payment verifies signatures itself. No IAM
+// assertion substitutes for WebAuthn. Approve methods reject a mismatched kind.
+//
+// Writes are idempotent per method/verified initiating user/key. Different
+// content is AlreadyExists; authorized identical retries return the original
+// result before fresh CAS/expiry checks, without another approval or action.
+// Second approval rechecks current versions/authority before atomic local
+// approval, configuration scheduling and outbox. effective_at >= approved_at.
+// Pending/expired approvals never change configuration; unknown service outcomes
+// are not success. Only new orders use new versions. Stop new dispatch grants
+// on disable; continue old query/callback/refund/notification/reconciliation.
+// No management method can directly change ledger balances or bypass barriers.
+// Canonical material/digest encoding is in docs contracts.md.
+service ChannelAdminService {
+  // Submit full create/update/seller-binding/ordinary disable material; no effect before approval.
+  rpc SubmitChannelAccount(SubmitChannelAccountRequest) returns (SubmitChannelAccountResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.channel.manage"
+      }
+    };
+  }
+  // Approve kind channel_account; recheck authoritative seller review and routing CAS.
+  rpc ApproveChannelAccount(ApproveChannelAccountRequest) returns (ApproveChannelAccountResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.channel.approve"
+      }
+    };
+  }
+  // Existing emergency exception: one designated person stops new dispatch only. No funds movement.
+  rpc DisableChannelAccount(DisableChannelAccountRequest) returns (DisableChannelAccountResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.channel.disable"
+      }
+    };
+  }
+  // Submit platform availability, independent of merchant eligibility.
+  rpc SubmitPaymentMethod(SubmitPaymentMethodRequest) returns (SubmitPaymentMethodResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.method.manage"
+      }
+    };
+  }
+  // Approve kind payment_method; update availability and control version after two approvals.
+  rpc ApprovePaymentMethod(ApprovePaymentMethodRequest) returns (ApprovePaymentMethodResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.method.approve"
+      }
+    };
+  }
+  // Submit explicit per-channel A111 durations; no platform default.
+  rpc SubmitRiskPolicy(SubmitRiskPolicyRequest) returns (SubmitRiskPolicyResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.risk.submit"
+      }
+    };
+  }
+  // Approve kind risk_policy; emit RiskPolicyApproved v1 with identical values and request_digest.
+  rpc ApproveRiskPolicy(ApproveRiskPolicyRequest) returns (ApproveRiskPolicyResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.risk.approve"
+      }
+    };
+  }
+  // Create/edit an unsubmitted draft only. Never enables or emits an approval event.
+  rpc SavePricingDraft(SavePricingDraftRequest) returns (SavePricingDraftResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.pricing.manage"
+      }
+    };
+  }
+  // Freeze the exact current A110 draft for two approvals; submitted drafts are immutable.
+  rpc SubmitPricingVersion(SubmitPricingVersionRequest) returns (SubmitPricingVersionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.pricing.manage"
+      }
+    };
+  }
+  // Approve kind pricing_version; emit PricingVersionApproved v2, approval_sha256=request_digest.
+  rpc ApprovePricingVersion(ApprovePricingVersionRequest) returns (ApprovePricingVersionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.pricing.approve"
+      }
+    };
+  }
+  // Replay immutable CI payment package/fixtures in sandbox before creating pending publication approval.
+  rpc UploadPlugin(UploadPluginRequest) returns (UploadPluginResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.plugin.upload"
+      }
+    };
+  }
+  // Approve kind plugin_version; publication does not bind or enable any channel account.
+  rpc ApprovePlugin(ApprovePluginRequest) returns (ApprovePluginResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.plugin.approve"
+      }
+    };
+  }
+  // Separate two-person request to bind an approved plugin to an account; also used for rollback.
+  rpc RequestPluginEnable(RequestPluginEnableRequest) returns (RequestPluginEnableResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.plugin.enable"
+      }
+    };
+  }
+  // Approve kind plugin_enable; recheck package/publication and routing CAS. Never undo a disable.
+  rpc ApprovePluginEnable(ApprovePluginEnableRequest) returns (ApprovePluginEnableResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.plugin.approve"
+      }
+    };
+  }
+  // Bind an approved correction rule to the original order/event, never arbitrary journal lines.
+  rpc SubmitReversal(SubmitReversalRequest) returns (SubmitReversalResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.reversal.submit"
+      }
+    };
+  }
+  // Approve kind reversal; emit OrderReversed v2 with original evidence. This is not ledger settlement.
+  rpc ApproveReversal(ApproveReversalRequest) returns (ApproveReversalResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.reversal.approve"
+      }
+    };
+  }
+}

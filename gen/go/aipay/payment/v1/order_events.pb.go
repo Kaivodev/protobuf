@@ -472,6 +472,115 @@ func (x *OrderReversed) GetReversedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// payment.orders, event_type=OrderDisputed, schema_version=1 (new type; the
+// four existing event types above remain v2). Producer payment; receivers
+// ledger/reconciliation. Original snapshots/IDs and a positive post-hold
+// control_version are required. Record only after ledger confirms the matching
+// dispute barrier; payment registration and outbox commit in one transaction.
+// This reports the existing hold, never creates a second hold, clears a barrier
+// or authorizes funds movement. Registered actor comes from verified authority;
+// UTC microsecond timestamp and 32-byte evidence digest are required. No raw
+// party evidence, assertions or keys. Ruling approval is NOT funds settlement.
+type OrderDisputed struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Trade               *v1.TradeSnapshot      `protobuf:"bytes,1,opt,name=trade,proto3" json:"trade,omitempty"`
+	EscrowReservationId string                 `protobuf:"bytes,2,opt,name=escrow_reservation_id,json=escrowReservationId,proto3" json:"escrow_reservation_id,omitempty"`
+	ControlVersion      uint64                 `protobuf:"varint,3,opt,name=control_version,json=controlVersion,proto3" json:"control_version,omitempty"`
+	DisputeId           string                 `protobuf:"bytes,4,opt,name=dispute_id,json=disputeId,proto3" json:"dispute_id,omitempty"`
+	Reason              string                 `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`
+	EvidenceSha256      []byte                 `protobuf:"bytes,6,opt,name=evidence_sha256,json=evidenceSha256,proto3" json:"evidence_sha256,omitempty"`
+	RegisteredBy        string                 `protobuf:"bytes,7,opt,name=registered_by,json=registeredBy,proto3" json:"registered_by,omitempty"`
+	RegisteredAt        *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=registered_at,json=registeredAt,proto3" json:"registered_at,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *OrderDisputed) Reset() {
+	*x = OrderDisputed{}
+	mi := &file_aipay_payment_v1_order_events_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OrderDisputed) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OrderDisputed) ProtoMessage() {}
+
+func (x *OrderDisputed) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_order_events_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OrderDisputed.ProtoReflect.Descriptor instead.
+func (*OrderDisputed) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_order_events_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *OrderDisputed) GetTrade() *v1.TradeSnapshot {
+	if x != nil {
+		return x.Trade
+	}
+	return nil
+}
+
+func (x *OrderDisputed) GetEscrowReservationId() string {
+	if x != nil {
+		return x.EscrowReservationId
+	}
+	return ""
+}
+
+func (x *OrderDisputed) GetControlVersion() uint64 {
+	if x != nil {
+		return x.ControlVersion
+	}
+	return 0
+}
+
+func (x *OrderDisputed) GetDisputeId() string {
+	if x != nil {
+		return x.DisputeId
+	}
+	return ""
+}
+
+func (x *OrderDisputed) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *OrderDisputed) GetEvidenceSha256() []byte {
+	if x != nil {
+		return x.EvidenceSha256
+	}
+	return nil
+}
+
+func (x *OrderDisputed) GetRegisteredBy() string {
+	if x != nil {
+		return x.RegisteredBy
+	}
+	return ""
+}
+
+func (x *OrderDisputed) GetRegisteredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RegisteredAt
+	}
+	return nil
+}
+
 var File_aipay_payment_v1_order_events_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_order_events_proto_rawDesc = "" +
@@ -521,7 +630,17 @@ const file_aipay_payment_v1_order_events_proto_rawDesc = "" +
 	"\x06reason\x18\x06 \x01(\tR\x06reason\x12'\n" +
 	"\x0fevidence_sha256\x18\a \x01(\fR\x0eevidenceSha256\x12;\n" +
 	"\vreversed_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"reversedAtB@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"reversedAt\"\xe8\x02\n" +
+	"\rOrderDisputed\x124\n" +
+	"\x05trade\x18\x01 \x01(\v2\x1e.aipay.common.v1.TradeSnapshotR\x05trade\x122\n" +
+	"\x15escrow_reservation_id\x18\x02 \x01(\tR\x13escrowReservationId\x12'\n" +
+	"\x0fcontrol_version\x18\x03 \x01(\x04R\x0econtrolVersion\x12\x1d\n" +
+	"\n" +
+	"dispute_id\x18\x04 \x01(\tR\tdisputeId\x12\x16\n" +
+	"\x06reason\x18\x05 \x01(\tR\x06reason\x12'\n" +
+	"\x0fevidence_sha256\x18\x06 \x01(\fR\x0eevidenceSha256\x12#\n" +
+	"\rregistered_by\x18\a \x01(\tR\fregisteredBy\x12?\n" +
+	"\rregistered_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\fregisteredAtB@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_aipay_payment_v1_order_events_proto_rawDescOnce sync.Once
@@ -535,33 +654,36 @@ func file_aipay_payment_v1_order_events_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_order_events_proto_rawDescData
 }
 
-var file_aipay_payment_v1_order_events_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_aipay_payment_v1_order_events_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_aipay_payment_v1_order_events_proto_goTypes = []any{
 	(*OrderPaid)(nil),                // 0: aipay.payment.v1.OrderPaid
 	(*RefundSucceeded)(nil),          // 1: aipay.payment.v1.RefundSucceeded
 	(*RefundFailed)(nil),             // 2: aipay.payment.v1.RefundFailed
 	(*OrderReversed)(nil),            // 3: aipay.payment.v1.OrderReversed
-	(*v1.TradeSnapshot)(nil),         // 4: aipay.common.v1.TradeSnapshot
-	(*timestamppb.Timestamp)(nil),    // 5: google.protobuf.Timestamp
-	(v11.RefundReservationBranch)(0), // 6: aipay.ledger.v1.RefundReservationBranch
+	(*OrderDisputed)(nil),            // 4: aipay.payment.v1.OrderDisputed
+	(*v1.TradeSnapshot)(nil),         // 5: aipay.common.v1.TradeSnapshot
+	(*timestamppb.Timestamp)(nil),    // 6: google.protobuf.Timestamp
+	(v11.RefundReservationBranch)(0), // 7: aipay.ledger.v1.RefundReservationBranch
 }
 var file_aipay_payment_v1_order_events_proto_depIdxs = []int32{
-	4,  // 0: aipay.payment.v1.OrderPaid.trade:type_name -> aipay.common.v1.TradeSnapshot
-	5,  // 1: aipay.payment.v1.OrderPaid.paid_verified_at:type_name -> google.protobuf.Timestamp
-	5,  // 2: aipay.payment.v1.OrderPaid.risk_release_at:type_name -> google.protobuf.Timestamp
-	4,  // 3: aipay.payment.v1.RefundSucceeded.trade:type_name -> aipay.common.v1.TradeSnapshot
-	6,  // 4: aipay.payment.v1.RefundSucceeded.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
-	5,  // 5: aipay.payment.v1.RefundSucceeded.verified_at:type_name -> google.protobuf.Timestamp
-	4,  // 6: aipay.payment.v1.RefundFailed.trade:type_name -> aipay.common.v1.TradeSnapshot
-	6,  // 7: aipay.payment.v1.RefundFailed.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
-	5,  // 8: aipay.payment.v1.RefundFailed.verified_at:type_name -> google.protobuf.Timestamp
-	4,  // 9: aipay.payment.v1.OrderReversed.trade:type_name -> aipay.common.v1.TradeSnapshot
-	5,  // 10: aipay.payment.v1.OrderReversed.reversed_at:type_name -> google.protobuf.Timestamp
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	5,  // 0: aipay.payment.v1.OrderPaid.trade:type_name -> aipay.common.v1.TradeSnapshot
+	6,  // 1: aipay.payment.v1.OrderPaid.paid_verified_at:type_name -> google.protobuf.Timestamp
+	6,  // 2: aipay.payment.v1.OrderPaid.risk_release_at:type_name -> google.protobuf.Timestamp
+	5,  // 3: aipay.payment.v1.RefundSucceeded.trade:type_name -> aipay.common.v1.TradeSnapshot
+	7,  // 4: aipay.payment.v1.RefundSucceeded.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
+	6,  // 5: aipay.payment.v1.RefundSucceeded.verified_at:type_name -> google.protobuf.Timestamp
+	5,  // 6: aipay.payment.v1.RefundFailed.trade:type_name -> aipay.common.v1.TradeSnapshot
+	7,  // 7: aipay.payment.v1.RefundFailed.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
+	6,  // 8: aipay.payment.v1.RefundFailed.verified_at:type_name -> google.protobuf.Timestamp
+	5,  // 9: aipay.payment.v1.OrderReversed.trade:type_name -> aipay.common.v1.TradeSnapshot
+	6,  // 10: aipay.payment.v1.OrderReversed.reversed_at:type_name -> google.protobuf.Timestamp
+	5,  // 11: aipay.payment.v1.OrderDisputed.trade:type_name -> aipay.common.v1.TradeSnapshot
+	6,  // 12: aipay.payment.v1.OrderDisputed.registered_at:type_name -> google.protobuf.Timestamp
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_order_events_proto_init() }
@@ -575,7 +697,7 @@ func file_aipay_payment_v1_order_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_order_events_proto_rawDesc), len(file_aipay_payment_v1_order_events_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -95,6 +95,9 @@ func TestPaymentExplicitZeroPresence(t *testing.T) {
 		&paymentv1.RiskPolicyApproved{HoldDurationSeconds: proto.Uint64(0)},
 		&paymentv1.PricingConfiguration{MarkupPpm: proto.Int32(0), FeeRatePpm: proto.Int32(0)},
 		&paymentv1.SetEnabledRequest{Enabled: proto.Bool(false)},
+		&paymentv1.RiskPolicyChange{HoldDurationSeconds: proto.Uint64(0)},
+		&paymentv1.ChannelAccountConfiguration{Enabled: proto.Bool(false)},
+		&paymentv1.PaymentMethodChange{Enabled: proto.Bool(false)},
 	} {
 		t.Run(string(message.ProtoReflect().Descriptor().Name()), func(t *testing.T) {
 			encoded, err := proto.Marshal(message)

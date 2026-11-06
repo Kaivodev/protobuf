@@ -1,0 +1,203 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/common/v1/trade.proto";
+import "aipay/payment/v1/pricing_events.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// All IDs/messages/versions/digests/times are required unless stated otherwise.
+// IDs are UUIDv7; SHA-256 digests are 32 bytes; times are UTC microseconds.
+// Receivers reject unknown fields/enums and UNSPECIFIED (0), absent required
+// presence, stale versions and unverifiable authority. No secrets/assertions
+// or raw evidence may enter logs. See docs contracts.md for canonical encoding.
+
+// Full replacement of routing configuration, never a patch to old orders.
+// Immutable credential references resolve only inside payment; no secret bytes.
+// New accounts start disabled. Enabling requires an independently approved
+// plugin binding, approved seller binding, pricing and explicit risk policy.
+message ChannelAccountConfiguration {
+  string channel_account_id = 1;
+  string channel_code = 2;
+  string name = 3;
+  string seller_account_id = 4;
+  // Binds the authoritative reviewed seller record; a caller's digest/ID alone
+  // is not proof. Recheck current review at submission AND execution.
+  bytes seller_review_sha256 = 5;
+  repeated string payment_methods = 6;
+  string fiat_currency = 7;
+  // Positive fiat minor units, max >= min; daily limit >= max.
+  int64 min_amount_fiat = 8;
+  int64 max_amount_fiat = 9;
+  int64 daily_limit_fiat = 10;
+  int32 priority = 11;
+  uint32 weight = 12;
+  // Nonempty immutable reference to payment's encrypted credential version.
+  string credentials_ref = 13;
+  // Exact normalized nonsecret JSON bytes, validated against plugin manifest.
+  bytes config_json = 14;
+  // Required presence. Changes affect new dispatch grants only.
+  optional bool enabled = 15;
+}
+
+message ChannelAccountChange {
+  ChannelAccountConfiguration configuration = 1;
+  // 0 only for a new ID, otherwise positive current routing control version.
+  uint64 expected_control_version = 2;
+}
+
+// Platform availability, separate from merchant eligibility. Current codes:
+// alipay, wxpay, bank; adding a row cannot open an undesigned EPay route.
+message PaymentMethodChange {
+  string payment_method = 1;
+  string name = 2;
+  optional bool enabled = 3;
+  // 0 only if absent; otherwise positive current method control version.
+  uint64 expected_control_version = 4;
+}
+
+message RiskPolicyChange {
+  string risk_policy_version = 1;
+  string channel_account_id = 2;
+  // All require presence. Hold can be an explicitly approved 0; others > 0.
+  optional uint64 hold_duration_seconds = 3;
+  optional uint64 exceptional_extension_seconds = 4;
+  optional uint64 dispute_handling_timeout_seconds = 5;
+  // Not before approval completion; affects new orders only. A dispute timeout
+  // never releases funds and policy replacement cannot shorten old deadlines.
+  google.protobuf.Timestamp effective_at = 6;
+  uint64 expected_control_version = 7;
+}
+
+message PricingDraft {
+  string draft_id = 1;
+  uint64 revision = 2;
+  PricingConfiguration configuration = 3;
+  google.protobuf.Timestamp effective_at = 4;
+}
+
+// Exact frozen draft submitted for approval; A110 scope, ppm and rounding
+// semantics are those of PricingConfiguration/TradeQuoteSnapshot.
+message PricingVersionChange {
+  PricingDraft draft = 1;
+  // Current version of the target+side configuration; 0 only if absent.
+  uint64 expected_control_version = 2;
+}
+
+message PluginFixture {
+  // Unique normalized relative path under fixtures/, no traversal or links.
+  string path = 1;
+  bytes content = 2;
+}
+
+// Immutable CI-built payment package only. manifest declares payment, code,
+// semver, host API, domain allowlist, secret reference names, config schema,
+// capabilities and callback rules. Reject statement plugins, unknown fields,
+// duplicate code/semver with different content and unsupported host APIs.
+message PluginVersionMaterial {
+  string plugin_version_id = 1;
+  bytes manifest_json = 2;
+  bytes plugin_js = 3;
+  // Sorted by path; replay all operations/scenarios in payment's sandbox before
+  // creating the approval request. Credentials never enter recordings.
+  repeated PluginFixture fixtures = 4;
+  // SHA-256(normalized manifest_json || plugin_js), matching the CI artifact.
+  bytes package_sha256 = 5;
+  // Computed by payment after successful replay, not accepted from the caller.
+  bytes regression_report_sha256 = 6;
+}
+
+// Separate approval from publishing the package. Rollback is another enable
+// request for a previously approved immutable version, with two new approvals.
+message PluginEnableChange {
+  string channel_account_id = 1;
+  uint64 expected_control_version = 2;
+  string plugin_version_id = 3;
+  bytes package_sha256 = 4;
+  string publication_approval_request_id = 5;
+  bytes publication_request_digest = 6;
+}
+
+// A correction of an original fact, never arbitrary lines/accounts/amounts.
+// payment reads the original TradeSnapshot and original event independently.
+message ReversalMaterial {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  uint64 expected_control_version = 3;
+  string original_event_id = 4;
+  string reason = 5;
+  bytes evidence_sha256 = 6;
+}
+
+// Exactly the three existing reconciliation authorization directions. Receivers
+// reject UNSPECIFIED (0) and unknown values. No arbitrary destination or amount.
+enum DisputeRulingOutcome {
+  DISPUTE_RULING_OUTCOME_UNSPECIFIED = 0;
+  DISPUTE_RULING_OUTCOME_RELEASE_TO_ORIGINAL_RECIPIENT = 1;
+  DISPUTE_RULING_OUTCOME_RETURN_TO_ORIGINAL_SELLER = 2;
+  DISPUTE_RULING_OUTCOME_REFUND = 3;
+}
+
+// Immutable dossier. Either party's bytes may be empty only when investigation
+// explains the absence; at least one is nonempty. Investigation is 1-1000 chars.
+// Combined evidence <= 64 KiB. It is evidence to investigate, never a paid flag.
+message DisputeEvidence {
+  bytes seller_evidence = 1;
+  bytes recipient_evidence = 2;
+  string investigation = 3;
+}
+
+// Loaded from original order and confirmed ledger barrier, not caller ownership.
+// No amount or destination override; trade must equal the stored original.
+message DisputeRulingMaterial {
+  string dispute_id = 1;
+  aipay.common.v1.TradeSnapshot trade = 2;
+  string escrow_reservation_id = 3;
+  uint64 expected_control_version = 4;
+  DisputeRulingOutcome outcome = 5;
+  string reason = 6;
+  // SHA-256(canonical DisputeEvidence bytes); evidence is returned separately.
+  bytes evidence_sha256 = 7;
+}
+
+// The executor creates these immutable signed materials. Exactly one operation
+// must match kind. Header fields equal ApprovalRequest id/kind/requested_by/
+// requested_at/expires_at. Canonical field-order encoding is specified in docs;
+// request_bytes has a length-prefixed "aipay.payment.admin.v1" domain followed
+// by canonical field-order material, NOT protobuf serialization. Unknown fields
+// are rejected. Different encoding/material versions require a new domain.
+message PaymentApprovalMaterial {
+  string approval_request_id = 1;
+  string kind = 2;
+  string requested_by = 3;
+  google.protobuf.Timestamp requested_at = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  // All kinds require TWO distinct natural persons, neither the initiator.
+  oneof operation {
+    ChannelAccountChange channel_account = 6;
+    PaymentMethodChange payment_method = 7;
+    RiskPolicyChange risk_policy = 8;
+    PricingVersionChange pricing_version = 9;
+    PluginVersionMaterial plugin_version = 10;
+    PluginEnableChange plugin_enable = 11;
+    ReversalMaterial reversal = 12;
+    DisputeRulingMaterial dispute_ruling = 13;
+  }
+}
+
+// Complete original evidence, no public keys. request_digest is
+// SHA-256("AIPAY-APPROVAL-V1" || request_bytes); request_bytes must exactly match
+// str("aipay.payment.admin.v1") || canonical(material). For dispute_ruling this
+// same request_digest is
+// reconciliation DisputeResolution.ruling_sha256, and id is ruling_id.
+message PaymentApproval {
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+  PaymentApprovalMaterial material = 2;
+  // Original append-only assertions; each approver is counted at most once.
+  repeated aipay.approval.v1.Approval approvals = 3;
+  // Absent until two approvals; equals second approval's verified_at.
+  google.protobuf.Timestamp approved_at = 4;
+}
