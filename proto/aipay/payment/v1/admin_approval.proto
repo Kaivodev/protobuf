@@ -94,20 +94,24 @@ message PluginFixture {
 }
 
 // Immutable CI-built payment package only. manifest declares payment, code,
-// semver, host API, domain allowlist, secret reference names, config schema,
-// capabilities and callback rules. Reject statement plugins, unknown fields,
-// duplicate code/semver with different content and unsupported host APIs.
+// semver, host ABI, domain allowlist, secret reference names, config schema,
+// capabilities, callback rules and build provenance (Go version, source commit,
+// source tree digest). Reject statement plugins, unknown fields,
+// duplicate code/semver with different content and unsupported host ABIs.
 message PluginVersionMaterial {
   string plugin_version_id = 1;
   bytes manifest_json = 2;
-  bytes plugin_js = 3;
+  // Superseded by plugin_wasm (decision A120); always empty.
+  bytes plugin_js = 3 [deprecated = true];
   // Sorted by path; replay all operations/scenarios in payment's sandbox before
   // creating the approval request. Credentials never enter recordings.
   repeated PluginFixture fixtures = 4;
-  // SHA-256(normalized manifest_json || plugin_js), matching the CI artifact.
+  // SHA-256(normalized manifest_json || plugin_wasm), matching the CI artifact.
   bytes package_sha256 = 5;
   // Computed by payment after successful replay, not accepted from the caller.
   bytes regression_report_sha256 = 6;
+  // Reproducible GOOS=wasip1 reactor module, at most 16 MiB.
+  bytes plugin_wasm = 7;
 }
 
 // Separate approval from publishing the package. Rollback is another enable

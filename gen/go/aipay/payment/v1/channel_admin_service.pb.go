@@ -1099,11 +1099,18 @@ type UploadPluginRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
 	// Must describe a payment plugin; no statement plugins or secret values.
-	ManifestJson []byte           `protobuf:"bytes,2,opt,name=manifest_json,json=manifestJson,proto3" json:"manifest_json,omitempty"`
-	PluginJs     []byte           `protobuf:"bytes,3,opt,name=plugin_js,json=pluginJs,proto3" json:"plugin_js,omitempty"`
-	Fixtures     []*PluginFixture `protobuf:"bytes,4,rep,name=fixtures,proto3" json:"fixtures,omitempty"`
-	// Recompute from normalized manifest_json || plugin_js and compare to CI.
+	ManifestJson []byte `protobuf:"bytes,2,opt,name=manifest_json,json=manifestJson,proto3" json:"manifest_json,omitempty"`
+	// QuickJS packages were superseded by WASM modules (decision A120); must be
+	// empty.
+	//
+	// Deprecated: Marked as deprecated in aipay/payment/v1/channel_admin_service.proto.
+	PluginJs []byte           `protobuf:"bytes,3,opt,name=plugin_js,json=pluginJs,proto3" json:"plugin_js,omitempty"`
+	Fixtures []*PluginFixture `protobuf:"bytes,4,rep,name=fixtures,proto3" json:"fixtures,omitempty"`
+	// Recompute from normalized manifest_json || plugin_wasm and compare to CI.
 	PackageSha256 []byte `protobuf:"bytes,5,opt,name=package_sha256,json=packageSha256,proto3" json:"package_sha256,omitempty"`
+	// Reproducible GOOS=wasip1 reactor module built by CI from a pinned Go
+	// toolchain, at most 16 MiB.
+	PluginWasm    []byte `protobuf:"bytes,6,opt,name=plugin_wasm,json=pluginWasm,proto3" json:"plugin_wasm,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1152,6 +1159,7 @@ func (x *UploadPluginRequest) GetManifestJson() []byte {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in aipay/payment/v1/channel_admin_service.proto.
 func (x *UploadPluginRequest) GetPluginJs() []byte {
 	if x != nil {
 		return x.PluginJs
@@ -1169,6 +1177,13 @@ func (x *UploadPluginRequest) GetFixtures() []*PluginFixture {
 func (x *UploadPluginRequest) GetPackageSha256() []byte {
 	if x != nil {
 		return x.PackageSha256
+	}
+	return nil
+}
+
+func (x *UploadPluginRequest) GetPluginWasm() []byte {
+	if x != nil {
+		return x.PluginWasm
 	}
 	return nil
 }
@@ -1849,13 +1864,15 @@ const file_aipay_payment_v1_channel_admin_service_proto_rawDesc = "" +
 	"\x13approval_request_id\x18\x02 \x01(\tR\x11approvalRequestId\x12B\n" +
 	"\tassertion\x18\x03 \x01(\v2$.aipay.approval.v1.WebAuthnAssertionR\tassertion\"^\n" +
 	"\x1dApprovePricingVersionResponse\x12=\n" +
-	"\bapproval\x18\x01 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\bapproval\"\xe4\x01\n" +
+	"\bapproval\x18\x01 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\bapproval\"\x89\x02\n" +
 	"\x13UploadPluginRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12#\n" +
-	"\rmanifest_json\x18\x02 \x01(\fR\fmanifestJson\x12\x1b\n" +
-	"\tplugin_js\x18\x03 \x01(\fR\bpluginJs\x12;\n" +
+	"\rmanifest_json\x18\x02 \x01(\fR\fmanifestJson\x12\x1f\n" +
+	"\tplugin_js\x18\x03 \x01(\fB\x02\x18\x01R\bpluginJs\x12;\n" +
 	"\bfixtures\x18\x04 \x03(\v2\x1f.aipay.payment.v1.PluginFixtureR\bfixtures\x12%\n" +
-	"\x0epackage_sha256\x18\x05 \x01(\fR\rpackageSha256\"U\n" +
+	"\x0epackage_sha256\x18\x05 \x01(\fR\rpackageSha256\x12\x1f\n" +
+	"\vplugin_wasm\x18\x06 \x01(\fR\n" +
+	"pluginWasm\"U\n" +
 	"\x14UploadPluginResponse\x12=\n" +
 	"\bapproval\x18\x01 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\bapproval\"\xb3\x01\n" +
 	"\x14ApprovePluginRequest\x12'\n" +

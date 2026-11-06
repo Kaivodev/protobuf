@@ -124,10 +124,15 @@ message UploadPluginRequest {
   string idempotency_key = 1;
   // Must describe a payment plugin; no statement plugins or secret values.
   bytes manifest_json = 2;
-  bytes plugin_js = 3;
+  // QuickJS packages were superseded by WASM modules (decision A120); must be
+  // empty.
+  bytes plugin_js = 3 [deprecated = true];
   repeated PluginFixture fixtures = 4;
-  // Recompute from normalized manifest_json || plugin_js and compare to CI.
+  // Recompute from normalized manifest_json || plugin_wasm and compare to CI.
   bytes package_sha256 = 5;
+  // Reproducible GOOS=wasip1 reactor module built by CI from a pinned Go
+  // toolchain, at most 16 MiB.
+  bytes plugin_wasm = 6;
 }
 
 message UploadPluginResponse {

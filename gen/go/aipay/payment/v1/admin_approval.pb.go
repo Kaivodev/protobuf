@@ -640,23 +640,29 @@ func (x *PluginFixture) GetContent() []byte {
 }
 
 // Immutable CI-built payment package only. manifest declares payment, code,
-// semver, host API, domain allowlist, secret reference names, config schema,
-// capabilities and callback rules. Reject statement plugins, unknown fields,
-// duplicate code/semver with different content and unsupported host APIs.
+// semver, host ABI, domain allowlist, secret reference names, config schema,
+// capabilities, callback rules and build provenance (Go version, source commit,
+// source tree digest). Reject statement plugins, unknown fields,
+// duplicate code/semver with different content and unsupported host ABIs.
 type PluginVersionMaterial struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	PluginVersionId string                 `protobuf:"bytes,1,opt,name=plugin_version_id,json=pluginVersionId,proto3" json:"plugin_version_id,omitempty"`
 	ManifestJson    []byte                 `protobuf:"bytes,2,opt,name=manifest_json,json=manifestJson,proto3" json:"manifest_json,omitempty"`
-	PluginJs        []byte                 `protobuf:"bytes,3,opt,name=plugin_js,json=pluginJs,proto3" json:"plugin_js,omitempty"`
+	// Superseded by plugin_wasm (decision A120); always empty.
+	//
+	// Deprecated: Marked as deprecated in aipay/payment/v1/admin_approval.proto.
+	PluginJs []byte `protobuf:"bytes,3,opt,name=plugin_js,json=pluginJs,proto3" json:"plugin_js,omitempty"`
 	// Sorted by path; replay all operations/scenarios in payment's sandbox before
 	// creating the approval request. Credentials never enter recordings.
 	Fixtures []*PluginFixture `protobuf:"bytes,4,rep,name=fixtures,proto3" json:"fixtures,omitempty"`
-	// SHA-256(normalized manifest_json || plugin_js), matching the CI artifact.
+	// SHA-256(normalized manifest_json || plugin_wasm), matching the CI artifact.
 	PackageSha256 []byte `protobuf:"bytes,5,opt,name=package_sha256,json=packageSha256,proto3" json:"package_sha256,omitempty"`
 	// Computed by payment after successful replay, not accepted from the caller.
 	RegressionReportSha256 []byte `protobuf:"bytes,6,opt,name=regression_report_sha256,json=regressionReportSha256,proto3" json:"regression_report_sha256,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	// Reproducible GOOS=wasip1 reactor module, at most 16 MiB.
+	PluginWasm    []byte `protobuf:"bytes,7,opt,name=plugin_wasm,json=pluginWasm,proto3" json:"plugin_wasm,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PluginVersionMaterial) Reset() {
@@ -703,6 +709,7 @@ func (x *PluginVersionMaterial) GetManifestJson() []byte {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in aipay/payment/v1/admin_approval.proto.
 func (x *PluginVersionMaterial) GetPluginJs() []byte {
 	if x != nil {
 		return x.PluginJs
@@ -727,6 +734,13 @@ func (x *PluginVersionMaterial) GetPackageSha256() []byte {
 func (x *PluginVersionMaterial) GetRegressionReportSha256() []byte {
 	if x != nil {
 		return x.RegressionReportSha256
+	}
+	return nil
+}
+
+func (x *PluginVersionMaterial) GetPluginWasm() []byte {
+	if x != nil {
+		return x.PluginWasm
 	}
 	return nil
 }
@@ -1418,14 +1432,16 @@ const file_aipay_payment_v1_admin_approval_proto_rawDesc = "" +
 	"\x18expected_control_version\x18\x02 \x01(\x04R\x16expectedControlVersion\"=\n" +
 	"\rPluginFixture\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\fR\acontent\"\xa3\x02\n" +
+	"\acontent\x18\x02 \x01(\fR\acontent\"\xc8\x02\n" +
 	"\x15PluginVersionMaterial\x12*\n" +
 	"\x11plugin_version_id\x18\x01 \x01(\tR\x0fpluginVersionId\x12#\n" +
-	"\rmanifest_json\x18\x02 \x01(\fR\fmanifestJson\x12\x1b\n" +
-	"\tplugin_js\x18\x03 \x01(\fR\bpluginJs\x12;\n" +
+	"\rmanifest_json\x18\x02 \x01(\fR\fmanifestJson\x12\x1f\n" +
+	"\tplugin_js\x18\x03 \x01(\fB\x02\x18\x01R\bpluginJs\x12;\n" +
 	"\bfixtures\x18\x04 \x03(\v2\x1f.aipay.payment.v1.PluginFixtureR\bfixtures\x12%\n" +
 	"\x0epackage_sha256\x18\x05 \x01(\fR\rpackageSha256\x128\n" +
-	"\x18regression_report_sha256\x18\x06 \x01(\fR\x16regressionReportSha256\"\xd4\x02\n" +
+	"\x18regression_report_sha256\x18\x06 \x01(\fR\x16regressionReportSha256\x12\x1f\n" +
+	"\vplugin_wasm\x18\a \x01(\fR\n" +
+	"pluginWasm\"\xd4\x02\n" +
 	"\x12PluginEnableChange\x12,\n" +
 	"\x12channel_account_id\x18\x01 \x01(\tR\x10channelAccountId\x128\n" +
 	"\x18expected_control_version\x18\x02 \x01(\x04R\x16expectedControlVersion\x12*\n" +
