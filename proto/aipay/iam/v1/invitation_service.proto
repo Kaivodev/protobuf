@@ -1,0 +1,194 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/iam/v1/identity.proto";
+import "aipay/iam/v1/web_entry.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+// Explicit first-version platform roles; reject zero/unknown values.
+enum PlatformRole {
+  PLATFORM_ROLE_UNSPECIFIED = 0;
+  PLATFORM_ROLE_ADMINISTRATOR = 1;
+  PLATFORM_ROLE_APPROVER = 2;
+  PLATFORM_ROLE_FINANCE = 3;
+  PLATFORM_ROLE_RISK = 4;
+  PLATFORM_ROLE_OPERATIONS = 5;
+  PLATFORM_ROLE_SRE = 6;
+  PLATFORM_ROLE_SUPPORT = 7;
+  PLATFORM_ROLE_TECHNICAL_SUPPORT = 8;
+}
+
+enum InvitationStatus {
+  INVITATION_STATUS_UNSPECIFIED = 0;
+  INVITATION_STATUS_PENDING_APPROVAL = 1;
+  INVITATION_STATUS_PENDING = 2;
+  INVITATION_STATUS_ACCEPTED = 3;
+  INVITATION_STATUS_REVOKED = 4;
+  INVITATION_STATUS_EXPIRED = 5;
+}
+
+// No invitation token in list/detail responses. Email delivered by IAM outbox.
+message Invitation {
+  string invitation_id = 1;
+  string email = 2;
+  WebEntry entry = 3;
+  repeated PlatformRole platform_roles = 4;
+  string seller_account_id = 5;
+  InvitationStatus status = 6;
+  string invited_by = 7;
+  google.protobuf.Timestamp expires_at = 8;
+  uint64 version = 9;
+  // Empty before an independent platform administrator approves protected roles.
+  string approved_by = 10;
+}
+
+message InvitationNewUser {
+  string display_name = 1;
+  // Sensitive. Forbidden for an existing user; invitations cannot reset passwords.
+  string password = 2;
+}
+message CreateInvitationRequest {
+  string idempotency_key = 1;
+  string email = 2;
+  WebEntry entry = 3;
+  // PLATFORM_ADMIN only, nonempty/unique; ADMINISTRATOR and APPROVER conflict.
+  repeated PlatformRole platform_roles = 4;
+  // UPSTREAM_PORTAL only. IAM verifies ownership, never creates a grant from ID.
+  string seller_account_id = 5;
+}
+
+message CreateInvitationResponse {
+  Invitation invitation = 1;
+}
+
+message ApproveInvitationRequest {
+  string idempotency_key = 1;
+  string invitation_id = 2;
+  uint64 expected_version = 3;
+}
+
+message ApproveInvitationResponse {
+  Invitation invitation = 1;
+}
+
+message InspectInvitationRequest {
+  string token = 1;
+  WebEntry entry = 2;
+}
+
+message InspectInvitationResponse {
+  Invitation invitation = 1;
+  bool existing_user = 2;
+}
+
+message AcceptInvitationRequest {
+  string idempotency_key = 1;
+  string token = 2;
+  WebEntry entry = 3;
+  oneof acceptance {
+    InvitationNewUser new_user = 4;
+    // Complete same-entry session, verified matching email, never a user ID.
+    BearerCredential existing_session = 5;
+  }
+}
+
+message AcceptInvitationResponse {
+  string user_id = 1;
+}
+
+message RevokeInvitationRequest {
+  string idempotency_key = 1;
+  string invitation_id = 2;
+  uint64 expected_version = 3;
+}
+
+message RevokeInvitationResponse {
+  Invitation invitation = 1;
+}
+
+message ListInvitationsRequest {
+  // Optional filters; absent means all authorized invitations.
+  optional WebEntry entry = 1;
+  optional InvitationStatus status = 2;
+  uint32 limit = 3;
+  string page_token = 4;
+}
+
+message ListInvitationsResponse {
+  repeated Invitation invitations = 1;
+  string next_page_token = 2;
+}
+
+// Management requires platform USER, internal listener, current WebAuthn and
+// explicit administrator delegation, not possession of the granted business role.
+// Protected roles (administrator/approver/finance/risk) stay PENDING_APPROVAL until
+// another administrator approves; no email/acceptance before that. Preserve
+// administrator/approver exclusion and at least two active administrators. Non-
+// protected roles/upstream use PENDING directly. Seller account must independently
+// belong to the invited identity (or verified pending activation); never reassign
+// funds ownership. Accept atomically consumes the limited hashed email token,
+// activates one global user/personal account and applies only approved grants.
+// Existing users must authenticate with matching verified email; no password reset.
+// Accept returns no session; fresh login/enrollment is required. Revoke pending
+// only. Writes are idempotent and CAS-protected, reads paginated (1-500).
+service InvitationService {
+  rpc CreateInvitation(CreateInvitationRequest) returns (CreateInvitationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.invitation.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ApproveInvitation(ApproveInvitationRequest) returns (ApproveInvitationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.invitation.approve"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc InspectInvitation(InspectInvitationRequest) returns (InspectInvitationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc AcceptInvitation(AcceptInvitationRequest) returns (AcceptInvitationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc RevokeInvitation(RevokeInvitationRequest) returns (RevokeInvitationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.invitation.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ListInvitations(ListInvitationsRequest) returns (ListInvitationsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.invitation.read"
+      }
+    };
+  }
+}

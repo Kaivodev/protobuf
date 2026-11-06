@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/common/v1/context.proto";
+import "aipay/iam/v1/identity.proto";
+import "aipay/iam/v1/web_entry.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+enum AuthenticationStatus {
+  AUTHENTICATION_STATUS_UNSPECIFIED = 0;
+  AUTHENTICATION_STATUS_AUTHENTICATED = 1;
+  AUTHENTICATION_STATUS_MFA_REQUIRED = 2;
+  AUTHENTICATION_STATUS_SETUP_REQUIRED = 3;
+}
+
+enum ChallengePurpose {
+  CHALLENGE_PURPOSE_UNSPECIFIED = 0;
+  CHALLENGE_PURPOSE_LOGIN = 1;
+  CHALLENGE_PURPOSE_REAUTHENTICATION = 2;
+}
+
+enum MfaKind {
+  MFA_KIND_UNSPECIFIED = 0;
+  MFA_KIND_TOTP = 1;
+  MFA_KIND_WEBAUTHN = 2;
+}
+
+// Nonsecret facts. IAM binds the token to this entry and rejects cross-entry
+// use. Restricted sessions can only enroll MFA and log out, never do business.
+message WebSession {
+  string session_id = 1;
+  string user_id = 2;
+  WebEntry entry = 3;
+  bool restricted = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp idle_expires_at = 6;
+  google.protobuf.Timestamp absolute_expires_at = 7;
+  // Absent before successful MFA; never supplied by backend.
+  google.protobuf.Timestamp auth_time = 8;
+  // Portal's verified fixed funds account; empty for PLATFORM_ADMIN.
+  string seller_account_id = 9;
+}
+
+// Sensitive token is IAM-generated, 256-bit opaque, hashed at rest, delivered
+// once for backend to set a host-only Cookie. Replay returns no token and false
+// secret_delivered, never regenerates it. Lost responses require fresh login.
+message SessionGrant {
+  WebSession session = 1;
+  string token = 2;
+  bool secret_delivered = 3;
+}
+
+// Original browser assertion, IAM's LOGIN key registry, not funds approval.
+// IAM checks random challenge, webauthn.get, entry's origin/RP, ES256, UP/UV,
+// expiry/revocation and monotonic counter (always-zero passkey exception A80).
+message WebAuthnAuthentication {
+  bytes credential_id = 1;
+  bytes authenticator_data = 2;
+  bytes client_data_json = 3;
+  bytes signature = 4;
+  bytes user_handle = 5;
+}
+
+message AuthenticationChallenge {
+  string challenge_id = 1;
+  // Sensitive expiring, attempt-limited, single-use capability, hashed at rest.
+  string challenge_token = 2;
+  WebEntry entry = 3;
+  ChallengePurpose purpose = 4;
+  MfaKind method = 5;
+  google.protobuf.Timestamp expires_at = 6;
+  // IAM-generated PublicKeyCredentialRequestOptions JSON, WebAuthn only.
+  bytes webauthn_options_json = 7;
+}
+
+// Not authority. IAM validates and binds the full target and command digest;
+// a reauthentication cannot refresh unrelated operations' auth_time.
+message ReauthenticationTarget {
+  RequestBinding binding = 1;
+  aipay.common.v1.Scope acting_scope = 2;
+  aipay.common.v1.ResourceRef resource = 3;
+}
+
+// Selector usable only together with the newly rotated session and matching
+// Authorize target. Expires within 600 seconds and no later than the session.
+message ReauthenticationGrant {
+  string reauthentication_id = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+// AUTHENTICATED: complete session only; MFA_REQUIRED: challenge only;
+// SETUP_REQUIRED: restricted session only. Reauthentication grants appear only
+// after a successful REAUTHENTICATION challenge. Reject inconsistent shapes.
+message AuthenticationResult {
+  AuthenticationStatus status = 1;
+  oneof next {
+    SessionGrant session = 2;
+    AuthenticationChallenge challenge = 3;
+  }
+  ReauthenticationGrant reauthentication = 4;
+}
+
+message UserProfile {
+  string user_id = 1;
+  string display_name = 2;
+  string email = 3;
+  bool email_verified = 4;
+  uint64 version = 5;
+}

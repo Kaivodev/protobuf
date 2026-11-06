@@ -93,7 +93,11 @@ message PluginFixture {
   bytes content = 2;
 }
 
-// Immutable CI-built payment package only. manifest declares payment, code,
+// Immutable CI-built payment package only. Since v0.8.0 the approval material
+// binds the package by digest: plugin_wasm and fixtures are left empty here and
+// payment stores the uploaded package bytes itself, so approval responses stay
+// small (approvers rebuild the package from source to check package_sha256).
+// manifest declares payment, code,
 // semver, host ABI, domain allowlist, secret reference names, config schema,
 // capabilities, callback rules and build provenance (Go version, source commit,
 // source tree digest). Reject statement plugins, unknown fields,
@@ -110,8 +114,12 @@ message PluginVersionMaterial {
   bytes package_sha256 = 5;
   // Computed by payment after successful replay, not accepted from the caller.
   bytes regression_report_sha256 = 6;
-  // Reproducible GOOS=wasip1 reactor module, at most 16 MiB.
+  // Reproducible GOOS=wasip1 reactor module, at most 12 MiB. Empty in approval
+  // material since v0.8.0; carried only by UploadPluginRequest.
   bytes plugin_wasm = 7;
+  // SHA-256 over the canonical encoding of the sorted fixtures (contracts.md).
+  // Required in approval material since v0.8.0; fixtures themselves are empty.
+  bytes fixtures_sha256 = 8;
 }
 
 // Separate approval from publishing the package. Rollback is another enable

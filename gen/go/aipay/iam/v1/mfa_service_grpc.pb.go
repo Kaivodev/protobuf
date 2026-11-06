@@ -19,11 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MfaService_IssueTotpEnrollmentToken_FullMethodName = "/aipay.iam.v1.MfaService/IssueTotpEnrollmentToken"
-	MfaService_GetTotpEnrollment_FullMethodName        = "/aipay.iam.v1.MfaService/GetTotpEnrollment"
-	MfaService_CompleteTotpEnrollment_FullMethodName   = "/aipay.iam.v1.MfaService/CompleteTotpEnrollment"
-	MfaService_UseRecoveryCode_FullMethodName          = "/aipay.iam.v1.MfaService/UseRecoveryCode"
-	MfaService_ResetTotp_FullMethodName                = "/aipay.iam.v1.MfaService/ResetTotp"
+	MfaService_IssueTotpEnrollmentToken_FullMethodName     = "/aipay.iam.v1.MfaService/IssueTotpEnrollmentToken"
+	MfaService_GetTotpEnrollment_FullMethodName            = "/aipay.iam.v1.MfaService/GetTotpEnrollment"
+	MfaService_CompleteTotpEnrollment_FullMethodName       = "/aipay.iam.v1.MfaService/CompleteTotpEnrollment"
+	MfaService_UseRecoveryCode_FullMethodName              = "/aipay.iam.v1.MfaService/UseRecoveryCode"
+	MfaService_ResetTotp_FullMethodName                    = "/aipay.iam.v1.MfaService/ResetTotp"
+	MfaService_BeginSessionTotpEnrollment_FullMethodName   = "/aipay.iam.v1.MfaService/BeginSessionTotpEnrollment"
+	MfaService_ConfirmSessionTotpEnrollment_FullMethodName = "/aipay.iam.v1.MfaService/ConfirmSessionTotpEnrollment"
+	MfaService_BeginWebAuthnRegistration_FullMethodName    = "/aipay.iam.v1.MfaService/BeginWebAuthnRegistration"
+	MfaService_CompleteWebAuthnRegistration_FullMethodName = "/aipay.iam.v1.MfaService/CompleteWebAuthnRegistration"
+	MfaService_RemoveWebAuthnCredential_FullMethodName     = "/aipay.iam.v1.MfaService/RemoveWebAuthnCredential"
+	MfaService_RotateRecoveryCodes_FullMethodName          = "/aipay.iam.v1.MfaService/RotateRecoveryCodes"
+	MfaService_ListMfaMethods_FullMethodName               = "/aipay.iam.v1.MfaService/ListMfaMethods"
 )
 
 // MfaServiceClient is the client API for MfaService service.
@@ -55,12 +62,35 @@ const (
 // settlement resets address cooling from that signed event; no settlement
 // implementation or permission to bypass cooling is provided by this contract.
 // Platform reset returns no new secret/recovery code to the administrator.
+// The preceding body-credential and replay rules describe the five published
+// one-time-page/recovery methods. The additive session methods below use their
+// declared metadata proof policies and the v0.8.0 single-delivery rules instead.
 type MfaServiceClient interface {
 	IssueTotpEnrollmentToken(ctx context.Context, in *IssueTotpEnrollmentTokenRequest, opts ...grpc.CallOption) (*IssueTotpEnrollmentTokenResponse, error)
 	GetTotpEnrollment(ctx context.Context, in *GetTotpEnrollmentRequest, opts ...grpc.CallOption) (*GetTotpEnrollmentResponse, error)
 	CompleteTotpEnrollment(ctx context.Context, in *CompleteTotpEnrollmentRequest, opts ...grpc.CallOption) (*CompleteTotpEnrollmentResponse, error)
 	UseRecoveryCode(ctx context.Context, in *UseRecoveryCodeRequest, opts ...grpc.CallOption) (*UseRecoveryCodeResponse, error)
 	ResetTotp(ctx context.Context, in *ResetTotpRequest, opts ...grpc.CallOption) (*ResetTotpResponse, error)
+	// v0.8.0 session-bound browser methods: Authorize.bearer USER/SELF proof,
+	// session_id/web_entry checked by IAM; no bot one-time-page capability.
+	// Initial setup allows restricted sessions only for the matching method;
+	// completion never upgrades them: a new login/MFA flow is required.
+	// TOTP is portal-only, KMS encrypted, pending secret not authentication.
+	// WebAuthn is platform-only, IAM login registry, ES256/create challenge with
+	// origin/RP/UP/UV/counter checks (A80), not funds approver registration.
+	// Additional WebAuthn registration requires recent WebAuthn <=600s even though
+	// bootstrap uses REQUIRED. Cannot remove the last mandatory method. Removal
+	// invalidates affected sessions/challenges; rotate invalidates all old codes.
+	// Recovery-code rotation is TOTP-only; codes never replace platform WebAuthn.
+	// All new writes idempotent; new secrets delivered once (secret_delivered),
+	// never returned again on replay. Full rules are in docs contracts.md.
+	BeginSessionTotpEnrollment(ctx context.Context, in *BeginSessionTotpEnrollmentRequest, opts ...grpc.CallOption) (*BeginSessionTotpEnrollmentResponse, error)
+	ConfirmSessionTotpEnrollment(ctx context.Context, in *ConfirmSessionTotpEnrollmentRequest, opts ...grpc.CallOption) (*ConfirmSessionTotpEnrollmentResponse, error)
+	BeginWebAuthnRegistration(ctx context.Context, in *BeginWebAuthnRegistrationRequest, opts ...grpc.CallOption) (*BeginWebAuthnRegistrationResponse, error)
+	CompleteWebAuthnRegistration(ctx context.Context, in *CompleteWebAuthnRegistrationRequest, opts ...grpc.CallOption) (*CompleteWebAuthnRegistrationResponse, error)
+	RemoveWebAuthnCredential(ctx context.Context, in *RemoveWebAuthnCredentialRequest, opts ...grpc.CallOption) (*RemoveWebAuthnCredentialResponse, error)
+	RotateRecoveryCodes(ctx context.Context, in *RotateRecoveryCodesRequest, opts ...grpc.CallOption) (*RotateRecoveryCodesResponse, error)
+	ListMfaMethods(ctx context.Context, in *ListMfaMethodsRequest, opts ...grpc.CallOption) (*ListMfaMethodsResponse, error)
 }
 
 type mfaServiceClient struct {
@@ -121,6 +151,76 @@ func (c *mfaServiceClient) ResetTotp(ctx context.Context, in *ResetTotpRequest, 
 	return out, nil
 }
 
+func (c *mfaServiceClient) BeginSessionTotpEnrollment(ctx context.Context, in *BeginSessionTotpEnrollmentRequest, opts ...grpc.CallOption) (*BeginSessionTotpEnrollmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BeginSessionTotpEnrollmentResponse)
+	err := c.cc.Invoke(ctx, MfaService_BeginSessionTotpEnrollment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mfaServiceClient) ConfirmSessionTotpEnrollment(ctx context.Context, in *ConfirmSessionTotpEnrollmentRequest, opts ...grpc.CallOption) (*ConfirmSessionTotpEnrollmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConfirmSessionTotpEnrollmentResponse)
+	err := c.cc.Invoke(ctx, MfaService_ConfirmSessionTotpEnrollment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mfaServiceClient) BeginWebAuthnRegistration(ctx context.Context, in *BeginWebAuthnRegistrationRequest, opts ...grpc.CallOption) (*BeginWebAuthnRegistrationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BeginWebAuthnRegistrationResponse)
+	err := c.cc.Invoke(ctx, MfaService_BeginWebAuthnRegistration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mfaServiceClient) CompleteWebAuthnRegistration(ctx context.Context, in *CompleteWebAuthnRegistrationRequest, opts ...grpc.CallOption) (*CompleteWebAuthnRegistrationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CompleteWebAuthnRegistrationResponse)
+	err := c.cc.Invoke(ctx, MfaService_CompleteWebAuthnRegistration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mfaServiceClient) RemoveWebAuthnCredential(ctx context.Context, in *RemoveWebAuthnCredentialRequest, opts ...grpc.CallOption) (*RemoveWebAuthnCredentialResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RemoveWebAuthnCredentialResponse)
+	err := c.cc.Invoke(ctx, MfaService_RemoveWebAuthnCredential_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mfaServiceClient) RotateRecoveryCodes(ctx context.Context, in *RotateRecoveryCodesRequest, opts ...grpc.CallOption) (*RotateRecoveryCodesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RotateRecoveryCodesResponse)
+	err := c.cc.Invoke(ctx, MfaService_RotateRecoveryCodes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mfaServiceClient) ListMfaMethods(ctx context.Context, in *ListMfaMethodsRequest, opts ...grpc.CallOption) (*ListMfaMethodsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMfaMethodsResponse)
+	err := c.cc.Invoke(ctx, MfaService_ListMfaMethods_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MfaServiceServer is the server API for MfaService service.
 // All implementations must embed UnimplementedMfaServiceServer
 // for forward compatibility.
@@ -150,12 +250,35 @@ func (c *mfaServiceClient) ResetTotp(ctx context.Context, in *ResetTotpRequest, 
 // settlement resets address cooling from that signed event; no settlement
 // implementation or permission to bypass cooling is provided by this contract.
 // Platform reset returns no new secret/recovery code to the administrator.
+// The preceding body-credential and replay rules describe the five published
+// one-time-page/recovery methods. The additive session methods below use their
+// declared metadata proof policies and the v0.8.0 single-delivery rules instead.
 type MfaServiceServer interface {
 	IssueTotpEnrollmentToken(context.Context, *IssueTotpEnrollmentTokenRequest) (*IssueTotpEnrollmentTokenResponse, error)
 	GetTotpEnrollment(context.Context, *GetTotpEnrollmentRequest) (*GetTotpEnrollmentResponse, error)
 	CompleteTotpEnrollment(context.Context, *CompleteTotpEnrollmentRequest) (*CompleteTotpEnrollmentResponse, error)
 	UseRecoveryCode(context.Context, *UseRecoveryCodeRequest) (*UseRecoveryCodeResponse, error)
 	ResetTotp(context.Context, *ResetTotpRequest) (*ResetTotpResponse, error)
+	// v0.8.0 session-bound browser methods: Authorize.bearer USER/SELF proof,
+	// session_id/web_entry checked by IAM; no bot one-time-page capability.
+	// Initial setup allows restricted sessions only for the matching method;
+	// completion never upgrades them: a new login/MFA flow is required.
+	// TOTP is portal-only, KMS encrypted, pending secret not authentication.
+	// WebAuthn is platform-only, IAM login registry, ES256/create challenge with
+	// origin/RP/UP/UV/counter checks (A80), not funds approver registration.
+	// Additional WebAuthn registration requires recent WebAuthn <=600s even though
+	// bootstrap uses REQUIRED. Cannot remove the last mandatory method. Removal
+	// invalidates affected sessions/challenges; rotate invalidates all old codes.
+	// Recovery-code rotation is TOTP-only; codes never replace platform WebAuthn.
+	// All new writes idempotent; new secrets delivered once (secret_delivered),
+	// never returned again on replay. Full rules are in docs contracts.md.
+	BeginSessionTotpEnrollment(context.Context, *BeginSessionTotpEnrollmentRequest) (*BeginSessionTotpEnrollmentResponse, error)
+	ConfirmSessionTotpEnrollment(context.Context, *ConfirmSessionTotpEnrollmentRequest) (*ConfirmSessionTotpEnrollmentResponse, error)
+	BeginWebAuthnRegistration(context.Context, *BeginWebAuthnRegistrationRequest) (*BeginWebAuthnRegistrationResponse, error)
+	CompleteWebAuthnRegistration(context.Context, *CompleteWebAuthnRegistrationRequest) (*CompleteWebAuthnRegistrationResponse, error)
+	RemoveWebAuthnCredential(context.Context, *RemoveWebAuthnCredentialRequest) (*RemoveWebAuthnCredentialResponse, error)
+	RotateRecoveryCodes(context.Context, *RotateRecoveryCodesRequest) (*RotateRecoveryCodesResponse, error)
+	ListMfaMethods(context.Context, *ListMfaMethodsRequest) (*ListMfaMethodsResponse, error)
 	mustEmbedUnimplementedMfaServiceServer()
 }
 
@@ -180,6 +303,27 @@ func (UnimplementedMfaServiceServer) UseRecoveryCode(context.Context, *UseRecove
 }
 func (UnimplementedMfaServiceServer) ResetTotp(context.Context, *ResetTotpRequest) (*ResetTotpResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResetTotp not implemented")
+}
+func (UnimplementedMfaServiceServer) BeginSessionTotpEnrollment(context.Context, *BeginSessionTotpEnrollmentRequest) (*BeginSessionTotpEnrollmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BeginSessionTotpEnrollment not implemented")
+}
+func (UnimplementedMfaServiceServer) ConfirmSessionTotpEnrollment(context.Context, *ConfirmSessionTotpEnrollmentRequest) (*ConfirmSessionTotpEnrollmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConfirmSessionTotpEnrollment not implemented")
+}
+func (UnimplementedMfaServiceServer) BeginWebAuthnRegistration(context.Context, *BeginWebAuthnRegistrationRequest) (*BeginWebAuthnRegistrationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BeginWebAuthnRegistration not implemented")
+}
+func (UnimplementedMfaServiceServer) CompleteWebAuthnRegistration(context.Context, *CompleteWebAuthnRegistrationRequest) (*CompleteWebAuthnRegistrationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CompleteWebAuthnRegistration not implemented")
+}
+func (UnimplementedMfaServiceServer) RemoveWebAuthnCredential(context.Context, *RemoveWebAuthnCredentialRequest) (*RemoveWebAuthnCredentialResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveWebAuthnCredential not implemented")
+}
+func (UnimplementedMfaServiceServer) RotateRecoveryCodes(context.Context, *RotateRecoveryCodesRequest) (*RotateRecoveryCodesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RotateRecoveryCodes not implemented")
+}
+func (UnimplementedMfaServiceServer) ListMfaMethods(context.Context, *ListMfaMethodsRequest) (*ListMfaMethodsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMfaMethods not implemented")
 }
 func (UnimplementedMfaServiceServer) mustEmbedUnimplementedMfaServiceServer() {}
 func (UnimplementedMfaServiceServer) testEmbeddedByValue()                    {}
@@ -292,6 +436,132 @@ func _MfaService_ResetTotp_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MfaService_BeginSessionTotpEnrollment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BeginSessionTotpEnrollmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MfaServiceServer).BeginSessionTotpEnrollment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MfaService_BeginSessionTotpEnrollment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MfaServiceServer).BeginSessionTotpEnrollment(ctx, req.(*BeginSessionTotpEnrollmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MfaService_ConfirmSessionTotpEnrollment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmSessionTotpEnrollmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MfaServiceServer).ConfirmSessionTotpEnrollment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MfaService_ConfirmSessionTotpEnrollment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MfaServiceServer).ConfirmSessionTotpEnrollment(ctx, req.(*ConfirmSessionTotpEnrollmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MfaService_BeginWebAuthnRegistration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BeginWebAuthnRegistrationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MfaServiceServer).BeginWebAuthnRegistration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MfaService_BeginWebAuthnRegistration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MfaServiceServer).BeginWebAuthnRegistration(ctx, req.(*BeginWebAuthnRegistrationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MfaService_CompleteWebAuthnRegistration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteWebAuthnRegistrationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MfaServiceServer).CompleteWebAuthnRegistration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MfaService_CompleteWebAuthnRegistration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MfaServiceServer).CompleteWebAuthnRegistration(ctx, req.(*CompleteWebAuthnRegistrationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MfaService_RemoveWebAuthnCredential_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveWebAuthnCredentialRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MfaServiceServer).RemoveWebAuthnCredential(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MfaService_RemoveWebAuthnCredential_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MfaServiceServer).RemoveWebAuthnCredential(ctx, req.(*RemoveWebAuthnCredentialRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MfaService_RotateRecoveryCodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RotateRecoveryCodesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MfaServiceServer).RotateRecoveryCodes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MfaService_RotateRecoveryCodes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MfaServiceServer).RotateRecoveryCodes(ctx, req.(*RotateRecoveryCodesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MfaService_ListMfaMethods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMfaMethodsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MfaServiceServer).ListMfaMethods(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MfaService_ListMfaMethods_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MfaServiceServer).ListMfaMethods(ctx, req.(*ListMfaMethodsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MfaService_ServiceDesc is the grpc.ServiceDesc for MfaService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -318,6 +588,34 @@ var MfaService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResetTotp",
 			Handler:    _MfaService_ResetTotp_Handler,
+		},
+		{
+			MethodName: "BeginSessionTotpEnrollment",
+			Handler:    _MfaService_BeginSessionTotpEnrollment_Handler,
+		},
+		{
+			MethodName: "ConfirmSessionTotpEnrollment",
+			Handler:    _MfaService_ConfirmSessionTotpEnrollment_Handler,
+		},
+		{
+			MethodName: "BeginWebAuthnRegistration",
+			Handler:    _MfaService_BeginWebAuthnRegistration_Handler,
+		},
+		{
+			MethodName: "CompleteWebAuthnRegistration",
+			Handler:    _MfaService_CompleteWebAuthnRegistration_Handler,
+		},
+		{
+			MethodName: "RemoveWebAuthnCredential",
+			Handler:    _MfaService_RemoveWebAuthnCredential_Handler,
+		},
+		{
+			MethodName: "RotateRecoveryCodes",
+			Handler:    _MfaService_RotateRecoveryCodes_Handler,
+		},
+		{
+			MethodName: "ListMfaMethods",
+			Handler:    _MfaService_ListMfaMethods_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

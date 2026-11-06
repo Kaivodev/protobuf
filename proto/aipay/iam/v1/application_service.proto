@@ -1,0 +1,239 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+enum ApplicationCredentialKind {
+  APPLICATION_CREDENTIAL_KIND_UNSPECIFIED = 0;
+  APPLICATION_CREDENTIAL_KIND_EPAY_V1_KEY = 1;
+  APPLICATION_CREDENTIAL_KIND_EPAY_V2_PUBLIC_KEY = 2;
+}
+
+// Nonsecret current IAM facts, never a replacement for historical order scope.
+message Application {
+  string application_id = 1;
+  string business_id = 2;
+  string account_id = 3;
+  // Increasing positive platform sequence, decimal string, immutable, never reused.
+  string pid = 4;
+  string name = 5;
+  optional bool enabled = 6;
+  uint64 version = 7;
+  uint64 ownership_version = 8;
+  optional bool allow_epay_v1 = 9;
+  optional bool allow_epay_v2 = 10;
+  // Canonical CIDRs, mandatory nonempty when V1 is enabled.
+  repeated string ip_allowlist = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+// Metadata only, including SHA-256 fingerprint (32 bytes), never V1 KEY.
+message ApplicationCredential {
+  string credential_id = 1;
+  uint64 version = 2;
+  ApplicationCredentialKind kind = 3;
+  bytes fingerprint = 4;
+  google.protobuf.Timestamp valid_from = 5;
+  // Absent for an active nonexpiring current credential.
+  google.protobuf.Timestamp valid_until = 6;
+}
+message CreateApplicationRequest {
+  string idempotency_key = 1;
+  string business_id = 2;
+  // 1-64 characters.
+  string name = 3;
+  // Required presence, at least one true. No key is implicitly generated.
+  optional bool allow_epay_v1 = 4;
+  optional bool allow_epay_v2 = 5;
+  repeated string ip_allowlist = 6;
+}
+
+message CreateApplicationResponse {
+  Application application = 1;
+}
+
+message ListApplicationsRequest {
+  string business_id = 1;
+  uint32 limit = 2;
+  string page_token = 3;
+}
+
+message ListApplicationsResponse {
+  repeated Application applications = 1;
+  string next_page_token = 2;
+}
+
+message GetApplicationRequest {
+  string application_id = 1;
+}
+
+message GetApplicationResponse {
+  Application application = 1;
+}
+
+message SetApplicationEnabledRequest {
+  string idempotency_key = 1;
+  string application_id = 2;
+  uint64 expected_version = 3;
+  optional bool enabled = 4;
+}
+
+message SetApplicationEnabledResponse {
+  Application application = 1;
+}
+
+message GenerateEpayV1KeyRequest {
+  string idempotency_key = 1;
+  string application_id = 2;
+  uint64 expected_version = 3;
+}
+
+message GenerateEpayV1KeyResponse {
+  ApplicationCredential credential = 1;
+  // Sensitive IAM-generated 32-character alphanumeric KEY, delivered once.
+  string key = 2;
+  bool secret_delivered = 3;
+}
+
+message RotateEpayV1KeyRequest {
+  string idempotency_key = 1;
+  string application_id = 2;
+  uint64 expected_version = 3;
+  // 0-86400 seconds; never extends an earlier version's prior deadline.
+  uint32 overlap_seconds = 4;
+}
+
+message RotateEpayV1KeyResponse {
+  ApplicationCredential credential = 1;
+  string key = 2;
+  bool secret_delivered = 3;
+  google.protobuf.Timestamp previous_valid_until = 4;
+}
+
+message UploadEpayV2PublicKeyRequest {
+  string idempotency_key = 1;
+  string application_id = 2;
+  uint64 expected_version = 3;
+  // Strict X.509 SPKI DER, RSA >=2048 bits; reject private keys/certificates.
+  bytes public_key_der = 4;
+}
+
+message UploadEpayV2PublicKeyResponse {
+  ApplicationCredential credential = 1;
+}
+
+message GetPlatformEpayV2PublicKeyRequest {
+  string application_id = 1;
+}
+
+message GetPlatformEpayV2PublicKeyResponse {
+  string key_id = 1;
+  // Platform RSA verification key in X.509 SPKI DER, never private material.
+  bytes public_key_der = 2;
+  bytes fingerprint = 3;
+  google.protobuf.Timestamp valid_from = 4;
+}
+
+// USER proof only, trusted application -> business -> account chain; Create/
+// List at granted account/business, Get/writes at account/business/application.
+// Explicit platform management must bind and verify the target account.
+// API application/workload identities cannot administer applications. All writes
+// require MFA <=600s; Telegram must be PRIVATE with IAM's freshly verified TOTP.
+// Writes idempotent per verified subject/key, positive expected_version CAS,
+// atomically advance Application.version with credential/status changes and audit.
+// Create emits ApplicationCreated; enabled transitions emit ApplicationStatusChanged
+// in the same IAM outbox transaction. Disabled applications cannot authenticate or
+// receive new dispatch; old orders keep original scope for restricted servicing.
+// Generate V1 only if none; rotate only existing, allow_epay_v1 required. At most
+// current+previous active KEY, old deadline <=24h, third rotation revokes older
+// versions. KEY encrypted by IAM KMS, never GET/log, delivered once (on authorized
+// replay key empty/secret_delivered=false). Bot delivery only once in PRIVATE.
+// V2 upload requires allow_epay_v2, atomically replaces old merchant public key;
+// V1 overlap is not applied to V2. No method changes pid/account/business ownership.
+// Lists: limit 1-500, opaque scope/filter-bound cursors. See contracts.md.
+// Platform administration requires bearer web_entry=platform_admin and
+// WebAuthn; Telegram cannot select platform, only its own personal resources.
+service ApplicationService {
+  rpc CreateApplication(CreateApplicationRequest) returns (CreateApplicationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.application.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ListApplications(ListApplicationsRequest) returns (ListApplicationsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.application.read"
+      }
+    };
+  }
+  rpc GetApplication(GetApplicationRequest) returns (GetApplicationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.application.read"
+      }
+    };
+  }
+  rpc SetApplicationEnabled(SetApplicationEnabledRequest) returns (SetApplicationEnabledResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.application.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc GenerateEpayV1Key(GenerateEpayV1KeyRequest) returns (GenerateEpayV1KeyResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.application.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc RotateEpayV1Key(RotateEpayV1KeyRequest) returns (RotateEpayV1KeyResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.application.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc UploadEpayV2PublicKey(UploadEpayV2PublicKeyRequest) returns (UploadEpayV2PublicKeyResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.application.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc GetPlatformEpayV2PublicKey(GetPlatformEpayV2PublicKeyRequest) returns (GetPlatformEpayV2PublicKeyResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.application.read"
+      }
+    };
+  }
+}

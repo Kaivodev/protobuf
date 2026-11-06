@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/iam/v1/web_entry.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+enum SessionKind {
+  SESSION_KIND_UNSPECIFIED = 0;
+  SESSION_KIND_WEB = 1;
+  SESSION_KIND_TELEGRAM = 2;
+}
+
+// Own-user metadata only; never contains raw token or its hash.
+message SessionInfo {
+  string session_id = 1;
+  SessionKind kind = 2;
+  // Unset only for TELEGRAM.
+  WebEntry entry = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp last_seen_at = 5;
+  google.protobuf.Timestamp expires_at = 6;
+  bool current = 7;
+  string client_ip = 8;
+  // At most 512 characters, sanitized for display.
+  string user_agent = 9;
+}
+message ListSessionsRequest {
+  uint32 limit = 1;
+  string page_token = 2;
+}
+
+message ListSessionsResponse {
+  repeated SessionInfo sessions = 1;
+  string next_page_token = 2;
+}
+
+message RevokeSessionRequest {
+  string idempotency_key = 1;
+  string session_id = 2;
+}
+
+message RevokeSessionResponse {
+  google.protobuf.Timestamp revoked_at = 1;
+}
+
+message RevokeAllSessionsRequest {
+  string idempotency_key = 1;
+}
+
+message RevokeAllSessionsResponse {
+  google.protobuf.Timestamp revoked_at = 1;
+}
+
+// USER proof, own sessions only (SELF), across web/portal/bot; target IDs do
+// not confer authority. RevokeAll includes the current session. Persist revocation
+// and invalidate caches/challenges; no implicit bot session recreation. Writes
+// are idempotent per verified user/key, different content AlreadyExists; exact
+// retry of a self-revoking command may retrieve only its nonsecret original result.
+// Lists use 1-500 and opaque scope/filter-bound cursors. See contracts.md.
+service SessionService {
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.session.read"
+      }
+    };
+  }
+  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.session.manage"
+      }
+    };
+  }
+  rpc RevokeAllSessions(RevokeAllSessionsRequest) returns (RevokeAllSessionsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.session.manage"
+      }
+    };
+  }
+}

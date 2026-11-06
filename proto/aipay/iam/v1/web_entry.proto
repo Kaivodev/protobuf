@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+// New website flows reject UNSPECIFIED and unknown entries. Future merchant
+// web support adds an entry; users remain global identities, not entry types.
+enum WebEntry {
+  WEB_ENTRY_UNSPECIFIED = 0;
+  WEB_ENTRY_PLATFORM_ADMIN = 1;
+  WEB_ENTRY_UPSTREAM_PORTAL = 2;
+}

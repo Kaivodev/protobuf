@@ -639,7 +639,11 @@ func (x *PluginFixture) GetContent() []byte {
 	return nil
 }
 
-// Immutable CI-built payment package only. manifest declares payment, code,
+// Immutable CI-built payment package only. Since v0.8.0 the approval material
+// binds the package by digest: plugin_wasm and fixtures are left empty here and
+// payment stores the uploaded package bytes itself, so approval responses stay
+// small (approvers rebuild the package from source to check package_sha256).
+// manifest declares payment, code,
 // semver, host ABI, domain allowlist, secret reference names, config schema,
 // capabilities, callback rules and build provenance (Go version, source commit,
 // source tree digest). Reject statement plugins, unknown fields,
@@ -659,10 +663,14 @@ type PluginVersionMaterial struct {
 	PackageSha256 []byte `protobuf:"bytes,5,opt,name=package_sha256,json=packageSha256,proto3" json:"package_sha256,omitempty"`
 	// Computed by payment after successful replay, not accepted from the caller.
 	RegressionReportSha256 []byte `protobuf:"bytes,6,opt,name=regression_report_sha256,json=regressionReportSha256,proto3" json:"regression_report_sha256,omitempty"`
-	// Reproducible GOOS=wasip1 reactor module, at most 16 MiB.
-	PluginWasm    []byte `protobuf:"bytes,7,opt,name=plugin_wasm,json=pluginWasm,proto3" json:"plugin_wasm,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Reproducible GOOS=wasip1 reactor module, at most 12 MiB. Empty in approval
+	// material since v0.8.0; carried only by UploadPluginRequest.
+	PluginWasm []byte `protobuf:"bytes,7,opt,name=plugin_wasm,json=pluginWasm,proto3" json:"plugin_wasm,omitempty"`
+	// SHA-256 over the canonical encoding of the sorted fixtures (contracts.md).
+	// Required in approval material since v0.8.0; fixtures themselves are empty.
+	FixturesSha256 []byte `protobuf:"bytes,8,opt,name=fixtures_sha256,json=fixturesSha256,proto3" json:"fixtures_sha256,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *PluginVersionMaterial) Reset() {
@@ -741,6 +749,13 @@ func (x *PluginVersionMaterial) GetRegressionReportSha256() []byte {
 func (x *PluginVersionMaterial) GetPluginWasm() []byte {
 	if x != nil {
 		return x.PluginWasm
+	}
+	return nil
+}
+
+func (x *PluginVersionMaterial) GetFixturesSha256() []byte {
+	if x != nil {
+		return x.FixturesSha256
 	}
 	return nil
 }
@@ -1432,7 +1447,7 @@ const file_aipay_payment_v1_admin_approval_proto_rawDesc = "" +
 	"\x18expected_control_version\x18\x02 \x01(\x04R\x16expectedControlVersion\"=\n" +
 	"\rPluginFixture\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\fR\acontent\"\xc8\x02\n" +
+	"\acontent\x18\x02 \x01(\fR\acontent\"\xf1\x02\n" +
 	"\x15PluginVersionMaterial\x12*\n" +
 	"\x11plugin_version_id\x18\x01 \x01(\tR\x0fpluginVersionId\x12#\n" +
 	"\rmanifest_json\x18\x02 \x01(\fR\fmanifestJson\x12\x1f\n" +
@@ -1441,7 +1456,8 @@ const file_aipay_payment_v1_admin_approval_proto_rawDesc = "" +
 	"\x0epackage_sha256\x18\x05 \x01(\fR\rpackageSha256\x128\n" +
 	"\x18regression_report_sha256\x18\x06 \x01(\fR\x16regressionReportSha256\x12\x1f\n" +
 	"\vplugin_wasm\x18\a \x01(\fR\n" +
-	"pluginWasm\"\xd4\x02\n" +
+	"pluginWasm\x12'\n" +
+	"\x0ffixtures_sha256\x18\b \x01(\fR\x0efixturesSha256\"\xd4\x02\n" +
 	"\x12PluginEnableChange\x12,\n" +
 	"\x12channel_account_id\x18\x01 \x01(\tR\x10channelAccountId\x128\n" +
 	"\x18expected_control_version\x18\x02 \x01(\x04R\x16expectedControlVersion\x12*\n" +

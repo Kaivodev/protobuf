@@ -1109,7 +1109,8 @@ type UploadPluginRequest struct {
 	// Recompute from normalized manifest_json || plugin_wasm and compare to CI.
 	PackageSha256 []byte `protobuf:"bytes,5,opt,name=package_sha256,json=packageSha256,proto3" json:"package_sha256,omitempty"`
 	// Reproducible GOOS=wasip1 reactor module built by CI from a pinned Go
-	// toolchain, at most 16 MiB.
+	// toolchain, at most 12 MiB. Fixtures total at most 3 MiB so the whole
+	// request fits payment's 16 MiB gRPC message limit.
 	PluginWasm    []byte `protobuf:"bytes,6,opt,name=plugin_wasm,json=pluginWasm,proto3" json:"plugin_wasm,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

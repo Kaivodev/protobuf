@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/iam/v1/web_identity.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+// IAM login credentials only, never a funds-domain approver registration.
+message WebAuthnRegistration {
+  bytes credential_id = 1;
+  bytes client_data_json = 2;
+  bytes attestation_object = 3;
+  repeated string transports = 4;
+}
+
+message MfaMethod {
+  string method_id = 1;
+  MfaKind kind = 2;
+  string name = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp last_used_at = 5;
+  // WebAuthn only; no public key, TOTP secret or recovery codes.
+  bytes credential_id = 6;
+}
+message BeginSessionTotpEnrollmentRequest {
+  string idempotency_key = 1;
+}
+
+message BeginSessionTotpEnrollmentResponse {
+  string enrollment_id = 1;
+  // Sensitive browser-only material, delivered once, never through bot paths.
+  bytes qr_code_png = 2;
+  repeated string recovery_codes = 3;
+  google.protobuf.Timestamp expires_at = 4;
+  bool secret_delivered = 5;
+}
+
+message ConfirmSessionTotpEnrollmentRequest {
+  string idempotency_key = 1;
+  string enrollment_id = 2;
+  string totp_code = 3;
+}
+
+message ConfirmSessionTotpEnrollmentResponse {
+  google.protobuf.Timestamp bound_at = 1;
+}
+
+message BeginWebAuthnRegistrationRequest {
+  string idempotency_key = 1;
+  string name = 2;
+}
+
+message BeginWebAuthnRegistrationResponse {
+  string registration_id = 1;
+  // IAM-generated PublicKeyCredentialCreationOptions.
+  bytes options_json = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+message CompleteWebAuthnRegistrationRequest {
+  string idempotency_key = 1;
+  string registration_id = 2;
+  WebAuthnRegistration registration = 3;
+}
+
+message CompleteWebAuthnRegistrationResponse {
+  MfaMethod method = 1;
+}
+
+message RemoveWebAuthnCredentialRequest {
+  string idempotency_key = 1;
+  bytes credential_id = 2;
+}
+
+message RemoveWebAuthnCredentialResponse {
+  google.protobuf.Timestamp removed_at = 1;
+}
+
+message RotateRecoveryCodesRequest {
+  string idempotency_key = 1;
+}
+
+message RotateRecoveryCodesResponse {
+  repeated string recovery_codes = 1;
+  google.protobuf.Timestamp rotated_at = 2;
+  bool secret_delivered = 3;
+}
+
+message ListMfaMethodsRequest {}
+
+message ListMfaMethodsResponse {
+  repeated MfaMethod methods = 1;
+}

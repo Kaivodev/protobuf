@@ -3,6 +3,7 @@ syntax = "proto3";
 package aipay.iam.v1;
 
 import "aipay/common/v1/context.proto";
+import "aipay/iam/v1/web_entry.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
 
@@ -24,6 +25,13 @@ message Principal {
 message BearerCredential {
   // Sensitive. Never include this value in logs or audit payloads.
   string token = 1;
+  // Required for new web sessions. Backend derives this from its actual
+  // listener/host, not HTTP input; IAM compares it with the token's entry.
+  // Missing entry cannot downgrade an entry-bound session to a legacy token.
+  WebEntry entry = 2;
+  // Optional selector for IAM's target-bound reauthentication record; never
+  // authority alone, never usable with a different session/operation/digest.
+  string reauthentication_id = 3;
 }
 
 // Receivers reject UNSPECIFIED (0), unknown values and channel identities.
@@ -93,4 +101,15 @@ message RequestBinding {
   string http_method = 1;
   string http_path = 2;
   string permission = 3;
+  // Required 32-byte canonical command digest for new website mutations and
+  // reauthentication targets and new business/application bot commands. IAM
+  // includes it in request_fingerprint and signed command_sha256; do not
+  // reuse a path-only proof for a different body. Other published flows retain
+  // their existing binding rules. Digest = SHA-256(str("aipay.web.command.v1")
+  // || str(full gRPC method name) || canonical(request)), using the explicit
+  // field-order encoding in contracts.md, excluding metadata. The receiving
+  // service recomputes and compares the signed lowercase-hex command_sha256
+  // claim; a caller-supplied digest alone is not proof. New protected writes
+  // require this claim; published methods retain their original proof rules.
+  bytes body_sha256 = 4;
 }

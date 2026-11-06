@@ -1,0 +1,312 @@
+syntax = "proto3";
+
+package aipay.reconciliation.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/authz/v1/policy.proto";
+import "aipay/reconciliation/v1/admin_approval.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1";
+
+message VerificationAccount {
+  VerificationAccountConfiguration configuration = 1;
+  uint64 control_version = 2;
+  optional bool enabled = 3;
+  // Empty until a plugin is independently approved and bound.
+  string plugin_version_id = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+// Safe list metadata, no raw credentials or secret references from payment.
+message PluginVersion {
+  string plugin_version_id = 1;
+  string code = 2;
+  string semver = 3;
+  bytes package_sha256 = 4;
+  bytes regression_report_sha256 = 5;
+  string publication_approval_request_id = 6;
+  aipay.approval.v1.ApprovalStatus status = 7;
+}
+message UploadPluginRequest {
+  string idempotency_key = 1;
+  bytes manifest_json = 2;
+  // CI-built reactor <=12 MiB; total request <=16 MiB.
+  bytes plugin_wasm = 3;
+  // Total <=3 MiB, contains no real credentials or personal information.
+  repeated PluginFixture fixtures = 4;
+  bytes package_sha256 = 5;
+}
+
+message UploadPluginResponse {
+  ReconciliationApproval approval = 1;
+}
+
+message ApprovePluginRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApprovePluginResponse {
+  ReconciliationApproval approval = 1;
+}
+
+message StoreVerificationCredentialsRequest {
+  string idempotency_key = 1;
+  string channel_account_id = 2;
+  // Sensitive ingress ONLY, strict JSON reference-name -> secret-value map,
+  // <=64 KiB, no duplicate keys. Backend memory-only pass-through over mTLS;
+  // reconciliation validates independently issued read-only authority, KMS
+  // envelope-encrypts an immutable version and returns only its reference.
+  // No logs/cache/disk, no secrets in config_json or plugin memory.
+  bytes credentials_json = 3;
+}
+
+message StoreVerificationCredentialsResponse {
+  string credentials_ref = 1;
+}
+
+message SubmitVerificationAccountRequest {
+  string idempotency_key = 1;
+  VerificationAccountChange change = 2;
+}
+
+message SubmitVerificationAccountResponse {
+  ReconciliationApproval approval = 1;
+}
+
+message ApproveVerificationAccountRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveVerificationAccountResponse {
+  ReconciliationApproval approval = 1;
+}
+
+message RequestPluginEnableRequest {
+  string idempotency_key = 1;
+  string verification_account_id = 2;
+  uint64 expected_control_version = 3;
+  string plugin_version_id = 4;
+}
+
+message RequestPluginEnableResponse {
+  ReconciliationApproval approval = 1;
+}
+
+message ApprovePluginEnableRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApprovePluginEnableResponse {
+  ReconciliationApproval approval = 1;
+}
+
+message DisableVerificationAccountRequest {
+  string idempotency_key = 1;
+  string verification_account_id = 2;
+  uint64 expected_control_version = 3;
+  // 1-1000 characters, no secrets.
+  string reason = 4;
+}
+
+message DisableVerificationAccountResponse {
+  VerificationAccount account = 1;
+}
+
+message ListVerificationAccountsRequest {
+  // Optional exact filter; absence cannot expand authorized data scope.
+  string channel_account_id = 1;
+  uint32 limit = 2;
+  string page_token = 3;
+}
+
+message ListVerificationAccountsResponse {
+  repeated VerificationAccount accounts = 1;
+  string next_page_token = 2;
+}
+
+message GetVerificationAccountRequest {
+  string verification_account_id = 1;
+}
+
+message GetVerificationAccountResponse {
+  VerificationAccount account = 1;
+}
+
+message ListPluginsRequest {
+  uint32 limit = 1;
+  string page_token = 2;
+}
+
+message ListPluginsResponse {
+  repeated PluginVersion plugins = 1;
+  string next_page_token = 2;
+}
+
+message GetPluginRequest {
+  string plugin_version_id = 1;
+}
+
+message GetPluginResponse {
+  PluginVersion plugin = 1;
+  ReconciliationApproval publication = 2;
+}
+
+message GetApprovalRequest {
+  string approval_request_id = 1;
+}
+
+message GetApprovalResponse {
+  ReconciliationApproval approval = 1;
+}
+
+// backend INTERNAL management listener only, verified USER/platform proof;
+// Requires bearer web_entry=platform_admin with WebAuthn; reject Telegram,
+// application and workload proofs. Reconciliation enforces scope, target and
+// independent WebAuthn
+// approval with its own offline registry (ES256, origin/RP, UP/UV, counters/A80).
+// IAM login registry and payment approval/credentials cannot substitute. No
+// management method releases funds or makes payment evidence independent.
+// All writes idempotent per method/verified user/key, changed content AlreadyExists;
+// authorized identical retries return original result before fresh CAS/expiry.
+// All approvals expire in 24h, two natural persons neither initiator. Approve
+// methods check kind, current CAS/channel/credential/package authority again on
+// second approval, atomically record approvals/result/configuration. No unknown
+// or failed state is success. Publication and enabling are separate approvals;
+// configuration changes disable and advance control_version. Emergency disable
+// is one designated person, stops new verification/authorization immediately;
+// in-flight issuance rechecks enabled/control_version. Resuming/rollback requires
+// a new two-person enable approval against the post-disable control_version.
+// Channel selectors are checked with payment ChannelVerificationService at
+// credential admission, account submission and final approval. No payment
+// secret is returned by that narrow read. Errors deny, never trust backend IDs.
+// Only query_payment/query_refund verification plugins, separately issued read-
+// only credentials and domain-local encrypted references. No secret in responses.
+// List limit 1-500, opaque filter/scope-bound cursors. Full original approval
+// materials/bytes/assertions are returned for independent review, including pending
+// states, within the 16 MiB whole message bound. See contracts.md for encoding.
+service ReconciliationAdminService {
+  rpc UploadPlugin(UploadPluginRequest) returns (UploadPluginResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.plugin.upload"
+      }
+    };
+  }
+  rpc ApprovePlugin(ApprovePluginRequest) returns (ApprovePluginResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.plugin.approve"
+      }
+    };
+  }
+  rpc StoreVerificationCredentials(StoreVerificationCredentialsRequest) returns (StoreVerificationCredentialsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.account.manage"
+      }
+    };
+  }
+  rpc SubmitVerificationAccount(SubmitVerificationAccountRequest) returns (SubmitVerificationAccountResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.account.manage"
+      }
+    };
+  }
+  rpc ApproveVerificationAccount(ApproveVerificationAccountRequest) returns (ApproveVerificationAccountResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.account.approve"
+      }
+    };
+  }
+  rpc RequestPluginEnable(RequestPluginEnableRequest) returns (RequestPluginEnableResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.plugin.enable"
+      }
+    };
+  }
+  rpc ApprovePluginEnable(ApprovePluginEnableRequest) returns (ApprovePluginEnableResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.plugin.approve"
+      }
+    };
+  }
+  rpc DisableVerificationAccount(DisableVerificationAccountRequest) returns (DisableVerificationAccountResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.account.disable"
+      }
+    };
+  }
+  rpc ListVerificationAccounts(ListVerificationAccountsRequest) returns (ListVerificationAccountsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.account.read"
+      }
+    };
+  }
+  rpc GetVerificationAccount(GetVerificationAccountRequest) returns (GetVerificationAccountResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.account.read"
+      }
+    };
+  }
+  rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.plugin.read"
+      }
+    };
+  }
+  rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.plugin.read"
+      }
+    };
+  }
+  rpc GetApproval(GetApprovalRequest) returns (GetApprovalResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.approval.read"
+      }
+    };
+  }
+}

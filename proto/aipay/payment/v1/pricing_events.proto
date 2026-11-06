@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package aipay.payment.v1;
 
+import "aipay/common/v1/money.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
@@ -71,4 +72,36 @@ message RiskPolicyApproved {
   bytes approval_sha256 = 7;
   google.protobuf.Timestamp approved_at = 8;
   google.protobuf.Timestamp effective_at = 9;
+}
+
+// payment.pricing, producer payment, receivers ledger/reconciliation;
+// event_type=RateSnapshotRecorded, schema_version=1. Existing SignedEvent and
+// per-stream ACL, immutable snapshot and outbox committed atomically. Dedup
+// event ID and snapshot ID; same snapshot ID with different content rejects.
+// TradeQuoteSnapshot is unchanged: join its rate_snapshot_id, never guess the
+// minute from order creation, collected_at or event arrival. Reconciliation
+// compares independently sampled medians of the SAME minute; this signed fact
+// or usable flag is not independent market evidence or a release authorization.
+message RateSnapshotRecorded {
+  string rate_snapshot_id = 1;
+  // UTC bucket [minute, minute+60s): seconds divisible by 60 and nanos=0.
+  google.protobuf.Timestamp minute = 2;
+  // Positive normalized exact decimals, base USDT/quote CNY, version_id equals
+  // rate_snapshot_id; <=12 integer/10 fractional digits, never float.
+  // Both sources use C2C CNY/USDT buy-USDT direction (A110).
+  aipay.common.v1.ExchangeRate okx_median = 3;
+  aipay.common.v1.ExchangeRate binance_median = 4;
+  // Per-source positive sample counts for the same minute/direction/market.
+  uint32 okx_sample_count = 5;
+  uint32 binance_sample_count = 6;
+  // Actual collection time >=minute, UTC microseconds, not the bucket key.
+  google.protobuf.Timestamp collected_at = 7;
+  // Required presence. False if abs(OKX-Binance)/OKX >1% or expired. Missing
+  // source/samples cannot yield usable=true. Records state AT recording;
+  // consumers always recheck current expiry/stream health and stricter policy.
+  optional bool usable_for_quoting = 8;
+  // >collected_at, from original minute samples and configured maximum age;
+  // rereading an old minute never extends expiry. Expiry never mutates an
+  // old signed record or permits quoting forever using a historical true flag.
+  google.protobuf.Timestamp expires_at = 9;
 }

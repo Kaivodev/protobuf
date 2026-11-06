@@ -192,9 +192,16 @@ func (x *Principal) GetBoundScope() *v1.Scope {
 type BearerCredential struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Sensitive. Never include this value in logs or audit payloads.
-	Token         string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	// Required for new web sessions. Backend derives this from its actual
+	// listener/host, not HTTP input; IAM compares it with the token's entry.
+	// Missing entry cannot downgrade an entry-bound session to a legacy token.
+	Entry WebEntry `protobuf:"varint,2,opt,name=entry,proto3,enum=aipay.iam.v1.WebEntry" json:"entry,omitempty"`
+	// Optional selector for IAM's target-bound reauthentication record; never
+	// authority alone, never usable with a different session/operation/digest.
+	ReauthenticationId string `protobuf:"bytes,3,opt,name=reauthentication_id,json=reauthenticationId,proto3" json:"reauthentication_id,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *BearerCredential) Reset() {
@@ -230,6 +237,20 @@ func (*BearerCredential) Descriptor() ([]byte, []int) {
 func (x *BearerCredential) GetToken() string {
 	if x != nil {
 		return x.Token
+	}
+	return ""
+}
+
+func (x *BearerCredential) GetEntry() WebEntry {
+	if x != nil {
+		return x.Entry
+	}
+	return WebEntry_WEB_ENTRY_UNSPECIFIED
+}
+
+func (x *BearerCredential) GetReauthenticationId() string {
+	if x != nil {
+		return x.ReauthenticationId
 	}
 	return ""
 }
@@ -641,10 +662,21 @@ func (*WorkloadIdentityCredential) Descriptor() ([]byte, []int) {
 // The authenticated gateway supplies these route facts over its private service
 // channel. IAM validates the protocol/operation pairing before issuing proof.
 type RequestBinding struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	HttpMethod    string                 `protobuf:"bytes,1,opt,name=http_method,json=httpMethod,proto3" json:"http_method,omitempty"`
-	HttpPath      string                 `protobuf:"bytes,2,opt,name=http_path,json=httpPath,proto3" json:"http_path,omitempty"`
-	Permission    string                 `protobuf:"bytes,3,opt,name=permission,proto3" json:"permission,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	HttpMethod string                 `protobuf:"bytes,1,opt,name=http_method,json=httpMethod,proto3" json:"http_method,omitempty"`
+	HttpPath   string                 `protobuf:"bytes,2,opt,name=http_path,json=httpPath,proto3" json:"http_path,omitempty"`
+	Permission string                 `protobuf:"bytes,3,opt,name=permission,proto3" json:"permission,omitempty"`
+	// Required 32-byte canonical command digest for new website mutations and
+	// reauthentication targets and new business/application bot commands. IAM
+	// includes it in request_fingerprint and signed command_sha256; do not
+	// reuse a path-only proof for a different body. Other published flows retain
+	// their existing binding rules. Digest = SHA-256(str("aipay.web.command.v1")
+	// || str(full gRPC method name) || canonical(request)), using the explicit
+	// field-order encoding in contracts.md, excluding metadata. The receiving
+	// service recomputes and compares the signed lowercase-hex command_sha256
+	// claim; a caller-supplied digest alone is not proof. New protected writes
+	// require this claim; published methods retain their original proof rules.
+	BodySha256    []byte `protobuf:"bytes,4,opt,name=body_sha256,json=bodySha256,proto3" json:"body_sha256,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -700,18 +732,27 @@ func (x *RequestBinding) GetPermission() string {
 	return ""
 }
 
+func (x *RequestBinding) GetBodySha256() []byte {
+	if x != nil {
+		return x.BodySha256
+	}
+	return nil
+}
+
 var File_aipay_iam_v1_identity_proto protoreflect.FileDescriptor
 
 const file_aipay_iam_v1_identity_proto_rawDesc = "" +
 	"\n" +
-	"\x1baipay/iam/v1/identity.proto\x12\faipay.iam.v1\x1a\x1daipay/common/v1/context.proto\"\x85\x01\n" +
+	"\x1baipay/iam/v1/identity.proto\x12\faipay.iam.v1\x1a\x1daipay/common/v1/context.proto\x1a\x1caipay/iam/v1/web_entry.proto\"\x85\x01\n" +
 	"\tPrincipal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x1b.aipay.iam.v1.PrincipalTypeR\x04type\x127\n" +
 	"\vbound_scope\x18\x03 \x01(\v2\x16.aipay.common.v1.ScopeR\n" +
-	"boundScope\"(\n" +
+	"boundScope\"\x87\x01\n" +
 	"\x10BearerCredential\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\"\xf2\x01\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12,\n" +
+	"\x05entry\x18\x02 \x01(\x0e2\x16.aipay.iam.v1.WebEntryR\x05entry\x12/\n" +
+	"\x13reauthentication_id\x18\x03 \x01(\tR\x12reauthenticationId\"\xf2\x01\n" +
 	"\x12TelegramCredential\x12(\n" +
 	"\x10telegram_user_id\x18\x01 \x01(\x03R\x0etelegramUserId\x12\x17\n" +
 	"\achat_id\x18\x02 \x01(\x03R\x06chatId\x12;\n" +
@@ -739,14 +780,16 @@ const file_aipay_iam_v1_identity_proto_rawDesc = "" +
 	"\n" +
 	"parameters\x18\x01 \x03(\v2\x1b.aipay.iam.v1.EPayParameterR\n" +
 	"parameters\"\x1c\n" +
-	"\x1aWorkloadIdentityCredential\"n\n" +
+	"\x1aWorkloadIdentityCredential\"\x8f\x01\n" +
 	"\x0eRequestBinding\x12\x1f\n" +
 	"\vhttp_method\x18\x01 \x01(\tR\n" +
 	"httpMethod\x12\x1b\n" +
 	"\thttp_path\x18\x02 \x01(\tR\bhttpPath\x12\x1e\n" +
 	"\n" +
 	"permission\x18\x03 \x01(\tR\n" +
-	"permission*\x8d\x01\n" +
+	"permission\x12\x1f\n" +
+	"\vbody_sha256\x18\x04 \x01(\fR\n" +
+	"bodySha256*\x8d\x01\n" +
 	"\rPrincipalType\x12\x1e\n" +
 	"\x1aPRINCIPAL_TYPE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PRINCIPAL_TYPE_USER\x10\x01\x12'\n" +
@@ -786,20 +829,22 @@ var file_aipay_iam_v1_identity_proto_goTypes = []any{
 	(*WorkloadIdentityCredential)(nil), // 10: aipay.iam.v1.WorkloadIdentityCredential
 	(*RequestBinding)(nil),             // 11: aipay.iam.v1.RequestBinding
 	(*v1.Scope)(nil),                   // 12: aipay.common.v1.Scope
+	(WebEntry)(0),                      // 13: aipay.iam.v1.WebEntry
 }
 var file_aipay_iam_v1_identity_proto_depIdxs = []int32{
 	0,  // 0: aipay.iam.v1.Principal.type:type_name -> aipay.iam.v1.PrincipalType
 	12, // 1: aipay.iam.v1.Principal.bound_scope:type_name -> aipay.common.v1.Scope
-	1,  // 2: aipay.iam.v1.TelegramCredential.chat_type:type_name -> aipay.iam.v1.TelegramChatType
-	3,  // 3: aipay.iam.v1.UserAuthentication.bearer:type_name -> aipay.iam.v1.BearerCredential
-	4,  // 4: aipay.iam.v1.UserAuthentication.telegram:type_name -> aipay.iam.v1.TelegramCredential
-	6,  // 5: aipay.iam.v1.EPayV1SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
-	6,  // 6: aipay.iam.v1.EPayV2SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
-	7,  // [7:7] is the sub-list for method output_type
-	7,  // [7:7] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	13, // 2: aipay.iam.v1.BearerCredential.entry:type_name -> aipay.iam.v1.WebEntry
+	1,  // 3: aipay.iam.v1.TelegramCredential.chat_type:type_name -> aipay.iam.v1.TelegramChatType
+	3,  // 4: aipay.iam.v1.UserAuthentication.bearer:type_name -> aipay.iam.v1.BearerCredential
+	4,  // 5: aipay.iam.v1.UserAuthentication.telegram:type_name -> aipay.iam.v1.TelegramCredential
+	6,  // 6: aipay.iam.v1.EPayV1SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
+	6,  // 7: aipay.iam.v1.EPayV2SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
+	8,  // [8:8] is the sub-list for method output_type
+	8,  // [8:8] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_aipay_iam_v1_identity_proto_init() }
@@ -807,6 +852,7 @@ func file_aipay_iam_v1_identity_proto_init() {
 	if File_aipay_iam_v1_identity_proto != nil {
 		return
 	}
+	file_aipay_iam_v1_web_entry_proto_init()
 	file_aipay_iam_v1_identity_proto_msgTypes[2].OneofWrappers = []any{}
 	file_aipay_iam_v1_identity_proto_msgTypes[3].OneofWrappers = []any{
 		(*UserAuthentication_Bearer)(nil),

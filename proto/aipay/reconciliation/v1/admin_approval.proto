@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package aipay.reconciliation.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1";
+
+// All required IDs/versions/digests/times must be present; UUIDv7 IDs,
+// SHA-256 exactly 32 bytes, UTC microseconds. Reject unknown fields/enums,
+// incomplete material, unverified authority and stale versions. Never log
+// secrets, raw credentials, assertions or fixture evidence. See contracts.md.
+
+message PluginFixture {
+  // Sorted unique normalized relative path under fixtures/, no links/traversal.
+  string path = 1;
+  bytes content = 2;
+}
+
+// Only independently admitted verification packages: exactly query_payment
+// and query_refund. Not payment or statement, no payment secret references.
+// CI pinned source/toolchain and reproducible WASI reactor, no uncommitted code.
+message PluginVersionMaterial {
+  string plugin_version_id = 1;
+  bytes manifest_json = 2;
+  // The package is bound by digest; reconciliation stores the uploaded
+  // plugin.wasm and fixtures itself, keeping approval responses small.
+  // SHA-256 over the canonical encoding of the sorted fixtures (contracts.md).
+  // Replay covers both operations' success/reject/timeout/bad signature/amount
+  // mismatch in this service's sandbox, not payment's result.
+  bytes fixtures_sha256 = 3;
+  reserved 4;
+  // SHA-256(normalized manifest_json || plugin_wasm), matching CI artifact.
+  bytes package_sha256 = 5;
+  // Computed by reconciliation after successful replay, never caller supplied.
+  bytes regression_report_sha256 = 6;
+}
+
+// No secret bytes. Immutable reference resolves only in reconciliation KMS,
+// scoped to this payment channel, separately issued read-only credentials.
+// New accounts start disabled; configuration changes also disable until a new
+// two-person plugin-enable approval validates the new control version.
+message VerificationAccountConfiguration {
+  string verification_account_id = 1;
+  // Independently verified payment channel selector, immutable after creation.
+  string channel_account_id = 2;
+  string name = 3;
+  bytes config_json = 4;
+  string credentials_ref = 5;
+}
+
+message VerificationAccountChange {
+  VerificationAccountConfiguration configuration = 1;
+  // 0 only for new ID, otherwise positive current account control version.
+  uint64 expected_control_version = 2;
+}
+
+// Separate approval from package publication. Reconciliation loads hashes and
+// publication proof itself. Rollback/resume are new two-person enable approvals.
+message PluginEnableChange {
+  string verification_account_id = 1;
+  uint64 expected_control_version = 2;
+  string plugin_version_id = 3;
+  bytes package_sha256 = 4;
+  string publication_approval_request_id = 5;
+  bytes publication_request_digest = 6;
+}
+
+// Domain-owned material; never use aipay.payment.v1 approval material. Headers
+// equal ApprovalRequest. request_bytes = str("aipay.reconciliation.admin.v1")
+// || canonical(material), NOT protobuf serialization. Canonical field-order
+// encoding follows docs contracts.md: headers 1-5, u32 operation tag, recursive
+// operation content, JSON normalized, fixtures sorted; unknown fields rejected.
+message ReconciliationApprovalMaterial {
+  string approval_request_id = 1;
+  string kind = 2;
+  string requested_by = 3;
+  google.protobuf.Timestamp requested_at = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  // Exactly one, kind identical to branch. Always two different natural
+  // persons, neither initiator, using reconciliation's own offline key registry.
+  oneof operation {
+    VerificationAccountChange verification_account = 6;
+    PluginVersionMaterial plugin_version = 7;
+    PluginEnableChange plugin_enable = 8;
+  }
+}
+
+message ReconciliationApproval {
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+  ReconciliationApprovalMaterial material = 2;
+  // Original records in verified_at/approver_id order, no public keys.
+  repeated aipay.approval.v1.Approval approvals = 3;
+  // Absent until two valid approvals; equals second verified_at.
+  google.protobuf.Timestamp approved_at = 4;
+}

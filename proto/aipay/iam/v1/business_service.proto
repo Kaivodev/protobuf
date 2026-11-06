@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+message Business {
+  string business_id = 1;
+  string account_id = 2;
+  string name = 3;
+  uint64 version = 4;
+  uint64 ownership_version = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message CreateBusinessRequest {
+  string idempotency_key = 1;
+  string account_id = 2;
+  // 1-128 characters.
+  string name = 3;
+}
+
+message CreateBusinessResponse {
+  Business business = 1;
+}
+
+message ListBusinessesRequest {
+  string account_id = 1;
+  uint32 limit = 2;
+  string page_token = 3;
+}
+
+message ListBusinessesResponse {
+  repeated Business businesses = 1;
+  string next_page_token = 2;
+}
+
+message GetBusinessRequest {
+  string business_id = 1;
+}
+
+message GetBusinessResponse {
+  Business business = 1;
+}
+
+message UpdateBusinessRequest {
+  string idempotency_key = 1;
+  string business_id = 2;
+  uint64 expected_version = 3;
+  string name = 4;
+}
+
+message UpdateBusinessResponse {
+  Business business = 1;
+}
+
+// USER only, Authorize proof and actual trusted account/business ownership
+// chain. Explicit platform management must bind the target account.
+// Create/List require account scope; Get/Update allow granted account or
+// business scope, never account funds authority from a business role. First bot
+// release is own personal account; organization web delivery is deferred.
+// All writes require MFA <=600s (bot PRIVATE and fresh IAM-verified TOTP), are
+// idempotent per subject/key, CAS for updates. IDs/scopes are selectors, not proof.
+// Only name changes here, never ownership; business transfer remains separate.
+// Lists require 1-500 with scope/filter-bound opaque cursors. See contracts.md.
+// Platform administration requires bearer web_entry=platform_admin and
+// WebAuthn; Telegram cannot select platform, only its own personal resources.
+service BusinessService {
+  rpc CreateBusiness(CreateBusinessRequest) returns (CreateBusinessResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.business.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ListBusinesses(ListBusinessesRequest) returns (ListBusinessesResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.business.read"
+      }
+    };
+  }
+  rpc GetBusiness(GetBusinessRequest) returns (GetBusinessResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.business.read"
+      }
+    };
+  }
+  rpc UpdateBusiness(UpdateBusinessRequest) returns (UpdateBusinessResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.business.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+}

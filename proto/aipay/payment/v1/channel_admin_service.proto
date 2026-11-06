@@ -131,7 +131,8 @@ message UploadPluginRequest {
   // Recompute from normalized manifest_json || plugin_wasm and compare to CI.
   bytes package_sha256 = 5;
   // Reproducible GOOS=wasip1 reactor module built by CI from a pinned Go
-  // toolchain, at most 16 MiB.
+  // toolchain, at most 12 MiB. Fixtures total at most 3 MiB so the whole
+  // request fits payment's 16 MiB gRPC message limit.
   bytes plugin_wasm = 6;
 }
 

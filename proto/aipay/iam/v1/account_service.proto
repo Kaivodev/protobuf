@@ -1,0 +1,246 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/iam/v1/identity.proto";
+import "aipay/iam/v1/web_entry.proto";
+import "aipay/iam/v1/web_identity.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+// All website writes use idempotency_key; unknown outcomes retry that key.
+// IAM checks entry/purpose/subject/expiry/attempts, hashes opaque capabilities
+// at rest and records their consumption and results atomically. Different
+// content under a key is AlreadyExists. No secrets or assertions in logs.
+// New one-time secret outputs are delivered once; authorized retries return
+// nonsecret original status with secret_delivered=false. See contracts.md.
+message LoginRequest {
+  string idempotency_key = 1;
+  string email = 2;
+  // Sensitive; unified failure for bad password, missing or disabled user.
+  string password = 3;
+  WebEntry entry = 4;
+  // 32-byte digest bound to backend's preauthentication Cookie/CSRF context.
+  bytes preauthentication_context = 5;
+}
+
+message LoginResponse {
+  AuthenticationResult result = 1;
+}
+
+message VerifyChallengeRequest {
+  string idempotency_key = 1;
+  string challenge_id = 2;
+  string challenge_token = 3;
+  WebEntry entry = 4;
+  bytes preauthentication_context = 5;
+  oneof answer {
+    // Sensitive, exactly six digits, consumes matched time step once.
+    string totp_code = 6;
+    WebAuthnAuthentication webauthn = 7;
+  }
+}
+
+message VerifyChallengeResponse {
+  AuthenticationResult result = 1;
+}
+
+message LogoutRequest {
+  string idempotency_key = 1;
+}
+
+message LogoutResponse {
+  google.protobuf.Timestamp revoked_at = 1;
+}
+
+message BeginReauthenticationRequest {
+  string idempotency_key = 1;
+  BearerCredential session = 2;
+  string password = 3;
+  ReauthenticationTarget target = 4;
+  bytes preauthentication_context = 5;
+}
+
+message BeginReauthenticationResponse {
+  AuthenticationResult result = 1;
+}
+
+message ForgotPasswordRequest {
+  string idempotency_key = 1;
+  string email = 2;
+  WebEntry entry = 3;
+}
+
+message ForgotPasswordResponse {}
+
+message ResetPasswordRequest {
+  string idempotency_key = 1;
+  // Sensitive independent expiring email capability; never a session token.
+  string token = 2;
+  string new_password = 3;
+  WebEntry entry = 4;
+}
+
+message ResetPasswordResponse {
+  google.protobuf.Timestamp reset_at = 1;
+}
+
+message ChangePasswordRequest {
+  string idempotency_key = 1;
+  string current_password = 2;
+  string new_password = 3;
+}
+
+message ChangePasswordResponse {
+  SessionGrant session = 1;
+}
+
+message BeginEmailChangeRequest {
+  string idempotency_key = 1;
+  string new_email = 2;
+}
+
+message BeginEmailChangeResponse {
+  google.protobuf.Timestamp expires_at = 1;
+}
+
+message ConfirmEmailChangeRequest {
+  string idempotency_key = 1;
+  string token = 2;
+  WebEntry entry = 3;
+}
+
+message ConfirmEmailChangeResponse {
+  google.protobuf.Timestamp changed_at = 1;
+}
+
+message GetProfileRequest {}
+
+message GetProfileResponse {
+  UserProfile profile = 1;
+}
+
+message UpdateProfileRequest {
+  string idempotency_key = 1;
+  uint64 expected_version = 2;
+  // Only editable profile field, 1-64 characters.
+  string display_name = 3;
+}
+
+message UpdateProfileResponse {
+  UserProfile profile = 1;
+}
+
+// New protected web calls use Authorize.bearer then the bound USER proof,
+// including session_id/web_entry. Own-user permissions require SELF constraints;
+// IAM resolves current session, never a caller-selected user ID. Restricted
+// sessions only get enrollment/logout. Platform uses WebAuthn, portal uses TOTP
+// and its fixed seller account. No cross-entry/unknown/expired authority.
+// Login/Verify/BeginReauthentication and email/reset capabilities are verified
+// by IAM directly (NOT_REQUIRED means no metadata assertion, not anonymous).
+// Backend enforces actual listener/host, Cookie/Origin/CSRF and preauth context.
+// Reset revokes all sessions/challenges, preserves MFA, requires new login;
+// change password rotates current token, revokes all others; email confirmation
+// revokes all sessions. Reauthentication rotates without extending absolute TTL,
+// only its exact target gets fresh auth_time. Tokens come from IAM only.
+// A pending approved invitation allows same-entry login for acceptance only;
+// its roles/seller business grants are not effective before acceptance.
+service AccountService {
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc VerifyChallenge(VerifyChallengeRequest) returns (VerifyChallengeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.session.manage"
+      }
+    };
+  }
+  rpc BeginReauthentication(BeginReauthenticationRequest) returns (BeginReauthenticationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc ForgotPassword(ForgotPasswordRequest) returns (ForgotPasswordResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.password.change"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc BeginEmailChange(BeginEmailChangeRequest) returns (BeginEmailChangeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.email.change"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ConfirmEmailChange(ConfirmEmailChangeRequest) returns (ConfirmEmailChangeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.profile.read"
+      }
+    };
+  }
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.profile.manage"
+      }
+    };
+  }
+}

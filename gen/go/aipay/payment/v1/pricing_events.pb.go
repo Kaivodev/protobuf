@@ -7,6 +7,7 @@
 package paymentv1
 
 import (
+	v1 "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -456,11 +457,139 @@ func (x *RiskPolicyApproved) GetEffectiveAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// payment.pricing, producer payment, receivers ledger/reconciliation;
+// event_type=RateSnapshotRecorded, schema_version=1. Existing SignedEvent and
+// per-stream ACL, immutable snapshot and outbox committed atomically. Dedup
+// event ID and snapshot ID; same snapshot ID with different content rejects.
+// TradeQuoteSnapshot is unchanged: join its rate_snapshot_id, never guess the
+// minute from order creation, collected_at or event arrival. Reconciliation
+// compares independently sampled medians of the SAME minute; this signed fact
+// or usable flag is not independent market evidence or a release authorization.
+type RateSnapshotRecorded struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	RateSnapshotId string                 `protobuf:"bytes,1,opt,name=rate_snapshot_id,json=rateSnapshotId,proto3" json:"rate_snapshot_id,omitempty"`
+	// UTC bucket [minute, minute+60s): seconds divisible by 60 and nanos=0.
+	Minute *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=minute,proto3" json:"minute,omitempty"`
+	// Positive normalized exact decimals, base USDT/quote CNY, version_id equals
+	// rate_snapshot_id; <=12 integer/10 fractional digits, never float.
+	// Both sources use C2C CNY/USDT buy-USDT direction (A110).
+	OkxMedian     *v1.ExchangeRate `protobuf:"bytes,3,opt,name=okx_median,json=okxMedian,proto3" json:"okx_median,omitempty"`
+	BinanceMedian *v1.ExchangeRate `protobuf:"bytes,4,opt,name=binance_median,json=binanceMedian,proto3" json:"binance_median,omitempty"`
+	// Per-source positive sample counts for the same minute/direction/market.
+	OkxSampleCount     uint32 `protobuf:"varint,5,opt,name=okx_sample_count,json=okxSampleCount,proto3" json:"okx_sample_count,omitempty"`
+	BinanceSampleCount uint32 `protobuf:"varint,6,opt,name=binance_sample_count,json=binanceSampleCount,proto3" json:"binance_sample_count,omitempty"`
+	// Actual collection time >=minute, UTC microseconds, not the bucket key.
+	CollectedAt *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=collected_at,json=collectedAt,proto3" json:"collected_at,omitempty"`
+	// Required presence. False if abs(OKX-Binance)/OKX >1% or expired. Missing
+	// source/samples cannot yield usable=true. Records state AT recording;
+	// consumers always recheck current expiry/stream health and stricter policy.
+	UsableForQuoting *bool `protobuf:"varint,8,opt,name=usable_for_quoting,json=usableForQuoting,proto3,oneof" json:"usable_for_quoting,omitempty"`
+	// >collected_at, from original minute samples and configured maximum age;
+	// rereading an old minute never extends expiry. Expiry never mutates an
+	// old signed record or permits quoting forever using a historical true flag.
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RateSnapshotRecorded) Reset() {
+	*x = RateSnapshotRecorded{}
+	mi := &file_aipay_payment_v1_pricing_events_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RateSnapshotRecorded) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RateSnapshotRecorded) ProtoMessage() {}
+
+func (x *RateSnapshotRecorded) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_pricing_events_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RateSnapshotRecorded.ProtoReflect.Descriptor instead.
+func (*RateSnapshotRecorded) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_pricing_events_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *RateSnapshotRecorded) GetRateSnapshotId() string {
+	if x != nil {
+		return x.RateSnapshotId
+	}
+	return ""
+}
+
+func (x *RateSnapshotRecorded) GetMinute() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Minute
+	}
+	return nil
+}
+
+func (x *RateSnapshotRecorded) GetOkxMedian() *v1.ExchangeRate {
+	if x != nil {
+		return x.OkxMedian
+	}
+	return nil
+}
+
+func (x *RateSnapshotRecorded) GetBinanceMedian() *v1.ExchangeRate {
+	if x != nil {
+		return x.BinanceMedian
+	}
+	return nil
+}
+
+func (x *RateSnapshotRecorded) GetOkxSampleCount() uint32 {
+	if x != nil {
+		return x.OkxSampleCount
+	}
+	return 0
+}
+
+func (x *RateSnapshotRecorded) GetBinanceSampleCount() uint32 {
+	if x != nil {
+		return x.BinanceSampleCount
+	}
+	return 0
+}
+
+func (x *RateSnapshotRecorded) GetCollectedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CollectedAt
+	}
+	return nil
+}
+
+func (x *RateSnapshotRecorded) GetUsableForQuoting() bool {
+	if x != nil && x.UsableForQuoting != nil {
+		return *x.UsableForQuoting
+	}
+	return false
+}
+
+func (x *RateSnapshotRecorded) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
 var File_aipay_payment_v1_pricing_events_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_pricing_events_proto_rawDesc = "" +
 	"\n" +
-	"%aipay/payment/v1/pricing_events.proto\x12\x10aipay.payment.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x18\n" +
+	"%aipay/payment/v1/pricing_events.proto\x12\x10aipay.payment.v1\x1a\x1baipay/common/v1/money.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x18\n" +
 	"\x16PlatformPricingDefault\"\xa5\x03\n" +
 	"\x14PricingConfiguration\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x121\n" +
@@ -497,7 +626,20 @@ const file_aipay_payment_v1_pricing_events_proto_rawDesc = "" +
 	"\feffective_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\veffectiveAtB\x18\n" +
 	"\x16_hold_duration_secondsB \n" +
 	"\x1e_exceptional_extension_secondsB#\n" +
-	"!_dispute_handling_timeout_seconds*`\n" +
+	"!_dispute_handling_timeout_seconds\"\x98\x04\n" +
+	"\x14RateSnapshotRecorded\x12(\n" +
+	"\x10rate_snapshot_id\x18\x01 \x01(\tR\x0erateSnapshotId\x122\n" +
+	"\x06minute\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x06minute\x12<\n" +
+	"\n" +
+	"okx_median\x18\x03 \x01(\v2\x1d.aipay.common.v1.ExchangeRateR\tokxMedian\x12D\n" +
+	"\x0ebinance_median\x18\x04 \x01(\v2\x1d.aipay.common.v1.ExchangeRateR\rbinanceMedian\x12(\n" +
+	"\x10okx_sample_count\x18\x05 \x01(\rR\x0eokxSampleCount\x120\n" +
+	"\x14binance_sample_count\x18\x06 \x01(\rR\x12binanceSampleCount\x12=\n" +
+	"\fcollected_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\vcollectedAt\x121\n" +
+	"\x12usable_for_quoting\x18\b \x01(\bH\x00R\x10usableForQuoting\x88\x01\x01\x129\n" +
+	"\n" +
+	"expires_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAtB\x15\n" +
+	"\x13_usable_for_quoting*`\n" +
 	"\vPricingSide\x12\x1c\n" +
 	"\x18PRICING_SIDE_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14PRICING_SIDE_CHANNEL\x10\x01\x12\x19\n" +
@@ -516,28 +658,35 @@ func file_aipay_payment_v1_pricing_events_proto_rawDescGZIP() []byte {
 }
 
 var file_aipay_payment_v1_pricing_events_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_aipay_payment_v1_pricing_events_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_aipay_payment_v1_pricing_events_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_aipay_payment_v1_pricing_events_proto_goTypes = []any{
 	(PricingSide)(0),               // 0: aipay.payment.v1.PricingSide
 	(*PlatformPricingDefault)(nil), // 1: aipay.payment.v1.PlatformPricingDefault
 	(*PricingConfiguration)(nil),   // 2: aipay.payment.v1.PricingConfiguration
 	(*PricingVersionApproved)(nil), // 3: aipay.payment.v1.PricingVersionApproved
 	(*RiskPolicyApproved)(nil),     // 4: aipay.payment.v1.RiskPolicyApproved
-	(*timestamppb.Timestamp)(nil),  // 5: google.protobuf.Timestamp
+	(*RateSnapshotRecorded)(nil),   // 5: aipay.payment.v1.RateSnapshotRecorded
+	(*timestamppb.Timestamp)(nil),  // 6: google.protobuf.Timestamp
+	(*v1.ExchangeRate)(nil),        // 7: aipay.common.v1.ExchangeRate
 }
 var file_aipay_payment_v1_pricing_events_proto_depIdxs = []int32{
-	0, // 0: aipay.payment.v1.PricingConfiguration.side:type_name -> aipay.payment.v1.PricingSide
-	1, // 1: aipay.payment.v1.PricingConfiguration.platform_default:type_name -> aipay.payment.v1.PlatformPricingDefault
-	2, // 2: aipay.payment.v1.PricingVersionApproved.configuration:type_name -> aipay.payment.v1.PricingConfiguration
-	5, // 3: aipay.payment.v1.PricingVersionApproved.approved_at:type_name -> google.protobuf.Timestamp
-	5, // 4: aipay.payment.v1.PricingVersionApproved.effective_at:type_name -> google.protobuf.Timestamp
-	5, // 5: aipay.payment.v1.RiskPolicyApproved.approved_at:type_name -> google.protobuf.Timestamp
-	5, // 6: aipay.payment.v1.RiskPolicyApproved.effective_at:type_name -> google.protobuf.Timestamp
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	0,  // 0: aipay.payment.v1.PricingConfiguration.side:type_name -> aipay.payment.v1.PricingSide
+	1,  // 1: aipay.payment.v1.PricingConfiguration.platform_default:type_name -> aipay.payment.v1.PlatformPricingDefault
+	2,  // 2: aipay.payment.v1.PricingVersionApproved.configuration:type_name -> aipay.payment.v1.PricingConfiguration
+	6,  // 3: aipay.payment.v1.PricingVersionApproved.approved_at:type_name -> google.protobuf.Timestamp
+	6,  // 4: aipay.payment.v1.PricingVersionApproved.effective_at:type_name -> google.protobuf.Timestamp
+	6,  // 5: aipay.payment.v1.RiskPolicyApproved.approved_at:type_name -> google.protobuf.Timestamp
+	6,  // 6: aipay.payment.v1.RiskPolicyApproved.effective_at:type_name -> google.protobuf.Timestamp
+	6,  // 7: aipay.payment.v1.RateSnapshotRecorded.minute:type_name -> google.protobuf.Timestamp
+	7,  // 8: aipay.payment.v1.RateSnapshotRecorded.okx_median:type_name -> aipay.common.v1.ExchangeRate
+	7,  // 9: aipay.payment.v1.RateSnapshotRecorded.binance_median:type_name -> aipay.common.v1.ExchangeRate
+	6,  // 10: aipay.payment.v1.RateSnapshotRecorded.collected_at:type_name -> google.protobuf.Timestamp
+	6,  // 11: aipay.payment.v1.RateSnapshotRecorded.expires_at:type_name -> google.protobuf.Timestamp
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_pricing_events_proto_init() }
@@ -551,13 +700,14 @@ func file_aipay_payment_v1_pricing_events_proto_init() {
 		(*PricingConfiguration_PlatformDefault)(nil),
 	}
 	file_aipay_payment_v1_pricing_events_proto_msgTypes[3].OneofWrappers = []any{}
+	file_aipay_payment_v1_pricing_events_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_pricing_events_proto_rawDesc), len(file_aipay_payment_v1_pricing_events_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

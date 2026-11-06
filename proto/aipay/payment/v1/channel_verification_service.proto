@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/authz/v1/policy.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// Approved, authoritative current channel identity, never payment credentials.
+// Not historical order ownership and not a cross-service lock. Disabling an
+// existing channel does not hide this mapping needed for old-order verification.
+message ChannelVerificationBinding {
+  string channel_account_id = 1;
+  // Immutable upstream identity for this channel ID.
+  string channel_code = 2;
+  uint64 control_version = 3;
+}
+
+message GetChannelVerificationBindingRequest {
+  // Selector, not authority. Unknown or pending-only configuration is NotFound.
+  string channel_account_id = 1;
+}
+
+message GetChannelVerificationBindingResponse {
+  ChannelVerificationBinding binding = 1;
+}
+
+// Narrow read-only channel mapping for independent verification-account setup,
+// credential admission and final approvals. Reconciliation authenticates payment
+// via mTLS; errors or unverifiable identity fail closed. No user proof, no secret
+// bytes/references/config JSON and no management authority. Historical queries
+// still bind the original order, never current seller or account ownership.
+service ChannelVerificationService {
+  rpc GetChannelVerificationBinding(GetChannelVerificationBindingRequest) returns (GetChannelVerificationBindingResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "reconciliation"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}

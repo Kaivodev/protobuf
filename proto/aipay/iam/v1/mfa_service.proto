@@ -5,6 +5,7 @@ package aipay.iam.v1;
 import "aipay/authz/v1/policy.proto";
 import "aipay/iam/v1/identity.proto";
 import "aipay/iam/v1/security_events.proto";
+import "aipay/iam/v1/web_mfa.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
@@ -115,6 +116,9 @@ message ResetTotpResponse {
 // settlement resets address cooling from that signed event; no settlement
 // implementation or permission to bypass cooling is provided by this contract.
 // Platform reset returns no new secret/recovery code to the administrator.
+// The preceding body-credential and replay rules describe the five published
+// one-time-page/recovery methods. The additive session methods below use their
+// declared metadata proof policies and the v0.8.0 single-delivery rules instead.
 service MfaService {
   rpc IssueTotpEnrollmentToken(IssueTotpEnrollmentTokenRequest) returns (IssueTotpEnrollmentTokenResponse) {
     option (aipay.authz.v1.policy) = {
@@ -153,6 +157,84 @@ service MfaService {
       rules: {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // v0.8.0 session-bound browser methods: Authorize.bearer USER/SELF proof,
+  // session_id/web_entry checked by IAM; no bot one-time-page capability.
+  // Initial setup allows restricted sessions only for the matching method;
+  // completion never upgrades them: a new login/MFA flow is required.
+  // TOTP is portal-only, KMS encrypted, pending secret not authentication.
+  // WebAuthn is platform-only, IAM login registry, ES256/create challenge with
+  // origin/RP/UP/UV/counter checks (A80), not funds approver registration.
+  // Additional WebAuthn registration requires recent WebAuthn <=600s even though
+  // bootstrap uses REQUIRED. Cannot remove the last mandatory method. Removal
+  // invalidates affected sessions/challenges; rotate invalidates all old codes.
+  // Recovery-code rotation is TOTP-only; codes never replace platform WebAuthn.
+  // All new writes idempotent; new secrets delivered once (secret_delivered),
+  // never returned again on replay. Full rules are in docs contracts.md.
+  rpc BeginSessionTotpEnrollment(BeginSessionTotpEnrollmentRequest) returns (BeginSessionTotpEnrollmentResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.mfa.manage"
+      }
+    };
+  }
+  rpc ConfirmSessionTotpEnrollment(ConfirmSessionTotpEnrollmentRequest) returns (ConfirmSessionTotpEnrollmentResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.mfa.manage"
+      }
+    };
+  }
+  rpc BeginWebAuthnRegistration(BeginWebAuthnRegistrationRequest) returns (BeginWebAuthnRegistrationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.mfa.manage"
+      }
+    };
+  }
+  rpc CompleteWebAuthnRegistration(CompleteWebAuthnRegistrationRequest) returns (CompleteWebAuthnRegistrationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.mfa.manage"
+      }
+    };
+  }
+  rpc RemoveWebAuthnCredential(RemoveWebAuthnCredentialRequest) returns (RemoveWebAuthnCredentialResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.mfa.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc RotateRecoveryCodes(RotateRecoveryCodesRequest) returns (RotateRecoveryCodesResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.mfa.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ListMfaMethods(ListMfaMethodsRequest) returns (ListMfaMethodsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "iam.mfa.read"
       }
     };
   }
