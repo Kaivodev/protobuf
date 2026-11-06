@@ -1,0 +1,224 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/query.proto";
+import "aipay/payment/v1/order_service.proto";
+import "aipay/payment/v1/portal_views.proto";
+import "aipay/payment/v1/refund_service.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+message ListSellerChannelsRequest {
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 1 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 2;
+}
+
+message ListSellerChannelsResponse {
+  repeated SellerChannelView channels = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetSellerChannelRequest {
+  string channel_account_id = 1;
+}
+
+message GetSellerChannelResponse {
+  SellerChannelView channel = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListSellerOrdersRequest {
+  string channel_account_id = 1;
+  optional OrderStatus status = 2;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 3 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 4;
+}
+
+message ListSellerOrdersResponse {
+  repeated SellerOrderView orders = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetSellerOrderRequest {
+  string order_id = 1;
+}
+
+message GetSellerOrderResponse {
+  SellerOrderView order = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListSellerRefundsRequest {
+  string order_id = 1;
+  optional RefundStatus status = 2;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 3 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 4;
+  string channel_account_id = 5;
+}
+
+message ListSellerRefundsResponse {
+  repeated SellerRefundView refunds = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetSellerRefundRequest {
+  string refund_id = 1;
+}
+
+message GetSellerRefundResponse {
+  SellerRefundView refund = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListSellerDisputesRequest {
+  string order_id = 1;
+  optional DisputeCaseStatus status = 2;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 3 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 4;
+}
+
+message ListSellerDisputesResponse {
+  repeated SellerDisputeView disputes = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetSellerDisputeRequest {
+  string dispute_id = 1;
+}
+
+message GetSellerDisputeResponse {
+  SellerDisputeView dispute = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message AppendSellerEvidenceRequest {
+  string idempotency_key = 1;
+  string dispute_id = 2;
+  // Positive current immutable dossier version, not ledger's control version.
+  uint64 expected_evidence_version = 3;
+  // Nonempty append-only bytes, <=64 KiB; cumulative dossier <=64 KiB.
+  bytes seller_evidence = 4;
+}
+
+message AppendSellerEvidenceResponse {
+  SellerDisputeView dispute = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+// backend seller listener only. USER upstream_portal/TOTP account proof with
+// the trusted own-user seller funds binding. No request owner/scope selectors.
+// Check original seller on every order/refund/dispute, actual binding on channel;
+// current merchant application ownership never authorizes a historical seller.
+// Reject absent/mismatched binding, principal/entry/scope/constraint or errors.
+// Never expose full Order/Refund/TradeSnapshot, counterparty evidence, merchant
+// notification configuration, recipient reserves or platform approval records.
+// Seller reasons/investigation summaries are explicitly sanitized by payment.
+// All lists limit 1-100; opaque cursors bind method/user/account/filters/limit and
+// consistent first-page snapshot, stable descending created_at/ID (disputes:
+// registered_at/ID). Recheck current access on each page. as_of is UTC micros.
+// Append creates a new evidence_version, preserving every old byte and signed
+// ruling; reject while an actionable PENDING/APPROVED ruling exists or RESOLVED.
+// Original GetDisputeRuling always returns its own frozen evidence. Append does
+// not modify ledger control_version, barriers or funds. Persist method/user/key
+// digest/result atomically; same-key different bytes AlreadyExists, authorized
+// identical replay returns original before fresh version checks. New website
+// writes recompute IAM command_sha256 per contracts.md, including method/body.
+// No seller refund-processing or online/offline command is added in v0.9.0.
+service SellerPortalService {
+  rpc ListSellerChannels(ListSellerChannelsRequest) returns (ListSellerChannelsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.channel.read"
+      }
+    };
+  }
+  rpc GetSellerChannel(GetSellerChannelRequest) returns (GetSellerChannelResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.channel.read"
+      }
+    };
+  }
+  rpc ListSellerOrders(ListSellerOrdersRequest) returns (ListSellerOrdersResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.order.read"
+      }
+    };
+  }
+  rpc GetSellerOrder(GetSellerOrderRequest) returns (GetSellerOrderResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.order.read"
+      }
+    };
+  }
+  rpc ListSellerRefunds(ListSellerRefundsRequest) returns (ListSellerRefundsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.refund.read"
+      }
+    };
+  }
+  rpc GetSellerRefund(GetSellerRefundRequest) returns (GetSellerRefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.refund.read"
+      }
+    };
+  }
+  rpc ListSellerDisputes(ListSellerDisputesRequest) returns (ListSellerDisputesResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.dispute.read"
+      }
+    };
+  }
+  rpc GetSellerDispute(GetSellerDisputeRequest) returns (GetSellerDisputeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.dispute.read"
+      }
+    };
+  }
+  rpc AppendSellerEvidence(AppendSellerEvidenceRequest) returns (AppendSellerEvidenceResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.dispute.evidence"
+      }
+    };
+  }
+}

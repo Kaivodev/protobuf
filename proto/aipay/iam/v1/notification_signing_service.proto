@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package aipay.iam.v1;
+
+import "aipay/authz/v1/policy.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
+
+// Exact V1 notification whitelist, never a generic parameter map. Reject
+// unknown protobuf fields and any transport duplicate/extra keys. Fields 1-7
+// are required nonempty; param alone may be empty. Reject '&'/'=' in any value
+// rather than allowing raw canonical-string field injection or silently escaping.
+message MerchantNotificationParameters {
+  // Positive canonical decimal ID; must match IAM's historical application.
+  string pid = 1;
+  string trade_no = 2;
+  string out_trade_no = 3;
+  string type = 4;
+  string name = 5;
+  // Original positive fiat yuan, canonical decimal with exactly two places.
+  string money = 6;
+  // Exactly TRADE_SUCCESS. No other state is signable.
+  string trade_status = 7;
+  string param = 8;
+}
+
+message SignMerchantNotificationRequest {
+  string application_id = 1;
+  // Idempotency key with application_id; binds ALL fields/parameters unchanged.
+  string notification_id = 2;
+  string order_id = 3;
+  // Required original order credential version, never auto-select current KEY.
+  string credential_version = 4;
+  MerchantNotificationParameters parameters = 5;
+}
+
+message SignMerchantNotificationResponse {
+  // MD5 lowercase 32 hex chars, using original historical KEY; never return KEY.
+  string sign = 1;
+  // Always MD5, not caller-selected.
+  string sign_type = 2;
+}
+
+// Only payment's mTLS service identity, no user assertion. V1 successful
+// notification only; V2 stays payment/KMS. Payment constructs fields from its
+// verified immutable order/notification snapshot. IAM independently verifies
+// historical application/pid/credential relationship and restricted notification
+// use; IDs alone do not prove an order. A transferred/disabled application or
+// expired request-authentication KEY never causes use of a new owner's KEY or
+// re-enables the old KEY for new requests. Missing history/policy/errors deny.
+// (application_id,notification_id) same content returns original sign, changed
+// order/version/parameters AlreadyExists. Rate limit per application, audit only
+// IDs/version and parameter digest, never KEY, assertion, sign or raw params.
+// V1: omit empty strings, sort field names ASCII, join raw key=value pairs by
+// '&', append original KEY directly, MD5 lowercase hex. No URLs/act/raw payload
+// can be supplied. Payment hands signed materials to the existing notifier lease.
+service NotificationSigningService {
+  rpc SignMerchantNotification(SignMerchantNotificationRequest) returns (SignMerchantNotificationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}

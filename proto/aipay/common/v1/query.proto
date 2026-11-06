@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package aipay.common.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1;commonv1";
+
+// Declarative contract bound, not generated runtime validation. On a uint32
+// limit this is the maximum requested page size; on a repeated field it is
+// the maximum item count. Services MUST reject out-of-range inputs themselves.
+extend google.protobuf.FieldOptions {
+  uint32 max_items = 51001;
+}

@@ -157,6 +157,8 @@ message RequestPluginEnableRequest {
   uint64 expected_control_version = 3;
   // payment loads the immutable approved package/hash/publication evidence.
   string plugin_version_id = 4;
+  // v0.9.0: current plugin fence; required after any emergency disable.
+  optional uint64 expected_plugin_control_version = 5;
 }
 
 message RequestPluginEnableResponse {

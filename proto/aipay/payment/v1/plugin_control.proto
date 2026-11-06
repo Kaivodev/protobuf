@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// One platform approver, MFA_RECENT plus a separately verified domain-local
+// WebAuthn assertion. Never changes funds. Canonical challenge and atomic fence
+// semantics are specified in docs contracts.md v0.9.0, with owner-specific domain.
+message EmergencyDisablePluginRequest {
+  string idempotency_key = 1;
+  string plugin_version_id = 2;
+  // Required positive plugin-wide CAS, not a channel/account control version.
+  uint64 expected_control_version = 3;
+  // Required 1-1000 characters, no secrets.
+  string reason = 4;
+  aipay.approval.v1.WebAuthnAssertion assertion = 5;
+}
+
+message PluginAffectedAccount {
+  string channel_account_id = 1;
+  uint64 control_version = 2;
+}
+
+// affected_accounts is the complete set bound at commit (even already disabled
+// accounts), sorted by ID ascending, with post-disable versions; no truncation.
+// Persist it with the idempotent result. Same method/user/key changed content
+// (including assertion) is AlreadyExists. Authorized identical replay returns
+// the original result before fresh CAS or WebAuthn counter checks.
+message EmergencyDisablePluginResponse {
+  string plugin_version_id = 1;
+  uint64 control_version = 2;
+  google.protobuf.Timestamp disabled_at = 3;
+  repeated PluginAffectedAccount affected_accounts = 4;
+}

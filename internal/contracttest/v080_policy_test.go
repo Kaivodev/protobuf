@@ -100,6 +100,9 @@ func TestV080MethodAuthorization(t *testing.T) {
 			"ListPlugins":                  {R, "reconciliation.plugin.read"},
 			"GetPlugin":                    {R, "reconciliation.plugin.read"},
 			"GetApproval":                  {R, "reconciliation.approval.read"},
+			// Additive v0.9.0 methods; keep this complete-surface guard.
+			"ListApprovals":          {R, "reconciliation.approval.read"},
+			"EmergencyDisablePlugin": {M, "reconciliation.plugin.disable"},
 		}},
 	} {
 		t.Run(string(group.service), func(t *testing.T) {

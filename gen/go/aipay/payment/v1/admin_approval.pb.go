@@ -770,6 +770,9 @@ type PluginEnableChange struct {
 	PackageSha256                []byte                 `protobuf:"bytes,4,opt,name=package_sha256,json=packageSha256,proto3" json:"package_sha256,omitempty"`
 	PublicationApprovalRequestId string                 `protobuf:"bytes,5,opt,name=publication_approval_request_id,json=publicationApprovalRequestId,proto3" json:"publication_approval_request_id,omitempty"`
 	PublicationRequestDigest     []byte                 `protobuf:"bytes,6,opt,name=publication_request_digest,json=publicationRequestDigest,proto3" json:"publication_request_digest,omitempty"`
+	// v0.9.0: approved plugin-wide fence. Absent preserves old canonical bytes;
+	// present appends u8(1) || u64(value); required after any emergency disable.
+	ExpectedPluginControlVersion *uint64 `protobuf:"varint,7,opt,name=expected_plugin_control_version,json=expectedPluginControlVersion,proto3,oneof" json:"expected_plugin_control_version,omitempty"`
 	unknownFields                protoimpl.UnknownFields
 	sizeCache                    protoimpl.SizeCache
 }
@@ -844,6 +847,13 @@ func (x *PluginEnableChange) GetPublicationRequestDigest() []byte {
 		return x.PublicationRequestDigest
 	}
 	return nil
+}
+
+func (x *PluginEnableChange) GetExpectedPluginControlVersion() uint64 {
+	if x != nil && x.ExpectedPluginControlVersion != nil {
+		return *x.ExpectedPluginControlVersion
+	}
+	return 0
 }
 
 // A correction of an original fact, never arbitrary lines/accounts/amounts.
@@ -1457,14 +1467,16 @@ const file_aipay_payment_v1_admin_approval_proto_rawDesc = "" +
 	"\x18regression_report_sha256\x18\x06 \x01(\fR\x16regressionReportSha256\x12\x1f\n" +
 	"\vplugin_wasm\x18\a \x01(\fR\n" +
 	"pluginWasm\x12'\n" +
-	"\x0ffixtures_sha256\x18\b \x01(\fR\x0efixturesSha256\"\xd4\x02\n" +
+	"\x0ffixtures_sha256\x18\b \x01(\fR\x0efixturesSha256\"\xc4\x03\n" +
 	"\x12PluginEnableChange\x12,\n" +
 	"\x12channel_account_id\x18\x01 \x01(\tR\x10channelAccountId\x128\n" +
 	"\x18expected_control_version\x18\x02 \x01(\x04R\x16expectedControlVersion\x12*\n" +
 	"\x11plugin_version_id\x18\x03 \x01(\tR\x0fpluginVersionId\x12%\n" +
 	"\x0epackage_sha256\x18\x04 \x01(\fR\rpackageSha256\x12E\n" +
 	"\x1fpublication_approval_request_id\x18\x05 \x01(\tR\x1cpublicationApprovalRequestId\x12<\n" +
-	"\x1apublication_request_digest\x18\x06 \x01(\fR\x18publicationRequestDigest\"\xa3\x02\n" +
+	"\x1apublication_request_digest\x18\x06 \x01(\fR\x18publicationRequestDigest\x12J\n" +
+	"\x1fexpected_plugin_control_version\x18\a \x01(\x04H\x00R\x1cexpectedPluginControlVersion\x88\x01\x01B\"\n" +
+	" _expected_plugin_control_version\"\xa3\x02\n" +
 	"\x10ReversalMaterial\x124\n" +
 	"\x05trade\x18\x01 \x01(\v2\x1e.aipay.common.v1.TradeSnapshotR\x05trade\x122\n" +
 	"\x15escrow_reservation_id\x18\x02 \x01(\tR\x13escrowReservationId\x128\n" +
@@ -1591,6 +1603,7 @@ func file_aipay_payment_v1_admin_approval_proto_init() {
 	file_aipay_payment_v1_admin_approval_proto_msgTypes[0].OneofWrappers = []any{}
 	file_aipay_payment_v1_admin_approval_proto_msgTypes[2].OneofWrappers = []any{}
 	file_aipay_payment_v1_admin_approval_proto_msgTypes[3].OneofWrappers = []any{}
+	file_aipay_payment_v1_admin_approval_proto_msgTypes[8].OneofWrappers = []any{}
 	file_aipay_payment_v1_admin_approval_proto_msgTypes[12].OneofWrappers = []any{
 		(*PaymentApprovalMaterial_ChannelAccount)(nil),
 		(*PaymentApprovalMaterial_PaymentMethod)(nil),

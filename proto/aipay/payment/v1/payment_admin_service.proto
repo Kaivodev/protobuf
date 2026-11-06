@@ -1,0 +1,530 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/query.proto";
+import "aipay/payment/v1/admin_approval.proto";
+import "aipay/payment/v1/merchant_payment_access_service.proto";
+import "aipay/payment/v1/order_service.proto";
+import "aipay/payment/v1/plugin_control.proto";
+import "aipay/payment/v1/portal_views.proto";
+import "aipay/payment/v1/pricing_events.proto";
+import "aipay/payment/v1/refund_service.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+message ListChannelAccountsRequest {
+  string seller_account_id = 1;
+  string channel_code = 2;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 3 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 4;
+  string channel_account_id = 5;
+  optional bool enabled = 6;
+}
+
+message ListChannelAccountsResponse {
+  repeated ChannelAccountView accounts = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetChannelAccountRequest {
+  string channel_account_id = 1;
+}
+
+message GetChannelAccountResponse {
+  ChannelAccountView account = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListPaymentMethodsRequest {
+  optional ConfigurationStage stage = 1;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 2 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 3;
+}
+
+message ListPaymentMethodsResponse {
+  repeated PaymentMethodView methods = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetPaymentMethodRequest {
+  string revision_id = 1;
+}
+
+message GetPaymentMethodResponse {
+  PaymentMethodView method = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListRiskPoliciesRequest {
+  string channel_account_id = 1;
+  optional ConfigurationStage stage = 2;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 3 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 4;
+}
+
+message ListRiskPoliciesResponse {
+  repeated RiskPolicyView policies = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetRiskPolicyRequest {
+  string revision_id = 1;
+}
+
+message GetRiskPolicyResponse {
+  RiskPolicyView policy = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListPricingDraftsRequest {
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 1 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 2;
+  // Optional exact target filters; account/channel are mutually exclusive.
+  string channel_account_id = 3;
+  string account_id = 4;
+  optional PricingSide side = 5;
+}
+
+message ListPricingDraftsResponse {
+  repeated PricingDraftView drafts = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetPricingDraftRequest {
+  string draft_id = 1;
+}
+
+message GetPricingDraftResponse {
+  PricingDraftView draft = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListPricingVersionsRequest {
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 1 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 2;
+  // Optional exact target filters; account/channel are mutually exclusive.
+  string channel_account_id = 3;
+  string account_id = 4;
+  optional PricingSide side = 5;
+}
+
+message ListPricingVersionsResponse {
+  repeated PricingVersionView versions = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetPricingVersionRequest {
+  string pricing_version = 1;
+}
+
+message GetPricingVersionResponse {
+  PricingVersionView version = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListPluginsRequest {
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 1 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 2;
+  // If present, restrict to versions currently bound to this channel.
+  string channel_account_id = 3;
+  optional aipay.approval.v1.ApprovalStatus publication_status = 4;
+  optional bool emergency_disabled = 5;
+}
+
+message ListPluginsResponse {
+  repeated PluginVersionView plugins = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetPluginRequest {
+  string plugin_version_id = 1;
+}
+
+message GetPluginResponse {
+  PluginVersionView plugin = 1;
+  google.protobuf.Timestamp as_of = 2;
+  PaymentApproval publication = 3;
+}
+
+message ListPaymentAccessesRequest {
+  string account_id = 1;
+  string business_id = 2;
+  string payment_method = 3;
+  optional PaymentAccessReviewStatus review_status = 4;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 5 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 6;
+}
+
+message ListPaymentAccessesResponse {
+  repeated MerchantPaymentAccess accesses = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetPaymentAccessRequest {
+  string payment_access_id = 1;
+}
+
+message GetPaymentAccessResponse {
+  MerchantPaymentAccess access = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListPlatformOrdersRequest {
+  string account_id = 1;
+  string business_id = 2;
+  string application_id = 3;
+  string seller_account_id = 4;
+  string channel_account_id = 5;
+  optional OrderStatus status = 6;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 7 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 8;
+}
+
+message ListPlatformOrdersResponse {
+  repeated Order orders = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetPlatformOrderRequest {
+  string order_id = 1;
+}
+
+message GetPlatformOrderResponse {
+  Order order = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListPlatformRefundsRequest {
+  string account_id = 1;
+  string application_id = 2;
+  string seller_account_id = 3;
+  string order_id = 4;
+  optional RefundStatus status = 5;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 6 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 7;
+  string business_id = 8;
+}
+
+message ListPlatformRefundsResponse {
+  repeated Refund refunds = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetPlatformRefundRequest {
+  string refund_id = 1;
+}
+
+message GetPlatformRefundResponse {
+  Refund refund = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListPlatformDisputesRequest {
+  string seller_account_id = 1;
+  string order_id = 2;
+  optional DisputeCaseStatus status = 3;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 4 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 5;
+  string account_id = 6;
+}
+
+message ListPlatformDisputesResponse {
+  repeated PlatformDisputeView disputes = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetPlatformDisputeRequest {
+  string dispute_id = 1;
+}
+
+message GetPlatformDisputeResponse {
+  PlatformDisputeView dispute = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListApprovalsRequest {
+  string kind = 1;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 2 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 3;
+}
+
+message ListApprovalsResponse {
+  repeated aipay.approval.v1.ApprovalRequest approvals = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetApprovalRequest {
+  string approval_request_id = 1;
+}
+
+message GetApprovalResponse {
+  PaymentApproval approval = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+// backend internal management listener only: USER, platform_admin/WebAuthn,
+// platform scope and explicit authorized query constraints. IDs/filters are
+// selectors, not authority. Check every row's original ownership. Reject API
+// application, Telegram/workload, wrong entry and missing/invalid constraints.
+// All new lists limit 1-100, stable descending (created_at,resource version ID),
+// orders/refunds by created_at/ID, disputes by registered_at/ID, approvals by
+// requested_at/ID. Cursors bind method/user/scope/filter/limit/as_of and the
+// first consistent snapshot; access is rechecked on every page. as_of is UTC
+// microseconds, also on Get. Unknown resources return NotFound.
+// ListApprovals returns only unexpired PENDING headers, optionally by kind;
+// GetApproval returns original full material/assertions in any actual state.
+// No cross-owner alias permission is accepted. None of these reads enable a
+// configuration or change funds. DRAFT method/risk views come from existing
+// pending approval proposals; approved versions preserve their original CAS.
+// EmergencyDisablePlugin atomically stops new create/refund dispatch for this
+// version and disables all bound accounts; old query/close/refund-query/callback
+// verification continues. It requires MFA_RECENT and independent WebAuthn.
+// Recovery uses existing NEW two-person enable approval, never a single-person
+// resume. See plugin_control.proto and contracts.md for fences and replay.
+service PaymentAdminService {
+  rpc ListChannelAccounts(ListChannelAccountsRequest) returns (ListChannelAccountsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.channel.read"
+      }
+    };
+  }
+  rpc GetChannelAccount(GetChannelAccountRequest) returns (GetChannelAccountResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.channel.read"
+      }
+    };
+  }
+  rpc ListPaymentMethods(ListPaymentMethodsRequest) returns (ListPaymentMethodsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.method.read"
+      }
+    };
+  }
+  rpc GetPaymentMethod(GetPaymentMethodRequest) returns (GetPaymentMethodResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.method.read"
+      }
+    };
+  }
+  rpc ListRiskPolicies(ListRiskPoliciesRequest) returns (ListRiskPoliciesResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.risk.read"
+      }
+    };
+  }
+  rpc GetRiskPolicy(GetRiskPolicyRequest) returns (GetRiskPolicyResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.risk.read"
+      }
+    };
+  }
+  rpc ListPricingDrafts(ListPricingDraftsRequest) returns (ListPricingDraftsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.pricing.read"
+      }
+    };
+  }
+  rpc GetPricingDraft(GetPricingDraftRequest) returns (GetPricingDraftResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.pricing.read"
+      }
+    };
+  }
+  rpc ListPricingVersions(ListPricingVersionsRequest) returns (ListPricingVersionsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.pricing.read"
+      }
+    };
+  }
+  rpc GetPricingVersion(GetPricingVersionRequest) returns (GetPricingVersionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.pricing.read"
+      }
+    };
+  }
+  rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.plugin.read"
+      }
+    };
+  }
+  rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.plugin.read"
+      }
+    };
+  }
+  rpc ListPaymentAccesses(ListPaymentAccessesRequest) returns (ListPaymentAccessesResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.access.read"
+      }
+    };
+  }
+  rpc GetPaymentAccess(GetPaymentAccessRequest) returns (GetPaymentAccessResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.access.read"
+      }
+    };
+  }
+  rpc ListPlatformOrders(ListPlatformOrdersRequest) returns (ListPlatformOrdersResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.order.read"
+      }
+    };
+  }
+  rpc GetPlatformOrder(GetPlatformOrderRequest) returns (GetPlatformOrderResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.order.read"
+      }
+    };
+  }
+  rpc ListPlatformRefunds(ListPlatformRefundsRequest) returns (ListPlatformRefundsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.refund.read"
+      }
+    };
+  }
+  rpc GetPlatformRefund(GetPlatformRefundRequest) returns (GetPlatformRefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.refund.read"
+      }
+    };
+  }
+  rpc ListPlatformDisputes(ListPlatformDisputesRequest) returns (ListPlatformDisputesResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.dispute.read"
+      }
+    };
+  }
+  rpc GetPlatformDispute(GetPlatformDisputeRequest) returns (GetPlatformDisputeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.dispute.read"
+      }
+    };
+  }
+  rpc ListApprovals(ListApprovalsRequest) returns (ListApprovalsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.approval.read"
+      }
+    };
+  }
+  rpc GetApproval(GetApprovalRequest) returns (GetApprovalResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.approval.read"
+      }
+    };
+  }
+  rpc EmergencyDisablePlugin(EmergencyDisablePluginRequest) returns (EmergencyDisablePluginResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "payment.plugin.disable"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+}

@@ -49,6 +49,18 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 认证证明的签发格式、密钥托管、调用方绑定与撤销机制尚待 IAM 实现；EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 
+## v0.9.0 门户契约增量
+
+- `payment/v1/payment_admin_service.proto`：平台查询、待审批列表/详情及插件紧急停用。
+- `payment/v1/seller_portal_service.proto`、`portal_views.proto`：本人卖方查询投影与不可变追加举证；不提供退款处理或通道上下线命令。
+- `ledger/v1/query_service.proto`：payment 批量卖方库存参考、backend 平台/本人余额、已入账预存与担保冻结查询；不开放分录。
+- `iam/v1/notification_signing_service.proto`：仅 payment 可调用的历史订单 V1 成功通知签名。
+- `payment/v1/plugin_control.proto`、`reconciliation/v1/plugin_control.proto`：插件级 CAS/WebAuthn 紧急停用；ReconciliationAdminService 另新增待审批列表。恢复仍走新的双人启用审批。
+
+新列表使用不透明游标、每页1–100条及一致读时点；`common/v1/query.proto` 的上限选项只是契约声明，运行时仍由属主校验。卖方身份仅来自 IAM 证明绑定，请求不接受卖方账户自报。权限、范围、签名规范、门户逐项映射和后续版本见 docs 仓库 `design/contracts.md` 的 v0.9.0 节。契约/SDK 不代表服务或 HTTP 已接通。
+
+`make breaking` 默认与本地 `v0.8.0` 标签比较，可通过 `BREAKING_AGAINST` 指定其他 Buf 基线；无需访问远程仓库。
+
 ## 生成与检查
 
 需要 Go 1.27.x 和 Buf CLI；当前校验基线为 Buf 1.57.2。`make tools` 将固定版本的 Go 插件安装到本仓库 `.bin/`，不修改系统工具。

@@ -1,0 +1,180 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/common/v1/money.proto";
+import "aipay/ledger/v1/trade.proto";
+import "aipay/payment/v1/admin_approval.proto";
+import "aipay/payment/v1/dispute_service.proto";
+import "aipay/payment/v1/order_service.proto";
+import "aipay/payment/v1/refund_service.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// Present UNSPECIFIED/unknown enum values are rejected. DRAFT means an
+// immutable pending proposal from existing Submit methods, not a new editor.
+enum ConfigurationStage {
+  CONFIGURATION_STAGE_UNSPECIFIED = 0;
+  CONFIGURATION_STAGE_DRAFT = 1;
+  CONFIGURATION_STAGE_APPROVED = 2;
+}
+
+enum DisputeCaseStatus {
+  DISPUTE_CASE_STATUS_UNSPECIFIED = 0;
+  DISPUTE_CASE_STATUS_REGISTERED = 1;
+  DISPUTE_CASE_STATUS_RULING_PENDING = 2;
+  DISPUTE_CASE_STATUS_RULING_APPROVED = 3;
+  // Only after the final execution is confirmed, never just an approved ruling.
+  DISPUTE_CASE_STATUS_RESOLVED = 4;
+}
+
+message ChannelAccountView {
+  ChannelAccountConfiguration configuration = 1;
+  uint64 control_version = 2;
+  string plugin_version_id = 3;
+  string risk_policy_version = 4;
+  string pricing_version = 5;
+  google.protobuf.Timestamp disabled_at = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+// revision_id is the immutable proposal/execution approval ID; the change
+// retains its original expected CAS, separate from current control_version.
+message PaymentMethodView {
+  string revision_id = 1;
+  PaymentMethodChange change = 2;
+  ConfigurationStage stage = 3;
+  uint64 control_version = 4;
+  string approval_request_id = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp effective_at = 7;
+}
+
+// revision_id is the immutable proposal/execution approval ID; the change
+// retains its original expected CAS, separate from current control_version.
+message RiskPolicyView {
+  string revision_id = 1;
+  RiskPolicyChange change = 2;
+  ConfigurationStage stage = 3;
+  uint64 control_version = 4;
+  string approval_request_id = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp effective_at = 7;
+}
+
+message PricingDraftView {
+  PricingDraft draft = 1;
+  google.protobuf.Timestamp created_at = 2;
+  google.protobuf.Timestamp updated_at = 3;
+}
+
+message PricingVersionView {
+  PricingVersionChange change = 1;
+  uint64 control_version = 2;
+  string approval_request_id = 3;
+  google.protobuf.Timestamp approved_at = 4;
+  google.protobuf.Timestamp effective_at = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message PluginVersionView {
+  string plugin_version_id = 1;
+  string code = 2;
+  string semver = 3;
+  bytes package_sha256 = 4;
+  bytes regression_report_sha256 = 5;
+  string publication_approval_request_id = 6;
+  aipay.approval.v1.ApprovalStatus publication_status = 7;
+  uint64 control_version = 8;
+  optional bool emergency_disabled = 9;
+  google.protobuf.Timestamp disabled_at = 10;
+  google.protobuf.Timestamp created_at = 11;
+}
+
+message PlatformDisputeView {
+  RegisteredDispute dispute = 1;
+  DisputeCaseStatus status = 2;
+  DisputeEvidence evidence = 3;
+  uint64 evidence_version = 4;
+  PaymentApproval ruling = 5;
+  string investigation_summary = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// Dedicated seller projections. No nested full order/refund/trade, merchant
+// notification configuration, recipient refund reservation, raw counterparty
+// evidence, credentials or platform approval/assertion records are permitted.
+message SellerChannelView {
+  string channel_account_id = 1;
+  string seller_account_id = 2;
+  string channel_code = 3;
+  string name = 4;
+  repeated string payment_methods = 5;
+  optional bool online = 6;
+  optional bool platform_enabled = 7;
+  uint64 control_version = 8;
+  string fiat_currency = 9;
+  int64 min_amount_fiat = 10;
+  int64 max_amount_fiat = 11;
+  int64 daily_limit_fiat = 12;
+  string risk_policy_version = 13;
+  optional uint64 hold_duration_seconds = 14;
+}
+
+message SellerOrderView {
+  string order_id = 1;
+  string trade_no = 2;
+  string seller_account_id = 3;
+  string channel_account_id = 4;
+  string payment_method = 5;
+  aipay.common.v1.Money fiat_amount = 6;
+  aipay.common.v1.Money escrow_usdt = 7;
+  OrderStatus status = 8;
+  UpstreamPaymentStatus upstream_payment_status = 9;
+  optional string escrow_reservation_id = 10;
+  optional uint64 control_version = 11;
+  optional aipay.ledger.v1.TradeReservationStatus escrow_status = 12;
+  OrderRiskStatus risk_status = 13;
+  google.protobuf.Timestamp paid_verified_at = 14;
+  google.protobuf.Timestamp risk_release_at = 15;
+  google.protobuf.Timestamp effective_risk_release_at = 16;
+  string upstream_order_id = 17;
+  google.protobuf.Timestamp created_at = 18;
+  google.protobuf.Timestamp updated_at = 19;
+}
+
+message SellerRefundView {
+  string refund_id = 1;
+  string order_id = 2;
+  string seller_account_id = 3;
+  string channel_account_id = 4;
+  optional string escrow_reservation_id = 5;
+  optional uint64 control_version = 6;
+  RefundStatus status = 7;
+  string upstream_refund_id = 8;
+  aipay.common.v1.Money fiat_amount = 9;
+  string reason = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+  google.protobuf.Timestamp verified_at = 13;
+}
+
+message SellerDisputeView {
+  string dispute_id = 1;
+  string order_id = 2;
+  string seller_account_id = 3;
+  string channel_account_id = 4;
+  string escrow_reservation_id = 5;
+  uint64 control_version = 6;
+  DisputeCaseStatus status = 7;
+  string reason = 8;
+  bytes seller_evidence = 9;
+  uint64 evidence_version = 10;
+  string investigation_summary = 11;
+  optional DisputeRulingOutcome ruling_outcome = 12;
+  google.protobuf.Timestamp registered_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}

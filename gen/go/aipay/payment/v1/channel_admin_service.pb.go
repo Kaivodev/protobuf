@@ -1345,8 +1345,10 @@ type RequestPluginEnableRequest struct {
 	ExpectedControlVersion uint64                 `protobuf:"varint,3,opt,name=expected_control_version,json=expectedControlVersion,proto3" json:"expected_control_version,omitempty"`
 	// payment loads the immutable approved package/hash/publication evidence.
 	PluginVersionId string `protobuf:"bytes,4,opt,name=plugin_version_id,json=pluginVersionId,proto3" json:"plugin_version_id,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// v0.9.0: current plugin fence; required after any emergency disable.
+	ExpectedPluginControlVersion *uint64 `protobuf:"varint,5,opt,name=expected_plugin_control_version,json=expectedPluginControlVersion,proto3,oneof" json:"expected_plugin_control_version,omitempty"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *RequestPluginEnableRequest) Reset() {
@@ -1405,6 +1407,13 @@ func (x *RequestPluginEnableRequest) GetPluginVersionId() string {
 		return x.PluginVersionId
 	}
 	return ""
+}
+
+func (x *RequestPluginEnableRequest) GetExpectedPluginControlVersion() uint64 {
+	if x != nil && x.ExpectedPluginControlVersion != nil {
+		return *x.ExpectedPluginControlVersion
+	}
+	return 0
 }
 
 type RequestPluginEnableResponse struct {
@@ -1881,12 +1890,14 @@ const file_aipay_payment_v1_channel_admin_service_proto_rawDesc = "" +
 	"\x13approval_request_id\x18\x02 \x01(\tR\x11approvalRequestId\x12B\n" +
 	"\tassertion\x18\x03 \x01(\v2$.aipay.approval.v1.WebAuthnAssertionR\tassertion\"V\n" +
 	"\x15ApprovePluginResponse\x12=\n" +
-	"\bapproval\x18\x01 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\bapproval\"\xd9\x01\n" +
+	"\bapproval\x18\x01 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\bapproval\"\xc9\x02\n" +
 	"\x1aRequestPluginEnableRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12,\n" +
 	"\x12channel_account_id\x18\x02 \x01(\tR\x10channelAccountId\x128\n" +
 	"\x18expected_control_version\x18\x03 \x01(\x04R\x16expectedControlVersion\x12*\n" +
-	"\x11plugin_version_id\x18\x04 \x01(\tR\x0fpluginVersionId\"\\\n" +
+	"\x11plugin_version_id\x18\x04 \x01(\tR\x0fpluginVersionId\x12J\n" +
+	"\x1fexpected_plugin_control_version\x18\x05 \x01(\x04H\x00R\x1cexpectedPluginControlVersion\x88\x01\x01B\"\n" +
+	" _expected_plugin_control_version\"\\\n" +
 	"\x1bRequestPluginEnableResponse\x12=\n" +
 	"\bapproval\x18\x01 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\bapproval\"\xb9\x01\n" +
 	"\x1aApprovePluginEnableRequest\x12'\n" +
@@ -2093,6 +2104,7 @@ func file_aipay_payment_v1_channel_admin_service_proto_init() {
 	}
 	file_aipay_payment_v1_admin_approval_proto_init()
 	file_aipay_payment_v1_pricing_events_proto_init()
+	file_aipay_payment_v1_channel_admin_service_proto_msgTypes[24].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

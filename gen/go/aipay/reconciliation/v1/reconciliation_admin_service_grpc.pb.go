@@ -32,6 +32,8 @@ const (
 	ReconciliationAdminService_ListPlugins_FullMethodName                  = "/aipay.reconciliation.v1.ReconciliationAdminService/ListPlugins"
 	ReconciliationAdminService_GetPlugin_FullMethodName                    = "/aipay.reconciliation.v1.ReconciliationAdminService/GetPlugin"
 	ReconciliationAdminService_GetApproval_FullMethodName                  = "/aipay.reconciliation.v1.ReconciliationAdminService/GetApproval"
+	ReconciliationAdminService_ListApprovals_FullMethodName                = "/aipay.reconciliation.v1.ReconciliationAdminService/ListApprovals"
+	ReconciliationAdminService_EmergencyDisablePlugin_FullMethodName       = "/aipay.reconciliation.v1.ReconciliationAdminService/EmergencyDisablePlugin"
 )
 
 // ReconciliationAdminServiceClient is the client API for ReconciliationAdminService service.
@@ -63,6 +65,14 @@ const (
 // List limit 1-500, opaque filter/scope-bound cursors. Full original approval
 // materials/bytes/assertions are returned for independent review, including pending
 // states, within the 16 MiB whole message bound. See contracts.md for encoding.
+// v0.9.0 ListApprovals: consistent as_of snapshot, descending requested_at/ID,
+// opaque method/user/scope/filter/limit-bound cursor, limit 1-100. Recheck access
+// every page; GetApproval retains full original records in any actual state.
+// EmergencyDisablePlugin: one platform approver with MFA_RECENT plus independent
+// domain WebAuthn. Atomically disable plugin and all bound verification accounts;
+// stop ALL verification and reject related authorizations, including in-flight
+// results at issuance. Recovery requires NEW two-person enable approvals. No
+// payment material/credentials or single-person resume. See contracts.md v0.9.0.
 type ReconciliationAdminServiceClient interface {
 	UploadPlugin(ctx context.Context, in *UploadPluginRequest, opts ...grpc.CallOption) (*UploadPluginResponse, error)
 	ApprovePlugin(ctx context.Context, in *ApprovePluginRequest, opts ...grpc.CallOption) (*ApprovePluginResponse, error)
@@ -77,6 +87,8 @@ type ReconciliationAdminServiceClient interface {
 	ListPlugins(ctx context.Context, in *ListPluginsRequest, opts ...grpc.CallOption) (*ListPluginsResponse, error)
 	GetPlugin(ctx context.Context, in *GetPluginRequest, opts ...grpc.CallOption) (*GetPluginResponse, error)
 	GetApproval(ctx context.Context, in *GetApprovalRequest, opts ...grpc.CallOption) (*GetApprovalResponse, error)
+	ListApprovals(ctx context.Context, in *ListApprovalsRequest, opts ...grpc.CallOption) (*ListApprovalsResponse, error)
+	EmergencyDisablePlugin(ctx context.Context, in *EmergencyDisablePluginRequest, opts ...grpc.CallOption) (*EmergencyDisablePluginResponse, error)
 }
 
 type reconciliationAdminServiceClient struct {
@@ -217,6 +229,26 @@ func (c *reconciliationAdminServiceClient) GetApproval(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *reconciliationAdminServiceClient) ListApprovals(ctx context.Context, in *ListApprovalsRequest, opts ...grpc.CallOption) (*ListApprovalsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListApprovalsResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_ListApprovals_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reconciliationAdminServiceClient) EmergencyDisablePlugin(ctx context.Context, in *EmergencyDisablePluginRequest, opts ...grpc.CallOption) (*EmergencyDisablePluginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmergencyDisablePluginResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_EmergencyDisablePlugin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReconciliationAdminServiceServer is the server API for ReconciliationAdminService service.
 // All implementations must embed UnimplementedReconciliationAdminServiceServer
 // for forward compatibility.
@@ -246,6 +278,14 @@ func (c *reconciliationAdminServiceClient) GetApproval(ctx context.Context, in *
 // List limit 1-500, opaque filter/scope-bound cursors. Full original approval
 // materials/bytes/assertions are returned for independent review, including pending
 // states, within the 16 MiB whole message bound. See contracts.md for encoding.
+// v0.9.0 ListApprovals: consistent as_of snapshot, descending requested_at/ID,
+// opaque method/user/scope/filter/limit-bound cursor, limit 1-100. Recheck access
+// every page; GetApproval retains full original records in any actual state.
+// EmergencyDisablePlugin: one platform approver with MFA_RECENT plus independent
+// domain WebAuthn. Atomically disable plugin and all bound verification accounts;
+// stop ALL verification and reject related authorizations, including in-flight
+// results at issuance. Recovery requires NEW two-person enable approvals. No
+// payment material/credentials or single-person resume. See contracts.md v0.9.0.
 type ReconciliationAdminServiceServer interface {
 	UploadPlugin(context.Context, *UploadPluginRequest) (*UploadPluginResponse, error)
 	ApprovePlugin(context.Context, *ApprovePluginRequest) (*ApprovePluginResponse, error)
@@ -260,6 +300,8 @@ type ReconciliationAdminServiceServer interface {
 	ListPlugins(context.Context, *ListPluginsRequest) (*ListPluginsResponse, error)
 	GetPlugin(context.Context, *GetPluginRequest) (*GetPluginResponse, error)
 	GetApproval(context.Context, *GetApprovalRequest) (*GetApprovalResponse, error)
+	ListApprovals(context.Context, *ListApprovalsRequest) (*ListApprovalsResponse, error)
+	EmergencyDisablePlugin(context.Context, *EmergencyDisablePluginRequest) (*EmergencyDisablePluginResponse, error)
 	mustEmbedUnimplementedReconciliationAdminServiceServer()
 }
 
@@ -308,6 +350,12 @@ func (UnimplementedReconciliationAdminServiceServer) GetPlugin(context.Context, 
 }
 func (UnimplementedReconciliationAdminServiceServer) GetApproval(context.Context, *GetApprovalRequest) (*GetApprovalResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetApproval not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) ListApprovals(context.Context, *ListApprovalsRequest) (*ListApprovalsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListApprovals not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) EmergencyDisablePlugin(context.Context, *EmergencyDisablePluginRequest) (*EmergencyDisablePluginResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EmergencyDisablePlugin not implemented")
 }
 func (UnimplementedReconciliationAdminServiceServer) mustEmbedUnimplementedReconciliationAdminServiceServer() {
 }
@@ -565,6 +613,42 @@ func _ReconciliationAdminService_GetApproval_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReconciliationAdminService_ListApprovals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListApprovalsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).ListApprovals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_ListApprovals_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).ListApprovals(ctx, req.(*ListApprovalsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReconciliationAdminService_EmergencyDisablePlugin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmergencyDisablePluginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).EmergencyDisablePlugin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_EmergencyDisablePlugin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).EmergencyDisablePlugin(ctx, req.(*EmergencyDisablePluginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReconciliationAdminService_ServiceDesc is the grpc.ServiceDesc for ReconciliationAdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -623,6 +707,14 @@ var ReconciliationAdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetApproval",
 			Handler:    _ReconciliationAdminService_GetApproval_Handler,
+		},
+		{
+			MethodName: "ListApprovals",
+			Handler:    _ReconciliationAdminService_ListApprovals_Handler,
+		},
+		{
+			MethodName: "EmergencyDisablePlugin",
+			Handler:    _ReconciliationAdminService_EmergencyDisablePlugin_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

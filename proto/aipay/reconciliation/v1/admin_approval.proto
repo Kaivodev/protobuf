@@ -65,6 +65,9 @@ message PluginEnableChange {
   bytes package_sha256 = 4;
   string publication_approval_request_id = 5;
   bytes publication_request_digest = 6;
+  // v0.9.0: approved plugin-wide fence. Absent preserves old canonical bytes;
+  // present appends u8(1) || u64(value); required after any emergency disable.
+  optional uint64 expected_plugin_control_version = 7;
 }
 
 // Domain-owned material; never use aipay.payment.v1 approval material. Headers

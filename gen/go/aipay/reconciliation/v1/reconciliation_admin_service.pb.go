@@ -9,6 +9,7 @@ package reconciliationv1
 import (
 	v1 "github.com/Kaivodev/protobuf/gen/go/aipay/approval/v1"
 	_ "github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1"
+	_ "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -111,8 +112,13 @@ type PluginVersion struct {
 	RegressionReportSha256       []byte                 `protobuf:"bytes,5,opt,name=regression_report_sha256,json=regressionReportSha256,proto3" json:"regression_report_sha256,omitempty"`
 	PublicationApprovalRequestId string                 `protobuf:"bytes,6,opt,name=publication_approval_request_id,json=publicationApprovalRequestId,proto3" json:"publication_approval_request_id,omitempty"`
 	Status                       v1.ApprovalStatus      `protobuf:"varint,7,opt,name=status,proto3,enum=aipay.approval.v1.ApprovalStatus" json:"status,omitempty"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// v0.9.0 plugin-wide fence, starts at 1; separate from publication status.
+	ControlVersion    uint64                 `protobuf:"varint,8,opt,name=control_version,json=controlVersion,proto3" json:"control_version,omitempty"`
+	EmergencyDisabled *bool                  `protobuf:"varint,9,opt,name=emergency_disabled,json=emergencyDisabled,proto3,oneof" json:"emergency_disabled,omitempty"`
+	DisabledAt        *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=disabled_at,json=disabledAt,proto3" json:"disabled_at,omitempty"`
+	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *PluginVersion) Reset() {
@@ -192,6 +198,34 @@ func (x *PluginVersion) GetStatus() v1.ApprovalStatus {
 		return x.Status
 	}
 	return v1.ApprovalStatus(0)
+}
+
+func (x *PluginVersion) GetControlVersion() uint64 {
+	if x != nil {
+		return x.ControlVersion
+	}
+	return 0
+}
+
+func (x *PluginVersion) GetEmergencyDisabled() bool {
+	if x != nil && x.EmergencyDisabled != nil {
+		return *x.EmergencyDisabled
+	}
+	return false
+}
+
+func (x *PluginVersion) GetDisabledAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DisabledAt
+	}
+	return nil
+}
+
+func (x *PluginVersion) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
 }
 
 type UploadPluginRequest struct {
@@ -735,8 +769,10 @@ type RequestPluginEnableRequest struct {
 	VerificationAccountId  string                 `protobuf:"bytes,2,opt,name=verification_account_id,json=verificationAccountId,proto3" json:"verification_account_id,omitempty"`
 	ExpectedControlVersion uint64                 `protobuf:"varint,3,opt,name=expected_control_version,json=expectedControlVersion,proto3" json:"expected_control_version,omitempty"`
 	PluginVersionId        string                 `protobuf:"bytes,4,opt,name=plugin_version_id,json=pluginVersionId,proto3" json:"plugin_version_id,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	// v0.9.0: current plugin fence; required after any emergency disable.
+	ExpectedPluginControlVersion *uint64 `protobuf:"varint,5,opt,name=expected_plugin_control_version,json=expectedPluginControlVersion,proto3,oneof" json:"expected_plugin_control_version,omitempty"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *RequestPluginEnableRequest) Reset() {
@@ -795,6 +831,13 @@ func (x *RequestPluginEnableRequest) GetPluginVersionId() string {
 		return x.PluginVersionId
 	}
 	return ""
+}
+
+func (x *RequestPluginEnableRequest) GetExpectedPluginControlVersion() uint64 {
+	if x != nil && x.ExpectedPluginControlVersion != nil {
+		return *x.ExpectedPluginControlVersion
+	}
+	return 0
 }
 
 type RequestPluginEnableResponse struct {
@@ -1123,6 +1166,7 @@ type ListVerificationAccountsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Accounts      []*VerificationAccount `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
 	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	AsOf          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1169,6 +1213,13 @@ func (x *ListVerificationAccountsResponse) GetNextPageToken() string {
 		return x.NextPageToken
 	}
 	return ""
+}
+
+func (x *ListVerificationAccountsResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
+	}
+	return nil
 }
 
 type GetVerificationAccountRequest struct {
@@ -1218,6 +1269,7 @@ func (x *GetVerificationAccountRequest) GetVerificationAccountId() string {
 type GetVerificationAccountResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Account       *VerificationAccount   `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	AsOf          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1255,6 +1307,13 @@ func (*GetVerificationAccountResponse) Descriptor() ([]byte, []int) {
 func (x *GetVerificationAccountResponse) GetAccount() *VerificationAccount {
 	if x != nil {
 		return x.Account
+	}
+	return nil
+}
+
+func (x *GetVerificationAccountResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
 	}
 	return nil
 }
@@ -1315,6 +1374,7 @@ type ListPluginsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Plugins       []*PluginVersion       `protobuf:"bytes,1,rep,name=plugins,proto3" json:"plugins,omitempty"`
 	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	AsOf          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1361,6 +1421,13 @@ func (x *ListPluginsResponse) GetNextPageToken() string {
 		return x.NextPageToken
 	}
 	return ""
+}
+
+func (x *ListPluginsResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
+	}
+	return nil
 }
 
 type GetPluginRequest struct {
@@ -1411,6 +1478,7 @@ type GetPluginResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Plugin        *PluginVersion          `protobuf:"bytes,1,opt,name=plugin,proto3" json:"plugin,omitempty"`
 	Publication   *ReconciliationApproval `protobuf:"bytes,2,opt,name=publication,proto3" json:"publication,omitempty"`
+	AsOf          *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1455,6 +1523,13 @@ func (x *GetPluginResponse) GetPlugin() *PluginVersion {
 func (x *GetPluginResponse) GetPublication() *ReconciliationApproval {
 	if x != nil {
 		return x.Publication
+	}
+	return nil
+}
+
+func (x *GetPluginResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
 	}
 	return nil
 }
@@ -1506,6 +1581,7 @@ func (x *GetApprovalRequest) GetApprovalRequestId() string {
 type GetApprovalResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Approval      *ReconciliationApproval `protobuf:"bytes,1,opt,name=approval,proto3" json:"approval,omitempty"`
+	AsOf          *timestamppb.Timestamp  `protobuf:"bytes,2,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1547,11 +1623,141 @@ func (x *GetApprovalResponse) GetApproval() *ReconciliationApproval {
 	return nil
 }
 
+func (x *GetApprovalResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
+	}
+	return nil
+}
+
+type ListApprovalsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional exact kind; only unexpired PENDING requests are listed.
+	Kind string `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	// Required 1-100; reject values outside the range, never clamp.
+	Limit uint32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	// Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+	PageToken     string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListApprovalsRequest) Reset() {
+	*x = ListApprovalsRequest{}
+	mi := &file_aipay_reconciliation_v1_reconciliation_admin_service_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListApprovalsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListApprovalsRequest) ProtoMessage() {}
+
+func (x *ListApprovalsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_reconciliation_v1_reconciliation_admin_service_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListApprovalsRequest.ProtoReflect.Descriptor instead.
+func (*ListApprovalsRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ListApprovalsRequest) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *ListApprovalsRequest) GetLimit() uint32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListApprovalsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListApprovalsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Approvals     []*v1.ApprovalRequest  `protobuf:"bytes,1,rep,name=approvals,proto3" json:"approvals,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	AsOf          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListApprovalsResponse) Reset() {
+	*x = ListApprovalsResponse{}
+	mi := &file_aipay_reconciliation_v1_reconciliation_admin_service_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListApprovalsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListApprovalsResponse) ProtoMessage() {}
+
+func (x *ListApprovalsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_reconciliation_v1_reconciliation_admin_service_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListApprovalsResponse.ProtoReflect.Descriptor instead.
+func (*ListApprovalsResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *ListApprovalsResponse) GetApprovals() []*v1.ApprovalRequest {
+	if x != nil {
+		return x.Approvals
+	}
+	return nil
+}
+
+func (x *ListApprovalsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+func (x *ListApprovalsResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
+	}
+	return nil
+}
+
 var File_aipay_reconciliation_v1_reconciliation_admin_service_proto protoreflect.FileDescriptor
 
 const file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDesc = "" +
 	"\n" +
-	":aipay/reconciliation/v1/reconciliation_admin_service.proto\x12\x17aipay.reconciliation.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/authz/v1/policy.proto\x1a,aipay/reconciliation/v1/admin_approval.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb1\x02\n" +
+	":aipay/reconciliation/v1/reconciliation_admin_service.proto\x12\x17aipay.reconciliation.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/query.proto\x1a,aipay/reconciliation/v1/admin_approval.proto\x1a,aipay/reconciliation/v1/plugin_control.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb1\x02\n" +
 	"\x13VerificationAccount\x12_\n" +
 	"\rconfiguration\x18\x01 \x01(\v29.aipay.reconciliation.v1.VerificationAccountConfigurationR\rconfiguration\x12'\n" +
 	"\x0fcontrol_version\x18\x02 \x01(\x04R\x0econtrolVersion\x12\x1d\n" +
@@ -1560,7 +1766,7 @@ const file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDesc = 
 	"\n" +
 	"updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\n" +
 	"\n" +
-	"\b_enabled\"\xca\x02\n" +
+	"\b_enabled\"\xb6\x04\n" +
 	"\rPluginVersion\x12*\n" +
 	"\x11plugin_version_id\x18\x01 \x01(\tR\x0fpluginVersionId\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\tR\x04code\x12\x16\n" +
@@ -1568,7 +1774,15 @@ const file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDesc = 
 	"\x0epackage_sha256\x18\x04 \x01(\fR\rpackageSha256\x128\n" +
 	"\x18regression_report_sha256\x18\x05 \x01(\fR\x16regressionReportSha256\x12E\n" +
 	"\x1fpublication_approval_request_id\x18\x06 \x01(\tR\x1cpublicationApprovalRequestId\x129\n" +
-	"\x06status\x18\a \x01(\x0e2!.aipay.approval.v1.ApprovalStatusR\x06status\"\xef\x01\n" +
+	"\x06status\x18\a \x01(\x0e2!.aipay.approval.v1.ApprovalStatusR\x06status\x12'\n" +
+	"\x0fcontrol_version\x18\b \x01(\x04R\x0econtrolVersion\x122\n" +
+	"\x12emergency_disabled\x18\t \x01(\bH\x00R\x11emergencyDisabled\x88\x01\x01\x12;\n" +
+	"\vdisabled_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"disabledAt\x129\n" +
+	"\n" +
+	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtB\x15\n" +
+	"\x13_emergency_disabled\"\xef\x01\n" +
 	"\x13UploadPluginRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12#\n" +
 	"\rmanifest_json\x18\x02 \x01(\fR\fmanifestJson\x12\x1f\n" +
@@ -1600,12 +1814,14 @@ const file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDesc = 
 	"\x13approval_request_id\x18\x02 \x01(\tR\x11approvalRequestId\x12B\n" +
 	"\tassertion\x18\x03 \x01(\v2$.aipay.approval.v1.WebAuthnAssertionR\tassertion\"q\n" +
 	"\"ApproveVerificationAccountResponse\x12K\n" +
-	"\bapproval\x18\x01 \x01(\v2/.aipay.reconciliation.v1.ReconciliationApprovalR\bapproval\"\xe3\x01\n" +
+	"\bapproval\x18\x01 \x01(\v2/.aipay.reconciliation.v1.ReconciliationApprovalR\bapproval\"\xd3\x02\n" +
 	"\x1aRequestPluginEnableRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x126\n" +
 	"\x17verification_account_id\x18\x02 \x01(\tR\x15verificationAccountId\x128\n" +
 	"\x18expected_control_version\x18\x03 \x01(\x04R\x16expectedControlVersion\x12*\n" +
-	"\x11plugin_version_id\x18\x04 \x01(\tR\x0fpluginVersionId\"j\n" +
+	"\x11plugin_version_id\x18\x04 \x01(\tR\x0fpluginVersionId\x12J\n" +
+	"\x1fexpected_plugin_control_version\x18\x05 \x01(\x04H\x00R\x1cexpectedPluginControlVersion\x88\x01\x01B\"\n" +
+	" _expected_plugin_control_version\"j\n" +
 	"\x1bRequestPluginEnableResponse\x12K\n" +
 	"\bapproval\x18\x01 \x01(\v2/.aipay.reconciliation.v1.ReconciliationApprovalR\bapproval\"\xb9\x01\n" +
 	"\x1aApprovePluginEnableRequest\x12'\n" +
@@ -1625,30 +1841,44 @@ const file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDesc = 
 	"\x12channel_account_id\x18\x01 \x01(\tR\x10channelAccountId\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\rR\x05limit\x12\x1d\n" +
 	"\n" +
-	"page_token\x18\x03 \x01(\tR\tpageToken\"\x94\x01\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\"\xc5\x01\n" +
 	" ListVerificationAccountsResponse\x12H\n" +
 	"\baccounts\x18\x01 \x03(\v2,.aipay.reconciliation.v1.VerificationAccountR\baccounts\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"W\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12/\n" +
+	"\x05as_of\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf\"W\n" +
 	"\x1dGetVerificationAccountRequest\x126\n" +
-	"\x17verification_account_id\x18\x01 \x01(\tR\x15verificationAccountId\"h\n" +
+	"\x17verification_account_id\x18\x01 \x01(\tR\x15verificationAccountId\"\x99\x01\n" +
 	"\x1eGetVerificationAccountResponse\x12F\n" +
-	"\aaccount\x18\x01 \x01(\v2,.aipay.reconciliation.v1.VerificationAccountR\aaccount\"I\n" +
+	"\aaccount\x18\x01 \x01(\v2,.aipay.reconciliation.v1.VerificationAccountR\aaccount\x12/\n" +
+	"\x05as_of\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf\"I\n" +
 	"\x12ListPluginsRequest\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\rR\x05limit\x12\x1d\n" +
 	"\n" +
-	"page_token\x18\x02 \x01(\tR\tpageToken\"\x7f\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\"\xb0\x01\n" +
 	"\x13ListPluginsResponse\x12@\n" +
 	"\aplugins\x18\x01 \x03(\v2&.aipay.reconciliation.v1.PluginVersionR\aplugins\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\">\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12/\n" +
+	"\x05as_of\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf\">\n" +
 	"\x10GetPluginRequest\x12*\n" +
-	"\x11plugin_version_id\x18\x01 \x01(\tR\x0fpluginVersionId\"\xa6\x01\n" +
+	"\x11plugin_version_id\x18\x01 \x01(\tR\x0fpluginVersionId\"\xd7\x01\n" +
 	"\x11GetPluginResponse\x12>\n" +
 	"\x06plugin\x18\x01 \x01(\v2&.aipay.reconciliation.v1.PluginVersionR\x06plugin\x12Q\n" +
-	"\vpublication\x18\x02 \x01(\v2/.aipay.reconciliation.v1.ReconciliationApprovalR\vpublication\"D\n" +
+	"\vpublication\x18\x02 \x01(\v2/.aipay.reconciliation.v1.ReconciliationApprovalR\vpublication\x12/\n" +
+	"\x05as_of\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf\"D\n" +
 	"\x12GetApprovalRequest\x12.\n" +
-	"\x13approval_request_id\x18\x01 \x01(\tR\x11approvalRequestId\"b\n" +
+	"\x13approval_request_id\x18\x01 \x01(\tR\x11approvalRequestId\"\x93\x01\n" +
 	"\x13GetApprovalResponse\x12K\n" +
-	"\bapproval\x18\x01 \x01(\v2/.aipay.reconciliation.v1.ReconciliationApprovalR\bapproval2\xbc\x12\n" +
+	"\bapproval\x18\x01 \x01(\v2/.aipay.reconciliation.v1.ReconciliationApprovalR\bapproval\x12/\n" +
+	"\x05as_of\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf\"e\n" +
+	"\x14ListApprovalsRequest\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x1a\n" +
+	"\x05limit\x18\x02 \x01(\rB\x04\xc8\xf3\x18dR\x05limit\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\"\xb2\x01\n" +
+	"\x15ListApprovalsResponse\x12@\n" +
+	"\tapprovals\x18\x01 \x03(\v2\".aipay.approval.v1.ApprovalRequestR\tapprovals\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12/\n" +
+	"\x05as_of\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf2\x9f\x15\n" +
 	"\x1aReconciliationAdminService\x12\x9c\x01\n" +
 	"\fUploadPlugin\x12,.aipay.reconciliation.v1.UploadPluginRequest\x1a-.aipay.reconciliation.v1.UploadPluginResponse\"/\xc2\xf3\x18+\n" +
 	")\n" +
@@ -1688,7 +1918,13 @@ const file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDesc = 
 	"\abackend\x10\x02\x1a\x1areconciliation.plugin.read\x12\x99\x01\n" +
 	"\vGetApproval\x12+.aipay.reconciliation.v1.GetApprovalRequest\x1a,.aipay.reconciliation.v1.GetApprovalResponse\"/\xc2\xf3\x18+\n" +
 	")\n" +
-	"\abackend\x10\x02\x1a\x1creconciliation.approval.readBNZLgithub.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1b\x06proto3"
+	"\abackend\x10\x02\x1a\x1creconciliation.approval.read\x12\x9f\x01\n" +
+	"\rListApprovals\x12-.aipay.reconciliation.v1.ListApprovalsRequest\x1a..aipay.reconciliation.v1.ListApprovalsResponse\"/\xc2\xf3\x18+\n" +
+	")\n" +
+	"\abackend\x10\x02\x1a\x1creconciliation.approval.read\x12\xbe\x01\n" +
+	"\x16EmergencyDisablePlugin\x126.aipay.reconciliation.v1.EmergencyDisablePluginRequest\x1a7.aipay.reconciliation.v1.EmergencyDisablePluginResponse\"3\xc2\xf3\x18/\n" +
+	"-\n" +
+	"\abackend\x10\x03\x1a\x1dreconciliation.plugin.disable \xd8\x04BNZLgithub.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1b\x06proto3"
 
 var (
 	file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDescOnce sync.Once
@@ -1702,7 +1938,7 @@ func file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDescGZIP
 	return file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDescData
 }
 
-var file_aipay_reconciliation_v1_reconciliation_admin_service_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_aipay_reconciliation_v1_reconciliation_admin_service_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_aipay_reconciliation_v1_reconciliation_admin_service_proto_goTypes = []any{
 	(*VerificationAccount)(nil),                  // 0: aipay.reconciliation.v1.VerificationAccount
 	(*PluginVersion)(nil),                        // 1: aipay.reconciliation.v1.PluginVersion
@@ -1732,67 +1968,85 @@ var file_aipay_reconciliation_v1_reconciliation_admin_service_proto_goTypes = []
 	(*GetPluginResponse)(nil),                    // 25: aipay.reconciliation.v1.GetPluginResponse
 	(*GetApprovalRequest)(nil),                   // 26: aipay.reconciliation.v1.GetApprovalRequest
 	(*GetApprovalResponse)(nil),                  // 27: aipay.reconciliation.v1.GetApprovalResponse
-	(*VerificationAccountConfiguration)(nil),     // 28: aipay.reconciliation.v1.VerificationAccountConfiguration
-	(*timestamppb.Timestamp)(nil),                // 29: google.protobuf.Timestamp
-	(v1.ApprovalStatus)(0),                       // 30: aipay.approval.v1.ApprovalStatus
-	(*PluginFixture)(nil),                        // 31: aipay.reconciliation.v1.PluginFixture
-	(*ReconciliationApproval)(nil),               // 32: aipay.reconciliation.v1.ReconciliationApproval
-	(*v1.WebAuthnAssertion)(nil),                 // 33: aipay.approval.v1.WebAuthnAssertion
-	(*VerificationAccountChange)(nil),            // 34: aipay.reconciliation.v1.VerificationAccountChange
+	(*ListApprovalsRequest)(nil),                 // 28: aipay.reconciliation.v1.ListApprovalsRequest
+	(*ListApprovalsResponse)(nil),                // 29: aipay.reconciliation.v1.ListApprovalsResponse
+	(*VerificationAccountConfiguration)(nil),     // 30: aipay.reconciliation.v1.VerificationAccountConfiguration
+	(*timestamppb.Timestamp)(nil),                // 31: google.protobuf.Timestamp
+	(v1.ApprovalStatus)(0),                       // 32: aipay.approval.v1.ApprovalStatus
+	(*PluginFixture)(nil),                        // 33: aipay.reconciliation.v1.PluginFixture
+	(*ReconciliationApproval)(nil),               // 34: aipay.reconciliation.v1.ReconciliationApproval
+	(*v1.WebAuthnAssertion)(nil),                 // 35: aipay.approval.v1.WebAuthnAssertion
+	(*VerificationAccountChange)(nil),            // 36: aipay.reconciliation.v1.VerificationAccountChange
+	(*v1.ApprovalRequest)(nil),                   // 37: aipay.approval.v1.ApprovalRequest
+	(*EmergencyDisablePluginRequest)(nil),        // 38: aipay.reconciliation.v1.EmergencyDisablePluginRequest
+	(*EmergencyDisablePluginResponse)(nil),       // 39: aipay.reconciliation.v1.EmergencyDisablePluginResponse
 }
 var file_aipay_reconciliation_v1_reconciliation_admin_service_proto_depIdxs = []int32{
-	28, // 0: aipay.reconciliation.v1.VerificationAccount.configuration:type_name -> aipay.reconciliation.v1.VerificationAccountConfiguration
-	29, // 1: aipay.reconciliation.v1.VerificationAccount.updated_at:type_name -> google.protobuf.Timestamp
-	30, // 2: aipay.reconciliation.v1.PluginVersion.status:type_name -> aipay.approval.v1.ApprovalStatus
-	31, // 3: aipay.reconciliation.v1.UploadPluginRequest.fixtures:type_name -> aipay.reconciliation.v1.PluginFixture
-	32, // 4: aipay.reconciliation.v1.UploadPluginResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
-	33, // 5: aipay.reconciliation.v1.ApprovePluginRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
-	32, // 6: aipay.reconciliation.v1.ApprovePluginResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
-	34, // 7: aipay.reconciliation.v1.SubmitVerificationAccountRequest.change:type_name -> aipay.reconciliation.v1.VerificationAccountChange
-	32, // 8: aipay.reconciliation.v1.SubmitVerificationAccountResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
-	33, // 9: aipay.reconciliation.v1.ApproveVerificationAccountRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
-	32, // 10: aipay.reconciliation.v1.ApproveVerificationAccountResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
-	32, // 11: aipay.reconciliation.v1.RequestPluginEnableResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
-	33, // 12: aipay.reconciliation.v1.ApprovePluginEnableRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
-	32, // 13: aipay.reconciliation.v1.ApprovePluginEnableResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
-	0,  // 14: aipay.reconciliation.v1.DisableVerificationAccountResponse.account:type_name -> aipay.reconciliation.v1.VerificationAccount
-	0,  // 15: aipay.reconciliation.v1.ListVerificationAccountsResponse.accounts:type_name -> aipay.reconciliation.v1.VerificationAccount
-	0,  // 16: aipay.reconciliation.v1.GetVerificationAccountResponse.account:type_name -> aipay.reconciliation.v1.VerificationAccount
-	1,  // 17: aipay.reconciliation.v1.ListPluginsResponse.plugins:type_name -> aipay.reconciliation.v1.PluginVersion
-	1,  // 18: aipay.reconciliation.v1.GetPluginResponse.plugin:type_name -> aipay.reconciliation.v1.PluginVersion
-	32, // 19: aipay.reconciliation.v1.GetPluginResponse.publication:type_name -> aipay.reconciliation.v1.ReconciliationApproval
-	32, // 20: aipay.reconciliation.v1.GetApprovalResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
-	2,  // 21: aipay.reconciliation.v1.ReconciliationAdminService.UploadPlugin:input_type -> aipay.reconciliation.v1.UploadPluginRequest
-	4,  // 22: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePlugin:input_type -> aipay.reconciliation.v1.ApprovePluginRequest
-	6,  // 23: aipay.reconciliation.v1.ReconciliationAdminService.StoreVerificationCredentials:input_type -> aipay.reconciliation.v1.StoreVerificationCredentialsRequest
-	8,  // 24: aipay.reconciliation.v1.ReconciliationAdminService.SubmitVerificationAccount:input_type -> aipay.reconciliation.v1.SubmitVerificationAccountRequest
-	10, // 25: aipay.reconciliation.v1.ReconciliationAdminService.ApproveVerificationAccount:input_type -> aipay.reconciliation.v1.ApproveVerificationAccountRequest
-	12, // 26: aipay.reconciliation.v1.ReconciliationAdminService.RequestPluginEnable:input_type -> aipay.reconciliation.v1.RequestPluginEnableRequest
-	14, // 27: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePluginEnable:input_type -> aipay.reconciliation.v1.ApprovePluginEnableRequest
-	16, // 28: aipay.reconciliation.v1.ReconciliationAdminService.DisableVerificationAccount:input_type -> aipay.reconciliation.v1.DisableVerificationAccountRequest
-	18, // 29: aipay.reconciliation.v1.ReconciliationAdminService.ListVerificationAccounts:input_type -> aipay.reconciliation.v1.ListVerificationAccountsRequest
-	20, // 30: aipay.reconciliation.v1.ReconciliationAdminService.GetVerificationAccount:input_type -> aipay.reconciliation.v1.GetVerificationAccountRequest
-	22, // 31: aipay.reconciliation.v1.ReconciliationAdminService.ListPlugins:input_type -> aipay.reconciliation.v1.ListPluginsRequest
-	24, // 32: aipay.reconciliation.v1.ReconciliationAdminService.GetPlugin:input_type -> aipay.reconciliation.v1.GetPluginRequest
-	26, // 33: aipay.reconciliation.v1.ReconciliationAdminService.GetApproval:input_type -> aipay.reconciliation.v1.GetApprovalRequest
-	3,  // 34: aipay.reconciliation.v1.ReconciliationAdminService.UploadPlugin:output_type -> aipay.reconciliation.v1.UploadPluginResponse
-	5,  // 35: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePlugin:output_type -> aipay.reconciliation.v1.ApprovePluginResponse
-	7,  // 36: aipay.reconciliation.v1.ReconciliationAdminService.StoreVerificationCredentials:output_type -> aipay.reconciliation.v1.StoreVerificationCredentialsResponse
-	9,  // 37: aipay.reconciliation.v1.ReconciliationAdminService.SubmitVerificationAccount:output_type -> aipay.reconciliation.v1.SubmitVerificationAccountResponse
-	11, // 38: aipay.reconciliation.v1.ReconciliationAdminService.ApproveVerificationAccount:output_type -> aipay.reconciliation.v1.ApproveVerificationAccountResponse
-	13, // 39: aipay.reconciliation.v1.ReconciliationAdminService.RequestPluginEnable:output_type -> aipay.reconciliation.v1.RequestPluginEnableResponse
-	15, // 40: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePluginEnable:output_type -> aipay.reconciliation.v1.ApprovePluginEnableResponse
-	17, // 41: aipay.reconciliation.v1.ReconciliationAdminService.DisableVerificationAccount:output_type -> aipay.reconciliation.v1.DisableVerificationAccountResponse
-	19, // 42: aipay.reconciliation.v1.ReconciliationAdminService.ListVerificationAccounts:output_type -> aipay.reconciliation.v1.ListVerificationAccountsResponse
-	21, // 43: aipay.reconciliation.v1.ReconciliationAdminService.GetVerificationAccount:output_type -> aipay.reconciliation.v1.GetVerificationAccountResponse
-	23, // 44: aipay.reconciliation.v1.ReconciliationAdminService.ListPlugins:output_type -> aipay.reconciliation.v1.ListPluginsResponse
-	25, // 45: aipay.reconciliation.v1.ReconciliationAdminService.GetPlugin:output_type -> aipay.reconciliation.v1.GetPluginResponse
-	27, // 46: aipay.reconciliation.v1.ReconciliationAdminService.GetApproval:output_type -> aipay.reconciliation.v1.GetApprovalResponse
-	34, // [34:47] is the sub-list for method output_type
-	21, // [21:34] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	30, // 0: aipay.reconciliation.v1.VerificationAccount.configuration:type_name -> aipay.reconciliation.v1.VerificationAccountConfiguration
+	31, // 1: aipay.reconciliation.v1.VerificationAccount.updated_at:type_name -> google.protobuf.Timestamp
+	32, // 2: aipay.reconciliation.v1.PluginVersion.status:type_name -> aipay.approval.v1.ApprovalStatus
+	31, // 3: aipay.reconciliation.v1.PluginVersion.disabled_at:type_name -> google.protobuf.Timestamp
+	31, // 4: aipay.reconciliation.v1.PluginVersion.created_at:type_name -> google.protobuf.Timestamp
+	33, // 5: aipay.reconciliation.v1.UploadPluginRequest.fixtures:type_name -> aipay.reconciliation.v1.PluginFixture
+	34, // 6: aipay.reconciliation.v1.UploadPluginResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
+	35, // 7: aipay.reconciliation.v1.ApprovePluginRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
+	34, // 8: aipay.reconciliation.v1.ApprovePluginResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
+	36, // 9: aipay.reconciliation.v1.SubmitVerificationAccountRequest.change:type_name -> aipay.reconciliation.v1.VerificationAccountChange
+	34, // 10: aipay.reconciliation.v1.SubmitVerificationAccountResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
+	35, // 11: aipay.reconciliation.v1.ApproveVerificationAccountRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
+	34, // 12: aipay.reconciliation.v1.ApproveVerificationAccountResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
+	34, // 13: aipay.reconciliation.v1.RequestPluginEnableResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
+	35, // 14: aipay.reconciliation.v1.ApprovePluginEnableRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
+	34, // 15: aipay.reconciliation.v1.ApprovePluginEnableResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
+	0,  // 16: aipay.reconciliation.v1.DisableVerificationAccountResponse.account:type_name -> aipay.reconciliation.v1.VerificationAccount
+	0,  // 17: aipay.reconciliation.v1.ListVerificationAccountsResponse.accounts:type_name -> aipay.reconciliation.v1.VerificationAccount
+	31, // 18: aipay.reconciliation.v1.ListVerificationAccountsResponse.as_of:type_name -> google.protobuf.Timestamp
+	0,  // 19: aipay.reconciliation.v1.GetVerificationAccountResponse.account:type_name -> aipay.reconciliation.v1.VerificationAccount
+	31, // 20: aipay.reconciliation.v1.GetVerificationAccountResponse.as_of:type_name -> google.protobuf.Timestamp
+	1,  // 21: aipay.reconciliation.v1.ListPluginsResponse.plugins:type_name -> aipay.reconciliation.v1.PluginVersion
+	31, // 22: aipay.reconciliation.v1.ListPluginsResponse.as_of:type_name -> google.protobuf.Timestamp
+	1,  // 23: aipay.reconciliation.v1.GetPluginResponse.plugin:type_name -> aipay.reconciliation.v1.PluginVersion
+	34, // 24: aipay.reconciliation.v1.GetPluginResponse.publication:type_name -> aipay.reconciliation.v1.ReconciliationApproval
+	31, // 25: aipay.reconciliation.v1.GetPluginResponse.as_of:type_name -> google.protobuf.Timestamp
+	34, // 26: aipay.reconciliation.v1.GetApprovalResponse.approval:type_name -> aipay.reconciliation.v1.ReconciliationApproval
+	31, // 27: aipay.reconciliation.v1.GetApprovalResponse.as_of:type_name -> google.protobuf.Timestamp
+	37, // 28: aipay.reconciliation.v1.ListApprovalsResponse.approvals:type_name -> aipay.approval.v1.ApprovalRequest
+	31, // 29: aipay.reconciliation.v1.ListApprovalsResponse.as_of:type_name -> google.protobuf.Timestamp
+	2,  // 30: aipay.reconciliation.v1.ReconciliationAdminService.UploadPlugin:input_type -> aipay.reconciliation.v1.UploadPluginRequest
+	4,  // 31: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePlugin:input_type -> aipay.reconciliation.v1.ApprovePluginRequest
+	6,  // 32: aipay.reconciliation.v1.ReconciliationAdminService.StoreVerificationCredentials:input_type -> aipay.reconciliation.v1.StoreVerificationCredentialsRequest
+	8,  // 33: aipay.reconciliation.v1.ReconciliationAdminService.SubmitVerificationAccount:input_type -> aipay.reconciliation.v1.SubmitVerificationAccountRequest
+	10, // 34: aipay.reconciliation.v1.ReconciliationAdminService.ApproveVerificationAccount:input_type -> aipay.reconciliation.v1.ApproveVerificationAccountRequest
+	12, // 35: aipay.reconciliation.v1.ReconciliationAdminService.RequestPluginEnable:input_type -> aipay.reconciliation.v1.RequestPluginEnableRequest
+	14, // 36: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePluginEnable:input_type -> aipay.reconciliation.v1.ApprovePluginEnableRequest
+	16, // 37: aipay.reconciliation.v1.ReconciliationAdminService.DisableVerificationAccount:input_type -> aipay.reconciliation.v1.DisableVerificationAccountRequest
+	18, // 38: aipay.reconciliation.v1.ReconciliationAdminService.ListVerificationAccounts:input_type -> aipay.reconciliation.v1.ListVerificationAccountsRequest
+	20, // 39: aipay.reconciliation.v1.ReconciliationAdminService.GetVerificationAccount:input_type -> aipay.reconciliation.v1.GetVerificationAccountRequest
+	22, // 40: aipay.reconciliation.v1.ReconciliationAdminService.ListPlugins:input_type -> aipay.reconciliation.v1.ListPluginsRequest
+	24, // 41: aipay.reconciliation.v1.ReconciliationAdminService.GetPlugin:input_type -> aipay.reconciliation.v1.GetPluginRequest
+	26, // 42: aipay.reconciliation.v1.ReconciliationAdminService.GetApproval:input_type -> aipay.reconciliation.v1.GetApprovalRequest
+	28, // 43: aipay.reconciliation.v1.ReconciliationAdminService.ListApprovals:input_type -> aipay.reconciliation.v1.ListApprovalsRequest
+	38, // 44: aipay.reconciliation.v1.ReconciliationAdminService.EmergencyDisablePlugin:input_type -> aipay.reconciliation.v1.EmergencyDisablePluginRequest
+	3,  // 45: aipay.reconciliation.v1.ReconciliationAdminService.UploadPlugin:output_type -> aipay.reconciliation.v1.UploadPluginResponse
+	5,  // 46: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePlugin:output_type -> aipay.reconciliation.v1.ApprovePluginResponse
+	7,  // 47: aipay.reconciliation.v1.ReconciliationAdminService.StoreVerificationCredentials:output_type -> aipay.reconciliation.v1.StoreVerificationCredentialsResponse
+	9,  // 48: aipay.reconciliation.v1.ReconciliationAdminService.SubmitVerificationAccount:output_type -> aipay.reconciliation.v1.SubmitVerificationAccountResponse
+	11, // 49: aipay.reconciliation.v1.ReconciliationAdminService.ApproveVerificationAccount:output_type -> aipay.reconciliation.v1.ApproveVerificationAccountResponse
+	13, // 50: aipay.reconciliation.v1.ReconciliationAdminService.RequestPluginEnable:output_type -> aipay.reconciliation.v1.RequestPluginEnableResponse
+	15, // 51: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePluginEnable:output_type -> aipay.reconciliation.v1.ApprovePluginEnableResponse
+	17, // 52: aipay.reconciliation.v1.ReconciliationAdminService.DisableVerificationAccount:output_type -> aipay.reconciliation.v1.DisableVerificationAccountResponse
+	19, // 53: aipay.reconciliation.v1.ReconciliationAdminService.ListVerificationAccounts:output_type -> aipay.reconciliation.v1.ListVerificationAccountsResponse
+	21, // 54: aipay.reconciliation.v1.ReconciliationAdminService.GetVerificationAccount:output_type -> aipay.reconciliation.v1.GetVerificationAccountResponse
+	23, // 55: aipay.reconciliation.v1.ReconciliationAdminService.ListPlugins:output_type -> aipay.reconciliation.v1.ListPluginsResponse
+	25, // 56: aipay.reconciliation.v1.ReconciliationAdminService.GetPlugin:output_type -> aipay.reconciliation.v1.GetPluginResponse
+	27, // 57: aipay.reconciliation.v1.ReconciliationAdminService.GetApproval:output_type -> aipay.reconciliation.v1.GetApprovalResponse
+	29, // 58: aipay.reconciliation.v1.ReconciliationAdminService.ListApprovals:output_type -> aipay.reconciliation.v1.ListApprovalsResponse
+	39, // 59: aipay.reconciliation.v1.ReconciliationAdminService.EmergencyDisablePlugin:output_type -> aipay.reconciliation.v1.EmergencyDisablePluginResponse
+	45, // [45:60] is the sub-list for method output_type
+	30, // [30:45] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_aipay_reconciliation_v1_reconciliation_admin_service_proto_init() }
@@ -1801,14 +2055,17 @@ func file_aipay_reconciliation_v1_reconciliation_admin_service_proto_init() {
 		return
 	}
 	file_aipay_reconciliation_v1_admin_approval_proto_init()
+	file_aipay_reconciliation_v1_plugin_control_proto_init()
 	file_aipay_reconciliation_v1_reconciliation_admin_service_proto_msgTypes[0].OneofWrappers = []any{}
+	file_aipay_reconciliation_v1_reconciliation_admin_service_proto_msgTypes[1].OneofWrappers = []any{}
+	file_aipay_reconciliation_v1_reconciliation_admin_service_proto_msgTypes[12].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDesc), len(file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   28,
+			NumMessages:   30,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

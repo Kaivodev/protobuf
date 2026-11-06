@@ -1,0 +1,269 @@
+syntax = "proto3";
+
+package aipay.ledger.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/query.proto";
+import "aipay/ledger/v1/trade.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+
+// All monetary scalars below are nonnegative int64, in 10^-6 USDT. Balance
+// categories are mutually exclusive; no expected recipient proceeds are added.
+message SellerInventory {
+  string seller_account_id = 1;
+  int64 available_usdt = 2;
+}
+
+message SellerBalance {
+  string seller_account_id = 1;
+  string currency = 2;
+  int64 available_usdt = 3;
+  int64 order_escrow_usdt = 4;
+  int64 risk_held_usdt = 5;
+  int64 refund_reserved_usdt = 6;
+  int64 payout_in_flight_usdt = 7;
+}
+
+message SellerDeposit {
+  string deposit_id = 1;
+  string seller_account_id = 2;
+  string currency = 3;
+  int64 amount_usdt = 4;
+  string journal_transaction_id = 5;
+  uint64 seq = 6;
+  google.protobuf.Timestamp verified_at = 7;
+}
+
+// Original seller escrow only, not a full TradeReservation. amount_usdt is
+// original Q, held_usdt is currently held Q (0 after release/cancel/refund).
+// PRE_RELEASE refund occupation is counted once in order_escrow, not again in
+// refund_reserved. An A119 recipient hold never restores the old seller escrow.
+message SellerHold {
+  string escrow_reservation_id = 1;
+  string seller_account_id = 2;
+  string order_id = 3;
+  string channel_account_id = 4;
+  string currency = 5;
+  int64 amount_usdt = 6;
+  int64 held_usdt = 7;
+  TradeReservationStatus status = 8;
+  uint64 control_version = 9;
+  uint64 reserve_seq = 10;
+  uint64 latest_seq = 11;
+  google.protobuf.Timestamp risk_release_at = 12;
+}
+
+message BatchGetSellerInventoryRequest {
+  // Required 1-100 distinct nonempty seller funds accounts. Unknown/non-seller
+  // accounts fail the entire batch, never become a zero/missing row.
+  repeated string seller_account_ids = 1 [(aipay.common.v1.max_items) = 100];
+}
+
+message BatchGetSellerInventoryResponse {
+  repeated SellerInventory inventories = 1;
+  uint64 as_of_seq = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetPlatformSellerBalanceRequest {
+  string seller_account_id = 1;
+}
+
+message GetPlatformSellerBalanceResponse {
+  SellerBalance balance = 1;
+  uint64 as_of_seq = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message ListPlatformSellerDepositsRequest {
+  string seller_account_id = 1;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 2 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 3;
+}
+
+message ListPlatformSellerDepositsResponse {
+  repeated SellerDeposit deposits = 1;
+  string next_page_token = 2;
+  uint64 as_of_seq = 3;
+  google.protobuf.Timestamp as_of = 4;
+}
+
+message ListPlatformSellerHoldsRequest {
+  string seller_account_id = 1;
+  optional TradeReservationStatus status = 2;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 3 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 4;
+  string order_id = 5;
+}
+
+message ListPlatformSellerHoldsResponse {
+  repeated SellerHold holds = 1;
+  string next_page_token = 2;
+  uint64 as_of_seq = 3;
+  google.protobuf.Timestamp as_of = 4;
+}
+
+message GetPlatformSellerHoldRequest {
+  string seller_account_id = 1;
+  string escrow_reservation_id = 2;
+}
+
+message GetPlatformSellerHoldResponse {
+  SellerHold hold = 1;
+  uint64 as_of_seq = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetSellerBalanceRequest {}
+
+message GetSellerBalanceResponse {
+  SellerBalance balance = 1;
+  uint64 as_of_seq = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message ListSellerDepositsRequest {
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 1 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 2;
+}
+
+message ListSellerDepositsResponse {
+  repeated SellerDeposit deposits = 1;
+  string next_page_token = 2;
+  uint64 as_of_seq = 3;
+  google.protobuf.Timestamp as_of = 4;
+}
+
+message ListSellerHoldsRequest {
+  optional TradeReservationStatus status = 1;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 2 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 3;
+  string order_id = 4;
+}
+
+message ListSellerHoldsResponse {
+  repeated SellerHold holds = 1;
+  string next_page_token = 2;
+  uint64 as_of_seq = 3;
+  google.protobuf.Timestamp as_of = 4;
+}
+
+message GetSellerHoldRequest {
+  string escrow_reservation_id = 1;
+}
+
+message GetSellerHoldResponse {
+  SellerHold hold = 1;
+  uint64 as_of_seq = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+// Routing batch: payment service identity only, no assertion; rows in input
+// order at one snapshot. Inventory is advisory; ReserveTrade is the only atomic
+// admission decision. It never reserves funds or promises later availability.
+// Backend methods require USER/session/entry proof. Platform methods require
+// platform_admin/WebAuthn/platform and an explicitly authorized query scope;
+// target seller IDs are selectors. Seller methods require upstream_portal/TOTP,
+// account scope and IAM's own-user seller binding; there is no account selector.
+// Independently verify every resource's ORIGINAL seller against that binding.
+// Reject absent constraints, wrong entry/principal, stale/invalid proof/errors.
+// No JournalService, entry lines, recipient reserve or full TradeSnapshot here.
+// New lists use opaque cursors, limit 1-100 and one consistent snapshot:
+// deposits sort by (seq,deposit_id) descending, holds by (reserve_seq,id).
+// as_of_seq is the snapshot journal head (0 for an empty ledger); as_of is the
+// UTC microsecond read time, also pinning pure control changes without entries.
+// Cursors bind method, subject, scope, filters, limit and snapshot. Recheck
+// current access on every page; invalid/expired/changed cursors are rejected.
+// All currencies are exactly USDT; unbooked deposits are never included.
+service LedgerQueryService {
+  rpc BatchGetSellerInventory(BatchGetSellerInventoryRequest) returns (BatchGetSellerInventoryResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc GetPlatformSellerBalance(GetPlatformSellerBalanceRequest) returns (GetPlatformSellerBalanceResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.balance.read"
+      }
+    };
+  }
+  rpc ListPlatformSellerDeposits(ListPlatformSellerDepositsRequest) returns (ListPlatformSellerDepositsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.deposit.read"
+      }
+    };
+  }
+  rpc ListPlatformSellerHolds(ListPlatformSellerHoldsRequest) returns (ListPlatformSellerHoldsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.trade.read"
+      }
+    };
+  }
+  rpc GetPlatformSellerHold(GetPlatformSellerHoldRequest) returns (GetPlatformSellerHoldResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.trade.read"
+      }
+    };
+  }
+  rpc GetSellerBalance(GetSellerBalanceRequest) returns (GetSellerBalanceResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.balance.read"
+      }
+    };
+  }
+  rpc ListSellerDeposits(ListSellerDepositsRequest) returns (ListSellerDepositsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.deposit.read"
+      }
+    };
+  }
+  rpc ListSellerHolds(ListSellerHoldsRequest) returns (ListSellerHoldsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.trade.read"
+      }
+    };
+  }
+  rpc GetSellerHold(GetSellerHoldRequest) returns (GetSellerHoldResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.trade.read"
+      }
+    };
+  }
+}

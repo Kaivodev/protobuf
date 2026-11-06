@@ -4,7 +4,9 @@ package aipay.reconciliation.v1;
 
 import "aipay/approval/v1/approval.proto";
 import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/query.proto";
 import "aipay/reconciliation/v1/admin_approval.proto";
+import "aipay/reconciliation/v1/plugin_control.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1";
@@ -27,6 +29,11 @@ message PluginVersion {
   bytes regression_report_sha256 = 5;
   string publication_approval_request_id = 6;
   aipay.approval.v1.ApprovalStatus status = 7;
+  // v0.9.0 plugin-wide fence, starts at 1; separate from publication status.
+  uint64 control_version = 8;
+  optional bool emergency_disabled = 9;
+  google.protobuf.Timestamp disabled_at = 10;
+  google.protobuf.Timestamp created_at = 11;
 }
 message UploadPluginRequest {
   string idempotency_key = 1;
@@ -91,6 +98,8 @@ message RequestPluginEnableRequest {
   string verification_account_id = 2;
   uint64 expected_control_version = 3;
   string plugin_version_id = 4;
+  // v0.9.0: current plugin fence; required after any emergency disable.
+  optional uint64 expected_plugin_control_version = 5;
 }
 
 message RequestPluginEnableResponse {
@@ -129,6 +138,7 @@ message ListVerificationAccountsRequest {
 message ListVerificationAccountsResponse {
   repeated VerificationAccount accounts = 1;
   string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
 }
 
 message GetVerificationAccountRequest {
@@ -137,6 +147,7 @@ message GetVerificationAccountRequest {
 
 message GetVerificationAccountResponse {
   VerificationAccount account = 1;
+  google.protobuf.Timestamp as_of = 2;
 }
 
 message ListPluginsRequest {
@@ -147,6 +158,7 @@ message ListPluginsRequest {
 message ListPluginsResponse {
   repeated PluginVersion plugins = 1;
   string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
 }
 
 message GetPluginRequest {
@@ -156,6 +168,7 @@ message GetPluginRequest {
 message GetPluginResponse {
   PluginVersion plugin = 1;
   ReconciliationApproval publication = 2;
+  google.protobuf.Timestamp as_of = 3;
 }
 
 message GetApprovalRequest {
@@ -164,6 +177,22 @@ message GetApprovalRequest {
 
 message GetApprovalResponse {
   ReconciliationApproval approval = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListApprovalsRequest {
+  // Optional exact kind; only unexpired PENDING requests are listed.
+  string kind = 1;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 2 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 3;
+}
+
+message ListApprovalsResponse {
+  repeated aipay.approval.v1.ApprovalRequest approvals = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
 }
 
 // backend INTERNAL management listener only, verified USER/platform proof;
@@ -191,6 +220,14 @@ message GetApprovalResponse {
 // List limit 1-500, opaque filter/scope-bound cursors. Full original approval
 // materials/bytes/assertions are returned for independent review, including pending
 // states, within the 16 MiB whole message bound. See contracts.md for encoding.
+// v0.9.0 ListApprovals: consistent as_of snapshot, descending requested_at/ID,
+// opaque method/user/scope/filter/limit-bound cursor, limit 1-100. Recheck access
+// every page; GetApproval retains full original records in any actual state.
+// EmergencyDisablePlugin: one platform approver with MFA_RECENT plus independent
+// domain WebAuthn. Atomically disable plugin and all bound verification accounts;
+// stop ALL verification and reject related authorizations, including in-flight
+// results at issuance. Recovery requires NEW two-person enable approvals. No
+// payment material/credentials or single-person resume. See contracts.md v0.9.0.
 service ReconciliationAdminService {
   rpc UploadPlugin(UploadPluginRequest) returns (UploadPluginResponse) {
     option (aipay.authz.v1.policy) = {
@@ -306,6 +343,25 @@ service ReconciliationAdminService {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_REQUIRED
         permissions: "reconciliation.approval.read"
+      }
+    };
+  }
+  rpc ListApprovals(ListApprovalsRequest) returns (ListApprovalsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.approval.read"
+      }
+    };
+  }
+  rpc EmergencyDisablePlugin(EmergencyDisablePluginRequest) returns (EmergencyDisablePluginResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "reconciliation.plugin.disable"
+        recent_auth_max_age_seconds: 600
       }
     };
   }
