@@ -666,8 +666,9 @@ type RequestBinding struct {
 	HttpMethod string                 `protobuf:"bytes,1,opt,name=http_method,json=httpMethod,proto3" json:"http_method,omitempty"`
 	HttpPath   string                 `protobuf:"bytes,2,opt,name=http_path,json=httpPath,proto3" json:"http_path,omitempty"`
 	Permission string                 `protobuf:"bytes,3,opt,name=permission,proto3" json:"permission,omitempty"`
-	// Required 32-byte canonical command digest for new website mutations and
-	// reauthentication targets and new business/application bot commands. IAM
+	// Required 32-byte canonical command digest for new website mutations, all
+	// collection methods (including Get), reauthentication targets and new
+	// business/application bot commands. IAM
 	// includes it in request_fingerprint and signed command_sha256; do not
 	// reuse a path-only proof for a different body. Other published flows retain
 	// their existing binding rules. Digest = SHA-256(str("aipay.web.command.v1")
@@ -675,7 +676,8 @@ type RequestBinding struct {
 	// field-order encoding in contracts.md, excluding metadata. The receiving
 	// service recomputes and compares the signed lowercase-hex command_sha256
 	// claim; a caller-supplied digest alone is not proof. New protected writes
-	// require this claim; published methods retain their original proof rules.
+	// and all collection methods require this claim; other published methods
+	// retain their original proof rules.
 	BodySha256    []byte `protobuf:"bytes,4,opt,name=body_sha256,json=bodySha256,proto3" json:"body_sha256,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

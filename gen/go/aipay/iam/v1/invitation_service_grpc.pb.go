@@ -33,8 +33,9 @@ const (
 //
 // Management requires platform USER, internal listener, current WebAuthn and
 // explicit administrator delegation, not possession of the granted business role.
-// Protected roles (administrator/approver/finance/risk) stay PENDING_APPROVAL until
-// another administrator approves; no email/acceptance before that. Preserve
+// Protected roles (administrator/approver/finance/risk/collection-operator) stay
+// PENDING_APPROVAL until another administrator approves; no email/acceptance
+// before that. Preserve
 // administrator/approver exclusion and at least two active administrators. Non-
 // protected roles/upstream use PENDING directly. Seller account must independently
 // belong to the invited identity (or verified pending activation); never reassign
@@ -126,8 +127,9 @@ func (c *invitationServiceClient) ListInvitations(ctx context.Context, in *ListI
 //
 // Management requires platform USER, internal listener, current WebAuthn and
 // explicit administrator delegation, not possession of the granted business role.
-// Protected roles (administrator/approver/finance/risk) stay PENDING_APPROVAL until
-// another administrator approves; no email/acceptance before that. Preserve
+// Protected roles (administrator/approver/finance/risk/collection-operator) stay
+// PENDING_APPROVAL until another administrator approves; no email/acceptance
+// before that. Preserve
 // administrator/approver exclusion and at least two active administrators. Non-
 // protected roles/upstream use PENDING directly. Seller account must independently
 // belong to the invited identity (or verified pending activation); never reassign

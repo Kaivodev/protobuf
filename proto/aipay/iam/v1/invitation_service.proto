@@ -20,6 +20,8 @@ enum PlatformRole {
   PLATFORM_ROLE_SRE = 6;
   PLATFORM_ROLE_SUPPORT = 7;
   PLATFORM_ROLE_TECHNICAL_SUPPORT = 8;
+  // Protected collection-operator role; no implicit grant from other roles.
+  PLATFORM_ROLE_COLLECTION_OPERATOR = 9;
 }
 
 enum InvitationStatus {
@@ -125,8 +127,9 @@ message ListInvitationsResponse {
 
 // Management requires platform USER, internal listener, current WebAuthn and
 // explicit administrator delegation, not possession of the granted business role.
-// Protected roles (administrator/approver/finance/risk) stay PENDING_APPROVAL until
-// another administrator approves; no email/acceptance before that. Preserve
+// Protected roles (administrator/approver/finance/risk/collection-operator) stay
+// PENDING_APPROVAL until another administrator approves; no email/acceptance
+// before that. Preserve
 // administrator/approver exclusion and at least two active administrators. Non-
 // protected roles/upstream use PENDING directly. Seller account must independently
 // belong to the invited identity (or verified pending activation); never reassign

@@ -101,8 +101,9 @@ message RequestBinding {
   string http_method = 1;
   string http_path = 2;
   string permission = 3;
-  // Required 32-byte canonical command digest for new website mutations and
-  // reauthentication targets and new business/application bot commands. IAM
+  // Required 32-byte canonical command digest for new website mutations, all
+  // collection methods (including Get), reauthentication targets and new
+  // business/application bot commands. IAM
   // includes it in request_fingerprint and signed command_sha256; do not
   // reuse a path-only proof for a different body. Other published flows retain
   // their existing binding rules. Digest = SHA-256(str("aipay.web.command.v1")
@@ -110,6 +111,7 @@ message RequestBinding {
   // field-order encoding in contracts.md, excluding metadata. The receiving
   // service recomputes and compares the signed lowercase-hex command_sha256
   // claim; a caller-supplied digest alone is not proof. New protected writes
-  // require this claim; published methods retain their original proof rules.
+  // and all collection methods require this claim; other published methods
+  // retain their original proof rules.
   bytes body_sha256 = 4;
 }
