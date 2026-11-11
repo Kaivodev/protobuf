@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package aipay.collection.v1;
+
+import "aipay/common/v1/asset.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/collection/v1;collectionv1";
+
+// Payloads on collection.deposits, producer collection, receivers
+// reconciliation and ledger. event_type is the message name and
+// schema_version is 1. ReceiptConfirmed states what collection observed; it is
+// not authority to post funds. Reconciliation independently verifies the chain
+// transfer, finality, registered contract, amount and historical ownership.
+
+message ReceiptConfirmed {
+  // Stable UUIDv7 for this receipt. The chain tuple below is the independent
+  // cross-producer uniqueness key and cannot be replaced by this ID.
+  string receipt_id = 1;
+  // Historical owner of the deposit address at confirmation time.
+  string account_id = 2;
+  string address_id = 3;
+  // Canonical chain transaction ID and transfer/log index; index 0 is valid.
+  string chain_transaction_id = 4;
+  uint32 transfer_index = 5;
+  // Registered USDT contract only. Raw amount and ledger minor units follow
+  // the shared asset registry's exact conversion rules.
+  aipay.common.v1.ChainAssetAmount asset = 6;
+  // Canonical recipient address according to the chain's own address rules.
+  string deposit_address = 7;
+  // Customer-funds wallet account proposed by collection. Reconciliation must
+  // resolve and verify it independently before including it in its event.
+  string wallet_account_code = 8;
+  uint64 block_number = 9;
+  bytes block_hash = 10;
+  google.protobuf.Timestamp confirmed_at = 11;
+}

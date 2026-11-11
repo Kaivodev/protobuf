@@ -1,0 +1,199 @@
+syntax = "proto3";
+
+package aipay.collection.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/collection/v1;collectionv1";
+
+// Task outcome, independent of the outer transaction/batch phase.
+enum SweepState {
+  SWEEP_STATE_UNSPECIFIED = 0;
+  SWEEP_STATE_QUEUED = 1;
+  SWEEP_STATE_EXECUTING = 2;
+  // Requires matched per-UserOp execution, transfer and finality evidence.
+  SWEEP_STATE_SUCCEEDED = 3;
+  SWEEP_STATE_FAILED = 4;
+  SWEEP_STATE_EXPIRED = 5;
+  SWEEP_STATE_CANCELLED = 6;
+}
+
+enum SweepExecutionPhase {
+  SWEEP_EXECUTION_PHASE_UNSPECIFIED = 0;
+  SWEEP_EXECUTION_PHASE_PREPARED = 1;
+  SWEEP_EXECUTION_PHASE_SIGNED = 2;
+  // Keeps task EXECUTING and its source occupied; not evidence of non-execution.
+  SWEEP_EXECUTION_PHASE_SUBMISSION_UNKNOWN = 3;
+  SWEEP_EXECUTION_PHASE_PENDING = 4;
+  // Batch finalized, not necessarily successful for every task.
+  SWEEP_EXECUTION_PHASE_CONFIRMED = 5;
+  SWEEP_EXECUTION_PHASE_EXPIRED = 6;
+}
+
+enum SweepBlocker {
+  SWEEP_BLOCKER_UNSPECIFIED = 0;
+  // Recorded candidate-level preflight rejection, not a terminal task failure.
+  // Do not project scheduler-wide budget exhaustion as an individual blocker.
+  SWEEP_BLOCKER_PREFLIGHT_BLOCKED = 1;
+}
+
+// Known actual quantities only, canonical nonnegative decimal integer strings.
+// Absent means unknown; explicit "0" means observed zero. Costs are native Gas
+// asset atomic units for SweepJob.chain_id, never Token units or ledger USDT.
+message SweepGas {
+  optional string user_op_gas_used = 1;
+  optional string user_op_cost_atomic = 2;
+  // Shared outer transaction quantities, not per-task allocations. Deduplicate
+  // by chain_id + transaction_hash when aggregating across jobs in a batch.
+  optional string batch_transaction_gas_used = 3;
+  optional string batch_transaction_cost_atomic = 4;
+}
+
+// Safe read projection. No signatures, broadcastable UserOp/raw transaction,
+// node URLs, SQL errors or key references. Unknown evidence stays absent.
+message SweepJob {
+  string sweep_id = 1;
+  string account_id = 2;
+  string address_id = 3;
+  string network_id = 4;
+  // Canonical positive decimal chain identifier; network/asset are registry IDs.
+  string chain_id = 5;
+  string asset_id = 6;
+  string amount_atomic = 7;
+  // UNSPECIFIED/unknown must never be interpreted as success.
+  SweepState state = 8;
+  google.protobuf.Timestamp accepted_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  google.protobuf.Timestamp due_at = 11;
+  // When present, UNSPECIFIED/unknown values are invalid.
+  optional SweepExecutionPhase execution_phase = 12;
+  optional SweepBlocker blocker = 13;
+  // Each hash is absent (empty) or exactly 32 bytes; ProtoJSON uses base64.
+  bytes user_op_hash = 14;
+  // Our outer handleOps transaction, even if another sender executed the UserOp.
+  bytes transaction_hash = 15;
+  // Actual transaction containing this UserOp, only with execution evidence.
+  bytes user_op_transaction_hash = 16;
+  SweepGas gas = 17;
+}
+
+// All fields required. IDs/keys use lowercase canonical UUIDv7. Unknown fields
+// are rejected. account_id selects a target, never grants authority. Approved
+// chain/asset/route/recipient and execution parameters come from the owner.
+message CreateSweepJobRequest {
+  string idempotency_key = 1;
+  string account_id = 2;
+  string address_id = 3;
+  // Token atomic units, [1-9][0-9]*, 1..2^256-1 and >= configured minimum.
+  // Not ledger's six-decimal USDT, floating point, exponent or "all".
+  string amount_atomic = 4;
+  // 1..1000 Unicode scalar values, valid UTF-8, no trimming/normalization.
+  // No credentials or payer personal data; do not concatenate into logs.
+  string reason = 5;
+}
+
+message CreateSweepJobResponse {
+  string sweep_id = 1;
+  // Original durable acceptance, not signing/broadcast/execution success.
+  google.protobuf.Timestamp accepted_at = 2;
+}
+
+message GetSweepJobRequest {
+  string account_id = 1;
+  // Exactly one nonempty canonical UUIDv7. Lookup by creation key is scoped to
+  // the verified caller + subject's original CreateSweepJob and target account.
+  oneof selector {
+    string sweep_id = 2;
+    string create_idempotency_key = 3;
+  }
+}
+
+message GetSweepJobResponse {
+  SweepJob job = 1;
+  // Consistent read of the task and its execution projection, UTC timestamp.
+  google.protobuf.Timestamp observed_at = 2;
+}
+
+// Required UUIDv7 identifiers and reason as in CreateSweepJobRequest.
+// QUEUED -> CANCELLED races with scheduling via the same conditional update.
+// EXECUTING or other terminal states fail FailedPrecondition. A new key for an
+// already CANCELLED job may return its original cancellation fact, without
+// another state transition. This never withdraws a signature or chain transfer.
+message CancelSweepJobRequest {
+  string idempotency_key = 1;
+  string account_id = 2;
+  string sweep_id = 3;
+  string reason = 4;
+}
+
+message CancelSweepJobResponse {
+  string sweep_id = 1;
+  google.protobuf.Timestamp cancelled_at = 2;
+}
+
+// Platform management only: verified USER, session_id, web_entry=platform_admin,
+// WebAuthn login and platform scope bound to this single target account/type.
+// IAM audience is exactly collection. No Telegram, EPay, seller or workload
+// proof. The owner checks trusted target scope against actual resource ownership.
+// Policies below enforce caller/permission/MFA, not these owner-specific checks.
+//
+// ALL three methods, including Get, require signed command_sha256 (lowercase
+// 64-character hex): SHA-256(str("aipay.web.command.v1") || str(full gRPC method)
+// || canonical(request)). str is u32 big-endian UTF-8 BYTE length + raw bytes.
+// Full method is /aipay.collection.v1.CollectionService/<Method>.
+// Create: str(key)||str(account)||str(address)||str(amount)||str(reason).
+// Get: str(account)||u32(selected field number, 2 or 3)||str(selected value).
+// Cancel: str(key)||str(account)||str(sweep)||str(reason).
+// No field tags except the oneof discriminator; no protobuf wire/JSON encoding,
+// metadata, trace or jti. Reject unknown fields/missing or invalid values BEFORE
+// encoding. The owner recomputes from the received request and verified claims.
+// Encoding changes require explicit versioning; testvectors.CollectionCommandV1
+// publishes fixed bytes/hashes, not a production encoder or validator.
+//
+// Writes use MFA_RECENT, NOT SINGLE_USE: durable idempotency per verified
+// (caller, subject, full method, key) returns the original response for identical
+// commands, AlreadyExists for different bodies. Authenticate retries too. Store
+// intent/state, internal request mapping, result and audit in one transaction.
+// On Unavailable/DeadlineExceeded, query by original key or retry unchanged;
+// NotFound cannot rule out an in-flight commit. Never change the key blindly.
+// Wrong proof/account is PermissionDenied; missing/out-of-scope resources are
+// NotFound after authorization. Input errors are InvalidArgument, occupied
+// sources/disallowed configuration or state are FailedPrecondition.
+//
+// Approved fixed same-chain sweeps need no per-job two-person funds approval.
+// Safe controls route/Token/recipient changes, upgrades and emergency actions;
+// management MFA cannot replace that governance. No List/Preview/Retry/Tick,
+// deposit discovery, balance mutation or settlement dependency in this surface.
+// These are contracts, not evidence that runtime services are connected.
+service CollectionService {
+  rpc CreateSweepJob(CreateSweepJobRequest) returns (CreateSweepJobResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "collection.sweep.create"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc GetSweepJob(GetSweepJobRequest) returns (GetSweepJobResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "collection.sweep.read"
+      }
+    };
+  }
+  rpc CancelSweepJob(CancelSweepJobRequest) returns (CancelSweepJobResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "collection.sweep.cancel"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+}

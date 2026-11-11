@@ -22,6 +22,8 @@ var (
 	approvalV1 []byte
 	//go:embed ledger_checkpoint_v1.json
 	ledgerCheckpointV1 []byte
+	//go:embed collection_command_v1.json
+	collectionCommandV1 []byte
 )
 
 // LedgerCanonicalV1 holds journal transactions with their canonical encoding V1
@@ -41,3 +43,7 @@ func LedgerCheckpointV1() []byte { return bytes.Clone(ledgerCheckpointV1) }
 // ApprovalV1 holds an approval request digest and WebAuthn assertions over it,
 // one valid and the rest invalid.
 func ApprovalV1() []byte { return bytes.Clone(approvalV1) }
+
+// CollectionCommandV1 holds canonical command bytes and hashes for collection
+// create/get/cancel, including both query selectors. Data only, not validation.
+func CollectionCommandV1() []byte { return bytes.Clone(collectionCommandV1) }

@@ -15,7 +15,9 @@ import (
 	"strings"
 	"testing"
 
+	collectionv1 "github.com/Kaivodev/protobuf/gen/go/aipay/collection/v1"
 	"github.com/Kaivodev/protobuf/testvectors"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // This file re-derives every vector so the published data stays consistent.
@@ -70,6 +72,76 @@ func sum(parts ...[]byte) []byte {
 	return h.Sum(nil)
 }
 func equalHex(a []byte, b string) bool { return hex.EncodeToString(a) == b }
+
+// Re-derive the published Python-generated fixtures using concrete Go requests.
+// This is an encoding check, not a claim that IAM or collection enforces it yet.
+func TestCollectionCommandV1(t *testing.T) {
+	var doc struct {
+		Spec, Description string
+		Vectors           []struct {
+			Name, Method, Encoding, SHA256 string
+			Request                        json.RawMessage
+		}
+	}
+	decodeJSON(t, testvectors.CollectionCommandV1(), &doc)
+	if doc.Spec != "aipay.collection.command.v1" || len(doc.Vectors) != 4 {
+		t.Fatal("unexpected collection vectors")
+	}
+	seen := map[string]bool{}
+	for _, vector := range doc.Vectors {
+		t.Run(vector.Name, func(t *testing.T) {
+			w := &writer{}
+			w.str("aipay.web.command.v1")
+			w.str(vector.Method)
+			switch vector.Method {
+			case collectionv1.CollectionService_CreateSweepJob_FullMethodName:
+				var request collectionv1.CreateSweepJobRequest
+				if err := protojson.Unmarshal(vector.Request, &request); err != nil {
+					t.Fatal(err)
+				}
+				w.str(request.IdempotencyKey)
+				w.str(request.AccountId)
+				w.str(request.AddressId)
+				w.str(request.AmountAtomic)
+				w.str(request.Reason)
+			case collectionv1.CollectionService_GetSweepJob_FullMethodName:
+				var request collectionv1.GetSweepJobRequest
+				if err := protojson.Unmarshal(vector.Request, &request); err != nil {
+					t.Fatal(err)
+				}
+				w.str(request.AccountId)
+				switch selector := request.Selector.(type) {
+				case *collectionv1.GetSweepJobRequest_SweepId:
+					w.u32(2)
+					w.str(selector.SweepId)
+				case *collectionv1.GetSweepJobRequest_CreateIdempotencyKey:
+					w.u32(3)
+					w.str(selector.CreateIdempotencyKey)
+				default:
+					t.Fatal("missing lookup selector")
+				}
+			case collectionv1.CollectionService_CancelSweepJob_FullMethodName:
+				var request collectionv1.CancelSweepJobRequest
+				if err := protojson.Unmarshal(vector.Request, &request); err != nil {
+					t.Fatal(err)
+				}
+				w.str(request.IdempotencyKey)
+				w.str(request.AccountId)
+				w.str(request.SweepId)
+				w.str(request.Reason)
+			default:
+				t.Fatal("unknown method")
+			}
+			if !equalHex(w.b, vector.Encoding) || !equalHex(sum(w.b), vector.SHA256) {
+				t.Fatal("canonical bytes or digest differ from fixed fixture")
+			}
+			if seen[vector.SHA256] {
+				t.Fatal("commands or selectors share a digest")
+			}
+			seen[vector.SHA256] = true
+		})
+	}
+}
 
 func TestLedgerCanonicalV1(t *testing.T) {
 	var doc struct {

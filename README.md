@@ -13,6 +13,7 @@ proto/aipay/
   approval/v1/approval.proto       审批请求与 WebAuthn 断言
   iam/v1/identity.proto            认证输入、主体、短期认证证明
   iam/v1/authorization.proto       角色、权限、绑定、授权检查与数据范围约束
+  collection/v1/collection_service.proto  CollectionService：受限归集创建、查询、取消
   payment/v1/payment.proto         支付订单契约占位
   ledger/v1/ledger.proto           分录交易、分录行与 CheckpointSigned 检查点
   ledger/v1/journal_service.proto  JournalService：分录与检查点拉取
@@ -48,6 +49,20 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 `testvectors` 包以 JSON 发布分录规范编码 V1，余额摘要、科目余额表摘要、RFC 6962 Merkle 根与检查点签名，签名事件，以及 WebAuthn 审批断言的测试向量（输入、规范字节、期望哈希、公钥与签名，以及必须被拒绝的篡改样例）。包内只有数据，没有编码器或校验器：settlement 与 reconciliation 按规范自行实现分录哈希校验器（决策 A16），再用这些向量测试。向量中的密钥只为生成向量临时创建，私钥已丢弃。
 
 认证证明的签发格式、密钥托管、调用方绑定与撤销机制尚待 IAM 实现；EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
+
+## Collection 最小接入契约（待发布）
+
+`aipay.collection.v1.DepositAddressService` 定义两个账户地址方法：GetOrCreateDepositAddress(request_id, network_id, asset_id) 和 GetAddressAllocation(oneof allocation_id/request_id)。仅 backend、USER/account scope，权限分别为 `collection.address.ensure/read`，证明 REQUIRED，audience=collection；不要求归集管理角色或资金审批。账户来自已验证证明，不接受调用方指定目标、部署字节或签名参数。
+
+地址申请按调用服务＋规范 UUIDv7 请求 ID 幂等；绑定、原请求、订阅意图和审计同事务。查询始终重验范围。尚未完成批准部署、路线及订阅覆盖核验时返回 ALLOCATING、无地址、deposit_enabled=false；已有历史地址的生命周期和当前可用性分开。不把协议已生成当成真实订阅、backend 入口或生产部署已完成。当前实施开放范围仅为这两个地址方法，以下归集三方法仍保留契约、不注册运行入口。
+
+`aipay.collection.v1.CollectionService` 只定义 CreateSweepJob/GetSweepJob/CancelSweepJob；仅 backend，平台 USER/WebAuthn 与单个目标账户，audience=collection。权限为 collection.sweep.create/read/cancel，写 MFA_RECENT 600 秒、读 REQUIRED，不采用 SINGLE_USE。三个请求都绑定完整方法名和规范命令摘要，幂等键与追踪 ID 分离；创建只表示受理，取消只作用于排队任务。方法选项不自动实现入口、归属、摘要或事务校验。
+
+`PlatformRole` 追加 `PLATFORM_ROLE_COLLECTION_OPERATOR=9`，对应 IAM 的受保护角色 `collection-operator`，保留既有 0–8 值。邀请须经第二名平台管理员批准，不能用普通运营或资金审批人角色替代；枚举不授予任何人员权限，不代表邀请/撤销执行层已经实现。旧消费者须升级 SDK 后才支持该角色，未知值不能降级处理。
+
+保留 UUPS/Safe/自有 handleOps，固定批准路线的归集不逐笔双人资金审批，治理仍由 Safe 批准。没有地址监听、到账/入账、List/Preview/Retry/Tick、暂停/停签或 settlement 下发接口；没有通用 Any/map/Struct 载荷或裸签名能力。
+
+`testvectors.CollectionCommandV1()` 发布四组规范字节/摘要，涵盖 UTF-8 字节长度、uint256 最大金额及相同值下不同 oneof 查询分支；消费方独立编码，不用 protobuf wire/JSON 替代。完整字段、权限目录与四条管理 HTTP 目标路由见 docs 的 [Collection 契约](https://github.com/Kaivodev/docs/blob/main/design/contracts.md#collection-最小归集接口)。本轮只交付本地协议/SDK，未发布、未运行服务；公共验签字段、真实平台 IAM、collection/backend 接线须另行验收。
 
 ## v0.9.0 门户契约增量
 

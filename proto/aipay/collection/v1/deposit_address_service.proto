@@ -1,0 +1,121 @@
+syntax = "proto3";
+
+package aipay.collection.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/context.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/collection/v1;collectionv1";
+
+enum AddressAllocationState {
+  ADDRESS_ALLOCATION_STATE_UNSPECIFIED = 0;
+  // Durable intent; the predicted address is never exposed in this state.
+  ADDRESS_ALLOCATION_STATE_ALLOCATING = 1;
+  ADDRESS_ALLOCATION_STATE_ACTIVE = 2;
+  ADDRESS_ALLOCATION_STATE_RETIRED = 3;
+  ADDRESS_ALLOCATION_STATE_FAILED = 4;
+}
+
+enum AddressReadiness {
+  ADDRESS_READINESS_UNSPECIFIED = 0;
+  ADDRESS_READINESS_READY = 1;
+  ADDRESS_READINESS_BLOCKED = 2;
+  ADDRESS_READINESS_UNKNOWN = 3;
+}
+
+// An observation, not a claim of zero-latency chain/consumer state.
+message AddressBlockRef {
+  uint64 block_number = 1;
+  bytes block_hash = 2;
+  google.protobuf.Timestamp observed_at = 3;
+}
+
+message AddressAllocation {
+  string allocation_id = 1;
+  string account_id = 2;
+  aipay.common.v1.AccountType account_type = 3;
+  string network_id = 4;
+  string chain_id = 5;
+  string asset_id = 6;
+  // Fixed account_deposit; callers cannot select a different purpose.
+  string purpose = 7;
+  AddressAllocationState state = 8;
+  // Empty until first issuance; otherwise exactly 20 bytes for this EVM v1 API.
+  // ACTIVE but non-ready returns historical address, never a new deposit target.
+  bytes address = 9;
+  bool deposit_enabled = 10;
+  AddressReadiness readiness = 11;
+  AddressBlockRef block_ref = 12;
+  // Stable safe code, not a provider error, credential or raw payload.
+  string reason_code = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
+  uint64 version = 16;
+}
+
+message GetOrCreateDepositAddressRequest {
+  // Canonical lowercase UUIDv7. Durable scope is verified caller + request_id;
+  // semantics bind method, trusted account/type, network, asset and fixed purpose.
+  // No trace ID, assertion jti or caller-supplied account participates as authority.
+  string request_id = 1;
+  string network_id = 2;
+  string asset_id = 3;
+}
+
+message GetOrCreateDepositAddressResponse {
+  AddressAllocation allocation = 1;
+  // Original request accepted previously; not evidence of completed deployment.
+  bool replayed = 2;
+}
+
+message GetAddressAllocationRequest {
+  // Required canonical lowercase UUIDv7. Request lookup is additionally scoped
+  // to the verified original calling service. Both selectors enforce account scope.
+  oneof selector {
+    string allocation_id = 1;
+    string request_id = 2;
+  }
+}
+
+message GetAddressAllocationResponse {
+  AddressAllocation allocation = 1;
+}
+
+// Only an IAM USER proof with account scope (personal/organization), exact
+// collection audience and matching permission is accepted. No application,
+// business, platform or bare service authority; an account ID is not a login.
+// IAM owns authentication and grants; collection checks resource ownership.
+// This service neither creates sweep jobs nor handles passwords/sessions.
+//
+// Same caller/request with different semantics is AlreadyExists. Authentication
+// precedes replay. Different requests for an active account/chain/asset binding
+// reuse that allocation. Out-of-scope resources are NotFound. Unknown request
+// fields and invalid selectors are InvalidArgument. Unavailable/DeadlineExceeded
+// does not prove rollback: query the original request or retry it unchanged.
+//
+// Intent, request result, subscription intent and audit commit locally together.
+// Safe-approved deployment remains outside this RPC. New issuance requires
+// verified deployment, route/asset readiness and continuous subscription coverage;
+// until then return ALLOCATING, no address and deposit_enabled=false. Gaps and
+// uncertain observations never become READY. Queries do not mutate lifecycle.
+service DepositAddressService {
+  rpc GetOrCreateDepositAddress(GetOrCreateDepositAddressRequest) returns (GetOrCreateDepositAddressResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "collection.address.ensure"
+      }
+    };
+  }
+  rpc GetAddressAllocation(GetAddressAllocationRequest) returns (GetAddressAllocationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "collection.address.read"
+      }
+    };
+  }
+}
