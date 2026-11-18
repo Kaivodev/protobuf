@@ -966,6 +966,171 @@ func (x *ResolveReleasedTradeDisputeResponse) GetSeq() uint64 {
 	return 0
 }
 
+// Reconciliation supplies both original IDs. Unknown or mismatched pair: NotFound.
+type GetTradeFreezeDetailsRequest struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	OrderId             string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	EscrowReservationId string                 `protobuf:"bytes,2,opt,name=escrow_reservation_id,json=escrowReservationId,proto3" json:"escrow_reservation_id,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *GetTradeFreezeDetailsRequest) Reset() {
+	*x = GetTradeFreezeDetailsRequest{}
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTradeFreezeDetailsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTradeFreezeDetailsRequest) ProtoMessage() {}
+
+func (x *GetTradeFreezeDetailsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTradeFreezeDetailsRequest.ProtoReflect.Descriptor instead.
+func (*GetTradeFreezeDetailsRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetTradeFreezeDetailsRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *GetTradeFreezeDetailsRequest) GetEscrowReservationId() string {
+	if x != nil {
+		return x.EscrowReservationId
+	}
+	return ""
+}
+
+type GetTradeFreezeDetailsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Positive global journal head at the consistent read, not a control version.
+	AsOfSeq             uint64                 `protobuf:"varint,1,opt,name=as_of_seq,json=asOfSeq,proto3" json:"as_of_seq,omitempty"`
+	OrderId             string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	EscrowReservationId string                 `protobuf:"bytes,3,opt,name=escrow_reservation_id,json=escrowReservationId,proto3" json:"escrow_reservation_id,omitempty"`
+	Status              TradeReservationStatus `protobuf:"varint,4,opt,name=status,proto3,enum=aipay.ledger.v1.TradeReservationStatus" json:"status,omitempty"`
+	ControlVersion      uint64                 `protobuf:"varint,5,opt,name=control_version,json=controlVersion,proto3" json:"control_version,omitempty"`
+	// Complete, unpaginated sets. A barrier-only refund and a zero-funded A119
+	// hold are both active. Never infer absence from a balance or the status enum.
+	RefundHolds  []*TradeRefundHold  `protobuf:"bytes,6,rep,name=refund_holds,json=refundHolds,proto3" json:"refund_holds,omitempty"`
+	DisputeHolds []*TradeDisputeHold `protobuf:"bytes,7,rep,name=dispute_holds,json=disputeHolds,proto3" json:"dispute_holds,omitempty"`
+	// Both messages required, including when explicitly clear.
+	SellerRiskFreeze    *AccountRiskFreeze `protobuf:"bytes,8,opt,name=seller_risk_freeze,json=sellerRiskFreeze,proto3" json:"seller_risk_freeze,omitempty"`
+	RecipientRiskFreeze *AccountRiskFreeze `protobuf:"bytes,9,opt,name=recipient_risk_freeze,json=recipientRiskFreeze,proto3" json:"recipient_risk_freeze,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *GetTradeFreezeDetailsResponse) Reset() {
+	*x = GetTradeFreezeDetailsResponse{}
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTradeFreezeDetailsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTradeFreezeDetailsResponse) ProtoMessage() {}
+
+func (x *GetTradeFreezeDetailsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTradeFreezeDetailsResponse.ProtoReflect.Descriptor instead.
+func (*GetTradeFreezeDetailsResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetTradeFreezeDetailsResponse) GetAsOfSeq() uint64 {
+	if x != nil {
+		return x.AsOfSeq
+	}
+	return 0
+}
+
+func (x *GetTradeFreezeDetailsResponse) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *GetTradeFreezeDetailsResponse) GetEscrowReservationId() string {
+	if x != nil {
+		return x.EscrowReservationId
+	}
+	return ""
+}
+
+func (x *GetTradeFreezeDetailsResponse) GetStatus() TradeReservationStatus {
+	if x != nil {
+		return x.Status
+	}
+	return TradeReservationStatus_TRADE_RESERVATION_STATUS_UNSPECIFIED
+}
+
+func (x *GetTradeFreezeDetailsResponse) GetControlVersion() uint64 {
+	if x != nil {
+		return x.ControlVersion
+	}
+	return 0
+}
+
+func (x *GetTradeFreezeDetailsResponse) GetRefundHolds() []*TradeRefundHold {
+	if x != nil {
+		return x.RefundHolds
+	}
+	return nil
+}
+
+func (x *GetTradeFreezeDetailsResponse) GetDisputeHolds() []*TradeDisputeHold {
+	if x != nil {
+		return x.DisputeHolds
+	}
+	return nil
+}
+
+func (x *GetTradeFreezeDetailsResponse) GetSellerRiskFreeze() *AccountRiskFreeze {
+	if x != nil {
+		return x.SellerRiskFreeze
+	}
+	return nil
+}
+
+func (x *GetTradeFreezeDetailsResponse) GetRecipientRiskFreeze() *AccountRiskFreeze {
+	if x != nil {
+		return x.RecipientRiskFreeze
+	}
+	return nil
+}
+
 var File_aipay_ledger_v1_reservation_service_proto protoreflect.FileDescriptor
 
 const file_aipay_ledger_v1_reservation_service_proto_rawDesc = "" +
@@ -1036,7 +1201,20 @@ const file_aipay_ledger_v1_reservation_service_proto_rawDesc = "" +
 	"#ResolveReleasedTradeDisputeResponse\x12'\n" +
 	"\x0fcontrol_version\x18\x01 \x01(\x04R\x0econtrolVersion\x12Q\n" +
 	"\x12refund_reservation\x18\x02 \x01(\v2\".aipay.ledger.v1.RefundReservationR\x11refundReservation\x12\x10\n" +
-	"\x03seq\x18\x03 \x01(\x04R\x03seq2\xd2\a\n" +
+	"\x03seq\x18\x03 \x01(\x04R\x03seq\"m\n" +
+	"\x1cGetTradeFreezeDetailsRequest\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\x122\n" +
+	"\x15escrow_reservation_id\x18\x02 \x01(\tR\x13escrowReservationId\"\xab\x04\n" +
+	"\x1dGetTradeFreezeDetailsResponse\x12\x1a\n" +
+	"\tas_of_seq\x18\x01 \x01(\x04R\aasOfSeq\x12\x19\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x122\n" +
+	"\x15escrow_reservation_id\x18\x03 \x01(\tR\x13escrowReservationId\x12?\n" +
+	"\x06status\x18\x04 \x01(\x0e2'.aipay.ledger.v1.TradeReservationStatusR\x06status\x12'\n" +
+	"\x0fcontrol_version\x18\x05 \x01(\x04R\x0econtrolVersion\x12C\n" +
+	"\frefund_holds\x18\x06 \x03(\v2 .aipay.ledger.v1.TradeRefundHoldR\vrefundHolds\x12F\n" +
+	"\rdispute_holds\x18\a \x03(\v2!.aipay.ledger.v1.TradeDisputeHoldR\fdisputeHolds\x12P\n" +
+	"\x12seller_risk_freeze\x18\b \x01(\v2\".aipay.ledger.v1.AccountRiskFreezeR\x10sellerRiskFreeze\x12V\n" +
+	"\x15recipient_risk_freeze\x18\t \x01(\v2\".aipay.ledger.v1.AccountRiskFreezeR\x13recipientRiskFreeze2\xe5\b\n" +
 	"\x12ReservationService\x12n\n" +
 	"\fReserveTrade\x12$.aipay.ledger.v1.ReserveTradeRequest\x1a%.aipay.ledger.v1.ReserveTradeResponse\"\x11\xc2\xf3\x18\r\n" +
 	"\v\n" +
@@ -1059,7 +1237,10 @@ const file_aipay_ledger_v1_reservation_service_proto_rawDesc = "" +
 	"\apayment\x10\x01\x12\x9b\x01\n" +
 	"\x1bResolveReleasedTradeDispute\x123.aipay.ledger.v1.ResolveReleasedTradeDisputeRequest\x1a4.aipay.ledger.v1.ResolveReleasedTradeDisputeResponse\"\x11\xc2\xf3\x18\r\n" +
 	"\v\n" +
-	"\apayment\x10\x01B>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
+	"\apayment\x10\x01\x12\x90\x01\n" +
+	"\x15GetTradeFreezeDetails\x12-.aipay.ledger.v1.GetTradeFreezeDetailsRequest\x1a..aipay.ledger.v1.GetTradeFreezeDetailsResponse\"\x18\xc2\xf3\x18\x14\n" +
+	"\x12\n" +
+	"\x0ereconciliation\x10\x01B>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
 
 var (
 	file_aipay_ledger_v1_reservation_service_proto_rawDescOnce sync.Once
@@ -1073,7 +1254,7 @@ func file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP() []byte {
 	return file_aipay_ledger_v1_reservation_service_proto_rawDescData
 }
 
-var file_aipay_ledger_v1_reservation_service_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_aipay_ledger_v1_reservation_service_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_aipay_ledger_v1_reservation_service_proto_goTypes = []any{
 	(*ReserveTradeRequest)(nil),                 // 0: aipay.ledger.v1.ReserveTradeRequest
 	(*ReserveTradeResponse)(nil),                // 1: aipay.ledger.v1.ReserveTradeResponse
@@ -1089,44 +1270,57 @@ var file_aipay_ledger_v1_reservation_service_proto_goTypes = []any{
 	(*HoldReleasedTradeForDisputeResponse)(nil), // 11: aipay.ledger.v1.HoldReleasedTradeForDisputeResponse
 	(*ResolveReleasedTradeDisputeRequest)(nil),  // 12: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest
 	(*ResolveReleasedTradeDisputeResponse)(nil), // 13: aipay.ledger.v1.ResolveReleasedTradeDisputeResponse
-	(*v1.TradeSnapshot)(nil),                    // 14: aipay.common.v1.TradeSnapshot
-	(*TradeReservation)(nil),                    // 15: aipay.ledger.v1.TradeReservation
-	(*RefundReservation)(nil),                   // 16: aipay.ledger.v1.RefundReservation
-	(RefundReservationBranch)(0),                // 17: aipay.ledger.v1.RefundReservationBranch
-	(*DisputeRulingReference)(nil),              // 18: aipay.ledger.v1.DisputeRulingReference
-	(*ReleasedTradeDisputeHold)(nil),            // 19: aipay.ledger.v1.ReleasedTradeDisputeHold
-	(ReleasedTradeDisputeOutcome)(0),            // 20: aipay.ledger.v1.ReleasedTradeDisputeOutcome
+	(*GetTradeFreezeDetailsRequest)(nil),        // 14: aipay.ledger.v1.GetTradeFreezeDetailsRequest
+	(*GetTradeFreezeDetailsResponse)(nil),       // 15: aipay.ledger.v1.GetTradeFreezeDetailsResponse
+	(*v1.TradeSnapshot)(nil),                    // 16: aipay.common.v1.TradeSnapshot
+	(*TradeReservation)(nil),                    // 17: aipay.ledger.v1.TradeReservation
+	(*RefundReservation)(nil),                   // 18: aipay.ledger.v1.RefundReservation
+	(RefundReservationBranch)(0),                // 19: aipay.ledger.v1.RefundReservationBranch
+	(*DisputeRulingReference)(nil),              // 20: aipay.ledger.v1.DisputeRulingReference
+	(*ReleasedTradeDisputeHold)(nil),            // 21: aipay.ledger.v1.ReleasedTradeDisputeHold
+	(ReleasedTradeDisputeOutcome)(0),            // 22: aipay.ledger.v1.ReleasedTradeDisputeOutcome
+	(TradeReservationStatus)(0),                 // 23: aipay.ledger.v1.TradeReservationStatus
+	(*TradeRefundHold)(nil),                     // 24: aipay.ledger.v1.TradeRefundHold
+	(*TradeDisputeHold)(nil),                    // 25: aipay.ledger.v1.TradeDisputeHold
+	(*AccountRiskFreeze)(nil),                   // 26: aipay.ledger.v1.AccountRiskFreeze
 }
 var file_aipay_ledger_v1_reservation_service_proto_depIdxs = []int32{
-	14, // 0: aipay.ledger.v1.ReserveTradeRequest.trade:type_name -> aipay.common.v1.TradeSnapshot
-	15, // 1: aipay.ledger.v1.GetTradeReservationResponse.reservation:type_name -> aipay.ledger.v1.TradeReservation
-	16, // 2: aipay.ledger.v1.GetTradeReservationResponse.refund_reservation:type_name -> aipay.ledger.v1.RefundReservation
-	17, // 3: aipay.ledger.v1.ReserveRefundRequest.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
-	18, // 4: aipay.ledger.v1.ReserveRefundRequest.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
-	16, // 5: aipay.ledger.v1.ReserveRefundResponse.reservation:type_name -> aipay.ledger.v1.RefundReservation
-	19, // 6: aipay.ledger.v1.HoldReleasedTradeForDisputeResponse.hold:type_name -> aipay.ledger.v1.ReleasedTradeDisputeHold
-	18, // 7: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
-	20, // 8: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest.outcome:type_name -> aipay.ledger.v1.ReleasedTradeDisputeOutcome
-	16, // 9: aipay.ledger.v1.ResolveReleasedTradeDisputeResponse.refund_reservation:type_name -> aipay.ledger.v1.RefundReservation
-	0,  // 10: aipay.ledger.v1.ReservationService.ReserveTrade:input_type -> aipay.ledger.v1.ReserveTradeRequest
-	2,  // 11: aipay.ledger.v1.ReservationService.GetTradeReservation:input_type -> aipay.ledger.v1.GetTradeReservationRequest
-	4,  // 12: aipay.ledger.v1.ReservationService.HoldTradeForRefund:input_type -> aipay.ledger.v1.HoldTradeForRefundRequest
-	6,  // 13: aipay.ledger.v1.ReservationService.HoldTradeForDispute:input_type -> aipay.ledger.v1.HoldTradeForDisputeRequest
-	8,  // 14: aipay.ledger.v1.ReservationService.ReserveRefund:input_type -> aipay.ledger.v1.ReserveRefundRequest
-	10, // 15: aipay.ledger.v1.ReservationService.HoldReleasedTradeForDispute:input_type -> aipay.ledger.v1.HoldReleasedTradeForDisputeRequest
-	12, // 16: aipay.ledger.v1.ReservationService.ResolveReleasedTradeDispute:input_type -> aipay.ledger.v1.ResolveReleasedTradeDisputeRequest
-	1,  // 17: aipay.ledger.v1.ReservationService.ReserveTrade:output_type -> aipay.ledger.v1.ReserveTradeResponse
-	3,  // 18: aipay.ledger.v1.ReservationService.GetTradeReservation:output_type -> aipay.ledger.v1.GetTradeReservationResponse
-	5,  // 19: aipay.ledger.v1.ReservationService.HoldTradeForRefund:output_type -> aipay.ledger.v1.HoldTradeForRefundResponse
-	7,  // 20: aipay.ledger.v1.ReservationService.HoldTradeForDispute:output_type -> aipay.ledger.v1.HoldTradeForDisputeResponse
-	9,  // 21: aipay.ledger.v1.ReservationService.ReserveRefund:output_type -> aipay.ledger.v1.ReserveRefundResponse
-	11, // 22: aipay.ledger.v1.ReservationService.HoldReleasedTradeForDispute:output_type -> aipay.ledger.v1.HoldReleasedTradeForDisputeResponse
-	13, // 23: aipay.ledger.v1.ReservationService.ResolveReleasedTradeDispute:output_type -> aipay.ledger.v1.ResolveReleasedTradeDisputeResponse
-	17, // [17:24] is the sub-list for method output_type
-	10, // [10:17] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	16, // 0: aipay.ledger.v1.ReserveTradeRequest.trade:type_name -> aipay.common.v1.TradeSnapshot
+	17, // 1: aipay.ledger.v1.GetTradeReservationResponse.reservation:type_name -> aipay.ledger.v1.TradeReservation
+	18, // 2: aipay.ledger.v1.GetTradeReservationResponse.refund_reservation:type_name -> aipay.ledger.v1.RefundReservation
+	19, // 3: aipay.ledger.v1.ReserveRefundRequest.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
+	20, // 4: aipay.ledger.v1.ReserveRefundRequest.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
+	18, // 5: aipay.ledger.v1.ReserveRefundResponse.reservation:type_name -> aipay.ledger.v1.RefundReservation
+	21, // 6: aipay.ledger.v1.HoldReleasedTradeForDisputeResponse.hold:type_name -> aipay.ledger.v1.ReleasedTradeDisputeHold
+	20, // 7: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
+	22, // 8: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest.outcome:type_name -> aipay.ledger.v1.ReleasedTradeDisputeOutcome
+	18, // 9: aipay.ledger.v1.ResolveReleasedTradeDisputeResponse.refund_reservation:type_name -> aipay.ledger.v1.RefundReservation
+	23, // 10: aipay.ledger.v1.GetTradeFreezeDetailsResponse.status:type_name -> aipay.ledger.v1.TradeReservationStatus
+	24, // 11: aipay.ledger.v1.GetTradeFreezeDetailsResponse.refund_holds:type_name -> aipay.ledger.v1.TradeRefundHold
+	25, // 12: aipay.ledger.v1.GetTradeFreezeDetailsResponse.dispute_holds:type_name -> aipay.ledger.v1.TradeDisputeHold
+	26, // 13: aipay.ledger.v1.GetTradeFreezeDetailsResponse.seller_risk_freeze:type_name -> aipay.ledger.v1.AccountRiskFreeze
+	26, // 14: aipay.ledger.v1.GetTradeFreezeDetailsResponse.recipient_risk_freeze:type_name -> aipay.ledger.v1.AccountRiskFreeze
+	0,  // 15: aipay.ledger.v1.ReservationService.ReserveTrade:input_type -> aipay.ledger.v1.ReserveTradeRequest
+	2,  // 16: aipay.ledger.v1.ReservationService.GetTradeReservation:input_type -> aipay.ledger.v1.GetTradeReservationRequest
+	4,  // 17: aipay.ledger.v1.ReservationService.HoldTradeForRefund:input_type -> aipay.ledger.v1.HoldTradeForRefundRequest
+	6,  // 18: aipay.ledger.v1.ReservationService.HoldTradeForDispute:input_type -> aipay.ledger.v1.HoldTradeForDisputeRequest
+	8,  // 19: aipay.ledger.v1.ReservationService.ReserveRefund:input_type -> aipay.ledger.v1.ReserveRefundRequest
+	10, // 20: aipay.ledger.v1.ReservationService.HoldReleasedTradeForDispute:input_type -> aipay.ledger.v1.HoldReleasedTradeForDisputeRequest
+	12, // 21: aipay.ledger.v1.ReservationService.ResolveReleasedTradeDispute:input_type -> aipay.ledger.v1.ResolveReleasedTradeDisputeRequest
+	14, // 22: aipay.ledger.v1.ReservationService.GetTradeFreezeDetails:input_type -> aipay.ledger.v1.GetTradeFreezeDetailsRequest
+	1,  // 23: aipay.ledger.v1.ReservationService.ReserveTrade:output_type -> aipay.ledger.v1.ReserveTradeResponse
+	3,  // 24: aipay.ledger.v1.ReservationService.GetTradeReservation:output_type -> aipay.ledger.v1.GetTradeReservationResponse
+	5,  // 25: aipay.ledger.v1.ReservationService.HoldTradeForRefund:output_type -> aipay.ledger.v1.HoldTradeForRefundResponse
+	7,  // 26: aipay.ledger.v1.ReservationService.HoldTradeForDispute:output_type -> aipay.ledger.v1.HoldTradeForDisputeResponse
+	9,  // 27: aipay.ledger.v1.ReservationService.ReserveRefund:output_type -> aipay.ledger.v1.ReserveRefundResponse
+	11, // 28: aipay.ledger.v1.ReservationService.HoldReleasedTradeForDispute:output_type -> aipay.ledger.v1.HoldReleasedTradeForDisputeResponse
+	13, // 29: aipay.ledger.v1.ReservationService.ResolveReleasedTradeDispute:output_type -> aipay.ledger.v1.ResolveReleasedTradeDisputeResponse
+	15, // 30: aipay.ledger.v1.ReservationService.GetTradeFreezeDetails:output_type -> aipay.ledger.v1.GetTradeFreezeDetailsResponse
+	23, // [23:31] is the sub-list for method output_type
+	15, // [15:23] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_aipay_ledger_v1_reservation_service_proto_init() }
@@ -1145,7 +1339,7 @@ func file_aipay_ledger_v1_reservation_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_ledger_v1_reservation_service_proto_rawDesc), len(file_aipay_ledger_v1_reservation_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

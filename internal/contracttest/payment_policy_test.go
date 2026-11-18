@@ -38,7 +38,7 @@ func TestPaymentMethodAuthorization(t *testing.T) {
 		{
 			paymentv1.File_aipay_payment_v1_callback_service_proto, "CallbackService", "backend",
 			authzv1.AssertionRequirement_ASSERTION_REQUIREMENT_NOT_REQUIRED,
-			map[protoreflect.Name]string{"HandleUpstreamCallback": ""},
+			map[protoreflect.Name]string{"HandleUpstreamCallback": "", "GetCallbackPolicy": ""},
 		},
 		{
 			paymentv1.File_aipay_payment_v1_merchant_payment_access_service_proto, "MerchantPaymentAccessService", "backend",

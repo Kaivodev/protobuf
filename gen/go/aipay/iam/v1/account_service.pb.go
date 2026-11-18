@@ -38,8 +38,11 @@ type LoginRequest struct {
 	Entry    WebEntry `protobuf:"varint,4,opt,name=entry,proto3,enum=aipay.iam.v1.WebEntry" json:"entry,omitempty"`
 	// 32-byte digest bound to backend's preauthentication Cookie/CSRF context.
 	PreauthenticationContext []byte `protobuf:"bytes,5,opt,name=preauthentication_context,json=preauthenticationContext,proto3" json:"preauthentication_context,omitempty"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	// Same trusted source as RequestBinding.client_ip. IAM retains it through
+	// the login challenge for the new session. Omission is valid for web login.
+	ClientIp      *string `protobuf:"bytes,6,opt,name=client_ip,json=clientIp,proto3,oneof" json:"client_ip,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LoginRequest) Reset() {
@@ -107,6 +110,13 @@ func (x *LoginRequest) GetPreauthenticationContext() []byte {
 	return nil
 }
 
+func (x *LoginRequest) GetClientIp() string {
+	if x != nil && x.ClientIp != nil {
+		return *x.ClientIp
+	}
+	return ""
+}
+
 type LoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Result        *AuthenticationResult  `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
@@ -162,6 +172,7 @@ type VerifyChallengeRequest struct {
 	//
 	//	*VerifyChallengeRequest_TotpCode
 	//	*VerifyChallengeRequest_Webauthn
+	//	*VerifyChallengeRequest_RecoveryCode
 	Answer        isVerifyChallengeRequest_Answer `protobuf_oneof:"answer"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -257,6 +268,15 @@ func (x *VerifyChallengeRequest) GetWebauthn() *WebAuthnAuthentication {
 	return nil
 }
 
+func (x *VerifyChallengeRequest) GetRecoveryCode() string {
+	if x != nil {
+		if x, ok := x.Answer.(*VerifyChallengeRequest_RecoveryCode); ok {
+			return x.RecoveryCode
+		}
+	}
+	return ""
+}
+
 type isVerifyChallengeRequest_Answer interface {
 	isVerifyChallengeRequest_Answer()
 }
@@ -270,15 +290,24 @@ type VerifyChallengeRequest_Webauthn struct {
 	Webauthn *WebAuthnAuthentication `protobuf:"bytes,7,opt,name=webauthn,proto3,oneof"`
 }
 
+type VerifyChallengeRequest_RecoveryCode struct {
+	// Sensitive single-use second factor for a portal TOTP login challenge.
+	RecoveryCode string `protobuf:"bytes,8,opt,name=recovery_code,json=recoveryCode,proto3,oneof"`
+}
+
 func (*VerifyChallengeRequest_TotpCode) isVerifyChallengeRequest_Answer() {}
 
 func (*VerifyChallengeRequest_Webauthn) isVerifyChallengeRequest_Answer() {}
 
+func (*VerifyChallengeRequest_RecoveryCode) isVerifyChallengeRequest_Answer() {}
+
 type VerifyChallengeResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Result        *AuthenticationResult  `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Result *AuthenticationResult  `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
+	// Present only after successful recovery-code login, including zero.
+	RemainingRecoveryCodes *uint32 `protobuf:"varint,2,opt,name=remaining_recovery_codes,json=remainingRecoveryCodes,proto3,oneof" json:"remaining_recovery_codes,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *VerifyChallengeResponse) Reset() {
@@ -316,6 +345,13 @@ func (x *VerifyChallengeResponse) GetResult() *AuthenticationResult {
 		return x.Result
 	}
 	return nil
+}
+
+func (x *VerifyChallengeResponse) GetRemainingRecoveryCodes() uint32 {
+	if x != nil && x.RemainingRecoveryCodes != nil {
+		return *x.RemainingRecoveryCodes
+	}
+	return 0
 }
 
 type LogoutRequest struct {
@@ -1224,19 +1260,241 @@ func (x *UpdateProfileResponse) GetProfile() *UserProfile {
 	return nil
 }
 
+type GetChallengeRequest struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	ChallengeId string                 `protobuf:"bytes,1,opt,name=challenge_id,json=challengeId,proto3" json:"challenge_id,omitempty"`
+	// Sensitive original preauthentication capability; never logged.
+	ChallengeToken           string   `protobuf:"bytes,2,opt,name=challenge_token,json=challengeToken,proto3" json:"challenge_token,omitempty"`
+	Entry                    WebEntry `protobuf:"varint,3,opt,name=entry,proto3,enum=aipay.iam.v1.WebEntry" json:"entry,omitempty"`
+	PreauthenticationContext []byte   `protobuf:"bytes,4,opt,name=preauthentication_context,json=preauthenticationContext,proto3" json:"preauthentication_context,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
+}
+
+func (x *GetChallengeRequest) Reset() {
+	*x = GetChallengeRequest{}
+	mi := &file_aipay_iam_v1_account_service_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetChallengeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetChallengeRequest) ProtoMessage() {}
+
+func (x *GetChallengeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_account_service_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetChallengeRequest.ProtoReflect.Descriptor instead.
+func (*GetChallengeRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_account_service_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetChallengeRequest) GetChallengeId() string {
+	if x != nil {
+		return x.ChallengeId
+	}
+	return ""
+}
+
+func (x *GetChallengeRequest) GetChallengeToken() string {
+	if x != nil {
+		return x.ChallengeToken
+	}
+	return ""
+}
+
+func (x *GetChallengeRequest) GetEntry() WebEntry {
+	if x != nil {
+		return x.Entry
+	}
+	return WebEntry_WEB_ENTRY_UNSPECIFIED
+}
+
+func (x *GetChallengeRequest) GetPreauthenticationContext() []byte {
+	if x != nil {
+		return x.PreauthenticationContext
+	}
+	return nil
+}
+
+type TotpChallengeOptions struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Digits              uint32                 `protobuf:"varint,1,opt,name=digits,proto3" json:"digits,omitempty"` // Six for the current TOTP policy.
+	RecoveryCodeAllowed bool                   `protobuf:"varint,2,opt,name=recovery_code_allowed,json=recoveryCodeAllowed,proto3" json:"recovery_code_allowed,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *TotpChallengeOptions) Reset() {
+	*x = TotpChallengeOptions{}
+	mi := &file_aipay_iam_v1_account_service_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TotpChallengeOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TotpChallengeOptions) ProtoMessage() {}
+
+func (x *TotpChallengeOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_account_service_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TotpChallengeOptions.ProtoReflect.Descriptor instead.
+func (*TotpChallengeOptions) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_account_service_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *TotpChallengeOptions) GetDigits() uint32 {
+	if x != nil {
+		return x.Digits
+	}
+	return 0
+}
+
+func (x *TotpChallengeOptions) GetRecoveryCodeAllowed() bool {
+	if x != nil {
+		return x.RecoveryCodeAllowed
+	}
+	return false
+}
+
+type GetChallengeResponse struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Purpose   ChallengePurpose       `protobuf:"varint,1,opt,name=purpose,proto3,enum=aipay.iam.v1.ChallengePurpose" json:"purpose,omitempty"`
+	ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	// Types that are valid to be assigned to Options:
+	//
+	//	*GetChallengeResponse_WebauthnOptionsJson
+	//	*GetChallengeResponse_Totp
+	Options       isGetChallengeResponse_Options `protobuf_oneof:"options"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetChallengeResponse) Reset() {
+	*x = GetChallengeResponse{}
+	mi := &file_aipay_iam_v1_account_service_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetChallengeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetChallengeResponse) ProtoMessage() {}
+
+func (x *GetChallengeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_account_service_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetChallengeResponse.ProtoReflect.Descriptor instead.
+func (*GetChallengeResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_account_service_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *GetChallengeResponse) GetPurpose() ChallengePurpose {
+	if x != nil {
+		return x.Purpose
+	}
+	return ChallengePurpose_CHALLENGE_PURPOSE_UNSPECIFIED
+}
+
+func (x *GetChallengeResponse) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *GetChallengeResponse) GetOptions() isGetChallengeResponse_Options {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *GetChallengeResponse) GetWebauthnOptionsJson() []byte {
+	if x != nil {
+		if x, ok := x.Options.(*GetChallengeResponse_WebauthnOptionsJson); ok {
+			return x.WebauthnOptionsJson
+		}
+	}
+	return nil
+}
+
+func (x *GetChallengeResponse) GetTotp() *TotpChallengeOptions {
+	if x != nil {
+		if x, ok := x.Options.(*GetChallengeResponse_Totp); ok {
+			return x.Totp
+		}
+	}
+	return nil
+}
+
+type isGetChallengeResponse_Options interface {
+	isGetChallengeResponse_Options()
+}
+
+type GetChallengeResponse_WebauthnOptionsJson struct {
+	WebauthnOptionsJson []byte `protobuf:"bytes,3,opt,name=webauthn_options_json,json=webauthnOptionsJson,proto3,oneof"`
+}
+
+type GetChallengeResponse_Totp struct {
+	Totp *TotpChallengeOptions `protobuf:"bytes,4,opt,name=totp,proto3,oneof"`
+}
+
+func (*GetChallengeResponse_WebauthnOptionsJson) isGetChallengeResponse_Options() {}
+
+func (*GetChallengeResponse_Totp) isGetChallengeResponse_Options() {}
+
 var File_aipay_iam_v1_account_service_proto protoreflect.FileDescriptor
 
 const file_aipay_iam_v1_account_service_proto_rawDesc = "" +
 	"\n" +
-	"\"aipay/iam/v1/account_service.proto\x12\faipay.iam.v1\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/iam/v1/identity.proto\x1a\x1caipay/iam/v1/web_entry.proto\x1a\x1faipay/iam/v1/web_identity.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd4\x01\n" +
+	"\"aipay/iam/v1/account_service.proto\x12\faipay.iam.v1\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/iam/v1/identity.proto\x1a\x1caipay/iam/v1/web_entry.proto\x1a\x1faipay/iam/v1/web_identity.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x84\x02\n" +
 	"\fLoginRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x03 \x01(\tR\bpassword\x12,\n" +
 	"\x05entry\x18\x04 \x01(\x0e2\x16.aipay.iam.v1.WebEntryR\x05entry\x12;\n" +
-	"\x19preauthentication_context\x18\x05 \x01(\fR\x18preauthenticationContext\"K\n" +
+	"\x19preauthentication_context\x18\x05 \x01(\fR\x18preauthenticationContext\x12 \n" +
+	"\tclient_ip\x18\x06 \x01(\tH\x00R\bclientIp\x88\x01\x01B\f\n" +
+	"\n" +
+	"_client_ip\"K\n" +
 	"\rLoginResponse\x12:\n" +
-	"\x06result\x18\x01 \x01(\v2\".aipay.iam.v1.AuthenticationResultR\x06result\"\xe5\x02\n" +
+	"\x06result\x18\x01 \x01(\v2\".aipay.iam.v1.AuthenticationResultR\x06result\"\x8c\x03\n" +
 	"\x16VerifyChallengeRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12!\n" +
 	"\fchallenge_id\x18\x02 \x01(\tR\vchallengeId\x12'\n" +
@@ -1244,10 +1502,13 @@ const file_aipay_iam_v1_account_service_proto_rawDesc = "" +
 	"\x05entry\x18\x04 \x01(\x0e2\x16.aipay.iam.v1.WebEntryR\x05entry\x12;\n" +
 	"\x19preauthentication_context\x18\x05 \x01(\fR\x18preauthenticationContext\x12\x1d\n" +
 	"\ttotp_code\x18\x06 \x01(\tH\x00R\btotpCode\x12B\n" +
-	"\bwebauthn\x18\a \x01(\v2$.aipay.iam.v1.WebAuthnAuthenticationH\x00R\bwebauthnB\b\n" +
-	"\x06answer\"U\n" +
+	"\bwebauthn\x18\a \x01(\v2$.aipay.iam.v1.WebAuthnAuthenticationH\x00R\bwebauthn\x12%\n" +
+	"\rrecovery_code\x18\b \x01(\tH\x00R\frecoveryCodeB\b\n" +
+	"\x06answer\"\xb1\x01\n" +
 	"\x17VerifyChallengeResponse\x12:\n" +
-	"\x06result\x18\x01 \x01(\v2\".aipay.iam.v1.AuthenticationResultR\x06result\"8\n" +
+	"\x06result\x18\x01 \x01(\v2\".aipay.iam.v1.AuthenticationResultR\x06result\x12=\n" +
+	"\x18remaining_recovery_codes\x18\x02 \x01(\rH\x00R\x16remainingRecoveryCodes\x88\x01\x01B\x1b\n" +
+	"\x19_remaining_recovery_codes\"8\n" +
 	"\rLogoutRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\"K\n" +
 	"\x0eLogoutResponse\x129\n" +
@@ -1300,8 +1561,22 @@ const file_aipay_iam_v1_account_service_proto_rawDesc = "" +
 	"\x10expected_version\x18\x02 \x01(\x04R\x0fexpectedVersion\x12!\n" +
 	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\"L\n" +
 	"\x15UpdateProfileResponse\x123\n" +
-	"\aprofile\x18\x01 \x01(\v2\x19.aipay.iam.v1.UserProfileR\aprofile2\xaf\n" +
+	"\aprofile\x18\x01 \x01(\v2\x19.aipay.iam.v1.UserProfileR\aprofile\"\xcc\x01\n" +
+	"\x13GetChallengeRequest\x12!\n" +
+	"\fchallenge_id\x18\x01 \x01(\tR\vchallengeId\x12'\n" +
+	"\x0fchallenge_token\x18\x02 \x01(\tR\x0echallengeToken\x12,\n" +
+	"\x05entry\x18\x03 \x01(\x0e2\x16.aipay.iam.v1.WebEntryR\x05entry\x12;\n" +
+	"\x19preauthentication_context\x18\x04 \x01(\fR\x18preauthenticationContext\"b\n" +
+	"\x14TotpChallengeOptions\x12\x16\n" +
+	"\x06digits\x18\x01 \x01(\rR\x06digits\x122\n" +
+	"\x15recovery_code_allowed\x18\x02 \x01(\bR\x13recoveryCodeAllowed\"\x86\x02\n" +
+	"\x14GetChallengeResponse\x128\n" +
+	"\apurpose\x18\x01 \x01(\x0e2\x1e.aipay.iam.v1.ChallengePurposeR\apurpose\x129\n" +
 	"\n" +
+	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x124\n" +
+	"\x15webauthn_options_json\x18\x03 \x01(\fH\x00R\x13webauthnOptionsJson\x128\n" +
+	"\x04totp\x18\x04 \x01(\v2\".aipay.iam.v1.TotpChallengeOptionsH\x00R\x04totpB\t\n" +
+	"\aoptions2\x99\v\n" +
 	"\x0eAccountService\x12S\n" +
 	"\x05Login\x12\x1a.aipay.iam.v1.LoginRequest\x1a\x1b.aipay.iam.v1.LoginResponse\"\x11\xc2\xf3\x18\r\n" +
 	"\v\n" +
@@ -1336,7 +1611,10 @@ const file_aipay_iam_v1_account_service_proto_rawDesc = "" +
 	"\abackend\x10\x02\x1a\x10iam.profile.read\x12\x7f\n" +
 	"\rUpdateProfile\x12\".aipay.iam.v1.UpdateProfileRequest\x1a#.aipay.iam.v1.UpdateProfileResponse\"%\xc2\xf3\x18!\n" +
 	"\x1f\n" +
-	"\abackend\x10\x02\x1a\x12iam.profile.manageB8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
+	"\abackend\x10\x02\x1a\x12iam.profile.manage\x12h\n" +
+	"\fGetChallenge\x12!.aipay.iam.v1.GetChallengeRequest\x1a\".aipay.iam.v1.GetChallengeResponse\"\x11\xc2\xf3\x18\r\n" +
+	"\v\n" +
+	"\abackend\x10\x01B8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
 
 var (
 	file_aipay_iam_v1_account_service_proto_rawDescOnce sync.Once
@@ -1350,7 +1628,7 @@ func file_aipay_iam_v1_account_service_proto_rawDescGZIP() []byte {
 	return file_aipay_iam_v1_account_service_proto_rawDescData
 }
 
-var file_aipay_iam_v1_account_service_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_aipay_iam_v1_account_service_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_aipay_iam_v1_account_service_proto_goTypes = []any{
 	(*LoginRequest)(nil),                  // 0: aipay.iam.v1.LoginRequest
 	(*LoginResponse)(nil),                 // 1: aipay.iam.v1.LoginResponse
@@ -1374,61 +1652,71 @@ var file_aipay_iam_v1_account_service_proto_goTypes = []any{
 	(*GetProfileResponse)(nil),            // 19: aipay.iam.v1.GetProfileResponse
 	(*UpdateProfileRequest)(nil),          // 20: aipay.iam.v1.UpdateProfileRequest
 	(*UpdateProfileResponse)(nil),         // 21: aipay.iam.v1.UpdateProfileResponse
-	(WebEntry)(0),                         // 22: aipay.iam.v1.WebEntry
-	(*AuthenticationResult)(nil),          // 23: aipay.iam.v1.AuthenticationResult
-	(*WebAuthnAuthentication)(nil),        // 24: aipay.iam.v1.WebAuthnAuthentication
-	(*timestamppb.Timestamp)(nil),         // 25: google.protobuf.Timestamp
-	(*BearerCredential)(nil),              // 26: aipay.iam.v1.BearerCredential
-	(*ReauthenticationTarget)(nil),        // 27: aipay.iam.v1.ReauthenticationTarget
-	(*SessionGrant)(nil),                  // 28: aipay.iam.v1.SessionGrant
-	(*UserProfile)(nil),                   // 29: aipay.iam.v1.UserProfile
+	(*GetChallengeRequest)(nil),           // 22: aipay.iam.v1.GetChallengeRequest
+	(*TotpChallengeOptions)(nil),          // 23: aipay.iam.v1.TotpChallengeOptions
+	(*GetChallengeResponse)(nil),          // 24: aipay.iam.v1.GetChallengeResponse
+	(WebEntry)(0),                         // 25: aipay.iam.v1.WebEntry
+	(*AuthenticationResult)(nil),          // 26: aipay.iam.v1.AuthenticationResult
+	(*WebAuthnAuthentication)(nil),        // 27: aipay.iam.v1.WebAuthnAuthentication
+	(*timestamppb.Timestamp)(nil),         // 28: google.protobuf.Timestamp
+	(*BearerCredential)(nil),              // 29: aipay.iam.v1.BearerCredential
+	(*ReauthenticationTarget)(nil),        // 30: aipay.iam.v1.ReauthenticationTarget
+	(*SessionGrant)(nil),                  // 31: aipay.iam.v1.SessionGrant
+	(*UserProfile)(nil),                   // 32: aipay.iam.v1.UserProfile
+	(ChallengePurpose)(0),                 // 33: aipay.iam.v1.ChallengePurpose
 }
 var file_aipay_iam_v1_account_service_proto_depIdxs = []int32{
-	22, // 0: aipay.iam.v1.LoginRequest.entry:type_name -> aipay.iam.v1.WebEntry
-	23, // 1: aipay.iam.v1.LoginResponse.result:type_name -> aipay.iam.v1.AuthenticationResult
-	22, // 2: aipay.iam.v1.VerifyChallengeRequest.entry:type_name -> aipay.iam.v1.WebEntry
-	24, // 3: aipay.iam.v1.VerifyChallengeRequest.webauthn:type_name -> aipay.iam.v1.WebAuthnAuthentication
-	23, // 4: aipay.iam.v1.VerifyChallengeResponse.result:type_name -> aipay.iam.v1.AuthenticationResult
-	25, // 5: aipay.iam.v1.LogoutResponse.revoked_at:type_name -> google.protobuf.Timestamp
-	26, // 6: aipay.iam.v1.BeginReauthenticationRequest.session:type_name -> aipay.iam.v1.BearerCredential
-	27, // 7: aipay.iam.v1.BeginReauthenticationRequest.target:type_name -> aipay.iam.v1.ReauthenticationTarget
-	23, // 8: aipay.iam.v1.BeginReauthenticationResponse.result:type_name -> aipay.iam.v1.AuthenticationResult
-	22, // 9: aipay.iam.v1.ForgotPasswordRequest.entry:type_name -> aipay.iam.v1.WebEntry
-	22, // 10: aipay.iam.v1.ResetPasswordRequest.entry:type_name -> aipay.iam.v1.WebEntry
-	25, // 11: aipay.iam.v1.ResetPasswordResponse.reset_at:type_name -> google.protobuf.Timestamp
-	28, // 12: aipay.iam.v1.ChangePasswordResponse.session:type_name -> aipay.iam.v1.SessionGrant
-	25, // 13: aipay.iam.v1.BeginEmailChangeResponse.expires_at:type_name -> google.protobuf.Timestamp
-	22, // 14: aipay.iam.v1.ConfirmEmailChangeRequest.entry:type_name -> aipay.iam.v1.WebEntry
-	25, // 15: aipay.iam.v1.ConfirmEmailChangeResponse.changed_at:type_name -> google.protobuf.Timestamp
-	29, // 16: aipay.iam.v1.GetProfileResponse.profile:type_name -> aipay.iam.v1.UserProfile
-	29, // 17: aipay.iam.v1.UpdateProfileResponse.profile:type_name -> aipay.iam.v1.UserProfile
-	0,  // 18: aipay.iam.v1.AccountService.Login:input_type -> aipay.iam.v1.LoginRequest
-	2,  // 19: aipay.iam.v1.AccountService.VerifyChallenge:input_type -> aipay.iam.v1.VerifyChallengeRequest
-	4,  // 20: aipay.iam.v1.AccountService.Logout:input_type -> aipay.iam.v1.LogoutRequest
-	6,  // 21: aipay.iam.v1.AccountService.BeginReauthentication:input_type -> aipay.iam.v1.BeginReauthenticationRequest
-	8,  // 22: aipay.iam.v1.AccountService.ForgotPassword:input_type -> aipay.iam.v1.ForgotPasswordRequest
-	10, // 23: aipay.iam.v1.AccountService.ResetPassword:input_type -> aipay.iam.v1.ResetPasswordRequest
-	12, // 24: aipay.iam.v1.AccountService.ChangePassword:input_type -> aipay.iam.v1.ChangePasswordRequest
-	14, // 25: aipay.iam.v1.AccountService.BeginEmailChange:input_type -> aipay.iam.v1.BeginEmailChangeRequest
-	16, // 26: aipay.iam.v1.AccountService.ConfirmEmailChange:input_type -> aipay.iam.v1.ConfirmEmailChangeRequest
-	18, // 27: aipay.iam.v1.AccountService.GetProfile:input_type -> aipay.iam.v1.GetProfileRequest
-	20, // 28: aipay.iam.v1.AccountService.UpdateProfile:input_type -> aipay.iam.v1.UpdateProfileRequest
-	1,  // 29: aipay.iam.v1.AccountService.Login:output_type -> aipay.iam.v1.LoginResponse
-	3,  // 30: aipay.iam.v1.AccountService.VerifyChallenge:output_type -> aipay.iam.v1.VerifyChallengeResponse
-	5,  // 31: aipay.iam.v1.AccountService.Logout:output_type -> aipay.iam.v1.LogoutResponse
-	7,  // 32: aipay.iam.v1.AccountService.BeginReauthentication:output_type -> aipay.iam.v1.BeginReauthenticationResponse
-	9,  // 33: aipay.iam.v1.AccountService.ForgotPassword:output_type -> aipay.iam.v1.ForgotPasswordResponse
-	11, // 34: aipay.iam.v1.AccountService.ResetPassword:output_type -> aipay.iam.v1.ResetPasswordResponse
-	13, // 35: aipay.iam.v1.AccountService.ChangePassword:output_type -> aipay.iam.v1.ChangePasswordResponse
-	15, // 36: aipay.iam.v1.AccountService.BeginEmailChange:output_type -> aipay.iam.v1.BeginEmailChangeResponse
-	17, // 37: aipay.iam.v1.AccountService.ConfirmEmailChange:output_type -> aipay.iam.v1.ConfirmEmailChangeResponse
-	19, // 38: aipay.iam.v1.AccountService.GetProfile:output_type -> aipay.iam.v1.GetProfileResponse
-	21, // 39: aipay.iam.v1.AccountService.UpdateProfile:output_type -> aipay.iam.v1.UpdateProfileResponse
-	29, // [29:40] is the sub-list for method output_type
-	18, // [18:29] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	25, // 0: aipay.iam.v1.LoginRequest.entry:type_name -> aipay.iam.v1.WebEntry
+	26, // 1: aipay.iam.v1.LoginResponse.result:type_name -> aipay.iam.v1.AuthenticationResult
+	25, // 2: aipay.iam.v1.VerifyChallengeRequest.entry:type_name -> aipay.iam.v1.WebEntry
+	27, // 3: aipay.iam.v1.VerifyChallengeRequest.webauthn:type_name -> aipay.iam.v1.WebAuthnAuthentication
+	26, // 4: aipay.iam.v1.VerifyChallengeResponse.result:type_name -> aipay.iam.v1.AuthenticationResult
+	28, // 5: aipay.iam.v1.LogoutResponse.revoked_at:type_name -> google.protobuf.Timestamp
+	29, // 6: aipay.iam.v1.BeginReauthenticationRequest.session:type_name -> aipay.iam.v1.BearerCredential
+	30, // 7: aipay.iam.v1.BeginReauthenticationRequest.target:type_name -> aipay.iam.v1.ReauthenticationTarget
+	26, // 8: aipay.iam.v1.BeginReauthenticationResponse.result:type_name -> aipay.iam.v1.AuthenticationResult
+	25, // 9: aipay.iam.v1.ForgotPasswordRequest.entry:type_name -> aipay.iam.v1.WebEntry
+	25, // 10: aipay.iam.v1.ResetPasswordRequest.entry:type_name -> aipay.iam.v1.WebEntry
+	28, // 11: aipay.iam.v1.ResetPasswordResponse.reset_at:type_name -> google.protobuf.Timestamp
+	31, // 12: aipay.iam.v1.ChangePasswordResponse.session:type_name -> aipay.iam.v1.SessionGrant
+	28, // 13: aipay.iam.v1.BeginEmailChangeResponse.expires_at:type_name -> google.protobuf.Timestamp
+	25, // 14: aipay.iam.v1.ConfirmEmailChangeRequest.entry:type_name -> aipay.iam.v1.WebEntry
+	28, // 15: aipay.iam.v1.ConfirmEmailChangeResponse.changed_at:type_name -> google.protobuf.Timestamp
+	32, // 16: aipay.iam.v1.GetProfileResponse.profile:type_name -> aipay.iam.v1.UserProfile
+	32, // 17: aipay.iam.v1.UpdateProfileResponse.profile:type_name -> aipay.iam.v1.UserProfile
+	25, // 18: aipay.iam.v1.GetChallengeRequest.entry:type_name -> aipay.iam.v1.WebEntry
+	33, // 19: aipay.iam.v1.GetChallengeResponse.purpose:type_name -> aipay.iam.v1.ChallengePurpose
+	28, // 20: aipay.iam.v1.GetChallengeResponse.expires_at:type_name -> google.protobuf.Timestamp
+	23, // 21: aipay.iam.v1.GetChallengeResponse.totp:type_name -> aipay.iam.v1.TotpChallengeOptions
+	0,  // 22: aipay.iam.v1.AccountService.Login:input_type -> aipay.iam.v1.LoginRequest
+	2,  // 23: aipay.iam.v1.AccountService.VerifyChallenge:input_type -> aipay.iam.v1.VerifyChallengeRequest
+	4,  // 24: aipay.iam.v1.AccountService.Logout:input_type -> aipay.iam.v1.LogoutRequest
+	6,  // 25: aipay.iam.v1.AccountService.BeginReauthentication:input_type -> aipay.iam.v1.BeginReauthenticationRequest
+	8,  // 26: aipay.iam.v1.AccountService.ForgotPassword:input_type -> aipay.iam.v1.ForgotPasswordRequest
+	10, // 27: aipay.iam.v1.AccountService.ResetPassword:input_type -> aipay.iam.v1.ResetPasswordRequest
+	12, // 28: aipay.iam.v1.AccountService.ChangePassword:input_type -> aipay.iam.v1.ChangePasswordRequest
+	14, // 29: aipay.iam.v1.AccountService.BeginEmailChange:input_type -> aipay.iam.v1.BeginEmailChangeRequest
+	16, // 30: aipay.iam.v1.AccountService.ConfirmEmailChange:input_type -> aipay.iam.v1.ConfirmEmailChangeRequest
+	18, // 31: aipay.iam.v1.AccountService.GetProfile:input_type -> aipay.iam.v1.GetProfileRequest
+	20, // 32: aipay.iam.v1.AccountService.UpdateProfile:input_type -> aipay.iam.v1.UpdateProfileRequest
+	22, // 33: aipay.iam.v1.AccountService.GetChallenge:input_type -> aipay.iam.v1.GetChallengeRequest
+	1,  // 34: aipay.iam.v1.AccountService.Login:output_type -> aipay.iam.v1.LoginResponse
+	3,  // 35: aipay.iam.v1.AccountService.VerifyChallenge:output_type -> aipay.iam.v1.VerifyChallengeResponse
+	5,  // 36: aipay.iam.v1.AccountService.Logout:output_type -> aipay.iam.v1.LogoutResponse
+	7,  // 37: aipay.iam.v1.AccountService.BeginReauthentication:output_type -> aipay.iam.v1.BeginReauthenticationResponse
+	9,  // 38: aipay.iam.v1.AccountService.ForgotPassword:output_type -> aipay.iam.v1.ForgotPasswordResponse
+	11, // 39: aipay.iam.v1.AccountService.ResetPassword:output_type -> aipay.iam.v1.ResetPasswordResponse
+	13, // 40: aipay.iam.v1.AccountService.ChangePassword:output_type -> aipay.iam.v1.ChangePasswordResponse
+	15, // 41: aipay.iam.v1.AccountService.BeginEmailChange:output_type -> aipay.iam.v1.BeginEmailChangeResponse
+	17, // 42: aipay.iam.v1.AccountService.ConfirmEmailChange:output_type -> aipay.iam.v1.ConfirmEmailChangeResponse
+	19, // 43: aipay.iam.v1.AccountService.GetProfile:output_type -> aipay.iam.v1.GetProfileResponse
+	21, // 44: aipay.iam.v1.AccountService.UpdateProfile:output_type -> aipay.iam.v1.UpdateProfileResponse
+	24, // 45: aipay.iam.v1.AccountService.GetChallenge:output_type -> aipay.iam.v1.GetChallengeResponse
+	34, // [34:46] is the sub-list for method output_type
+	22, // [22:34] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_aipay_iam_v1_account_service_proto_init() }
@@ -1439,9 +1727,16 @@ func file_aipay_iam_v1_account_service_proto_init() {
 	file_aipay_iam_v1_identity_proto_init()
 	file_aipay_iam_v1_web_entry_proto_init()
 	file_aipay_iam_v1_web_identity_proto_init()
+	file_aipay_iam_v1_account_service_proto_msgTypes[0].OneofWrappers = []any{}
 	file_aipay_iam_v1_account_service_proto_msgTypes[2].OneofWrappers = []any{
 		(*VerifyChallengeRequest_TotpCode)(nil),
 		(*VerifyChallengeRequest_Webauthn)(nil),
+		(*VerifyChallengeRequest_RecoveryCode)(nil),
+	}
+	file_aipay_iam_v1_account_service_proto_msgTypes[3].OneofWrappers = []any{}
+	file_aipay_iam_v1_account_service_proto_msgTypes[24].OneofWrappers = []any{
+		(*GetChallengeResponse_WebauthnOptionsJson)(nil),
+		(*GetChallengeResponse_Totp)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1449,7 +1744,7 @@ func file_aipay_iam_v1_account_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_iam_v1_account_service_proto_rawDesc), len(file_aipay_iam_v1_account_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

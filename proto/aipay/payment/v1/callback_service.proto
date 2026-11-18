@@ -28,6 +28,21 @@ message HandleUpstreamCallbackResponse {
   bytes body = 3;
 }
 
+message GetCallbackPolicyRequest {
+  string channel_code = 1;
+}
+
+// Effective ingress restrictions from approved channel configuration and the
+// bound plugin manifest. No plugin credentials, ack payload or raw config.
+message GetCallbackPolicyResponse {
+  repeated string source_ip_cidrs = 1; // Empty denies all sources.
+  repeated string allowed_methods = 2;
+  repeated string allowed_content_types = 3;
+  bool allow_query = 4;
+  uint32 max_body_bytes = 5; // Positive, at most 65536.
+  uint64 policy_version = 6; // Positive; changes on effective policy changes.
+}
+
 // Only backend's mTLS service identity. Deduplicate by original channel and
 // upstream order number. payment verifies the callback and triggers active
 // query verification of original IDs, fiat amount/currency and terminal state.
@@ -35,6 +50,15 @@ message HandleUpstreamCallbackResponse {
 // confirms USDT availability, and never directly changes ledger balances.
 service CallbackService {
   rpc HandleUpstreamCallback(HandleUpstreamCallbackRequest) returns (HandleUpstreamCallbackResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Unknown channel: NotFound. Gateway caches a valid policy up to 60 seconds.
+  rpc GetCallbackPolicy(GetCallbackPolicyRequest) returns (GetCallbackPolicyResponse) {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: "backend"

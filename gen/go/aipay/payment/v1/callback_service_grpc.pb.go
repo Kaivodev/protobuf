@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	CallbackService_HandleUpstreamCallback_FullMethodName = "/aipay.payment.v1.CallbackService/HandleUpstreamCallback"
+	CallbackService_GetCallbackPolicy_FullMethodName      = "/aipay.payment.v1.CallbackService/GetCallbackPolicy"
 )
 
 // CallbackServiceClient is the client API for CallbackService service.
@@ -33,6 +34,8 @@ const (
 // confirms USDT availability, and never directly changes ledger balances.
 type CallbackServiceClient interface {
 	HandleUpstreamCallback(ctx context.Context, in *HandleUpstreamCallbackRequest, opts ...grpc.CallOption) (*HandleUpstreamCallbackResponse, error)
+	// Unknown channel: NotFound. Gateway caches a valid policy up to 60 seconds.
+	GetCallbackPolicy(ctx context.Context, in *GetCallbackPolicyRequest, opts ...grpc.CallOption) (*GetCallbackPolicyResponse, error)
 }
 
 type callbackServiceClient struct {
@@ -53,6 +56,16 @@ func (c *callbackServiceClient) HandleUpstreamCallback(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *callbackServiceClient) GetCallbackPolicy(ctx context.Context, in *GetCallbackPolicyRequest, opts ...grpc.CallOption) (*GetCallbackPolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCallbackPolicyResponse)
+	err := c.cc.Invoke(ctx, CallbackService_GetCallbackPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CallbackServiceServer is the server API for CallbackService service.
 // All implementations must embed UnimplementedCallbackServiceServer
 // for forward compatibility.
@@ -64,6 +77,8 @@ func (c *callbackServiceClient) HandleUpstreamCallback(ctx context.Context, in *
 // confirms USDT availability, and never directly changes ledger balances.
 type CallbackServiceServer interface {
 	HandleUpstreamCallback(context.Context, *HandleUpstreamCallbackRequest) (*HandleUpstreamCallbackResponse, error)
+	// Unknown channel: NotFound. Gateway caches a valid policy up to 60 seconds.
+	GetCallbackPolicy(context.Context, *GetCallbackPolicyRequest) (*GetCallbackPolicyResponse, error)
 	mustEmbedUnimplementedCallbackServiceServer()
 }
 
@@ -76,6 +91,9 @@ type UnimplementedCallbackServiceServer struct{}
 
 func (UnimplementedCallbackServiceServer) HandleUpstreamCallback(context.Context, *HandleUpstreamCallbackRequest) (*HandleUpstreamCallbackResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method HandleUpstreamCallback not implemented")
+}
+func (UnimplementedCallbackServiceServer) GetCallbackPolicy(context.Context, *GetCallbackPolicyRequest) (*GetCallbackPolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCallbackPolicy not implemented")
 }
 func (UnimplementedCallbackServiceServer) mustEmbedUnimplementedCallbackServiceServer() {}
 func (UnimplementedCallbackServiceServer) testEmbeddedByValue()                         {}
@@ -116,6 +134,24 @@ func _CallbackService_HandleUpstreamCallback_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CallbackService_GetCallbackPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCallbackPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CallbackServiceServer).GetCallbackPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CallbackService_GetCallbackPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CallbackServiceServer).GetCallbackPolicy(ctx, req.(*GetCallbackPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CallbackService_ServiceDesc is the grpc.ServiceDesc for CallbackService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -126,6 +162,10 @@ var CallbackService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HandleUpstreamCallback",
 			Handler:    _CallbackService_HandleUpstreamCallback_Handler,
+		},
+		{
+			MethodName: "GetCallbackPolicy",
+			Handler:    _CallbackService_GetCallbackPolicy_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

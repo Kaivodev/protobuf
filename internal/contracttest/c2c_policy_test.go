@@ -32,6 +32,7 @@ func TestC2CMethodAuthorization(t *testing.T) {
 			map[string]expected{
 				"ReserveTrade":                {[]string{"payment"}, serviceOnly, ""},
 				"GetTradeReservation":         {[]string{"payment", "reconciliation"}, serviceOnly, ""},
+				"GetTradeFreezeDetails":       {[]string{"reconciliation"}, serviceOnly, ""},
 				"HoldTradeForRefund":          {[]string{"payment"}, serviceOnly, ""},
 				"HoldTradeForDispute":         {[]string{"payment"}, serviceOnly, ""},
 				"ReserveRefund":               {[]string{"payment"}, serviceOnly, ""},

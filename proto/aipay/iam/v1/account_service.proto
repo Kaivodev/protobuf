@@ -24,6 +24,9 @@ message LoginRequest {
   WebEntry entry = 4;
   // 32-byte digest bound to backend's preauthentication Cookie/CSRF context.
   bytes preauthentication_context = 5;
+  // Same trusted source as RequestBinding.client_ip. IAM retains it through
+  // the login challenge for the new session. Omission is valid for web login.
+  optional string client_ip = 6;
 }
 
 message LoginResponse {
@@ -40,11 +43,15 @@ message VerifyChallengeRequest {
     // Sensitive, exactly six digits, consumes matched time step once.
     string totp_code = 6;
     WebAuthnAuthentication webauthn = 7;
+    // Sensitive single-use second factor for a portal TOTP login challenge.
+    string recovery_code = 8;
   }
 }
 
 message VerifyChallengeResponse {
   AuthenticationResult result = 1;
+  // Present only after successful recovery-code login, including zero.
+  optional uint32 remaining_recovery_codes = 2;
 }
 
 message LogoutRequest {
@@ -131,6 +138,28 @@ message UpdateProfileRequest {
 
 message UpdateProfileResponse {
   UserProfile profile = 1;
+}
+
+message GetChallengeRequest {
+  string challenge_id = 1;
+  // Sensitive original preauthentication capability; never logged.
+  string challenge_token = 2;
+  WebEntry entry = 3;
+  bytes preauthentication_context = 4;
+}
+
+message TotpChallengeOptions {
+  uint32 digits = 1; // Six for the current TOTP policy.
+  bool recovery_code_allowed = 2;
+}
+
+message GetChallengeResponse {
+  ChallengePurpose purpose = 1;
+  google.protobuf.Timestamp expires_at = 2;
+  oneof options {
+    bytes webauthn_options_json = 3;
+    TotpChallengeOptions totp = 4;
+  }
 }
 
 // New protected web calls use Authorize.bearer then the bound USER proof,
@@ -240,6 +269,16 @@ service AccountService {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_REQUIRED
         permissions: "iam.profile.manage"
+      }
+    };
+  }
+  // Read original options for a live, context/entry-bound challenge. Does not
+  // consume it, reset limits, rotate the capability or issue a session.
+  rpc GetChallenge(GetChallengeRequest) returns (GetChallengeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
       }
     };
   }

@@ -30,7 +30,7 @@ func TestIAMMethodAuthorization(t *testing.T) {
 			service := want.file.Services().ByName(want.service)
 			methodCount := len(want.methods)
 			if want.service == "MfaService" {
-				methodCount += 7 // New session policies pinned separately by TestV080MethodAuthorization.
+				methodCount += 9 // Seven v0.8 session methods and two v0.11 replacement methods.
 			}
 			if want.file.Services().Len() != 1 || service == nil || service.Methods().Len() != methodCount {
 				t.Fatal("unreviewed IAM RPC surface")

@@ -31,6 +31,8 @@ const (
 	MfaService_RemoveWebAuthnCredential_FullMethodName     = "/aipay.iam.v1.MfaService/RemoveWebAuthnCredential"
 	MfaService_RotateRecoveryCodes_FullMethodName          = "/aipay.iam.v1.MfaService/RotateRecoveryCodes"
 	MfaService_ListMfaMethods_FullMethodName               = "/aipay.iam.v1.MfaService/ListMfaMethods"
+	MfaService_BeginTotpReplacement_FullMethodName         = "/aipay.iam.v1.MfaService/BeginTotpReplacement"
+	MfaService_ConfirmTotpReplacement_FullMethodName       = "/aipay.iam.v1.MfaService/ConfirmTotpReplacement"
 )
 
 // MfaServiceClient is the client API for MfaService service.
@@ -91,6 +93,10 @@ type MfaServiceClient interface {
 	RemoveWebAuthnCredential(ctx context.Context, in *RemoveWebAuthnCredentialRequest, opts ...grpc.CallOption) (*RemoveWebAuthnCredentialResponse, error)
 	RotateRecoveryCodes(ctx context.Context, in *RotateRecoveryCodesRequest, opts ...grpc.CallOption) (*RotateRecoveryCodesResponse, error)
 	ListMfaMethods(ctx context.Context, in *ListMfaMethodsRequest, opts ...grpc.CallOption) (*ListMfaMethodsResponse, error)
+	// Portal USER/SELF only. Both commands require recent MFA bound to the
+	// command. Begin verifies the old factor; only Confirm activates the new key.
+	BeginTotpReplacement(ctx context.Context, in *BeginTotpReplacementRequest, opts ...grpc.CallOption) (*BeginTotpReplacementResponse, error)
+	ConfirmTotpReplacement(ctx context.Context, in *ConfirmTotpReplacementRequest, opts ...grpc.CallOption) (*ConfirmTotpReplacementResponse, error)
 }
 
 type mfaServiceClient struct {
@@ -221,6 +227,26 @@ func (c *mfaServiceClient) ListMfaMethods(ctx context.Context, in *ListMfaMethod
 	return out, nil
 }
 
+func (c *mfaServiceClient) BeginTotpReplacement(ctx context.Context, in *BeginTotpReplacementRequest, opts ...grpc.CallOption) (*BeginTotpReplacementResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BeginTotpReplacementResponse)
+	err := c.cc.Invoke(ctx, MfaService_BeginTotpReplacement_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mfaServiceClient) ConfirmTotpReplacement(ctx context.Context, in *ConfirmTotpReplacementRequest, opts ...grpc.CallOption) (*ConfirmTotpReplacementResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ConfirmTotpReplacementResponse)
+	err := c.cc.Invoke(ctx, MfaService_ConfirmTotpReplacement_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MfaServiceServer is the server API for MfaService service.
 // All implementations must embed UnimplementedMfaServiceServer
 // for forward compatibility.
@@ -279,6 +305,10 @@ type MfaServiceServer interface {
 	RemoveWebAuthnCredential(context.Context, *RemoveWebAuthnCredentialRequest) (*RemoveWebAuthnCredentialResponse, error)
 	RotateRecoveryCodes(context.Context, *RotateRecoveryCodesRequest) (*RotateRecoveryCodesResponse, error)
 	ListMfaMethods(context.Context, *ListMfaMethodsRequest) (*ListMfaMethodsResponse, error)
+	// Portal USER/SELF only. Both commands require recent MFA bound to the
+	// command. Begin verifies the old factor; only Confirm activates the new key.
+	BeginTotpReplacement(context.Context, *BeginTotpReplacementRequest) (*BeginTotpReplacementResponse, error)
+	ConfirmTotpReplacement(context.Context, *ConfirmTotpReplacementRequest) (*ConfirmTotpReplacementResponse, error)
 	mustEmbedUnimplementedMfaServiceServer()
 }
 
@@ -324,6 +354,12 @@ func (UnimplementedMfaServiceServer) RotateRecoveryCodes(context.Context, *Rotat
 }
 func (UnimplementedMfaServiceServer) ListMfaMethods(context.Context, *ListMfaMethodsRequest) (*ListMfaMethodsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListMfaMethods not implemented")
+}
+func (UnimplementedMfaServiceServer) BeginTotpReplacement(context.Context, *BeginTotpReplacementRequest) (*BeginTotpReplacementResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BeginTotpReplacement not implemented")
+}
+func (UnimplementedMfaServiceServer) ConfirmTotpReplacement(context.Context, *ConfirmTotpReplacementRequest) (*ConfirmTotpReplacementResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConfirmTotpReplacement not implemented")
 }
 func (UnimplementedMfaServiceServer) mustEmbedUnimplementedMfaServiceServer() {}
 func (UnimplementedMfaServiceServer) testEmbeddedByValue()                    {}
@@ -562,6 +598,42 @@ func _MfaService_ListMfaMethods_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MfaService_BeginTotpReplacement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BeginTotpReplacementRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MfaServiceServer).BeginTotpReplacement(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MfaService_BeginTotpReplacement_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MfaServiceServer).BeginTotpReplacement(ctx, req.(*BeginTotpReplacementRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MfaService_ConfirmTotpReplacement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmTotpReplacementRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MfaServiceServer).ConfirmTotpReplacement(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MfaService_ConfirmTotpReplacement_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MfaServiceServer).ConfirmTotpReplacement(ctx, req.(*ConfirmTotpReplacementRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MfaService_ServiceDesc is the grpc.ServiceDesc for MfaService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -616,6 +688,14 @@ var MfaService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListMfaMethods",
 			Handler:    _MfaService_ListMfaMethods_Handler,
+		},
+		{
+			MethodName: "BeginTotpReplacement",
+			Handler:    _MfaService_BeginTotpReplacement_Handler,
+		},
+		{
+			MethodName: "ConfirmTotpReplacement",
+			Handler:    _MfaService_ConfirmTotpReplacement_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

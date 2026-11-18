@@ -678,7 +678,11 @@ type RequestBinding struct {
 	// claim; a caller-supplied digest alone is not proof. New protected writes
 	// and all collection methods require this claim; other published methods
 	// retain their original proof rules.
-	BodySha256    []byte `protobuf:"bytes,4,opt,name=body_sha256,json=bodySha256,proto3" json:"body_sha256,omitempty"`
+	BodySha256 []byte `protobuf:"bytes,4,opt,name=body_sha256,json=bodySha256,proto3" json:"body_sha256,omitempty"`
+	// Canonical single IP from backend's verified proxy chain. All EPay
+	// branches require it and IAM applies the application's CIDR allowlist.
+	// Optional metadata for web sessions. Never a merchant-signed parameter.
+	ClientIp      *string `protobuf:"bytes,5,opt,name=client_ip,json=clientIp,proto3,oneof" json:"client_ip,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -741,6 +745,13 @@ func (x *RequestBinding) GetBodySha256() []byte {
 	return nil
 }
 
+func (x *RequestBinding) GetClientIp() string {
+	if x != nil && x.ClientIp != nil {
+		return *x.ClientIp
+	}
+	return ""
+}
+
 var File_aipay_iam_v1_identity_proto protoreflect.FileDescriptor
 
 const file_aipay_iam_v1_identity_proto_rawDesc = "" +
@@ -782,7 +793,7 @@ const file_aipay_iam_v1_identity_proto_rawDesc = "" +
 	"\n" +
 	"parameters\x18\x01 \x03(\v2\x1b.aipay.iam.v1.EPayParameterR\n" +
 	"parameters\"\x1c\n" +
-	"\x1aWorkloadIdentityCredential\"\x8f\x01\n" +
+	"\x1aWorkloadIdentityCredential\"\xbf\x01\n" +
 	"\x0eRequestBinding\x12\x1f\n" +
 	"\vhttp_method\x18\x01 \x01(\tR\n" +
 	"httpMethod\x12\x1b\n" +
@@ -791,7 +802,10 @@ const file_aipay_iam_v1_identity_proto_rawDesc = "" +
 	"permission\x18\x03 \x01(\tR\n" +
 	"permission\x12\x1f\n" +
 	"\vbody_sha256\x18\x04 \x01(\fR\n" +
-	"bodySha256*\x8d\x01\n" +
+	"bodySha256\x12 \n" +
+	"\tclient_ip\x18\x05 \x01(\tH\x00R\bclientIp\x88\x01\x01B\f\n" +
+	"\n" +
+	"_client_ip*\x8d\x01\n" +
 	"\rPrincipalType\x12\x1e\n" +
 	"\x1aPRINCIPAL_TYPE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13PRINCIPAL_TYPE_USER\x10\x01\x12'\n" +
@@ -860,6 +874,7 @@ func file_aipay_iam_v1_identity_proto_init() {
 		(*UserAuthentication_Bearer)(nil),
 		(*UserAuthentication_Telegram)(nil),
 	}
+	file_aipay_iam_v1_identity_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

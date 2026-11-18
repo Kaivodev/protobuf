@@ -104,9 +104,13 @@ type ChannelAccountConfiguration struct {
 	// Exact normalized nonsecret JSON bytes, validated against plugin manifest.
 	ConfigJson []byte `protobuf:"bytes,14,opt,name=config_json,json=configJson,proto3" json:"config_json,omitempty"`
 	// Required presence. Changes affect new dispatch grants only.
-	Enabled       *bool `protobuf:"varint,15,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Enabled *bool `protobuf:"varint,15,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`
+	// Approved inbound callback source networks. Canonical unique CIDRs; empty
+	// denies all. Nonempty lists are sorted and bound into the two-person
+	// approval digest. Empty adds no canonical bytes to legacy materials.
+	CallbackSourceCidrs []string `protobuf:"bytes,16,rep,name=callback_source_cidrs,json=callbackSourceCidrs,proto3" json:"callback_source_cidrs,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ChannelAccountConfiguration) Reset() {
@@ -242,6 +246,13 @@ func (x *ChannelAccountConfiguration) GetEnabled() bool {
 		return *x.Enabled
 	}
 	return false
+}
+
+func (x *ChannelAccountConfiguration) GetCallbackSourceCidrs() []string {
+	if x != nil {
+		return x.CallbackSourceCidrs
+	}
+	return nil
 }
 
 type ChannelAccountChange struct {
@@ -1405,7 +1416,7 @@ var File_aipay_payment_v1_admin_approval_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_admin_approval_proto_rawDesc = "" +
 	"\n" +
-	"%aipay/payment/v1/admin_approval.proto\x12\x10aipay.payment.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/common/v1/trade.proto\x1a%aipay/payment/v1/pricing_events.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd1\x04\n" +
+	"%aipay/payment/v1/admin_approval.proto\x12\x10aipay.payment.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/common/v1/trade.proto\x1a%aipay/payment/v1/pricing_events.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x85\x05\n" +
 	"\x1bChannelAccountConfiguration\x12,\n" +
 	"\x12channel_account_id\x18\x01 \x01(\tR\x10channelAccountId\x12!\n" +
 	"\fchannel_code\x18\x02 \x01(\tR\vchannelCode\x12\x12\n" +
@@ -1423,7 +1434,8 @@ const file_aipay_payment_v1_admin_approval_proto_rawDesc = "" +
 	"\x0fcredentials_ref\x18\r \x01(\tR\x0ecredentialsRef\x12\x1f\n" +
 	"\vconfig_json\x18\x0e \x01(\fR\n" +
 	"configJson\x12\x1d\n" +
-	"\aenabled\x18\x0f \x01(\bH\x00R\aenabled\x88\x01\x01B\n" +
+	"\aenabled\x18\x0f \x01(\bH\x00R\aenabled\x88\x01\x01\x122\n" +
+	"\x15callback_source_cidrs\x18\x10 \x03(\tR\x13callbackSourceCidrsB\n" +
 	"\n" +
 	"\b_enabled\"\xa5\x01\n" +
 	"\x14ChannelAccountChange\x12S\n" +

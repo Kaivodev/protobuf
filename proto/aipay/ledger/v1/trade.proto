@@ -112,3 +112,31 @@ message RefundReservation {
   // no longer DISPUTED; this stored ruling must still be checked independently.
   DisputeRulingReference dispute_ruling = 10;
 }
+
+// Active refund barrier on the enclosing order/escrow. A bare hold can exist
+// before funds are reserved and remains visible during a concurrent dispute.
+message TradeRefundHold {
+  string refund_id = 1;
+  // Escrow version at creation of this barrier, <= current snapshot version.
+  uint64 control_version = 2;
+  // Required once reserved. All IDs must match the barrier and enclosing trade.
+  RefundReservation reservation = 3;
+}
+
+message TradeDisputeHold {
+  string dispute_id = 1;
+  // Escrow version at creation of this barrier, as reported by OrderDisputed.
+  uint64 control_version = 2;
+  // Present exactly for an A119 post-release hold. Same dispute ID, even if H=0.
+  ReleasedTradeDisputeHold released_hold = 3;
+}
+
+// Account-wide risk controls on the original seller or recipient. Excludes the
+// separately listed trade-specific occupations. Absent/unknown never means clear.
+message AccountRiskFreeze {
+  string account_id = 1;
+  // Required presence. True exactly when freeze_ids is nonempty.
+  optional bool frozen = 2;
+  // All active account risk freeze IDs, unique and nonempty.
+  repeated string freeze_ids = 3;
+}

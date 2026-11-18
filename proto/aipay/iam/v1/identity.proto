@@ -114,4 +114,8 @@ message RequestBinding {
   // and all collection methods require this claim; other published methods
   // retain their original proof rules.
   bytes body_sha256 = 4;
+  // Canonical single IP from backend's verified proxy chain. All EPay
+  // branches require it and IAM applies the application's CIDR allowlist.
+  // Optional metadata for web sessions. Never a merchant-signed parameter.
+  optional string client_ip = 5;
 }

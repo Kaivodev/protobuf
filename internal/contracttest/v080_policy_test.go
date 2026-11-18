@@ -32,6 +32,7 @@ func TestV080MethodAuthorization(t *testing.T) {
 	}{
 		{iamv1.File_aipay_iam_v1_account_service_proto, "AccountService", map[protoreflect.Name]expected{
 			"Login":                 {N, ""},
+			"GetChallenge":          {N, ""},
 			"VerifyChallenge":       {N, ""},
 			"Logout":                {R, "iam.session.manage"},
 			"BeginReauthentication": {N, ""},
@@ -68,6 +69,8 @@ func TestV080MethodAuthorization(t *testing.T) {
 			"CompleteWebAuthnRegistration": {R, "iam.mfa.manage"},
 			"RemoveWebAuthnCredential":     {M, "iam.mfa.manage"},
 			"RotateRecoveryCodes":          {M, "iam.mfa.manage"},
+			"BeginTotpReplacement":         {M, "iam.mfa.manage"},
+			"ConfirmTotpReplacement":       {M, "iam.mfa.manage"},
 			"ListMfaMethods":               {R, "iam.mfa.read"},
 		}},
 		{iamv1.File_aipay_iam_v1_business_service_proto, "BusinessService", map[protoreflect.Name]expected{

@@ -50,6 +50,14 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 认证证明的签发格式、密钥托管、调用方绑定与撤销机制尚待 IAM 实现；EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 
+## v0.11.0 契约增量（待发布）
+
+- ledger 的 `GetTradeFreezeDetails` 仅供 reconciliation 读取同一账本快照中的交易冻结、全部退款与争议占用，以及原卖方和收款账户的风控冻结。
+- reconciliation 放币时使用不早于 payment 核实时间的独立新鲜查单结果。未付款取消需要两次独立核实关单、未收款，并把两次结果绑定到既有签名授权摘要。
+- backend 传入可信来源 `client_ip`，IAM 对 EPay 三个凭据分支执行应用白名单，网页会话可记录地址。
+- payment 的 `GetCallbackPolicy` 仅供 backend 按通道取得入口限制。回调来源 CIDR 纳入既有通道配置双人审批。
+- IAM 增加只读 `GetChallenge`、卖方门户恢复码登录和两步 TOTP 更换。完整方法策略与服务分工见 docs 仓库 `design/contracts.md` 的 v0.11.0 节。
+
 ## Collection 最小接入契约（待发布）
 
 `aipay.collection.v1.DepositAddressService` 定义两个账户地址方法：GetOrCreateDepositAddress(request_id, network_id, asset_id) 和 GetAddressAllocation(oneof allocation_id/request_id)。仅 backend、USER/account scope，权限分别为 `collection.address.ensure/read`，证明 REQUIRED，audience=collection；不要求归集管理角色或资金审批。账户来自已验证证明，不接受调用方指定目标、部署字节或签名参数。
@@ -74,7 +82,7 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 新列表使用不透明游标、每页1–100条及一致读时点；`common/v1/query.proto` 的上限选项只是契约声明，运行时仍由属主校验。卖方身份仅来自 IAM 证明绑定，请求不接受卖方账户自报。权限、范围、签名规范、门户逐项映射和后续版本见 docs 仓库 `design/contracts.md` 的 v0.9.0 节。契约/SDK 不代表服务或 HTTP 已接通。
 
-`make breaking` 默认与本地 `v0.8.0` 标签比较，可通过 `BREAKING_AGAINST` 指定其他 Buf 基线；无需访问远程仓库。
+`make breaking` 默认与本地 `v0.10.0` 标签比较，可通过 `BREAKING_AGAINST` 指定其他 Buf 基线；无需访问远程仓库。
 
 ## 生成与检查
 
@@ -94,7 +102,7 @@ make check
 
 ## 发布与本地联调
 
-Go module 为 `github.com/Kaivodev/protobuf`。当前是尚未发布的本地草案；各服务正式导入前先提交、推送并发布可解析的版本，再固定该版本依赖。工作区 `go.work` 可用于联合开发，但不能替代单仓库 `GOWORK=off` 检查，不在 `go.mod` 写绝对路径 `replace`。
+Go module 为 `github.com/Kaivodev/protobuf`。v0.10.0 已发布，v0.11.0 为本地草案；各服务正式导入新版前先提交、推送并发布可解析的版本，再固定该版本依赖。工作区 `go.work` 可用于联合开发，但不能替代单仓库 `GOWORK=off` 检查，不在 `go.mod` 写绝对路径 `replace`。
 
 ## 名称与兼容性
 

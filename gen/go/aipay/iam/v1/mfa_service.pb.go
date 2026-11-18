@@ -712,7 +712,7 @@ const file_aipay_iam_v1_mfa_service_proto_rawDesc = "" +
 	"\x18identity_verification_id\x18\x04 \x01(\tR\x16identityVerificationId\x12\x16\n" +
 	"\x06reason\x18\x05 \x01(\tR\x06reason\"B\n" +
 	"\x11ResetTotpResponse\x12-\n" +
-	"\x05reset\x18\x01 \x01(\v2\x17.aipay.iam.v1.TotpResetR\x05reset2\xc1\r\n" +
+	"\x05reset\x18\x01 \x01(\v2\x17.aipay.iam.v1.TotpResetR\x05reset2\xf3\x0f\n" +
 	"\n" +
 	"MfaService\x12\x8c\x01\n" +
 	"\x18IssueTotpEnrollmentToken\x12-.aipay.iam.v1.IssueTotpEnrollmentTokenRequest\x1a..aipay.iam.v1.IssueTotpEnrollmentTokenResponse\"\x11\xc2\xf3\x18\r\n" +
@@ -750,7 +750,13 @@ const file_aipay_iam_v1_mfa_service_proto_rawDesc = "" +
 	"\abackend\x10\x03\x1a\x0eiam.mfa.manage \xd8\x04\x12|\n" +
 	"\x0eListMfaMethods\x12#.aipay.iam.v1.ListMfaMethodsRequest\x1a$.aipay.iam.v1.ListMfaMethodsResponse\"\x1f\xc2\xf3\x18\x1b\n" +
 	"\x19\n" +
-	"\abackend\x10\x02\x1a\fiam.mfa.readB8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
+	"\abackend\x10\x02\x1a\fiam.mfa.read\x12\x93\x01\n" +
+	"\x14BeginTotpReplacement\x12).aipay.iam.v1.BeginTotpReplacementRequest\x1a*.aipay.iam.v1.BeginTotpReplacementResponse\"$\xc2\xf3\x18 \n" +
+	"\x1e\n" +
+	"\abackend\x10\x03\x1a\x0eiam.mfa.manage \xd8\x04\x12\x99\x01\n" +
+	"\x16ConfirmTotpReplacement\x12+.aipay.iam.v1.ConfirmTotpReplacementRequest\x1a,.aipay.iam.v1.ConfirmTotpReplacementResponse\"$\xc2\xf3\x18 \n" +
+	"\x1e\n" +
+	"\abackend\x10\x03\x1a\x0eiam.mfa.manage \xd8\x04B8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
 
 var (
 	file_aipay_iam_v1_mfa_service_proto_rawDescOnce sync.Once
@@ -788,13 +794,17 @@ var file_aipay_iam_v1_mfa_service_proto_goTypes = []any{
 	(*RemoveWebAuthnCredentialRequest)(nil),      // 19: aipay.iam.v1.RemoveWebAuthnCredentialRequest
 	(*RotateRecoveryCodesRequest)(nil),           // 20: aipay.iam.v1.RotateRecoveryCodesRequest
 	(*ListMfaMethodsRequest)(nil),                // 21: aipay.iam.v1.ListMfaMethodsRequest
-	(*BeginSessionTotpEnrollmentResponse)(nil),   // 22: aipay.iam.v1.BeginSessionTotpEnrollmentResponse
-	(*ConfirmSessionTotpEnrollmentResponse)(nil), // 23: aipay.iam.v1.ConfirmSessionTotpEnrollmentResponse
-	(*BeginWebAuthnRegistrationResponse)(nil),    // 24: aipay.iam.v1.BeginWebAuthnRegistrationResponse
-	(*CompleteWebAuthnRegistrationResponse)(nil), // 25: aipay.iam.v1.CompleteWebAuthnRegistrationResponse
-	(*RemoveWebAuthnCredentialResponse)(nil),     // 26: aipay.iam.v1.RemoveWebAuthnCredentialResponse
-	(*RotateRecoveryCodesResponse)(nil),          // 27: aipay.iam.v1.RotateRecoveryCodesResponse
-	(*ListMfaMethodsResponse)(nil),               // 28: aipay.iam.v1.ListMfaMethodsResponse
+	(*BeginTotpReplacementRequest)(nil),          // 22: aipay.iam.v1.BeginTotpReplacementRequest
+	(*ConfirmTotpReplacementRequest)(nil),        // 23: aipay.iam.v1.ConfirmTotpReplacementRequest
+	(*BeginSessionTotpEnrollmentResponse)(nil),   // 24: aipay.iam.v1.BeginSessionTotpEnrollmentResponse
+	(*ConfirmSessionTotpEnrollmentResponse)(nil), // 25: aipay.iam.v1.ConfirmSessionTotpEnrollmentResponse
+	(*BeginWebAuthnRegistrationResponse)(nil),    // 26: aipay.iam.v1.BeginWebAuthnRegistrationResponse
+	(*CompleteWebAuthnRegistrationResponse)(nil), // 27: aipay.iam.v1.CompleteWebAuthnRegistrationResponse
+	(*RemoveWebAuthnCredentialResponse)(nil),     // 28: aipay.iam.v1.RemoveWebAuthnCredentialResponse
+	(*RotateRecoveryCodesResponse)(nil),          // 29: aipay.iam.v1.RotateRecoveryCodesResponse
+	(*ListMfaMethodsResponse)(nil),               // 30: aipay.iam.v1.ListMfaMethodsResponse
+	(*BeginTotpReplacementResponse)(nil),         // 31: aipay.iam.v1.BeginTotpReplacementResponse
+	(*ConfirmTotpReplacementResponse)(nil),       // 32: aipay.iam.v1.ConfirmTotpReplacementResponse
 }
 var file_aipay_iam_v1_mfa_service_proto_depIdxs = []int32{
 	11, // 0: aipay.iam.v1.TotpEnrollmentToken.expires_at:type_name -> google.protobuf.Timestamp
@@ -819,20 +829,24 @@ var file_aipay_iam_v1_mfa_service_proto_depIdxs = []int32{
 	19, // 19: aipay.iam.v1.MfaService.RemoveWebAuthnCredential:input_type -> aipay.iam.v1.RemoveWebAuthnCredentialRequest
 	20, // 20: aipay.iam.v1.MfaService.RotateRecoveryCodes:input_type -> aipay.iam.v1.RotateRecoveryCodesRequest
 	21, // 21: aipay.iam.v1.MfaService.ListMfaMethods:input_type -> aipay.iam.v1.ListMfaMethodsRequest
-	2,  // 22: aipay.iam.v1.MfaService.IssueTotpEnrollmentToken:output_type -> aipay.iam.v1.IssueTotpEnrollmentTokenResponse
-	4,  // 23: aipay.iam.v1.MfaService.GetTotpEnrollment:output_type -> aipay.iam.v1.GetTotpEnrollmentResponse
-	6,  // 24: aipay.iam.v1.MfaService.CompleteTotpEnrollment:output_type -> aipay.iam.v1.CompleteTotpEnrollmentResponse
-	8,  // 25: aipay.iam.v1.MfaService.UseRecoveryCode:output_type -> aipay.iam.v1.UseRecoveryCodeResponse
-	10, // 26: aipay.iam.v1.MfaService.ResetTotp:output_type -> aipay.iam.v1.ResetTotpResponse
-	22, // 27: aipay.iam.v1.MfaService.BeginSessionTotpEnrollment:output_type -> aipay.iam.v1.BeginSessionTotpEnrollmentResponse
-	23, // 28: aipay.iam.v1.MfaService.ConfirmSessionTotpEnrollment:output_type -> aipay.iam.v1.ConfirmSessionTotpEnrollmentResponse
-	24, // 29: aipay.iam.v1.MfaService.BeginWebAuthnRegistration:output_type -> aipay.iam.v1.BeginWebAuthnRegistrationResponse
-	25, // 30: aipay.iam.v1.MfaService.CompleteWebAuthnRegistration:output_type -> aipay.iam.v1.CompleteWebAuthnRegistrationResponse
-	26, // 31: aipay.iam.v1.MfaService.RemoveWebAuthnCredential:output_type -> aipay.iam.v1.RemoveWebAuthnCredentialResponse
-	27, // 32: aipay.iam.v1.MfaService.RotateRecoveryCodes:output_type -> aipay.iam.v1.RotateRecoveryCodesResponse
-	28, // 33: aipay.iam.v1.MfaService.ListMfaMethods:output_type -> aipay.iam.v1.ListMfaMethodsResponse
-	22, // [22:34] is the sub-list for method output_type
-	10, // [10:22] is the sub-list for method input_type
+	22, // 22: aipay.iam.v1.MfaService.BeginTotpReplacement:input_type -> aipay.iam.v1.BeginTotpReplacementRequest
+	23, // 23: aipay.iam.v1.MfaService.ConfirmTotpReplacement:input_type -> aipay.iam.v1.ConfirmTotpReplacementRequest
+	2,  // 24: aipay.iam.v1.MfaService.IssueTotpEnrollmentToken:output_type -> aipay.iam.v1.IssueTotpEnrollmentTokenResponse
+	4,  // 25: aipay.iam.v1.MfaService.GetTotpEnrollment:output_type -> aipay.iam.v1.GetTotpEnrollmentResponse
+	6,  // 26: aipay.iam.v1.MfaService.CompleteTotpEnrollment:output_type -> aipay.iam.v1.CompleteTotpEnrollmentResponse
+	8,  // 27: aipay.iam.v1.MfaService.UseRecoveryCode:output_type -> aipay.iam.v1.UseRecoveryCodeResponse
+	10, // 28: aipay.iam.v1.MfaService.ResetTotp:output_type -> aipay.iam.v1.ResetTotpResponse
+	24, // 29: aipay.iam.v1.MfaService.BeginSessionTotpEnrollment:output_type -> aipay.iam.v1.BeginSessionTotpEnrollmentResponse
+	25, // 30: aipay.iam.v1.MfaService.ConfirmSessionTotpEnrollment:output_type -> aipay.iam.v1.ConfirmSessionTotpEnrollmentResponse
+	26, // 31: aipay.iam.v1.MfaService.BeginWebAuthnRegistration:output_type -> aipay.iam.v1.BeginWebAuthnRegistrationResponse
+	27, // 32: aipay.iam.v1.MfaService.CompleteWebAuthnRegistration:output_type -> aipay.iam.v1.CompleteWebAuthnRegistrationResponse
+	28, // 33: aipay.iam.v1.MfaService.RemoveWebAuthnCredential:output_type -> aipay.iam.v1.RemoveWebAuthnCredentialResponse
+	29, // 34: aipay.iam.v1.MfaService.RotateRecoveryCodes:output_type -> aipay.iam.v1.RotateRecoveryCodesResponse
+	30, // 35: aipay.iam.v1.MfaService.ListMfaMethods:output_type -> aipay.iam.v1.ListMfaMethodsResponse
+	31, // 36: aipay.iam.v1.MfaService.BeginTotpReplacement:output_type -> aipay.iam.v1.BeginTotpReplacementResponse
+	32, // 37: aipay.iam.v1.MfaService.ConfirmTotpReplacement:output_type -> aipay.iam.v1.ConfirmTotpReplacementResponse
+	24, // [24:38] is the sub-list for method output_type
+	10, // [10:24] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name
 	10, // [10:10] is the sub-list for extension extendee
 	0,  // [0:10] is the sub-list for field type_name

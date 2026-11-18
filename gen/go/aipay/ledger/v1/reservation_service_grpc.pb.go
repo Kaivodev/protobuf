@@ -26,6 +26,7 @@ const (
 	ReservationService_ReserveRefund_FullMethodName               = "/aipay.ledger.v1.ReservationService/ReserveRefund"
 	ReservationService_HoldReleasedTradeForDispute_FullMethodName = "/aipay.ledger.v1.ReservationService/HoldReleasedTradeForDispute"
 	ReservationService_ResolveReleasedTradeDispute_FullMethodName = "/aipay.ledger.v1.ReservationService/ResolveReleasedTradeDispute"
+	ReservationService_GetTradeFreezeDetails_FullMethodName       = "/aipay.ledger.v1.ReservationService/GetTradeFreezeDetails"
 )
 
 // ReservationServiceClient is the client API for ReservationService service.
@@ -74,6 +75,10 @@ type ReservationServiceClient interface {
 	ReserveRefund(ctx context.Context, in *ReserveRefundRequest, opts ...grpc.CallOption) (*ReserveRefundResponse, error)
 	HoldReleasedTradeForDispute(ctx context.Context, in *HoldReleasedTradeForDisputeRequest, opts ...grpc.CallOption) (*HoldReleasedTradeForDisputeResponse, error)
 	ResolveReleasedTradeDispute(ctx context.Context, in *ResolveReleasedTradeDisputeRequest, opts ...grpc.CallOption) (*ResolveReleasedTradeDisputeResponse, error)
+	// Read the escrow, all its active barriers, both original accounts' risk
+	// controls and journal head in one ledger snapshot. Fail the whole read if
+	// any part is unavailable. Pure control changes need not advance as_of_seq.
+	GetTradeFreezeDetails(ctx context.Context, in *GetTradeFreezeDetailsRequest, opts ...grpc.CallOption) (*GetTradeFreezeDetailsResponse, error)
 }
 
 type reservationServiceClient struct {
@@ -154,6 +159,16 @@ func (c *reservationServiceClient) ResolveReleasedTradeDispute(ctx context.Conte
 	return out, nil
 }
 
+func (c *reservationServiceClient) GetTradeFreezeDetails(ctx context.Context, in *GetTradeFreezeDetailsRequest, opts ...grpc.CallOption) (*GetTradeFreezeDetailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTradeFreezeDetailsResponse)
+	err := c.cc.Invoke(ctx, ReservationService_GetTradeFreezeDetails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReservationServiceServer is the server API for ReservationService service.
 // All implementations must embed UnimplementedReservationServiceServer
 // for forward compatibility.
@@ -200,6 +215,10 @@ type ReservationServiceServer interface {
 	ReserveRefund(context.Context, *ReserveRefundRequest) (*ReserveRefundResponse, error)
 	HoldReleasedTradeForDispute(context.Context, *HoldReleasedTradeForDisputeRequest) (*HoldReleasedTradeForDisputeResponse, error)
 	ResolveReleasedTradeDispute(context.Context, *ResolveReleasedTradeDisputeRequest) (*ResolveReleasedTradeDisputeResponse, error)
+	// Read the escrow, all its active barriers, both original accounts' risk
+	// controls and journal head in one ledger snapshot. Fail the whole read if
+	// any part is unavailable. Pure control changes need not advance as_of_seq.
+	GetTradeFreezeDetails(context.Context, *GetTradeFreezeDetailsRequest) (*GetTradeFreezeDetailsResponse, error)
 	mustEmbedUnimplementedReservationServiceServer()
 }
 
@@ -230,6 +249,9 @@ func (UnimplementedReservationServiceServer) HoldReleasedTradeForDispute(context
 }
 func (UnimplementedReservationServiceServer) ResolveReleasedTradeDispute(context.Context, *ResolveReleasedTradeDisputeRequest) (*ResolveReleasedTradeDisputeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResolveReleasedTradeDispute not implemented")
+}
+func (UnimplementedReservationServiceServer) GetTradeFreezeDetails(context.Context, *GetTradeFreezeDetailsRequest) (*GetTradeFreezeDetailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTradeFreezeDetails not implemented")
 }
 func (UnimplementedReservationServiceServer) mustEmbedUnimplementedReservationServiceServer() {}
 func (UnimplementedReservationServiceServer) testEmbeddedByValue()                            {}
@@ -378,6 +400,24 @@ func _ReservationService_ResolveReleasedTradeDispute_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReservationService_GetTradeFreezeDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTradeFreezeDetailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReservationServiceServer).GetTradeFreezeDetails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReservationService_GetTradeFreezeDetails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReservationServiceServer).GetTradeFreezeDetails(ctx, req.(*GetTradeFreezeDetailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReservationService_ServiceDesc is the grpc.ServiceDesc for ReservationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -412,6 +452,10 @@ var ReservationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResolveReleasedTradeDispute",
 			Handler:    _ReservationService_ResolveReleasedTradeDispute_Handler,
+		},
+		{
+			MethodName: "GetTradeFreezeDetails",
+			Handler:    _ReservationService_GetTradeFreezeDetails_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -898,6 +898,290 @@ func (x *ListMfaMethodsResponse) GetMethods() []*MfaMethod {
 	return nil
 }
 
+// Portal only. A pending replacement is bound to the current active key
+// version, session and entry. Only Confirm can invalidate the old key.
+type BeginTotpReplacementRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	// Types that are valid to be assigned to CurrentFactor:
+	//
+	//	*BeginTotpReplacementRequest_CurrentTotpCode
+	//	*BeginTotpReplacementRequest_RecoveryCode
+	CurrentFactor isBeginTotpReplacementRequest_CurrentFactor `protobuf_oneof:"current_factor"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BeginTotpReplacementRequest) Reset() {
+	*x = BeginTotpReplacementRequest{}
+	mi := &file_aipay_iam_v1_web_mfa_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BeginTotpReplacementRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BeginTotpReplacementRequest) ProtoMessage() {}
+
+func (x *BeginTotpReplacementRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_web_mfa_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BeginTotpReplacementRequest.ProtoReflect.Descriptor instead.
+func (*BeginTotpReplacementRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_web_mfa_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *BeginTotpReplacementRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *BeginTotpReplacementRequest) GetCurrentFactor() isBeginTotpReplacementRequest_CurrentFactor {
+	if x != nil {
+		return x.CurrentFactor
+	}
+	return nil
+}
+
+func (x *BeginTotpReplacementRequest) GetCurrentTotpCode() string {
+	if x != nil {
+		if x, ok := x.CurrentFactor.(*BeginTotpReplacementRequest_CurrentTotpCode); ok {
+			return x.CurrentTotpCode
+		}
+	}
+	return ""
+}
+
+func (x *BeginTotpReplacementRequest) GetRecoveryCode() string {
+	if x != nil {
+		if x, ok := x.CurrentFactor.(*BeginTotpReplacementRequest_RecoveryCode); ok {
+			return x.RecoveryCode
+		}
+	}
+	return ""
+}
+
+type isBeginTotpReplacementRequest_CurrentFactor interface {
+	isBeginTotpReplacementRequest_CurrentFactor()
+}
+
+type BeginTotpReplacementRequest_CurrentTotpCode struct {
+	CurrentTotpCode string `protobuf:"bytes,2,opt,name=current_totp_code,json=currentTotpCode,proto3,oneof"`
+}
+
+type BeginTotpReplacementRequest_RecoveryCode struct {
+	RecoveryCode string `protobuf:"bytes,3,opt,name=recovery_code,json=recoveryCode,proto3,oneof"`
+}
+
+func (*BeginTotpReplacementRequest_CurrentTotpCode) isBeginTotpReplacementRequest_CurrentFactor() {}
+
+func (*BeginTotpReplacementRequest_RecoveryCode) isBeginTotpReplacementRequest_CurrentFactor() {}
+
+type BeginTotpReplacementResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ReplacementId string                 `protobuf:"bytes,1,opt,name=replacement_id,json=replacementId,proto3" json:"replacement_id,omitempty"`
+	// Sensitive, delivered to the browser only once. Never accepted for login
+	// until the replacement is confirmed. Replays omit QR and return false.
+	QrCodePng       []byte                 `protobuf:"bytes,2,opt,name=qr_code_png,json=qrCodePng,proto3" json:"qr_code_png,omitempty"`
+	ExpiresAt       *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	SecretDelivered bool                   `protobuf:"varint,4,opt,name=secret_delivered,json=secretDelivered,proto3" json:"secret_delivered,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *BeginTotpReplacementResponse) Reset() {
+	*x = BeginTotpReplacementResponse{}
+	mi := &file_aipay_iam_v1_web_mfa_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BeginTotpReplacementResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BeginTotpReplacementResponse) ProtoMessage() {}
+
+func (x *BeginTotpReplacementResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_web_mfa_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BeginTotpReplacementResponse.ProtoReflect.Descriptor instead.
+func (*BeginTotpReplacementResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_web_mfa_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *BeginTotpReplacementResponse) GetReplacementId() string {
+	if x != nil {
+		return x.ReplacementId
+	}
+	return ""
+}
+
+func (x *BeginTotpReplacementResponse) GetQrCodePng() []byte {
+	if x != nil {
+		return x.QrCodePng
+	}
+	return nil
+}
+
+func (x *BeginTotpReplacementResponse) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *BeginTotpReplacementResponse) GetSecretDelivered() bool {
+	if x != nil {
+		return x.SecretDelivered
+	}
+	return false
+}
+
+type ConfirmTotpReplacementRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	ReplacementId  string                 `protobuf:"bytes,2,opt,name=replacement_id,json=replacementId,proto3" json:"replacement_id,omitempty"`
+	// Validate against the pending new key and consume the matched step once.
+	NewTotpCode   string `protobuf:"bytes,3,opt,name=new_totp_code,json=newTotpCode,proto3" json:"new_totp_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConfirmTotpReplacementRequest) Reset() {
+	*x = ConfirmTotpReplacementRequest{}
+	mi := &file_aipay_iam_v1_web_mfa_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfirmTotpReplacementRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmTotpReplacementRequest) ProtoMessage() {}
+
+func (x *ConfirmTotpReplacementRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_web_mfa_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmTotpReplacementRequest.ProtoReflect.Descriptor instead.
+func (*ConfirmTotpReplacementRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_web_mfa_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ConfirmTotpReplacementRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *ConfirmTotpReplacementRequest) GetReplacementId() string {
+	if x != nil {
+		return x.ReplacementId
+	}
+	return ""
+}
+
+func (x *ConfirmTotpReplacementRequest) GetNewTotpCode() string {
+	if x != nil {
+		return x.NewTotpCode
+	}
+	return ""
+}
+
+type ConfirmTotpReplacementResponse struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	ReplacedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=replaced_at,json=replacedAt,proto3" json:"replaced_at,omitempty"`
+	// Rotate recovery codes with the key; first browser delivery only.
+	RecoveryCodes   []string `protobuf:"bytes,2,rep,name=recovery_codes,json=recoveryCodes,proto3" json:"recovery_codes,omitempty"`
+	SecretDelivered bool     `protobuf:"varint,3,opt,name=secret_delivered,json=secretDelivered,proto3" json:"secret_delivered,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ConfirmTotpReplacementResponse) Reset() {
+	*x = ConfirmTotpReplacementResponse{}
+	mi := &file_aipay_iam_v1_web_mfa_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConfirmTotpReplacementResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConfirmTotpReplacementResponse) ProtoMessage() {}
+
+func (x *ConfirmTotpReplacementResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_web_mfa_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConfirmTotpReplacementResponse.ProtoReflect.Descriptor instead.
+func (*ConfirmTotpReplacementResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_web_mfa_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ConfirmTotpReplacementResponse) GetReplacedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ReplacedAt
+	}
+	return nil
+}
+
+func (x *ConfirmTotpReplacementResponse) GetRecoveryCodes() []string {
+	if x != nil {
+		return x.RecoveryCodes
+	}
+	return nil
+}
+
+func (x *ConfirmTotpReplacementResponse) GetSecretDelivered() bool {
+	if x != nil {
+		return x.SecretDelivered
+	}
+	return false
+}
+
 var File_aipay_iam_v1_web_mfa_proto protoreflect.FileDescriptor
 
 const file_aipay_iam_v1_web_mfa_proto_rawDesc = "" +
@@ -963,7 +1247,27 @@ const file_aipay_iam_v1_web_mfa_proto_rawDesc = "" +
 	"\x10secret_delivered\x18\x03 \x01(\bR\x0fsecretDelivered\"\x17\n" +
 	"\x15ListMfaMethodsRequest\"K\n" +
 	"\x16ListMfaMethodsResponse\x121\n" +
-	"\amethods\x18\x01 \x03(\v2\x17.aipay.iam.v1.MfaMethodR\amethodsB8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
+	"\amethods\x18\x01 \x03(\v2\x17.aipay.iam.v1.MfaMethodR\amethods\"\xad\x01\n" +
+	"\x1bBeginTotpReplacementRequest\x12'\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12,\n" +
+	"\x11current_totp_code\x18\x02 \x01(\tH\x00R\x0fcurrentTotpCode\x12%\n" +
+	"\rrecovery_code\x18\x03 \x01(\tH\x00R\frecoveryCodeB\x10\n" +
+	"\x0ecurrent_factor\"\xcb\x01\n" +
+	"\x1cBeginTotpReplacementResponse\x12%\n" +
+	"\x0ereplacement_id\x18\x01 \x01(\tR\rreplacementId\x12\x1e\n" +
+	"\vqr_code_png\x18\x02 \x01(\fR\tqrCodePng\x129\n" +
+	"\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12)\n" +
+	"\x10secret_delivered\x18\x04 \x01(\bR\x0fsecretDelivered\"\x93\x01\n" +
+	"\x1dConfirmTotpReplacementRequest\x12'\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12%\n" +
+	"\x0ereplacement_id\x18\x02 \x01(\tR\rreplacementId\x12\"\n" +
+	"\rnew_totp_code\x18\x03 \x01(\tR\vnewTotpCode\"\xaf\x01\n" +
+	"\x1eConfirmTotpReplacementResponse\x12;\n" +
+	"\vreplaced_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"replacedAt\x12%\n" +
+	"\x0erecovery_codes\x18\x02 \x03(\tR\rrecoveryCodes\x12)\n" +
+	"\x10secret_delivered\x18\x03 \x01(\bR\x0fsecretDeliveredB8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
 
 var (
 	file_aipay_iam_v1_web_mfa_proto_rawDescOnce sync.Once
@@ -977,7 +1281,7 @@ func file_aipay_iam_v1_web_mfa_proto_rawDescGZIP() []byte {
 	return file_aipay_iam_v1_web_mfa_proto_rawDescData
 }
 
-var file_aipay_iam_v1_web_mfa_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_aipay_iam_v1_web_mfa_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_aipay_iam_v1_web_mfa_proto_goTypes = []any{
 	(*WebAuthnRegistration)(nil),                 // 0: aipay.iam.v1.WebAuthnRegistration
 	(*MfaMethod)(nil),                            // 1: aipay.iam.v1.MfaMethod
@@ -995,26 +1299,32 @@ var file_aipay_iam_v1_web_mfa_proto_goTypes = []any{
 	(*RotateRecoveryCodesResponse)(nil),          // 13: aipay.iam.v1.RotateRecoveryCodesResponse
 	(*ListMfaMethodsRequest)(nil),                // 14: aipay.iam.v1.ListMfaMethodsRequest
 	(*ListMfaMethodsResponse)(nil),               // 15: aipay.iam.v1.ListMfaMethodsResponse
-	(MfaKind)(0),                                 // 16: aipay.iam.v1.MfaKind
-	(*timestamppb.Timestamp)(nil),                // 17: google.protobuf.Timestamp
+	(*BeginTotpReplacementRequest)(nil),          // 16: aipay.iam.v1.BeginTotpReplacementRequest
+	(*BeginTotpReplacementResponse)(nil),         // 17: aipay.iam.v1.BeginTotpReplacementResponse
+	(*ConfirmTotpReplacementRequest)(nil),        // 18: aipay.iam.v1.ConfirmTotpReplacementRequest
+	(*ConfirmTotpReplacementResponse)(nil),       // 19: aipay.iam.v1.ConfirmTotpReplacementResponse
+	(MfaKind)(0),                                 // 20: aipay.iam.v1.MfaKind
+	(*timestamppb.Timestamp)(nil),                // 21: google.protobuf.Timestamp
 }
 var file_aipay_iam_v1_web_mfa_proto_depIdxs = []int32{
-	16, // 0: aipay.iam.v1.MfaMethod.kind:type_name -> aipay.iam.v1.MfaKind
-	17, // 1: aipay.iam.v1.MfaMethod.created_at:type_name -> google.protobuf.Timestamp
-	17, // 2: aipay.iam.v1.MfaMethod.last_used_at:type_name -> google.protobuf.Timestamp
-	17, // 3: aipay.iam.v1.BeginSessionTotpEnrollmentResponse.expires_at:type_name -> google.protobuf.Timestamp
-	17, // 4: aipay.iam.v1.ConfirmSessionTotpEnrollmentResponse.bound_at:type_name -> google.protobuf.Timestamp
-	17, // 5: aipay.iam.v1.BeginWebAuthnRegistrationResponse.expires_at:type_name -> google.protobuf.Timestamp
+	20, // 0: aipay.iam.v1.MfaMethod.kind:type_name -> aipay.iam.v1.MfaKind
+	21, // 1: aipay.iam.v1.MfaMethod.created_at:type_name -> google.protobuf.Timestamp
+	21, // 2: aipay.iam.v1.MfaMethod.last_used_at:type_name -> google.protobuf.Timestamp
+	21, // 3: aipay.iam.v1.BeginSessionTotpEnrollmentResponse.expires_at:type_name -> google.protobuf.Timestamp
+	21, // 4: aipay.iam.v1.ConfirmSessionTotpEnrollmentResponse.bound_at:type_name -> google.protobuf.Timestamp
+	21, // 5: aipay.iam.v1.BeginWebAuthnRegistrationResponse.expires_at:type_name -> google.protobuf.Timestamp
 	0,  // 6: aipay.iam.v1.CompleteWebAuthnRegistrationRequest.registration:type_name -> aipay.iam.v1.WebAuthnRegistration
 	1,  // 7: aipay.iam.v1.CompleteWebAuthnRegistrationResponse.method:type_name -> aipay.iam.v1.MfaMethod
-	17, // 8: aipay.iam.v1.RemoveWebAuthnCredentialResponse.removed_at:type_name -> google.protobuf.Timestamp
-	17, // 9: aipay.iam.v1.RotateRecoveryCodesResponse.rotated_at:type_name -> google.protobuf.Timestamp
+	21, // 8: aipay.iam.v1.RemoveWebAuthnCredentialResponse.removed_at:type_name -> google.protobuf.Timestamp
+	21, // 9: aipay.iam.v1.RotateRecoveryCodesResponse.rotated_at:type_name -> google.protobuf.Timestamp
 	1,  // 10: aipay.iam.v1.ListMfaMethodsResponse.methods:type_name -> aipay.iam.v1.MfaMethod
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	21, // 11: aipay.iam.v1.BeginTotpReplacementResponse.expires_at:type_name -> google.protobuf.Timestamp
+	21, // 12: aipay.iam.v1.ConfirmTotpReplacementResponse.replaced_at:type_name -> google.protobuf.Timestamp
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_aipay_iam_v1_web_mfa_proto_init() }
@@ -1023,13 +1333,17 @@ func file_aipay_iam_v1_web_mfa_proto_init() {
 		return
 	}
 	file_aipay_iam_v1_web_identity_proto_init()
+	file_aipay_iam_v1_web_mfa_proto_msgTypes[16].OneofWrappers = []any{
+		(*BeginTotpReplacementRequest_CurrentTotpCode)(nil),
+		(*BeginTotpReplacementRequest_RecoveryCode)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_iam_v1_web_mfa_proto_rawDesc), len(file_aipay_iam_v1_web_mfa_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

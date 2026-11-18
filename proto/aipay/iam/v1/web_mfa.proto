@@ -93,3 +93,36 @@ message ListMfaMethodsRequest {}
 message ListMfaMethodsResponse {
   repeated MfaMethod methods = 1;
 }
+
+// Portal only. A pending replacement is bound to the current active key
+// version, session and entry. Only Confirm can invalidate the old key.
+message BeginTotpReplacementRequest {
+  string idempotency_key = 1;
+  oneof current_factor {
+    string current_totp_code = 2;
+    string recovery_code = 3;
+  }
+}
+
+message BeginTotpReplacementResponse {
+  string replacement_id = 1;
+  // Sensitive, delivered to the browser only once. Never accepted for login
+  // until the replacement is confirmed. Replays omit QR and return false.
+  bytes qr_code_png = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  bool secret_delivered = 4;
+}
+
+message ConfirmTotpReplacementRequest {
+  string idempotency_key = 1;
+  string replacement_id = 2;
+  // Validate against the pending new key and consume the matched step once.
+  string new_totp_code = 3;
+}
+
+message ConfirmTotpReplacementResponse {
+  google.protobuf.Timestamp replaced_at = 1;
+  // Rotate recovery codes with the key; first browser delivery only.
+  repeated string recovery_codes = 2;
+  bool secret_delivered = 3;
+}

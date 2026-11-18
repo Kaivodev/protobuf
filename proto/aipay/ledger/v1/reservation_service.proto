@@ -138,6 +138,28 @@ message ResolveReleasedTradeDisputeResponse {
   uint64 seq = 3;
 }
 
+// Reconciliation supplies both original IDs. Unknown or mismatched pair: NotFound.
+message GetTradeFreezeDetailsRequest {
+  string order_id = 1;
+  string escrow_reservation_id = 2;
+}
+
+message GetTradeFreezeDetailsResponse {
+  // Positive global journal head at the consistent read, not a control version.
+  uint64 as_of_seq = 1;
+  string order_id = 2;
+  string escrow_reservation_id = 3;
+  TradeReservationStatus status = 4;
+  uint64 control_version = 5;
+  // Complete, unpaginated sets. A barrier-only refund and a zero-funded A119
+  // hold are both active. Never infer absence from a balance or the status enum.
+  repeated TradeRefundHold refund_holds = 6;
+  repeated TradeDisputeHold dispute_holds = 7;
+  // Both messages required, including when explicitly clear.
+  AccountRiskFreeze seller_risk_freeze = 8;
+  AccountRiskFreeze recipient_risk_freeze = 9;
+}
+
 // Service-only commands, with no user assertion. Payment first checks the
 // initiating refund/dispute authority. Queries also allow reconciliation to
 // independently verify the actual escrow. Every change serializes on the
@@ -228,6 +250,17 @@ service ReservationService {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Read the escrow, all its active barriers, both original accounts' risk
+  // controls and journal head in one ledger snapshot. Fail the whole read if
+  // any part is unavailable. Pure control changes need not advance as_of_seq.
+  rpc GetTradeFreezeDetails(GetTradeFreezeDetailsRequest) returns (GetTradeFreezeDetailsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "reconciliation"
         assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
       }
     };

@@ -41,6 +41,10 @@ message ChannelAccountConfiguration {
   bytes config_json = 14;
   // Required presence. Changes affect new dispatch grants only.
   optional bool enabled = 15;
+  // Approved inbound callback source networks. Canonical unique CIDRs; empty
+  // denies all. Nonempty lists are sorted and bound into the two-person
+  // approval digest. Empty adds no canonical bytes to legacy materials.
+  repeated string callback_source_cidrs = 16;
 }
 
 message ChannelAccountChange {

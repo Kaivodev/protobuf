@@ -67,7 +67,7 @@ func TestV080WebIdentityBoundary(t *testing.T) {
 		names []protoreflect.Name
 	}{
 		{&iamv1.AuthenticationResult{}, "next", []protoreflect.Name{"session", "challenge"}},
-		{&iamv1.VerifyChallengeRequest{}, "answer", []protoreflect.Name{"totp_code", "webauthn"}},
+		{&iamv1.VerifyChallengeRequest{}, "answer", []protoreflect.Name{"totp_code", "webauthn", "recovery_code"}},
 		{&iamv1.AcceptInvitationRequest{}, "acceptance", []protoreflect.Name{"new_user", "existing_session"}},
 	} {
 		oneof := want.msg.ProtoReflect().Descriptor().Oneofs().ByName(want.oneof)

@@ -238,4 +238,26 @@ service MfaService {
       }
     };
   }
+  // Portal USER/SELF only. Both commands require recent MFA bound to the
+  // command. Begin verifies the old factor; only Confirm activates the new key.
+  rpc BeginTotpReplacement(BeginTotpReplacementRequest) returns (BeginTotpReplacementResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.mfa.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ConfirmTotpReplacement(ConfirmTotpReplacementRequest) returns (ConfirmTotpReplacementResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "iam.mfa.manage"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
 }

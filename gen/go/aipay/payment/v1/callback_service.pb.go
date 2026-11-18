@@ -172,6 +172,136 @@ func (x *HandleUpstreamCallbackResponse) GetBody() []byte {
 	return nil
 }
 
+type GetCallbackPolicyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChannelCode   string                 `protobuf:"bytes,1,opt,name=channel_code,json=channelCode,proto3" json:"channel_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCallbackPolicyRequest) Reset() {
+	*x = GetCallbackPolicyRequest{}
+	mi := &file_aipay_payment_v1_callback_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCallbackPolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCallbackPolicyRequest) ProtoMessage() {}
+
+func (x *GetCallbackPolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_callback_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCallbackPolicyRequest.ProtoReflect.Descriptor instead.
+func (*GetCallbackPolicyRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_callback_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetCallbackPolicyRequest) GetChannelCode() string {
+	if x != nil {
+		return x.ChannelCode
+	}
+	return ""
+}
+
+// Effective ingress restrictions from approved channel configuration and the
+// bound plugin manifest. No plugin credentials, ack payload or raw config.
+type GetCallbackPolicyResponse struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	SourceIpCidrs       []string               `protobuf:"bytes,1,rep,name=source_ip_cidrs,json=sourceIpCidrs,proto3" json:"source_ip_cidrs,omitempty"` // Empty denies all sources.
+	AllowedMethods      []string               `protobuf:"bytes,2,rep,name=allowed_methods,json=allowedMethods,proto3" json:"allowed_methods,omitempty"`
+	AllowedContentTypes []string               `protobuf:"bytes,3,rep,name=allowed_content_types,json=allowedContentTypes,proto3" json:"allowed_content_types,omitempty"`
+	AllowQuery          bool                   `protobuf:"varint,4,opt,name=allow_query,json=allowQuery,proto3" json:"allow_query,omitempty"`
+	MaxBodyBytes        uint32                 `protobuf:"varint,5,opt,name=max_body_bytes,json=maxBodyBytes,proto3" json:"max_body_bytes,omitempty"`  // Positive, at most 65536.
+	PolicyVersion       uint64                 `protobuf:"varint,6,opt,name=policy_version,json=policyVersion,proto3" json:"policy_version,omitempty"` // Positive; changes on effective policy changes.
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *GetCallbackPolicyResponse) Reset() {
+	*x = GetCallbackPolicyResponse{}
+	mi := &file_aipay_payment_v1_callback_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCallbackPolicyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCallbackPolicyResponse) ProtoMessage() {}
+
+func (x *GetCallbackPolicyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_callback_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCallbackPolicyResponse.ProtoReflect.Descriptor instead.
+func (*GetCallbackPolicyResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_callback_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetCallbackPolicyResponse) GetSourceIpCidrs() []string {
+	if x != nil {
+		return x.SourceIpCidrs
+	}
+	return nil
+}
+
+func (x *GetCallbackPolicyResponse) GetAllowedMethods() []string {
+	if x != nil {
+		return x.AllowedMethods
+	}
+	return nil
+}
+
+func (x *GetCallbackPolicyResponse) GetAllowedContentTypes() []string {
+	if x != nil {
+		return x.AllowedContentTypes
+	}
+	return nil
+}
+
+func (x *GetCallbackPolicyResponse) GetAllowQuery() bool {
+	if x != nil {
+		return x.AllowQuery
+	}
+	return false
+}
+
+func (x *GetCallbackPolicyResponse) GetMaxBodyBytes() uint32 {
+	if x != nil {
+		return x.MaxBodyBytes
+	}
+	return 0
+}
+
+func (x *GetCallbackPolicyResponse) GetPolicyVersion() uint64 {
+	if x != nil {
+		return x.PolicyVersion
+	}
+	return 0
+}
+
 var File_aipay_payment_v1_callback_service_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_callback_service_proto_rawDesc = "" +
@@ -188,9 +318,22 @@ const file_aipay_payment_v1_callback_service_proto_rawDesc = "" +
 	"\x1eHandleUpstreamCallbackResponse\x12(\n" +
 	"\x10http_status_code\x18\x01 \x01(\rR\x0ehttpStatusCode\x12!\n" +
 	"\fcontent_type\x18\x02 \x01(\tR\vcontentType\x12\x12\n" +
-	"\x04body\x18\x03 \x01(\fR\x04body2\xa2\x01\n" +
+	"\x04body\x18\x03 \x01(\fR\x04body\"=\n" +
+	"\x18GetCallbackPolicyRequest\x12!\n" +
+	"\fchannel_code\x18\x01 \x01(\tR\vchannelCode\"\x8e\x02\n" +
+	"\x19GetCallbackPolicyResponse\x12&\n" +
+	"\x0fsource_ip_cidrs\x18\x01 \x03(\tR\rsourceIpCidrs\x12'\n" +
+	"\x0fallowed_methods\x18\x02 \x03(\tR\x0eallowedMethods\x122\n" +
+	"\x15allowed_content_types\x18\x03 \x03(\tR\x13allowedContentTypes\x12\x1f\n" +
+	"\vallow_query\x18\x04 \x01(\bR\n" +
+	"allowQuery\x12$\n" +
+	"\x0emax_body_bytes\x18\x05 \x01(\rR\fmaxBodyBytes\x12%\n" +
+	"\x0epolicy_version\x18\x06 \x01(\x04R\rpolicyVersion2\xa3\x02\n" +
 	"\x0fCallbackService\x12\x8e\x01\n" +
 	"\x16HandleUpstreamCallback\x12/.aipay.payment.v1.HandleUpstreamCallbackRequest\x1a0.aipay.payment.v1.HandleUpstreamCallbackResponse\"\x11\xc2\xf3\x18\r\n" +
+	"\v\n" +
+	"\abackend\x10\x01\x12\x7f\n" +
+	"\x11GetCallbackPolicy\x12*.aipay.payment.v1.GetCallbackPolicyRequest\x1a+.aipay.payment.v1.GetCallbackPolicyResponse\"\x11\xc2\xf3\x18\r\n" +
 	"\v\n" +
 	"\abackend\x10\x01B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
@@ -206,18 +349,22 @@ func file_aipay_payment_v1_callback_service_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_callback_service_proto_rawDescData
 }
 
-var file_aipay_payment_v1_callback_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_aipay_payment_v1_callback_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_aipay_payment_v1_callback_service_proto_goTypes = []any{
 	(*HandleUpstreamCallbackRequest)(nil),  // 0: aipay.payment.v1.HandleUpstreamCallbackRequest
 	(*HandleUpstreamCallbackResponse)(nil), // 1: aipay.payment.v1.HandleUpstreamCallbackResponse
-	(*HttpHeader)(nil),                     // 2: aipay.payment.v1.HttpHeader
+	(*GetCallbackPolicyRequest)(nil),       // 2: aipay.payment.v1.GetCallbackPolicyRequest
+	(*GetCallbackPolicyResponse)(nil),      // 3: aipay.payment.v1.GetCallbackPolicyResponse
+	(*HttpHeader)(nil),                     // 4: aipay.payment.v1.HttpHeader
 }
 var file_aipay_payment_v1_callback_service_proto_depIdxs = []int32{
-	2, // 0: aipay.payment.v1.HandleUpstreamCallbackRequest.headers:type_name -> aipay.payment.v1.HttpHeader
+	4, // 0: aipay.payment.v1.HandleUpstreamCallbackRequest.headers:type_name -> aipay.payment.v1.HttpHeader
 	0, // 1: aipay.payment.v1.CallbackService.HandleUpstreamCallback:input_type -> aipay.payment.v1.HandleUpstreamCallbackRequest
-	1, // 2: aipay.payment.v1.CallbackService.HandleUpstreamCallback:output_type -> aipay.payment.v1.HandleUpstreamCallbackResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
+	2, // 2: aipay.payment.v1.CallbackService.GetCallbackPolicy:input_type -> aipay.payment.v1.GetCallbackPolicyRequest
+	1, // 3: aipay.payment.v1.CallbackService.HandleUpstreamCallback:output_type -> aipay.payment.v1.HandleUpstreamCallbackResponse
+	3, // 4: aipay.payment.v1.CallbackService.GetCallbackPolicy:output_type -> aipay.payment.v1.GetCallbackPolicyResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -235,7 +382,7 @@ func file_aipay_payment_v1_callback_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_callback_service_proto_rawDesc), len(file_aipay_payment_v1_callback_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

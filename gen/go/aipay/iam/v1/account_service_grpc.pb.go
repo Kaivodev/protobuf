@@ -30,6 +30,7 @@ const (
 	AccountService_ConfirmEmailChange_FullMethodName    = "/aipay.iam.v1.AccountService/ConfirmEmailChange"
 	AccountService_GetProfile_FullMethodName            = "/aipay.iam.v1.AccountService/GetProfile"
 	AccountService_UpdateProfile_FullMethodName         = "/aipay.iam.v1.AccountService/UpdateProfile"
+	AccountService_GetChallenge_FullMethodName          = "/aipay.iam.v1.AccountService/GetChallenge"
 )
 
 // AccountServiceClient is the client API for AccountService service.
@@ -62,6 +63,9 @@ type AccountServiceClient interface {
 	ConfirmEmailChange(ctx context.Context, in *ConfirmEmailChangeRequest, opts ...grpc.CallOption) (*ConfirmEmailChangeResponse, error)
 	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileResponse, error)
 	UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...grpc.CallOption) (*UpdateProfileResponse, error)
+	// Read original options for a live, context/entry-bound challenge. Does not
+	// consume it, reset limits, rotate the capability or issue a session.
+	GetChallenge(ctx context.Context, in *GetChallengeRequest, opts ...grpc.CallOption) (*GetChallengeResponse, error)
 }
 
 type accountServiceClient struct {
@@ -182,6 +186,16 @@ func (c *accountServiceClient) UpdateProfile(ctx context.Context, in *UpdateProf
 	return out, nil
 }
 
+func (c *accountServiceClient) GetChallenge(ctx context.Context, in *GetChallengeRequest, opts ...grpc.CallOption) (*GetChallengeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetChallengeResponse)
+	err := c.cc.Invoke(ctx, AccountService_GetChallenge_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AccountServiceServer is the server API for AccountService service.
 // All implementations must embed UnimplementedAccountServiceServer
 // for forward compatibility.
@@ -212,6 +226,9 @@ type AccountServiceServer interface {
 	ConfirmEmailChange(context.Context, *ConfirmEmailChangeRequest) (*ConfirmEmailChangeResponse, error)
 	GetProfile(context.Context, *GetProfileRequest) (*GetProfileResponse, error)
 	UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error)
+	// Read original options for a live, context/entry-bound challenge. Does not
+	// consume it, reset limits, rotate the capability or issue a session.
+	GetChallenge(context.Context, *GetChallengeRequest) (*GetChallengeResponse, error)
 	mustEmbedUnimplementedAccountServiceServer()
 }
 
@@ -254,6 +271,9 @@ func (UnimplementedAccountServiceServer) GetProfile(context.Context, *GetProfile
 }
 func (UnimplementedAccountServiceServer) UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateProfile not implemented")
+}
+func (UnimplementedAccountServiceServer) GetChallenge(context.Context, *GetChallengeRequest) (*GetChallengeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetChallenge not implemented")
 }
 func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
 func (UnimplementedAccountServiceServer) testEmbeddedByValue()                        {}
@@ -474,6 +494,24 @@ func _AccountService_UpdateProfile_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AccountService_GetChallenge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetChallengeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).GetChallenge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_GetChallenge_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).GetChallenge(ctx, req.(*GetChallengeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AccountService_ServiceDesc is the grpc.ServiceDesc for AccountService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -524,6 +562,10 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateProfile",
 			Handler:    _AccountService_UpdateProfile_Handler,
+		},
+		{
+			MethodName: "GetChallenge",
+			Handler:    _AccountService_GetChallenge_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
