@@ -50,7 +50,14 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 认证证明的签发格式、密钥托管、调用方绑定与撤销机制尚待 IAM 实现；EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 
-## v0.11.0 契约增量（待发布）
+## v0.12.0 取消与退款核验触发（待发布）
+
+- payment 受理关单并确认上游请求已发出后，在 `payment.orders` 发布 `OrderCancellationVerificationRequested` v1。载荷只含订单 ID、冻结 ID 与控制版本。reconciliation 按订单和版本启动首次独立查单，沿用 v0.11.0 的迟到付款窗口和第二次查单规则。
+- 放币前后全额退款均复用 `RefundSucceeded` / `RefundFailed` v2。reconciliation 按退款 ID 和预留控制版本核验，按原预留分支区分资金来源。ledger 识别取消触发以保持流连续，取消或退款入账仍需 reconciliation 的单次签名授权。
+
+产生时刻、幂等键及服务接入顺序见[跨服务契约 v0.12.0](https://github.com/Kaivodev/docs/blob/main/design/contracts.md#v0120-取消与退款的首次核验)。
+
+## v0.11.0 契约增量
 
 - ledger 的 `GetTradeFreezeDetails` 仅供 reconciliation 读取同一账本快照中的交易冻结、全部退款与争议占用，以及原卖方和收款账户的风控冻结。
 - reconciliation 放币时使用不早于 payment 核实时间的独立新鲜查单结果。未付款取消需要两次独立核实关单、未收款，并把两次结果绑定到既有签名授权摘要。
@@ -82,7 +89,7 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 新列表使用不透明游标、每页1–100条及一致读时点；`common/v1/query.proto` 的上限选项只是契约声明，运行时仍由属主校验。卖方身份仅来自 IAM 证明绑定，请求不接受卖方账户自报。权限、范围、签名规范、门户逐项映射和后续版本见 docs 仓库 `design/contracts.md` 的 v0.9.0 节。契约/SDK 不代表服务或 HTTP 已接通。
 
-`make breaking` 默认与本地 `v0.10.0` 标签比较，可通过 `BREAKING_AGAINST` 指定其他 Buf 基线；无需访问远程仓库。
+`make breaking` 默认与本地 `v0.11.0` 标签比较，可通过 `BREAKING_AGAINST` 指定其他 Buf 基线。
 
 ## 生成与检查
 
@@ -102,7 +109,7 @@ make check
 
 ## 发布与本地联调
 
-Go module 为 `github.com/Kaivodev/protobuf`。v0.10.0 已发布，v0.11.0 为本地草案；各服务正式导入新版前先提交、推送并发布可解析的版本，再固定该版本依赖。工作区 `go.work` 可用于联合开发，但不能替代单仓库 `GOWORK=off` 检查，不在 `go.mod` 写绝对路径 `replace`。
+Go module 为 `github.com/Kaivodev/protobuf`。本地兼容基线为 v0.11.0，v0.12.0 为待发布草案。各服务在新版发布后固定依赖版本。工作区 `go.work` 可用于联合开发，但不能替代单仓库 `GOWORK=off` 检查，不在 `go.mod` 写绝对路径 `replace`。
 
 ## 名称与兼容性
 

@@ -9,12 +9,13 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
 
 // Payloads on payment.orders, producer payment, receivers ledger and
-// reconciliation. event_type equals the message name; ALL FOUR use
-// schema_version=2. Version 1 remains historical and must never enter C2C rules.
-// Original snapshots/IDs, positive control versions, UTC microsecond times and
-// 32-byte evidence digests are required. Refund branch UNSPECIFIED (0)/unknown
-// is rejected. Each fact and outbox row commit together; signatures/digests
-// alone do not establish external truth or authorize a ledger funds movement.
+// reconciliation. event_type equals the message name. OrderPaid,
+// RefundSucceeded, RefundFailed and OrderReversed use schema_version=2.
+// Version 1 of those four types remains historical. Their v2 payloads require
+// original snapshots/IDs, positive control versions, UTC microsecond times and
+// 32-byte evidence digests. Refund branch UNSPECIFIED (0)/unknown is rejected.
+// Each fact and outbox row commit together. Signatures/digests alone do not
+// establish external truth or authorize a ledger funds movement.
 
 // OrderPaid v2 confirms ONLY actively queried fiat payment (A111), never
 // upstream USDT receivables, recipient balance availability or release.
@@ -32,7 +33,9 @@ message OrderPaid {
 }
 
 // RefundSucceeded v2: verified original-route FULL fiat refund only. The
-// reconciliation authorization and ledger posting still settle/restore USDT.
+// signed fact starts reconciliation's independent refund query for either
+// reservation branch. Both terminal types share (refund_id, control_version)
+// as the review key. Only reconciliation authorization permits ledger posting.
 // Post-release, A112 reverses N and all three F components, restoring seller Q.
 message RefundSucceeded {
   aipay.common.v1.TradeSnapshot trade = 1;
@@ -48,8 +51,10 @@ message RefundSucceeded {
 }
 
 // RefundFailed v2 requires a definitive actively verified failure. Pending or
-// unknown refunds emit no terminal fact and keep funds occupied. Independent
-// authorization restores only this refund's source, preserving other barriers.
+// unknown refunds emit no terminal fact and keep funds occupied. As with
+// RefundSucceeded, this starts independent verification for either branch.
+// A conflicting terminal fact for the same review key is quarantined. Only
+// independent authorization restores this refund's source, preserving other barriers.
 message RefundFailed {
   aipay.common.v1.TradeSnapshot trade = 1;
   string escrow_reservation_id = 2;
@@ -98,4 +103,22 @@ message OrderDisputed {
   bytes evidence_sha256 = 6;
   string registered_by = 7;
   google.protobuf.Timestamp registered_at = 8;
+}
+
+// Signed payment.orders event_type=OrderCancellationVerificationRequested,
+// schema_version=1. After accepting a close, payment commits the upstream
+// dispatch confirmation and outbox together while no payment is known.
+// After an uncertain send, an active query confirming closure of the same
+// order can recover that trigger. Local acceptance or expiry alone cannot.
+// Reconciliation starts one review per (order_id, control_version), reads the
+// original snapshot from ledger and independently queries the original order.
+// Only two closed/unpaid observations separated by the late-payment window
+// can support cancellation. Ledger records this trigger without a funds action.
+message OrderCancellationVerificationRequested {
+  // Required UUIDv7 of the original order.
+  string order_id = 1;
+  // Required UUIDv7 of that order's ledger escrow.
+  string escrow_reservation_id = 2;
+  // Positive ledger escrow control version at the trigger.
+  uint64 control_version = 3;
 }

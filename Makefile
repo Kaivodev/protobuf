@@ -1,6 +1,6 @@
 SHELL := /bin/sh
 BUF ?= buf
-BREAKING_AGAINST ?= .git\#tag=v0.10.0
+BREAKING_AGAINST ?= .git\#tag=v0.11.0
 PROTOC_GEN_GO_VERSION := v1.36.11
 PROTOC_GEN_GO_GRPC_VERSION := v1.6.2
 PLUGINS := .bin/protoc-gen-go .bin/protoc-gen-go-grpc
