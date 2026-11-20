@@ -122,3 +122,25 @@ message OrderCancellationVerificationRequested {
   // Positive ledger escrow control version at the trigger.
   uint64 control_version = 3;
 }
+
+// Signed payment.orders event_type=DisputeRulingApproved, schema_version=1.
+// When the second valid approval makes the ruling APPROVED, payment commits
+// the state change and outbox row together, at most once per ruling_id.
+// Expired or rejected rulings emit no event. Approval alone proves neither
+// payment nor refund and does not settle funds.
+// Reconciliation starts one review per (dispute_id, ruling_id). It reads the
+// outcome and original evidence via GetDisputeRuling, independently verifies
+// both approvers and their signatures, and checks the current ledger escrow.
+// Ledger records this trigger without a funds action.
+message DisputeRulingApproved {
+  // Required UUIDv7 of the original order.
+  string order_id = 1;
+  // Required UUIDv7 of that order's ledger escrow.
+  string escrow_reservation_id = 2;
+  // Required positive expected_control_version bound at ruling submission.
+  uint64 control_version = 3;
+  // Required ID of the registered dispute.
+  string dispute_id = 4;
+  // Required ruling approval request ID used by GetDisputeRuling.
+  string ruling_id = 5;
+}
