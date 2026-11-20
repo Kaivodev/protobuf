@@ -276,12 +276,17 @@ func (MerchantNotificationProtocol) EnumDescriptor() ([]byte, []int) {
 // assertions. Historical targets/credential versions survive business transfer;
 // an old credential is usable only for restricted historical notifications.
 type OrderNotificationSnapshot struct {
-	state    protoimpl.MessageState       `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Determined by the EPay route.
 	Protocol MerchantNotificationProtocol `protobuf:"varint,1,opt,name=protocol,proto3,enum=aipay.payment.v1.MerchantNotificationProtocol" json:"protocol,omitempty"`
-	// Required registered controlled HTTP(S) target; independently SSRF checked.
+	// Required HTTP(S) URL. Its scheme and host[:port] must exactly match
+	// notify_origin for this application on the approved, enabled revision.
+	// Payment also performs its independent SSRF checks.
 	NotifyUrl string `protobuf:"bytes,2,opt,name=notify_url,json=notifyUrl,proto3" json:"notify_url,omitempty"`
-	// Optional registered return target; browser redirects require HTTPS.
-	ReturnUrl         string `protobuf:"bytes,3,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
+	// If supplied, must match return_origin on the same target by scheme and
+	// host[:port]. Browser redirects require HTTPS.
+	ReturnUrl string `protobuf:"bytes,3,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
+	// Matching credential ID returned by IAM Authorize for the signed request.
 	CredentialVersion string `protobuf:"bytes,4,opt,name=credential_version,json=credentialVersion,proto3" json:"credential_version,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache

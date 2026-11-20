@@ -33,11 +33,11 @@ const (
 //
 // Management requires platform USER, internal listener, current WebAuthn and
 // explicit administrator delegation, not possession of the granted business role.
-// Protected roles (administrator/approver/finance/risk/collection-operator) stay
-// PENDING_APPROVAL until another administrator approves; no email/acceptance
-// before that. Preserve
-// administrator/approver exclusion and at least two active administrators. Non-
-// protected roles/upstream use PENDING directly. Seller account must independently
+// Protected roles (administrator/approver/finance/risk/collection-operator/
+// payment-access-reviewer) stay PENDING_APPROVAL until another administrator
+// approves; no email/acceptance before that. Enforce role exclusions and
+// preserve at least two active administrators. Other roles and upstream
+// invitations use PENDING directly. Seller account must independently
 // belong to the invited identity (or verified pending activation); never reassign
 // funds ownership. Accept atomically consumes the limited hashed email token,
 // activates one global user/personal account and applies only approved grants.
@@ -127,11 +127,11 @@ func (c *invitationServiceClient) ListInvitations(ctx context.Context, in *ListI
 //
 // Management requires platform USER, internal listener, current WebAuthn and
 // explicit administrator delegation, not possession of the granted business role.
-// Protected roles (administrator/approver/finance/risk/collection-operator) stay
-// PENDING_APPROVAL until another administrator approves; no email/acceptance
-// before that. Preserve
-// administrator/approver exclusion and at least two active administrators. Non-
-// protected roles/upstream use PENDING directly. Seller account must independently
+// Protected roles (administrator/approver/finance/risk/collection-operator/
+// payment-access-reviewer) stay PENDING_APPROVAL until another administrator
+// approves; no email/acceptance before that. Enforce role exclusions and
+// preserve at least two active administrators. Other roles and upstream
+// invitations use PENDING directly. Seller account must independently
 // belong to the invited identity (or verified pending activation); never reassign
 // funds ownership. Accept atomically consumes the limited hashed email token,
 // activates one global user/personal account and applies only approved grants.

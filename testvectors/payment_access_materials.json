@@ -1,0 +1,60 @@
+{
+  "description": "Normalized scoped SubmitRequest inputs, deterministic protobuf wire bytes and materials_sha256. The historical revision has no field 5 in materials. The new revision covers two sorted applications, an explicit default port and both present and absent return origins.",
+  "vectors": [
+    {
+      "name": "v0.12.0-no-targets",
+      "request": {
+        "account_id": "019a3142-4000-7000-8000-000000000001",
+        "business_id": "019a3142-4000-7000-8000-000000000002",
+        "payment_method": "alipay",
+        "ownership_version": "1",
+        "materials": {
+          "business_name": "Shop",
+          "business_description": "Books",
+          "domains": [
+            "shop.example"
+          ],
+          "application_ids": [
+            "019a3142-4000-7000-8000-000000000003",
+            "019a3142-4000-7000-8000-000000000004"
+          ]
+        }
+      },
+      "encoding": "122430313961333134322d343030302d373030302d383030302d3030303030303030303030311a2430313961333134322d343030302d373030302d383030302d3030303030303030303030322206616c69706179280132670a0453686f701205426f6f6b731a0c73686f702e6578616d706c65222430313961333134322d343030302d373030302d383030302d303030303030303030303033222430313961333134322d343030302d373030302d383030302d303030303030303030303034",
+      "sha256": "947b1a8a8e1fcb6d3c305c49eab179efe251dd26fe625c727d2710772be614d8"
+    },
+    {
+      "name": "v0.13.0-two-applications",
+      "request": {
+        "account_id": "019a3142-4000-7000-8000-000000000001",
+        "business_id": "019a3142-4000-7000-8000-000000000002",
+        "payment_method": "alipay",
+        "ownership_version": "1",
+        "materials": {
+          "business_name": "Shop",
+          "business_description": "Books",
+          "domains": [
+            "shop.example"
+          ],
+          "application_ids": [
+            "019a3142-4000-7000-8000-000000000003",
+            "019a3142-4000-7000-8000-000000000004"
+          ],
+          "notification_targets": [
+            {
+              "application_id": "019a3142-4000-7000-8000-000000000003",
+              "notify_origin": "https://xn--bcher-kva.example:443",
+              "return_origin": "https://shop.example"
+            },
+            {
+              "application_id": "019a3142-4000-7000-8000-000000000004",
+              "notify_origin": "http://notify.example"
+            }
+          ]
+        }
+      },
+      "encoding": "122430313961333134322d343030302d373030302d383030302d3030303030303030303030311a2430313961333134322d343030302d373030302d383030302d3030303030303030303030322206616c6970617928013287020a0453686f701205426f6f6b731a0c73686f702e6578616d706c65222430313961333134322d343030302d373030302d383030302d303030303030303030303033222430313961333134322d343030302d373030302d383030302d3030303030303030303030342a5f0a2430313961333134322d343030302d373030302d383030302d303030303030303030303033122168747470733a2f2f786e2d2d62636865722d6b76612e6578616d706c653a3434331a1468747470733a2f2f73686f702e6578616d706c652a3d0a2430313961333134322d343030302d373030302d383030302d3030303030303030303030341215687474703a2f2f6e6f746966792e6578616d706c65",
+      "sha256": "76d364c78e794ebf249a728fc7362bc975dacc06c42cd5de8cb972412b5f4c72"
+    }
+  ]
+}

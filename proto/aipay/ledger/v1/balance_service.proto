@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package aipay.ledger.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+
+// The verified assertion's acting_scope selects the only funds account.
+message GetMerchantBalanceRequest {}
+
+// One account at one ledger snapshot. All amounts are nonnegative int64
+// in 10^-6 USDT. Fields 3-7 are the mutually exclusive SellerBalance liabilities.
+message MerchantBalance {
+  string account_id = 1;
+  // Always USDT.
+  string currency = 2;
+  int64 available_usdt = 3;
+  int64 order_escrow_usdt = 4;
+  int64 risk_held_usdt = 5;
+  int64 refund_reserved_usdt = 6;
+  int64 payout_in_flight_usdt = 7;
+  // Sum original recipient amount N once per order where this account is
+  // the original recipient, ledger has accepted OrderPaid and escrow remains
+  // open (no release, cancellation or refund). Expected proceeds only:
+  // excluded from liabilities and available funds.
+  int64 pending_release_usdt = 8;
+  // Number of distinct orders in the same sum and snapshot.
+  uint64 pending_release_orders = 9;
+  // Snapshot journal head (zero for an empty ledger).
+  uint64 as_of_seq = 10;
+  // UTC microsecond read time, including control changes without entries.
+  google.protobuf.Timestamp as_of = 11;
+}
+
+message GetMerchantBalanceResponse {
+  MerchantBalance balance = 1;
+}
+
+service BalanceService {
+  // USER requires ledger.balance.read and account scope. An EPay merchant
+  // application requires merchant.profile.read and the owning account_id in
+  // its verified business/application scope. Reject other principal/permission/
+  // scope combinations, including platform scope even with an account_id.
+  // Platform seller queries use LedgerQueryService.GetPlatformSellerBalance.
+  rpc GetMerchantBalance(GetMerchantBalanceRequest) returns (GetMerchantBalanceResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.balance.read"
+        permissions: "merchant.profile.read"
+      }
+    };
+  }
+}

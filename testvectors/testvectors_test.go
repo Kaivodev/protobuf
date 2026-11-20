@@ -16,8 +16,10 @@ import (
 	"testing"
 
 	collectionv1 "github.com/Kaivodev/protobuf/gen/go/aipay/collection/v1"
+	paymentv1 "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1"
 	"github.com/Kaivodev/protobuf/testvectors"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 // This file re-derives every vector so the published data stays consistent.
@@ -72,6 +74,35 @@ func sum(parts ...[]byte) []byte {
 	return h.Sum(nil)
 }
 func equalHex(a []byte, b string) bool { return hex.EncodeToString(a) == b }
+
+func TestPaymentAccessMaterials(t *testing.T) {
+	var doc struct {
+		Description string
+		Vectors     []struct {
+			Name, Encoding, SHA256 string
+			Request                json.RawMessage
+		}
+	}
+	decodeJSON(t, testvectors.PaymentAccessMaterials(), &doc)
+	if len(doc.Vectors) != 2 {
+		t.Fatal("expected historical and per-application materials vectors")
+	}
+	for _, v := range doc.Vectors {
+		t.Run(v.Name, func(t *testing.T) {
+			var request paymentv1.SubmitRequest
+			if err := protojson.Unmarshal(v.Request, &request); err != nil {
+				t.Fatal(err)
+			}
+			wire, err := (proto.MarshalOptions{Deterministic: true}).Marshal(&request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !equalHex(wire, v.Encoding) || !equalHex(sum(wire), v.SHA256) {
+				t.Fatal("materials encoding or SHA-256 changed")
+			}
+		})
+	}
+}
 
 // Re-derive the published Python-generated fixtures using concrete Go requests.
 // This is an encoding check, not a claim that IAM or collection enforces it yet.

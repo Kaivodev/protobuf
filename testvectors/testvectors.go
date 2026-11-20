@@ -24,6 +24,8 @@ var (
 	ledgerCheckpointV1 []byte
 	//go:embed collection_command_v1.json
 	collectionCommandV1 []byte
+	//go:embed payment_access_materials.json
+	paymentAccessMaterials []byte
 )
 
 // LedgerCanonicalV1 holds journal transactions with their canonical encoding V1
@@ -47,3 +49,7 @@ func ApprovalV1() []byte { return bytes.Clone(approvalV1) }
 // CollectionCommandV1 holds canonical command bytes and hashes for collection
 // create/get/cancel, including both query selectors. Data only, not validation.
 func CollectionCommandV1() []byte { return bytes.Clone(collectionCommandV1) }
+
+// PaymentAccessMaterials holds normalized revisions and their digest inputs
+// before and after per-application notification origins were introduced.
+func PaymentAccessMaterials() []byte { return bytes.Clone(paymentAccessMaterials) }

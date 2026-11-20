@@ -35,6 +35,13 @@ message PaymentAccessMaterials {
   repeated string domains = 3;
   // Nonempty, distinct explicit applications of this business/ownership.
   repeated string application_ids = 4;
+  // New submissions require exactly one target per listed application, with
+  // no duplicates or extras. Reviewers see these origins alongside domains
+  // in the immutable revision. Changes require resubmission, approval and
+  // enablement. Business domain approval alone never authorizes an origin.
+  // Sort by application_id for the materials digest. When absent in a legacy
+  // revision, field 5 emits no bytes; preserve the digest and deny new orders.
+  repeated ApplicationNotificationTarget notification_targets = 5;
 }
 
 // Immutable submitted material. All fields required, positive versions and a
@@ -164,6 +171,19 @@ message RevokeRequest {
 
 message RevokeResponse {
   MerchantPaymentAccess access = 1;
+}
+
+// Register each origin as scheme://host[:port], with no path except an
+// optional "/" and no query, fragment or userinfo. Store the origin without
+// the slash, with lowercase scheme and lowercase IDNA ASCII DNS host. Retain
+// explicit ports (including default ports). Reject non-public IP literals
+// under payment's SSRF policy.
+message ApplicationNotificationTarget {
+  string application_id = 1;
+  // Required HTTP or HTTPS origin for order notifications.
+  string notify_origin = 2;
+  // If present, must be a nonempty HTTPS origin for browser returns.
+  optional string return_origin = 3;
 }
 
 // backend carries a USER proof; ordinary API application credentials cannot

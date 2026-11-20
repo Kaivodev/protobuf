@@ -146,8 +146,15 @@ type PaymentAccessMaterials struct {
 	Domains []string `protobuf:"bytes,3,rep,name=domains,proto3" json:"domains,omitempty"`
 	// Nonempty, distinct explicit applications of this business/ownership.
 	ApplicationIds []string `protobuf:"bytes,4,rep,name=application_ids,json=applicationIds,proto3" json:"application_ids,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// New submissions require exactly one target per listed application, with
+	// no duplicates or extras. Reviewers see these origins alongside domains
+	// in the immutable revision. Changes require resubmission, approval and
+	// enablement. Business domain approval alone never authorizes an origin.
+	// Sort by application_id for the materials digest. When absent in a legacy
+	// revision, field 5 emits no bytes; preserve the digest and deny new orders.
+	NotificationTargets []*ApplicationNotificationTarget `protobuf:"bytes,5,rep,name=notification_targets,json=notificationTargets,proto3" json:"notification_targets,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *PaymentAccessMaterials) Reset() {
@@ -204,6 +211,13 @@ func (x *PaymentAccessMaterials) GetDomains() []string {
 func (x *PaymentAccessMaterials) GetApplicationIds() []string {
 	if x != nil {
 		return x.ApplicationIds
+	}
+	return nil
+}
+
+func (x *PaymentAccessMaterials) GetNotificationTargets() []*ApplicationNotificationTarget {
+	if x != nil {
+		return x.NotificationTargets
 	}
 	return nil
 }
@@ -1360,16 +1374,84 @@ func (x *RevokeResponse) GetAccess() *MerchantPaymentAccess {
 	return nil
 }
 
+// Register each origin as scheme://host[:port], with no path except an
+// optional "/" and no query, fragment or userinfo. Store the origin without
+// the slash, with lowercase scheme and lowercase IDNA ASCII DNS host. Retain
+// explicit ports (including default ports). Reject non-public IP literals
+// under payment's SSRF policy.
+type ApplicationNotificationTarget struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ApplicationId string                 `protobuf:"bytes,1,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	// Required HTTP or HTTPS origin for order notifications.
+	NotifyOrigin string `protobuf:"bytes,2,opt,name=notify_origin,json=notifyOrigin,proto3" json:"notify_origin,omitempty"`
+	// If present, must be a nonempty HTTPS origin for browser returns.
+	ReturnOrigin  *string `protobuf:"bytes,3,opt,name=return_origin,json=returnOrigin,proto3,oneof" json:"return_origin,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApplicationNotificationTarget) Reset() {
+	*x = ApplicationNotificationTarget{}
+	mi := &file_aipay_payment_v1_merchant_payment_access_service_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApplicationNotificationTarget) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApplicationNotificationTarget) ProtoMessage() {}
+
+func (x *ApplicationNotificationTarget) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_merchant_payment_access_service_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApplicationNotificationTarget.ProtoReflect.Descriptor instead.
+func (*ApplicationNotificationTarget) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_merchant_payment_access_service_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ApplicationNotificationTarget) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
+func (x *ApplicationNotificationTarget) GetNotifyOrigin() string {
+	if x != nil {
+		return x.NotifyOrigin
+	}
+	return ""
+}
+
+func (x *ApplicationNotificationTarget) GetReturnOrigin() string {
+	if x != nil && x.ReturnOrigin != nil {
+		return *x.ReturnOrigin
+	}
+	return ""
+}
+
 var File_aipay_payment_v1_merchant_payment_access_service_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_merchant_payment_access_service_proto_rawDesc = "" +
 	"\n" +
-	"6aipay/payment/v1/merchant_payment_access_service.proto\x12\x10aipay.payment.v1\x1a\x1baipay/authz/v1/policy.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb3\x01\n" +
+	"6aipay/payment/v1/merchant_payment_access_service.proto\x12\x10aipay.payment.v1\x1a\x1baipay/authz/v1/policy.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x97\x02\n" +
 	"\x16PaymentAccessMaterials\x12#\n" +
 	"\rbusiness_name\x18\x01 \x01(\tR\fbusinessName\x121\n" +
 	"\x14business_description\x18\x02 \x01(\tR\x13businessDescription\x12\x18\n" +
 	"\adomains\x18\x03 \x03(\tR\adomains\x12'\n" +
-	"\x0fapplication_ids\x18\x04 \x03(\tR\x0eapplicationIds\"\xdf\x02\n" +
+	"\x0fapplication_ids\x18\x04 \x03(\tR\x0eapplicationIds\x12b\n" +
+	"\x14notification_targets\x18\x05 \x03(\v2/.aipay.payment.v1.ApplicationNotificationTargetR\x13notificationTargets\"\xdf\x02\n" +
 	"\x15PaymentAccessRevision\x12*\n" +
 	"\x11payment_access_id\x18\x01 \x01(\tR\x0fpaymentAccessId\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\x04R\aversion\x12+\n" +
@@ -1465,7 +1547,12 @@ const file_aipay_payment_v1_merchant_payment_access_service_proto_rawDesc = "" +
 	"\x18expected_control_version\x18\x03 \x01(\x04R\x16expectedControlVersion\x12\x16\n" +
 	"\x06reason\x18\x04 \x01(\tR\x06reason\"Q\n" +
 	"\x0eRevokeResponse\x12?\n" +
-	"\x06access\x18\x01 \x01(\v2'.aipay.payment.v1.MerchantPaymentAccessR\x06access*\xc7\x02\n" +
+	"\x06access\x18\x01 \x01(\v2'.aipay.payment.v1.MerchantPaymentAccessR\x06access\"\xa7\x01\n" +
+	"\x1dApplicationNotificationTarget\x12%\n" +
+	"\x0eapplication_id\x18\x01 \x01(\tR\rapplicationId\x12#\n" +
+	"\rnotify_origin\x18\x02 \x01(\tR\fnotifyOrigin\x12(\n" +
+	"\rreturn_origin\x18\x03 \x01(\tH\x00R\freturnOrigin\x88\x01\x01B\x10\n" +
+	"\x0e_return_origin*\xc7\x02\n" +
 	"\x19PaymentAccessReviewStatus\x12,\n" +
 	"(PAYMENT_ACCESS_REVIEW_STATUS_UNSPECIFIED\x10\x00\x12&\n" +
 	"\"PAYMENT_ACCESS_REVIEW_STATUS_DRAFT\x10\x01\x12(\n" +
@@ -1515,66 +1602,68 @@ func file_aipay_payment_v1_merchant_payment_access_service_proto_rawDescGZIP() [
 }
 
 var file_aipay_payment_v1_merchant_payment_access_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_aipay_payment_v1_merchant_payment_access_service_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_aipay_payment_v1_merchant_payment_access_service_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_aipay_payment_v1_merchant_payment_access_service_proto_goTypes = []any{
-	(PaymentAccessReviewStatus)(0),   // 0: aipay.payment.v1.PaymentAccessReviewStatus
-	(PaymentAccessReviewDecision)(0), // 1: aipay.payment.v1.PaymentAccessReviewDecision
-	(*PaymentAccessMaterials)(nil),   // 2: aipay.payment.v1.PaymentAccessMaterials
-	(*PaymentAccessRevision)(nil),    // 3: aipay.payment.v1.PaymentAccessRevision
-	(*PaymentAccessReview)(nil),      // 4: aipay.payment.v1.PaymentAccessReview
-	(*MerchantPaymentAccess)(nil),    // 5: aipay.payment.v1.MerchantPaymentAccess
-	(*ListRequest)(nil),              // 6: aipay.payment.v1.ListRequest
-	(*ListResponse)(nil),             // 7: aipay.payment.v1.ListResponse
-	(*GetRequest)(nil),               // 8: aipay.payment.v1.GetRequest
-	(*GetResponse)(nil),              // 9: aipay.payment.v1.GetResponse
-	(*SubmitRequest)(nil),            // 10: aipay.payment.v1.SubmitRequest
-	(*SubmitResponse)(nil),           // 11: aipay.payment.v1.SubmitResponse
-	(*ReviewRequest)(nil),            // 12: aipay.payment.v1.ReviewRequest
-	(*ReviewResponse)(nil),           // 13: aipay.payment.v1.ReviewResponse
-	(*SetEnabledRequest)(nil),        // 14: aipay.payment.v1.SetEnabledRequest
-	(*SetEnabledResponse)(nil),       // 15: aipay.payment.v1.SetEnabledResponse
-	(*SuspendRequest)(nil),           // 16: aipay.payment.v1.SuspendRequest
-	(*SuspendResponse)(nil),          // 17: aipay.payment.v1.SuspendResponse
-	(*RevokeRequest)(nil),            // 18: aipay.payment.v1.RevokeRequest
-	(*RevokeResponse)(nil),           // 19: aipay.payment.v1.RevokeResponse
-	(*timestamppb.Timestamp)(nil),    // 20: google.protobuf.Timestamp
+	(PaymentAccessReviewStatus)(0),        // 0: aipay.payment.v1.PaymentAccessReviewStatus
+	(PaymentAccessReviewDecision)(0),      // 1: aipay.payment.v1.PaymentAccessReviewDecision
+	(*PaymentAccessMaterials)(nil),        // 2: aipay.payment.v1.PaymentAccessMaterials
+	(*PaymentAccessRevision)(nil),         // 3: aipay.payment.v1.PaymentAccessRevision
+	(*PaymentAccessReview)(nil),           // 4: aipay.payment.v1.PaymentAccessReview
+	(*MerchantPaymentAccess)(nil),         // 5: aipay.payment.v1.MerchantPaymentAccess
+	(*ListRequest)(nil),                   // 6: aipay.payment.v1.ListRequest
+	(*ListResponse)(nil),                  // 7: aipay.payment.v1.ListResponse
+	(*GetRequest)(nil),                    // 8: aipay.payment.v1.GetRequest
+	(*GetResponse)(nil),                   // 9: aipay.payment.v1.GetResponse
+	(*SubmitRequest)(nil),                 // 10: aipay.payment.v1.SubmitRequest
+	(*SubmitResponse)(nil),                // 11: aipay.payment.v1.SubmitResponse
+	(*ReviewRequest)(nil),                 // 12: aipay.payment.v1.ReviewRequest
+	(*ReviewResponse)(nil),                // 13: aipay.payment.v1.ReviewResponse
+	(*SetEnabledRequest)(nil),             // 14: aipay.payment.v1.SetEnabledRequest
+	(*SetEnabledResponse)(nil),            // 15: aipay.payment.v1.SetEnabledResponse
+	(*SuspendRequest)(nil),                // 16: aipay.payment.v1.SuspendRequest
+	(*SuspendResponse)(nil),               // 17: aipay.payment.v1.SuspendResponse
+	(*RevokeRequest)(nil),                 // 18: aipay.payment.v1.RevokeRequest
+	(*RevokeResponse)(nil),                // 19: aipay.payment.v1.RevokeResponse
+	(*ApplicationNotificationTarget)(nil), // 20: aipay.payment.v1.ApplicationNotificationTarget
+	(*timestamppb.Timestamp)(nil),         // 21: google.protobuf.Timestamp
 }
 var file_aipay_payment_v1_merchant_payment_access_service_proto_depIdxs = []int32{
-	2,  // 0: aipay.payment.v1.PaymentAccessRevision.materials:type_name -> aipay.payment.v1.PaymentAccessMaterials
-	20, // 1: aipay.payment.v1.PaymentAccessRevision.submitted_at:type_name -> google.protobuf.Timestamp
-	1,  // 2: aipay.payment.v1.PaymentAccessReview.decision:type_name -> aipay.payment.v1.PaymentAccessReviewDecision
-	20, // 3: aipay.payment.v1.PaymentAccessReview.reviewed_at:type_name -> google.protobuf.Timestamp
-	3,  // 4: aipay.payment.v1.MerchantPaymentAccess.current_revision:type_name -> aipay.payment.v1.PaymentAccessRevision
-	0,  // 5: aipay.payment.v1.MerchantPaymentAccess.review_status:type_name -> aipay.payment.v1.PaymentAccessReviewStatus
-	4,  // 6: aipay.payment.v1.MerchantPaymentAccess.latest_review:type_name -> aipay.payment.v1.PaymentAccessReview
-	5,  // 7: aipay.payment.v1.ListResponse.accesses:type_name -> aipay.payment.v1.MerchantPaymentAccess
-	5,  // 8: aipay.payment.v1.GetResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
-	2,  // 9: aipay.payment.v1.SubmitRequest.materials:type_name -> aipay.payment.v1.PaymentAccessMaterials
-	5,  // 10: aipay.payment.v1.SubmitResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
-	1,  // 11: aipay.payment.v1.ReviewRequest.decision:type_name -> aipay.payment.v1.PaymentAccessReviewDecision
-	5,  // 12: aipay.payment.v1.ReviewResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
-	5,  // 13: aipay.payment.v1.SetEnabledResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
-	5,  // 14: aipay.payment.v1.SuspendResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
-	5,  // 15: aipay.payment.v1.RevokeResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
-	6,  // 16: aipay.payment.v1.MerchantPaymentAccessService.List:input_type -> aipay.payment.v1.ListRequest
-	8,  // 17: aipay.payment.v1.MerchantPaymentAccessService.Get:input_type -> aipay.payment.v1.GetRequest
-	10, // 18: aipay.payment.v1.MerchantPaymentAccessService.Submit:input_type -> aipay.payment.v1.SubmitRequest
-	12, // 19: aipay.payment.v1.MerchantPaymentAccessService.Review:input_type -> aipay.payment.v1.ReviewRequest
-	14, // 20: aipay.payment.v1.MerchantPaymentAccessService.SetEnabled:input_type -> aipay.payment.v1.SetEnabledRequest
-	16, // 21: aipay.payment.v1.MerchantPaymentAccessService.Suspend:input_type -> aipay.payment.v1.SuspendRequest
-	18, // 22: aipay.payment.v1.MerchantPaymentAccessService.Revoke:input_type -> aipay.payment.v1.RevokeRequest
-	7,  // 23: aipay.payment.v1.MerchantPaymentAccessService.List:output_type -> aipay.payment.v1.ListResponse
-	9,  // 24: aipay.payment.v1.MerchantPaymentAccessService.Get:output_type -> aipay.payment.v1.GetResponse
-	11, // 25: aipay.payment.v1.MerchantPaymentAccessService.Submit:output_type -> aipay.payment.v1.SubmitResponse
-	13, // 26: aipay.payment.v1.MerchantPaymentAccessService.Review:output_type -> aipay.payment.v1.ReviewResponse
-	15, // 27: aipay.payment.v1.MerchantPaymentAccessService.SetEnabled:output_type -> aipay.payment.v1.SetEnabledResponse
-	17, // 28: aipay.payment.v1.MerchantPaymentAccessService.Suspend:output_type -> aipay.payment.v1.SuspendResponse
-	19, // 29: aipay.payment.v1.MerchantPaymentAccessService.Revoke:output_type -> aipay.payment.v1.RevokeResponse
-	23, // [23:30] is the sub-list for method output_type
-	16, // [16:23] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	20, // 0: aipay.payment.v1.PaymentAccessMaterials.notification_targets:type_name -> aipay.payment.v1.ApplicationNotificationTarget
+	2,  // 1: aipay.payment.v1.PaymentAccessRevision.materials:type_name -> aipay.payment.v1.PaymentAccessMaterials
+	21, // 2: aipay.payment.v1.PaymentAccessRevision.submitted_at:type_name -> google.protobuf.Timestamp
+	1,  // 3: aipay.payment.v1.PaymentAccessReview.decision:type_name -> aipay.payment.v1.PaymentAccessReviewDecision
+	21, // 4: aipay.payment.v1.PaymentAccessReview.reviewed_at:type_name -> google.protobuf.Timestamp
+	3,  // 5: aipay.payment.v1.MerchantPaymentAccess.current_revision:type_name -> aipay.payment.v1.PaymentAccessRevision
+	0,  // 6: aipay.payment.v1.MerchantPaymentAccess.review_status:type_name -> aipay.payment.v1.PaymentAccessReviewStatus
+	4,  // 7: aipay.payment.v1.MerchantPaymentAccess.latest_review:type_name -> aipay.payment.v1.PaymentAccessReview
+	5,  // 8: aipay.payment.v1.ListResponse.accesses:type_name -> aipay.payment.v1.MerchantPaymentAccess
+	5,  // 9: aipay.payment.v1.GetResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
+	2,  // 10: aipay.payment.v1.SubmitRequest.materials:type_name -> aipay.payment.v1.PaymentAccessMaterials
+	5,  // 11: aipay.payment.v1.SubmitResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
+	1,  // 12: aipay.payment.v1.ReviewRequest.decision:type_name -> aipay.payment.v1.PaymentAccessReviewDecision
+	5,  // 13: aipay.payment.v1.ReviewResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
+	5,  // 14: aipay.payment.v1.SetEnabledResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
+	5,  // 15: aipay.payment.v1.SuspendResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
+	5,  // 16: aipay.payment.v1.RevokeResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
+	6,  // 17: aipay.payment.v1.MerchantPaymentAccessService.List:input_type -> aipay.payment.v1.ListRequest
+	8,  // 18: aipay.payment.v1.MerchantPaymentAccessService.Get:input_type -> aipay.payment.v1.GetRequest
+	10, // 19: aipay.payment.v1.MerchantPaymentAccessService.Submit:input_type -> aipay.payment.v1.SubmitRequest
+	12, // 20: aipay.payment.v1.MerchantPaymentAccessService.Review:input_type -> aipay.payment.v1.ReviewRequest
+	14, // 21: aipay.payment.v1.MerchantPaymentAccessService.SetEnabled:input_type -> aipay.payment.v1.SetEnabledRequest
+	16, // 22: aipay.payment.v1.MerchantPaymentAccessService.Suspend:input_type -> aipay.payment.v1.SuspendRequest
+	18, // 23: aipay.payment.v1.MerchantPaymentAccessService.Revoke:input_type -> aipay.payment.v1.RevokeRequest
+	7,  // 24: aipay.payment.v1.MerchantPaymentAccessService.List:output_type -> aipay.payment.v1.ListResponse
+	9,  // 25: aipay.payment.v1.MerchantPaymentAccessService.Get:output_type -> aipay.payment.v1.GetResponse
+	11, // 26: aipay.payment.v1.MerchantPaymentAccessService.Submit:output_type -> aipay.payment.v1.SubmitResponse
+	13, // 27: aipay.payment.v1.MerchantPaymentAccessService.Review:output_type -> aipay.payment.v1.ReviewResponse
+	15, // 28: aipay.payment.v1.MerchantPaymentAccessService.SetEnabled:output_type -> aipay.payment.v1.SetEnabledResponse
+	17, // 29: aipay.payment.v1.MerchantPaymentAccessService.Suspend:output_type -> aipay.payment.v1.SuspendResponse
+	19, // 30: aipay.payment.v1.MerchantPaymentAccessService.Revoke:output_type -> aipay.payment.v1.RevokeResponse
+	24, // [24:31] is the sub-list for method output_type
+	17, // [17:24] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_merchant_payment_access_service_proto_init() }
@@ -1583,13 +1672,14 @@ func file_aipay_payment_v1_merchant_payment_access_service_proto_init() {
 		return
 	}
 	file_aipay_payment_v1_merchant_payment_access_service_proto_msgTypes[12].OneofWrappers = []any{}
+	file_aipay_payment_v1_merchant_payment_access_service_proto_msgTypes[18].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_merchant_payment_access_service_proto_rawDesc), len(file_aipay_payment_v1_merchant_payment_access_service_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

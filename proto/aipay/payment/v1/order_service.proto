@@ -61,11 +61,16 @@ enum MerchantNotificationProtocol {
 // assertions. Historical targets/credential versions survive business transfer;
 // an old credential is usable only for restricted historical notifications.
 message OrderNotificationSnapshot {
+  // Determined by the EPay route.
   MerchantNotificationProtocol protocol = 1;
-  // Required registered controlled HTTP(S) target; independently SSRF checked.
+  // Required HTTP(S) URL. Its scheme and host[:port] must exactly match
+  // notify_origin for this application on the approved, enabled revision.
+  // Payment also performs its independent SSRF checks.
   string notify_url = 2;
-  // Optional registered return target; browser redirects require HTTPS.
+  // If supplied, must match return_origin on the same target by scheme and
+  // host[:port]. Browser redirects require HTTPS.
   string return_url = 3;
+  // Matching credential ID returned by IAM Authorize for the signed request.
   string credential_version = 4;
 }
 

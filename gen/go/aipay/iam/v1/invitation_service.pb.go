@@ -38,33 +38,39 @@ const (
 	PlatformRole_PLATFORM_ROLE_TECHNICAL_SUPPORT PlatformRole = 8
 	// Protected collection-operator role; no implicit grant from other roles.
 	PlatformRole_PLATFORM_ROLE_COLLECTION_OPERATOR PlatformRole = 9
+	// platform-payment-access-reviewer is protected: an invitation requires
+	// another administrator's approval. It conflicts with both ADMINISTRATOR
+	// and APPROVER and is never implicitly granted through another role.
+	PlatformRole_PLATFORM_ROLE_PAYMENT_ACCESS_REVIEWER PlatformRole = 10
 )
 
 // Enum value maps for PlatformRole.
 var (
 	PlatformRole_name = map[int32]string{
-		0: "PLATFORM_ROLE_UNSPECIFIED",
-		1: "PLATFORM_ROLE_ADMINISTRATOR",
-		2: "PLATFORM_ROLE_APPROVER",
-		3: "PLATFORM_ROLE_FINANCE",
-		4: "PLATFORM_ROLE_RISK",
-		5: "PLATFORM_ROLE_OPERATIONS",
-		6: "PLATFORM_ROLE_SRE",
-		7: "PLATFORM_ROLE_SUPPORT",
-		8: "PLATFORM_ROLE_TECHNICAL_SUPPORT",
-		9: "PLATFORM_ROLE_COLLECTION_OPERATOR",
+		0:  "PLATFORM_ROLE_UNSPECIFIED",
+		1:  "PLATFORM_ROLE_ADMINISTRATOR",
+		2:  "PLATFORM_ROLE_APPROVER",
+		3:  "PLATFORM_ROLE_FINANCE",
+		4:  "PLATFORM_ROLE_RISK",
+		5:  "PLATFORM_ROLE_OPERATIONS",
+		6:  "PLATFORM_ROLE_SRE",
+		7:  "PLATFORM_ROLE_SUPPORT",
+		8:  "PLATFORM_ROLE_TECHNICAL_SUPPORT",
+		9:  "PLATFORM_ROLE_COLLECTION_OPERATOR",
+		10: "PLATFORM_ROLE_PAYMENT_ACCESS_REVIEWER",
 	}
 	PlatformRole_value = map[string]int32{
-		"PLATFORM_ROLE_UNSPECIFIED":         0,
-		"PLATFORM_ROLE_ADMINISTRATOR":       1,
-		"PLATFORM_ROLE_APPROVER":            2,
-		"PLATFORM_ROLE_FINANCE":             3,
-		"PLATFORM_ROLE_RISK":                4,
-		"PLATFORM_ROLE_OPERATIONS":          5,
-		"PLATFORM_ROLE_SRE":                 6,
-		"PLATFORM_ROLE_SUPPORT":             7,
-		"PLATFORM_ROLE_TECHNICAL_SUPPORT":   8,
-		"PLATFORM_ROLE_COLLECTION_OPERATOR": 9,
+		"PLATFORM_ROLE_UNSPECIFIED":             0,
+		"PLATFORM_ROLE_ADMINISTRATOR":           1,
+		"PLATFORM_ROLE_APPROVER":                2,
+		"PLATFORM_ROLE_FINANCE":                 3,
+		"PLATFORM_ROLE_RISK":                    4,
+		"PLATFORM_ROLE_OPERATIONS":              5,
+		"PLATFORM_ROLE_SRE":                     6,
+		"PLATFORM_ROLE_SUPPORT":                 7,
+		"PLATFORM_ROLE_TECHNICAL_SUPPORT":       8,
+		"PLATFORM_ROLE_COLLECTION_OPERATOR":     9,
+		"PLATFORM_ROLE_PAYMENT_ACCESS_REVIEWER": 10,
 	}
 )
 
@@ -1108,7 +1114,7 @@ const file_aipay_iam_v1_invitation_service_proto_rawDesc = "" +
 	"\a_status\"}\n" +
 	"\x17ListInvitationsResponse\x12:\n" +
 	"\vinvitations\x18\x01 \x03(\v2\x18.aipay.iam.v1.InvitationR\vinvitations\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\xb9\x02\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\xe4\x02\n" +
 	"\fPlatformRole\x12\x1d\n" +
 	"\x19PLATFORM_ROLE_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bPLATFORM_ROLE_ADMINISTRATOR\x10\x01\x12\x1a\n" +
@@ -1119,7 +1125,9 @@ const file_aipay_iam_v1_invitation_service_proto_rawDesc = "" +
 	"\x11PLATFORM_ROLE_SRE\x10\x06\x12\x19\n" +
 	"\x15PLATFORM_ROLE_SUPPORT\x10\a\x12#\n" +
 	"\x1fPLATFORM_ROLE_TECHNICAL_SUPPORT\x10\b\x12%\n" +
-	"!PLATFORM_ROLE_COLLECTION_OPERATOR\x10\t*\xda\x01\n" +
+	"!PLATFORM_ROLE_COLLECTION_OPERATOR\x10\t\x12)\n" +
+	"%PLATFORM_ROLE_PAYMENT_ACCESS_REVIEWER\x10\n" +
+	"*\xda\x01\n" +
 	"\x10InvitationStatus\x12!\n" +
 	"\x1dINVITATION_STATUS_UNSPECIFIED\x10\x00\x12&\n" +
 	"\"INVITATION_STATUS_PENDING_APPROVAL\x10\x01\x12\x1d\n" +
