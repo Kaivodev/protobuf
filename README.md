@@ -50,6 +50,10 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 认证证明的签发格式、密钥托管、调用方绑定与撤销机制尚待 IAM 实现；EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 
+## v0.15.1 两个写操作要求近期 MFA
+
+`SetSellerChannelOnline` 与 `RequeueArchivedWork` 的方法策略由 `ASSERTION_REQUIREMENT_REQUIRED` 收紧为 `ASSERTION_REQUIREMENT_MFA_RECENT`，`recent_auth_max_age_seconds` 为 600，与 `DisablePlugin` 一致。IAM 对 `payment.channel.online`、`payment.work.requeue` 签发证明前要求近期 MFA，payment 收到后再按证明的认证时间核对。消息与字段不变。
+
 ## v0.15.0 卖方上线、归档任务恢复、账户通知与商户对账文件
 
 - payment 的 `SetSellerChannelOnline` 按卖方自己的版本切换接单意愿。卖方视图沿用 `online`，平台视图用 `seller_online`。两个视图都返回 `seller_online_version`，从未切换时省略 `seller_online_changed_at`。新幂等键设置为当前值时仍核对版本，通过后记录未变更审计，返回当前视图，状态和版本保持原值。新单路由同时核对平台启用和卖方上线，在途订单继续处理。
@@ -98,7 +102,7 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 新列表使用不透明游标、每页1–100条及一致读时点；`common/v1/query.proto` 的上限选项只是契约声明，运行时仍由属主校验。卖方身份仅来自 IAM 证明绑定，请求不接受卖方账户自报。权限、范围、签名规范、门户逐项映射和后续版本见 docs 仓库 `design/contracts.md` 的 v0.9.0 节。契约/SDK 不代表服务或 HTTP 已接通。
 
-`make breaking` 默认与本地 `v0.14.0` 标签比较。
+`make breaking` 默认与本地 `v0.15.0` 标签比较。
 
 ## 生成与检查
 

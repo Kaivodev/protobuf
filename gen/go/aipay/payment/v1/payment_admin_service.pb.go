@@ -3218,7 +3218,7 @@ const file_aipay_payment_v1_payment_admin_service_proto_rawDesc = "" +
 	"\x10expected_version\x18\x04 \x01(\x04R\x0fexpectedVersion\x12\x16\n" +
 	"\x06reason\x18\x05 \x01(\tR\x06reason\"Q\n" +
 	"\x1bRequeueArchivedWorkResponse\x122\n" +
-	"\x04work\x18\x01 \x01(\v2\x1e.aipay.payment.v1.ArchivedWorkR\x04work2\xb4\x1d\n" +
+	"\x04work\x18\x01 \x01(\v2\x1e.aipay.payment.v1.ArchivedWorkR\x04work2\xb7\x1d\n" +
 	"\x13PaymentAdminService\x12\x9b\x01\n" +
 	"\x13ListChannelAccounts\x12,.aipay.payment.v1.ListChannelAccountsRequest\x1a-.aipay.payment.v1.ListChannelAccountsResponse\"'\xc2\xf3\x18#\n" +
 	"!\n" +
@@ -3291,10 +3291,10 @@ const file_aipay_payment_v1_payment_admin_service_proto_rawDesc = "" +
 	"\abackend\x10\x03\x1a\x16payment.plugin.disable \xd8\x04\x12\x8f\x01\n" +
 	"\x10ListArchivedWork\x12).aipay.payment.v1.ListArchivedWorkRequest\x1a*.aipay.payment.v1.ListArchivedWorkResponse\"$\xc2\xf3\x18 \n" +
 	"\x1e\n" +
-	"\abackend\x10\x02\x1a\x11payment.work.read\x12\x9b\x01\n" +
-	"\x13RequeueArchivedWork\x12,.aipay.payment.v1.RequeueArchivedWorkRequest\x1a-.aipay.payment.v1.RequeueArchivedWorkResponse\"'\xc2\xf3\x18#\n" +
-	"!\n" +
-	"\abackend\x10\x02\x1a\x14payment.work.requeueB@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"\abackend\x10\x02\x1a\x11payment.work.read\x12\x9e\x01\n" +
+	"\x13RequeueArchivedWork\x12,.aipay.payment.v1.RequeueArchivedWorkRequest\x1a-.aipay.payment.v1.RequeueArchivedWorkResponse\"*\xc2\xf3\x18&\n" +
+	"$\n" +
+	"\abackend\x10\x03\x1a\x14payment.work.requeue \xd8\x04B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_aipay_payment_v1_payment_admin_service_proto_rawDescOnce sync.Once

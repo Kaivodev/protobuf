@@ -1254,7 +1254,7 @@ const file_aipay_payment_v1_seller_portal_service_proto_rawDesc = "" +
 	"\x06reason\x18\x05 \x01(\tR\x06reasonB\t\n" +
 	"\a_online\"_\n" +
 	"\x1eSetSellerChannelOnlineResponse\x12=\n" +
-	"\achannel\x18\x01 \x01(\v2#.aipay.payment.v1.SellerChannelViewR\achannel2\x8b\f\n" +
+	"\achannel\x18\x01 \x01(\v2#.aipay.payment.v1.SellerChannelViewR\achannel2\x8e\f\n" +
 	"\x13SellerPortalService\x12\x98\x01\n" +
 	"\x12ListSellerChannels\x12+.aipay.payment.v1.ListSellerChannelsRequest\x1a,.aipay.payment.v1.ListSellerChannelsResponse\"'\xc2\xf3\x18#\n" +
 	"!\n" +
@@ -1282,10 +1282,10 @@ const file_aipay_payment_v1_seller_portal_service_proto_rawDesc = "" +
 	"\abackend\x10\x02\x1a\x14payment.dispute.read\x12\xa2\x01\n" +
 	"\x14AppendSellerEvidence\x12-.aipay.payment.v1.AppendSellerEvidenceRequest\x1a..aipay.payment.v1.AppendSellerEvidenceResponse\"+\xc2\xf3\x18'\n" +
 	"%\n" +
-	"\abackend\x10\x02\x1a\x18payment.dispute.evidence\x12\xa6\x01\n" +
-	"\x16SetSellerChannelOnline\x12/.aipay.payment.v1.SetSellerChannelOnlineRequest\x1a0.aipay.payment.v1.SetSellerChannelOnlineResponse\")\xc2\xf3\x18%\n" +
-	"#\n" +
-	"\abackend\x10\x02\x1a\x16payment.channel.onlineB@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"\abackend\x10\x02\x1a\x18payment.dispute.evidence\x12\xa9\x01\n" +
+	"\x16SetSellerChannelOnline\x12/.aipay.payment.v1.SetSellerChannelOnlineRequest\x1a0.aipay.payment.v1.SetSellerChannelOnlineResponse\",\xc2\xf3\x18(\n" +
+	"&\n" +
+	"\abackend\x10\x03\x1a\x16payment.channel.online \xd8\x04B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_aipay_payment_v1_seller_portal_service_proto_rawDescOnce sync.Once

@@ -597,8 +597,9 @@ service PaymentAdminService {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: "backend"
-        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
         permissions: "payment.work.requeue"
+        recent_auth_max_age_seconds: 600
       }
     };
   }

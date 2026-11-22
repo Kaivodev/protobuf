@@ -19,6 +19,12 @@ func TestV0150PaymentAndReportPolicies(t *testing.T) {
 			Permissions: []string{permission},
 		}
 	}
+	recentBackend := func(permission string) *authzv1.CallerRule {
+		rule := backend(permission)
+		rule.Assertion = authzv1.AssertionRequirement_ASSERTION_REQUIREMENT_MFA_RECENT
+		rule.RecentAuthMaxAgeSeconds = 600
+		return rule
+	}
 	iamMail := &authzv1.CallerRule{Callers: []string{"iam"}, Assertion: authzv1.AssertionRequirement_ASSERTION_REQUIREMENT_NOT_REQUIRED}
 	seller := paymentv1.File_aipay_payment_v1_seller_portal_service_proto.Services().ByName("SellerPortalService")
 	admin := paymentv1.File_aipay_payment_v1_payment_admin_service_proto.Services().ByName("PaymentAdminService")
@@ -31,9 +37,9 @@ func TestV0150PaymentAndReportPolicies(t *testing.T) {
 		method  protoreflect.Name
 		rules   []*authzv1.CallerRule
 	}{
-		{seller, "SetSellerChannelOnline", []*authzv1.CallerRule{backend("payment.channel.online")}},
+		{seller, "SetSellerChannelOnline", []*authzv1.CallerRule{recentBackend("payment.channel.online")}},
 		{admin, "ListArchivedWork", []*authzv1.CallerRule{backend("payment.work.read")}},
-		{admin, "RequeueArchivedWork", []*authzv1.CallerRule{backend("payment.work.requeue")}},
+		{admin, "RequeueArchivedWork", []*authzv1.CallerRule{recentBackend("payment.work.requeue")}},
 		{report, "ListMerchantStatements", []*authzv1.CallerRule{backend("ledger.statement.read")}},
 		{report, "GetMerchantStatement", []*authzv1.CallerRule{backend("ledger.statement.read"), iamMail}},
 	} {
