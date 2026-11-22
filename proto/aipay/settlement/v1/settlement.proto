@@ -2,7 +2,352 @@ syntax = "proto3";
 
 package aipay.settlement.v1;
 
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/asset.proto";
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/settlement/v1;settlementv1";
 
-// Reserved for the separately maintained settlement service. Settlement rules,
-// execution commands and state transitions require separate domain design.
+// Settlement owns the withdrawal address book, the payout gate and payout
+// execution. It never reads ledger or reconciliation databases; balances and
+// proofs arrive only through versioned RPCs and signed events.
+//
+// Account identity always comes from the verified IAM assertion's acting scope.
+// Request fields are selectors, never authority. Monetary values are int64 in
+// 10^-6 USDT (ledger minor units); chain raw amounts use decimal strings and
+// are never converted through floating point.
+
+enum AddressStatus {
+  ADDRESS_STATUS_UNSPECIFIED = 0;
+  // Added but not yet usable; A32 requires 24 hours without a shortening.
+  ADDRESS_STATUS_COOLING = 1;
+  ADDRESS_STATUS_ACTIVE = 2;
+  // Stops new payout authorization immediately; signed transactions remain
+  // tracked. Never implies a chain transaction was cancelled.
+  ADDRESS_STATUS_REVOKED = 3;
+  // Rejected by normalization, platform-address or screening checks.
+  ADDRESS_STATUS_REJECTED = 4;
+}
+
+// Only a safe projection: no screening credentials, raw provider responses or
+// internal risk scores are returned.
+message AddressBookEntry {
+  string id = 1;
+  string account_id = 2;
+  aipay.common.v1.Chain chain = 3;
+  // Canonical chain form. BSC is compared by its 20 address bytes.
+  string address = 4;
+  string label = 5;
+  AddressStatus status = 6;
+  google.protobuf.Timestamp cooling_until = 7;
+  google.protobuf.Timestamp activated_at = 8;
+  google.protobuf.Timestamp revoked_at = 9;
+  uint64 version = 10;
+  string policy_version = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+message AddAddressRequest {
+  // UUIDv7 idempotency key; same key with different content is AlreadyExists.
+  string request_id = 1;
+  aipay.common.v1.Chain chain = 2;
+  string address = 3;
+  // 0-100 Unicode scalar values, no credentials or personal data.
+  string label = 4;
+}
+
+message AddAddressResponse {
+  AddressBookEntry entry = 1;
+}
+
+message RevokeAddressRequest {
+  string address_id = 1;
+  // Positive current version; a stale value is FailedPrecondition.
+  uint64 expected_version = 2;
+}
+
+message RevokeAddressResponse {
+  AddressBookEntry entry = 1;
+}
+
+message ListAddressesRequest {
+  // 1-100; reject values outside the range, never clamp.
+  uint32 limit = 1;
+  // Opaque cursor bound to account, filter and snapshot.
+  string page_token = 2;
+}
+
+message ListAddressesResponse {
+  repeated AddressBookEntry entries = 1;
+  string next_page_token = 2;
+}
+
+// A quote is not a reservation and grants no authority. It exists so the user
+// sees the exact fee and so IAM's command digest can bind that fee. Settlement
+// re-derives every value when CreateWithdrawal runs.
+message WithdrawalQuote {
+  string quote_id = 1;
+  string account_id = 2;
+  aipay.common.v1.Chain chain = 3;
+  string address = 4;
+  int64 principal_usdt = 5;
+  int64 fee_usdt = 6;
+  int64 total_usdt = 7;
+  string fee_version = 8;
+  int64 minimum_usdt = 9;
+  int64 maximum_usdt = 10;
+  string policy_version = 11;
+  google.protobuf.Timestamp issued_at = 12;
+  google.protobuf.Timestamp expires_at = 13;
+}
+
+message GetWithdrawalQuoteRequest {
+  aipay.common.v1.Chain chain = 1;
+  string address = 2;
+  int64 principal_usdt = 3;
+}
+
+message GetWithdrawalQuoteResponse {
+  WithdrawalQuote quote = 1;
+}
+
+enum WithdrawalStatus {
+  WITHDRAWAL_STATUS_UNSPECIFIED = 0;
+  // Persisted only after the ledger reservation is known; a crash between the
+  // remote call and the local commit is recovered by querying the same key.
+  WITHDRAWAL_STATUS_RESERVED = 1;
+  // Reservation exists but a gate or simulation check has not passed.
+  WITHDRAWAL_STATUS_HELD = 2;
+  // Quota, inventory, gas and nonce are occupied; review may begin.
+  WITHDRAWAL_STATUS_PREPARED = 3;
+  WITHDRAWAL_STATUS_SIGNING = 4;
+  // Signed bytes are durable; never released because a review expired.
+  WITHDRAWAL_STATUS_SIGNED_UNBROADCAST = 5;
+  WITHDRAWAL_STATUS_BROADCAST = 6;
+  // Signing, broadcast or chain outcome is uncertain; occupation continues.
+  WITHDRAWAL_STATUS_UNKNOWN = 7;
+  // Finality and the exact token transfer were independently verified.
+  WITHDRAWAL_STATUS_CONFIRMED = 8;
+  // Proven that no related signature can produce the original payment.
+  WITHDRAWAL_STATUS_VOIDED = 9;
+  // Preflight or ledger reservation failed; no funds were reserved.
+  WITHDRAWAL_STATUS_REJECTED = 10;
+  // Local idempotency record exists but the ledger result is not yet known.
+  // Recovery queries the same withdrawal ID; it never creates a second key.
+  WITHDRAWAL_STATUS_REQUESTED = 11;
+}
+
+message Withdrawal {
+  string id = 1;
+  string account_id = 2;
+  string request_no = 3;
+  string address_id = 4;
+  string address = 5;
+  aipay.common.v1.Chain chain = 6;
+  int64 principal_usdt = 7;
+  int64 fee_usdt = 8;
+  int64 total_usdt = 9;
+  string fee_version = 10;
+  string quote_id = 11;
+  WithdrawalStatus status = 12;
+  string ledger_reservation_id = 13;
+  uint64 ledger_reserve_seq = 14;
+  string batch_id = 15;
+  uint64 execution_version = 16;
+  // Lowercase hex transaction hash once a signed attempt exists.
+  string transaction_hash = 17;
+  string failure_code = 18;
+  string failure_reason = 19;
+  google.protobuf.Timestamp created_at = 20;
+  google.protobuf.Timestamp updated_at = 21;
+  google.protobuf.Timestamp confirmed_at = 22;
+}
+
+message CreateWithdrawalRequest {
+  // 1-64 characters, unique per account for all history.
+  string request_no = 1;
+  string quote_id = 2;
+  string address_id = 3;
+  aipay.common.v1.Chain chain = 4;
+  int64 principal_usdt = 5;
+  int64 fee_usdt = 6;
+  string fee_version = 7;
+}
+
+message CreateWithdrawalResponse {
+  Withdrawal withdrawal = 1;
+  bool replayed = 2;
+}
+
+message GetWithdrawalRequest {
+  oneof selector {
+    string withdrawal_id = 1;
+    string request_no = 2;
+  }
+}
+
+message GetWithdrawalResponse {
+  Withdrawal withdrawal = 1;
+}
+
+message ListWithdrawalsRequest {
+  // 1-100; reject values outside the range, never clamp.
+  uint32 limit = 1;
+  // Opaque cursor bound to account, filter and snapshot.
+  string page_token = 2;
+  optional WithdrawalStatus status = 3;
+}
+
+message ListWithdrawalsResponse {
+  repeated Withdrawal withdrawals = 1;
+  string next_page_token = 2;
+}
+
+message ChainFreeze {
+  aipay.common.v1.Chain chain = 1;
+  string reason = 2;
+  google.protobuf.Timestamp updated_at = 3;
+}
+
+message AccountFreeze {
+  string account_id = 1;
+  string reason = 2;
+  google.protobuf.Timestamp updated_at = 3;
+}
+
+message ControlState {
+  bool global_frozen = 1;
+  repeated ChainFreeze chain_freezes = 2;
+  repeated AccountFreeze account_freezes = 3;
+  uint64 version = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message GetControlStateRequest {}
+
+message GetControlStateResponse {
+  ControlState state = 1;
+}
+
+enum FreezeScope {
+  FREEZE_SCOPE_UNSPECIFIED = 0;
+  FREEZE_SCOPE_GLOBAL = 1;
+  FREEZE_SCOPE_CHAIN = 2;
+  FREEZE_SCOPE_ACCOUNT = 3;
+}
+
+message SetFreezeRequest {
+  FreezeScope scope = 1;
+  aipay.common.v1.Chain chain = 2;
+  string account_id = 3;
+  bool frozen = 4;
+  // 1-500 characters; stored in the immutable control audit.
+  string reason = 5;
+  // Required when unfreezing: an approved two-person request that matches the
+  // exact scope, target and current control version. Ignored when freezing.
+  string approval_id = 6;
+}
+
+message SetFreezeResponse {
+  ControlState state = 1;
+}
+
+// AddAddress and CreateWithdrawal are single-use, MFA-recent, command-bound
+// mutations. The receiver independently checks the command digest and that amr
+// contains one login factor plus one independent step-up factor; a bare "mfa"
+// value is not sufficient. Read methods still require an IAM assertion and the
+// acting account scope.
+service AddressBookService {
+  rpc AddAddress(AddAddressRequest) returns (AddAddressResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_SINGLE_USE
+        permissions: "settlement.address.manage"
+        recent_auth_max_age_seconds: 300
+      }
+    };
+  }
+  rpc RevokeAddress(RevokeAddressRequest) returns (RevokeAddressResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_SINGLE_USE
+        permissions: "settlement.address.manage"
+        recent_auth_max_age_seconds: 300
+      }
+    };
+  }
+  rpc ListAddresses(ListAddressesRequest) returns (ListAddressesResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "settlement.address.read"
+      }
+    };
+  }
+}
+
+service WithdrawalService {
+  rpc GetWithdrawalQuote(GetWithdrawalQuoteRequest) returns (GetWithdrawalQuoteResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "settlement.withdrawal.create"
+      }
+    };
+  }
+  rpc CreateWithdrawal(CreateWithdrawalRequest) returns (CreateWithdrawalResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_SINGLE_USE
+        permissions: "settlement.withdrawal.create"
+        recent_auth_max_age_seconds: 300
+      }
+    };
+  }
+  rpc GetWithdrawal(GetWithdrawalRequest) returns (GetWithdrawalResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "settlement.withdrawal.read"
+      }
+    };
+  }
+  rpc ListWithdrawals(ListWithdrawalsRequest) returns (ListWithdrawalsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "settlement.withdrawal.read"
+      }
+    };
+  }
+}
+
+service SettlementControlService {
+  rpc GetControlState(GetControlStateRequest) returns (GetControlStateResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "settlement.control.read"
+      }
+    };
+  }
+  rpc SetFreeze(SetFreezeRequest) returns (SetFreezeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_SINGLE_USE
+        permissions: "settlement.control.freeze"
+        recent_auth_max_age_seconds: 300
+      }
+    };
+  }
+}

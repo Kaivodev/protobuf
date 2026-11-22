@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package aipay.reconciliation.v1;
+
+import "aipay/ledger/v1/ledger.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1";
+
+// AttestationIssued is the payload of the reconciliation.attestations stream
+// (producer reconciliation, sole receiver settlement, event_type
+// AttestationIssued, schema_version 1).
+//
+// Signing input (AIPAY-ATTESTATION-V1), with str/bytes carrying a u32
+// big-endian length prefix, integers 8-byte big-endian, and no separators:
+//   "AIPAY-ATTESTATION-V1"
+//   str attestation_id
+//   u64 checkpoint.id
+//   bytes checkpoint_digest
+//   bytes asset_digest
+//   bytes liability_digest
+//   i64 customer_assets_usdt
+//   i64 customer_liabilities_usdt
+//   str wallet_registry_version
+//   str policy_version
+//   u32 hold_count || (str account_id || str address || str reason)*
+//   i64 issued_at_unix_nanos
+//   i64 expires_at_unix_nanos
+// attestation_digest = SHA-256(signing input); signature is ECDSA P-256 over
+// that digest, ASN.1 DER encoded. key_id and checkpoint are not in the input;
+// the receiver separately verifies the checkpoint's own signature and digest.
+//
+// The receiver must reject an expired attestation, a checkpoint it cannot
+// verify, a lower checkpoint than its verified local head, a different wallet
+// registry or policy version, an unsigned or tampered payload, and any hold
+// matching the withdrawal's account or address.
+message AttestationIssued {
+  string attestation_id = 1;
+  aipay.ledger.v1.CheckpointSigned checkpoint = 2;
+  // SHA-256 of the independent customer-wallet asset evidence.
+  bytes asset_digest = 3;
+  // SHA-256 of the independent customer-liability evidence.
+  bytes liability_digest = 4;
+  // Independent totals at checkpoint.to_seq, in 10^-6 USDT.
+  int64 customer_assets_usdt = 5;
+  int64 customer_liabilities_usdt = 6;
+  string wallet_registry_version = 7;
+  string policy_version = 8;
+  repeated AttestationHold holds = 9;
+  google.protobuf.Timestamp issued_at = 10;
+  google.protobuf.Timestamp expires_at = 11;
+  string key_id = 12;
+  bytes signature = 13;
+}
+
+message AttestationHold {
+  // Empty means every account.
+  string account_id = 1;
+  // Empty means every address.
+  string address = 2;
+  string reason = 3;
+}

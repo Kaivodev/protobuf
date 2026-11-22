@@ -27,6 +27,8 @@ const (
 	ReservationService_HoldReleasedTradeForDispute_FullMethodName = "/aipay.ledger.v1.ReservationService/HoldReleasedTradeForDispute"
 	ReservationService_ResolveReleasedTradeDispute_FullMethodName = "/aipay.ledger.v1.ReservationService/ResolveReleasedTradeDispute"
 	ReservationService_GetTradeFreezeDetails_FullMethodName       = "/aipay.ledger.v1.ReservationService/GetTradeFreezeDetails"
+	ReservationService_ReserveWithdrawal_FullMethodName           = "/aipay.ledger.v1.ReservationService/ReserveWithdrawal"
+	ReservationService_GetWithdrawalReservation_FullMethodName    = "/aipay.ledger.v1.ReservationService/GetWithdrawalReservation"
 )
 
 // ReservationServiceClient is the client API for ReservationService service.
@@ -47,7 +49,7 @@ const (
 // Unknown outcomes and TTLs never release funds. Inter-account release,
 // cancellation and refund settlement/restoration are driven only by verified
 // reconciliation signed events; payment has no unilateral inter-account release
-// RPC. ReserveWithdrawal is deferred to M5.
+// RPC. ReserveWithdrawal is settlement-only and idempotent by withdrawal ID.
 // Command digests use the field-order encoding in docs contracts.md, not proto
 // serialization.
 //
@@ -79,6 +81,8 @@ type ReservationServiceClient interface {
 	// controls and journal head in one ledger snapshot. Fail the whole read if
 	// any part is unavailable. Pure control changes need not advance as_of_seq.
 	GetTradeFreezeDetails(ctx context.Context, in *GetTradeFreezeDetailsRequest, opts ...grpc.CallOption) (*GetTradeFreezeDetailsResponse, error)
+	ReserveWithdrawal(ctx context.Context, in *ReserveWithdrawalRequest, opts ...grpc.CallOption) (*ReserveWithdrawalResponse, error)
+	GetWithdrawalReservation(ctx context.Context, in *GetWithdrawalReservationRequest, opts ...grpc.CallOption) (*GetWithdrawalReservationResponse, error)
 }
 
 type reservationServiceClient struct {
@@ -169,6 +173,26 @@ func (c *reservationServiceClient) GetTradeFreezeDetails(ctx context.Context, in
 	return out, nil
 }
 
+func (c *reservationServiceClient) ReserveWithdrawal(ctx context.Context, in *ReserveWithdrawalRequest, opts ...grpc.CallOption) (*ReserveWithdrawalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReserveWithdrawalResponse)
+	err := c.cc.Invoke(ctx, ReservationService_ReserveWithdrawal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reservationServiceClient) GetWithdrawalReservation(ctx context.Context, in *GetWithdrawalReservationRequest, opts ...grpc.CallOption) (*GetWithdrawalReservationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetWithdrawalReservationResponse)
+	err := c.cc.Invoke(ctx, ReservationService_GetWithdrawalReservation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReservationServiceServer is the server API for ReservationService service.
 // All implementations must embed UnimplementedReservationServiceServer
 // for forward compatibility.
@@ -187,7 +211,7 @@ func (c *reservationServiceClient) GetTradeFreezeDetails(ctx context.Context, in
 // Unknown outcomes and TTLs never release funds. Inter-account release,
 // cancellation and refund settlement/restoration are driven only by verified
 // reconciliation signed events; payment has no unilateral inter-account release
-// RPC. ReserveWithdrawal is deferred to M5.
+// RPC. ReserveWithdrawal is settlement-only and idempotent by withdrawal ID.
 // Command digests use the field-order encoding in docs contracts.md, not proto
 // serialization.
 //
@@ -219,6 +243,8 @@ type ReservationServiceServer interface {
 	// controls and journal head in one ledger snapshot. Fail the whole read if
 	// any part is unavailable. Pure control changes need not advance as_of_seq.
 	GetTradeFreezeDetails(context.Context, *GetTradeFreezeDetailsRequest) (*GetTradeFreezeDetailsResponse, error)
+	ReserveWithdrawal(context.Context, *ReserveWithdrawalRequest) (*ReserveWithdrawalResponse, error)
+	GetWithdrawalReservation(context.Context, *GetWithdrawalReservationRequest) (*GetWithdrawalReservationResponse, error)
 	mustEmbedUnimplementedReservationServiceServer()
 }
 
@@ -252,6 +278,12 @@ func (UnimplementedReservationServiceServer) ResolveReleasedTradeDispute(context
 }
 func (UnimplementedReservationServiceServer) GetTradeFreezeDetails(context.Context, *GetTradeFreezeDetailsRequest) (*GetTradeFreezeDetailsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTradeFreezeDetails not implemented")
+}
+func (UnimplementedReservationServiceServer) ReserveWithdrawal(context.Context, *ReserveWithdrawalRequest) (*ReserveWithdrawalResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReserveWithdrawal not implemented")
+}
+func (UnimplementedReservationServiceServer) GetWithdrawalReservation(context.Context, *GetWithdrawalReservationRequest) (*GetWithdrawalReservationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetWithdrawalReservation not implemented")
 }
 func (UnimplementedReservationServiceServer) mustEmbedUnimplementedReservationServiceServer() {}
 func (UnimplementedReservationServiceServer) testEmbeddedByValue()                            {}
@@ -418,6 +450,42 @@ func _ReservationService_GetTradeFreezeDetails_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReservationService_ReserveWithdrawal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReserveWithdrawalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReservationServiceServer).ReserveWithdrawal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReservationService_ReserveWithdrawal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReservationServiceServer).ReserveWithdrawal(ctx, req.(*ReserveWithdrawalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReservationService_GetWithdrawalReservation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWithdrawalReservationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReservationServiceServer).GetWithdrawalReservation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReservationService_GetWithdrawalReservation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReservationServiceServer).GetWithdrawalReservation(ctx, req.(*GetWithdrawalReservationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReservationService_ServiceDesc is the grpc.ServiceDesc for ReservationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -456,6 +524,14 @@ var ReservationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTradeFreezeDetails",
 			Handler:    _ReservationService_GetTradeFreezeDetails_Handler,
+		},
+		{
+			MethodName: "ReserveWithdrawal",
+			Handler:    _ReservationService_ReserveWithdrawal_Handler,
+		},
+		{
+			MethodName: "GetWithdrawalReservation",
+			Handler:    _ReservationService_GetWithdrawalReservation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

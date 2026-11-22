@@ -7,9 +7,13 @@
 package settlementv1
 
 import (
+	_ "github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1"
+	v1 "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
+	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -20,19 +24,2247 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type AddressStatus int32
+
+const (
+	AddressStatus_ADDRESS_STATUS_UNSPECIFIED AddressStatus = 0
+	// Added but not yet usable; A32 requires 24 hours without a shortening.
+	AddressStatus_ADDRESS_STATUS_COOLING AddressStatus = 1
+	AddressStatus_ADDRESS_STATUS_ACTIVE  AddressStatus = 2
+	// Stops new payout authorization immediately; signed transactions remain
+	// tracked. Never implies a chain transaction was cancelled.
+	AddressStatus_ADDRESS_STATUS_REVOKED AddressStatus = 3
+	// Rejected by normalization, platform-address or screening checks.
+	AddressStatus_ADDRESS_STATUS_REJECTED AddressStatus = 4
+)
+
+// Enum value maps for AddressStatus.
+var (
+	AddressStatus_name = map[int32]string{
+		0: "ADDRESS_STATUS_UNSPECIFIED",
+		1: "ADDRESS_STATUS_COOLING",
+		2: "ADDRESS_STATUS_ACTIVE",
+		3: "ADDRESS_STATUS_REVOKED",
+		4: "ADDRESS_STATUS_REJECTED",
+	}
+	AddressStatus_value = map[string]int32{
+		"ADDRESS_STATUS_UNSPECIFIED": 0,
+		"ADDRESS_STATUS_COOLING":     1,
+		"ADDRESS_STATUS_ACTIVE":      2,
+		"ADDRESS_STATUS_REVOKED":     3,
+		"ADDRESS_STATUS_REJECTED":    4,
+	}
+)
+
+func (x AddressStatus) Enum() *AddressStatus {
+	p := new(AddressStatus)
+	*p = x
+	return p
+}
+
+func (x AddressStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AddressStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_settlement_v1_settlement_proto_enumTypes[0].Descriptor()
+}
+
+func (AddressStatus) Type() protoreflect.EnumType {
+	return &file_aipay_settlement_v1_settlement_proto_enumTypes[0]
+}
+
+func (x AddressStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AddressStatus.Descriptor instead.
+func (AddressStatus) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{0}
+}
+
+type WithdrawalStatus int32
+
+const (
+	WithdrawalStatus_WITHDRAWAL_STATUS_UNSPECIFIED WithdrawalStatus = 0
+	// Persisted only after the ledger reservation is known; a crash between the
+	// remote call and the local commit is recovered by querying the same key.
+	WithdrawalStatus_WITHDRAWAL_STATUS_RESERVED WithdrawalStatus = 1
+	// Reservation exists but a gate or simulation check has not passed.
+	WithdrawalStatus_WITHDRAWAL_STATUS_HELD WithdrawalStatus = 2
+	// Quota, inventory, gas and nonce are occupied; review may begin.
+	WithdrawalStatus_WITHDRAWAL_STATUS_PREPARED WithdrawalStatus = 3
+	WithdrawalStatus_WITHDRAWAL_STATUS_SIGNING  WithdrawalStatus = 4
+	// Signed bytes are durable; never released because a review expired.
+	WithdrawalStatus_WITHDRAWAL_STATUS_SIGNED_UNBROADCAST WithdrawalStatus = 5
+	WithdrawalStatus_WITHDRAWAL_STATUS_BROADCAST          WithdrawalStatus = 6
+	// Signing, broadcast or chain outcome is uncertain; occupation continues.
+	WithdrawalStatus_WITHDRAWAL_STATUS_UNKNOWN WithdrawalStatus = 7
+	// Finality and the exact token transfer were independently verified.
+	WithdrawalStatus_WITHDRAWAL_STATUS_CONFIRMED WithdrawalStatus = 8
+	// Proven that no related signature can produce the original payment.
+	WithdrawalStatus_WITHDRAWAL_STATUS_VOIDED WithdrawalStatus = 9
+	// Preflight or ledger reservation failed; no funds were reserved.
+	WithdrawalStatus_WITHDRAWAL_STATUS_REJECTED WithdrawalStatus = 10
+	// Local idempotency record exists but the ledger result is not yet known.
+	// Recovery queries the same withdrawal ID; it never creates a second key.
+	WithdrawalStatus_WITHDRAWAL_STATUS_REQUESTED WithdrawalStatus = 11
+)
+
+// Enum value maps for WithdrawalStatus.
+var (
+	WithdrawalStatus_name = map[int32]string{
+		0:  "WITHDRAWAL_STATUS_UNSPECIFIED",
+		1:  "WITHDRAWAL_STATUS_RESERVED",
+		2:  "WITHDRAWAL_STATUS_HELD",
+		3:  "WITHDRAWAL_STATUS_PREPARED",
+		4:  "WITHDRAWAL_STATUS_SIGNING",
+		5:  "WITHDRAWAL_STATUS_SIGNED_UNBROADCAST",
+		6:  "WITHDRAWAL_STATUS_BROADCAST",
+		7:  "WITHDRAWAL_STATUS_UNKNOWN",
+		8:  "WITHDRAWAL_STATUS_CONFIRMED",
+		9:  "WITHDRAWAL_STATUS_VOIDED",
+		10: "WITHDRAWAL_STATUS_REJECTED",
+		11: "WITHDRAWAL_STATUS_REQUESTED",
+	}
+	WithdrawalStatus_value = map[string]int32{
+		"WITHDRAWAL_STATUS_UNSPECIFIED":        0,
+		"WITHDRAWAL_STATUS_RESERVED":           1,
+		"WITHDRAWAL_STATUS_HELD":               2,
+		"WITHDRAWAL_STATUS_PREPARED":           3,
+		"WITHDRAWAL_STATUS_SIGNING":            4,
+		"WITHDRAWAL_STATUS_SIGNED_UNBROADCAST": 5,
+		"WITHDRAWAL_STATUS_BROADCAST":          6,
+		"WITHDRAWAL_STATUS_UNKNOWN":            7,
+		"WITHDRAWAL_STATUS_CONFIRMED":          8,
+		"WITHDRAWAL_STATUS_VOIDED":             9,
+		"WITHDRAWAL_STATUS_REJECTED":           10,
+		"WITHDRAWAL_STATUS_REQUESTED":          11,
+	}
+)
+
+func (x WithdrawalStatus) Enum() *WithdrawalStatus {
+	p := new(WithdrawalStatus)
+	*p = x
+	return p
+}
+
+func (x WithdrawalStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (WithdrawalStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_settlement_v1_settlement_proto_enumTypes[1].Descriptor()
+}
+
+func (WithdrawalStatus) Type() protoreflect.EnumType {
+	return &file_aipay_settlement_v1_settlement_proto_enumTypes[1]
+}
+
+func (x WithdrawalStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use WithdrawalStatus.Descriptor instead.
+func (WithdrawalStatus) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{1}
+}
+
+type FreezeScope int32
+
+const (
+	FreezeScope_FREEZE_SCOPE_UNSPECIFIED FreezeScope = 0
+	FreezeScope_FREEZE_SCOPE_GLOBAL      FreezeScope = 1
+	FreezeScope_FREEZE_SCOPE_CHAIN       FreezeScope = 2
+	FreezeScope_FREEZE_SCOPE_ACCOUNT     FreezeScope = 3
+)
+
+// Enum value maps for FreezeScope.
+var (
+	FreezeScope_name = map[int32]string{
+		0: "FREEZE_SCOPE_UNSPECIFIED",
+		1: "FREEZE_SCOPE_GLOBAL",
+		2: "FREEZE_SCOPE_CHAIN",
+		3: "FREEZE_SCOPE_ACCOUNT",
+	}
+	FreezeScope_value = map[string]int32{
+		"FREEZE_SCOPE_UNSPECIFIED": 0,
+		"FREEZE_SCOPE_GLOBAL":      1,
+		"FREEZE_SCOPE_CHAIN":       2,
+		"FREEZE_SCOPE_ACCOUNT":     3,
+	}
+)
+
+func (x FreezeScope) Enum() *FreezeScope {
+	p := new(FreezeScope)
+	*p = x
+	return p
+}
+
+func (x FreezeScope) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FreezeScope) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_settlement_v1_settlement_proto_enumTypes[2].Descriptor()
+}
+
+func (FreezeScope) Type() protoreflect.EnumType {
+	return &file_aipay_settlement_v1_settlement_proto_enumTypes[2]
+}
+
+func (x FreezeScope) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FreezeScope.Descriptor instead.
+func (FreezeScope) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{2}
+}
+
+// Only a safe projection: no screening credentials, raw provider responses or
+// internal risk scores are returned.
+type AddressBookEntry struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	AccountId string                 `protobuf:"bytes,2,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	Chain     v1.Chain               `protobuf:"varint,3,opt,name=chain,proto3,enum=aipay.common.v1.Chain" json:"chain,omitempty"`
+	// Canonical chain form. BSC is compared by its 20 address bytes.
+	Address       string                 `protobuf:"bytes,4,opt,name=address,proto3" json:"address,omitempty"`
+	Label         string                 `protobuf:"bytes,5,opt,name=label,proto3" json:"label,omitempty"`
+	Status        AddressStatus          `protobuf:"varint,6,opt,name=status,proto3,enum=aipay.settlement.v1.AddressStatus" json:"status,omitempty"`
+	CoolingUntil  *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=cooling_until,json=coolingUntil,proto3" json:"cooling_until,omitempty"`
+	ActivatedAt   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=activated_at,json=activatedAt,proto3" json:"activated_at,omitempty"`
+	RevokedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=revoked_at,json=revokedAt,proto3" json:"revoked_at,omitempty"`
+	Version       uint64                 `protobuf:"varint,10,opt,name=version,proto3" json:"version,omitempty"`
+	PolicyVersion string                 `protobuf:"bytes,11,opt,name=policy_version,json=policyVersion,proto3" json:"policy_version,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddressBookEntry) Reset() {
+	*x = AddressBookEntry{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddressBookEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddressBookEntry) ProtoMessage() {}
+
+func (x *AddressBookEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddressBookEntry.ProtoReflect.Descriptor instead.
+func (*AddressBookEntry) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *AddressBookEntry) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *AddressBookEntry) GetAccountId() string {
+	if x != nil {
+		return x.AccountId
+	}
+	return ""
+}
+
+func (x *AddressBookEntry) GetChain() v1.Chain {
+	if x != nil {
+		return x.Chain
+	}
+	return v1.Chain(0)
+}
+
+func (x *AddressBookEntry) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *AddressBookEntry) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *AddressBookEntry) GetStatus() AddressStatus {
+	if x != nil {
+		return x.Status
+	}
+	return AddressStatus_ADDRESS_STATUS_UNSPECIFIED
+}
+
+func (x *AddressBookEntry) GetCoolingUntil() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CoolingUntil
+	}
+	return nil
+}
+
+func (x *AddressBookEntry) GetActivatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ActivatedAt
+	}
+	return nil
+}
+
+func (x *AddressBookEntry) GetRevokedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RevokedAt
+	}
+	return nil
+}
+
+func (x *AddressBookEntry) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *AddressBookEntry) GetPolicyVersion() string {
+	if x != nil {
+		return x.PolicyVersion
+	}
+	return ""
+}
+
+func (x *AddressBookEntry) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *AddressBookEntry) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type AddAddressRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// UUIDv7 idempotency key; same key with different content is AlreadyExists.
+	RequestId string   `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	Chain     v1.Chain `protobuf:"varint,2,opt,name=chain,proto3,enum=aipay.common.v1.Chain" json:"chain,omitempty"`
+	Address   string   `protobuf:"bytes,3,opt,name=address,proto3" json:"address,omitempty"`
+	// 0-100 Unicode scalar values, no credentials or personal data.
+	Label         string `protobuf:"bytes,4,opt,name=label,proto3" json:"label,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddAddressRequest) Reset() {
+	*x = AddAddressRequest{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddAddressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddAddressRequest) ProtoMessage() {}
+
+func (x *AddAddressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddAddressRequest.ProtoReflect.Descriptor instead.
+func (*AddAddressRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *AddAddressRequest) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *AddAddressRequest) GetChain() v1.Chain {
+	if x != nil {
+		return x.Chain
+	}
+	return v1.Chain(0)
+}
+
+func (x *AddAddressRequest) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *AddAddressRequest) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+type AddAddressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entry         *AddressBookEntry      `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddAddressResponse) Reset() {
+	*x = AddAddressResponse{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddAddressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddAddressResponse) ProtoMessage() {}
+
+func (x *AddAddressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddAddressResponse.ProtoReflect.Descriptor instead.
+func (*AddAddressResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *AddAddressResponse) GetEntry() *AddressBookEntry {
+	if x != nil {
+		return x.Entry
+	}
+	return nil
+}
+
+type RevokeAddressRequest struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	AddressId string                 `protobuf:"bytes,1,opt,name=address_id,json=addressId,proto3" json:"address_id,omitempty"`
+	// Positive current version; a stale value is FailedPrecondition.
+	ExpectedVersion uint64 `protobuf:"varint,2,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *RevokeAddressRequest) Reset() {
+	*x = RevokeAddressRequest{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeAddressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeAddressRequest) ProtoMessage() {}
+
+func (x *RevokeAddressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeAddressRequest.ProtoReflect.Descriptor instead.
+func (*RevokeAddressRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *RevokeAddressRequest) GetAddressId() string {
+	if x != nil {
+		return x.AddressId
+	}
+	return ""
+}
+
+func (x *RevokeAddressRequest) GetExpectedVersion() uint64 {
+	if x != nil {
+		return x.ExpectedVersion
+	}
+	return 0
+}
+
+type RevokeAddressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entry         *AddressBookEntry      `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeAddressResponse) Reset() {
+	*x = RevokeAddressResponse{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeAddressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeAddressResponse) ProtoMessage() {}
+
+func (x *RevokeAddressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeAddressResponse.ProtoReflect.Descriptor instead.
+func (*RevokeAddressResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *RevokeAddressResponse) GetEntry() *AddressBookEntry {
+	if x != nil {
+		return x.Entry
+	}
+	return nil
+}
+
+type ListAddressesRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 1-100; reject values outside the range, never clamp.
+	Limit uint32 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	// Opaque cursor bound to account, filter and snapshot.
+	PageToken     string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAddressesRequest) Reset() {
+	*x = ListAddressesRequest{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAddressesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAddressesRequest) ProtoMessage() {}
+
+func (x *ListAddressesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAddressesRequest.ProtoReflect.Descriptor instead.
+func (*ListAddressesRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ListAddressesRequest) GetLimit() uint32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListAddressesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListAddressesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entries       []*AddressBookEntry    `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAddressesResponse) Reset() {
+	*x = ListAddressesResponse{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAddressesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAddressesResponse) ProtoMessage() {}
+
+func (x *ListAddressesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAddressesResponse.ProtoReflect.Descriptor instead.
+func (*ListAddressesResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ListAddressesResponse) GetEntries() []*AddressBookEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+func (x *ListAddressesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+// A quote is not a reservation and grants no authority. It exists so the user
+// sees the exact fee and so IAM's command digest can bind that fee. Settlement
+// re-derives every value when CreateWithdrawal runs.
+type WithdrawalQuote struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	QuoteId       string                 `protobuf:"bytes,1,opt,name=quote_id,json=quoteId,proto3" json:"quote_id,omitempty"`
+	AccountId     string                 `protobuf:"bytes,2,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	Chain         v1.Chain               `protobuf:"varint,3,opt,name=chain,proto3,enum=aipay.common.v1.Chain" json:"chain,omitempty"`
+	Address       string                 `protobuf:"bytes,4,opt,name=address,proto3" json:"address,omitempty"`
+	PrincipalUsdt int64                  `protobuf:"varint,5,opt,name=principal_usdt,json=principalUsdt,proto3" json:"principal_usdt,omitempty"`
+	FeeUsdt       int64                  `protobuf:"varint,6,opt,name=fee_usdt,json=feeUsdt,proto3" json:"fee_usdt,omitempty"`
+	TotalUsdt     int64                  `protobuf:"varint,7,opt,name=total_usdt,json=totalUsdt,proto3" json:"total_usdt,omitempty"`
+	FeeVersion    string                 `protobuf:"bytes,8,opt,name=fee_version,json=feeVersion,proto3" json:"fee_version,omitempty"`
+	MinimumUsdt   int64                  `protobuf:"varint,9,opt,name=minimum_usdt,json=minimumUsdt,proto3" json:"minimum_usdt,omitempty"`
+	MaximumUsdt   int64                  `protobuf:"varint,10,opt,name=maximum_usdt,json=maximumUsdt,proto3" json:"maximum_usdt,omitempty"`
+	PolicyVersion string                 `protobuf:"bytes,11,opt,name=policy_version,json=policyVersion,proto3" json:"policy_version,omitempty"`
+	IssuedAt      *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WithdrawalQuote) Reset() {
+	*x = WithdrawalQuote{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WithdrawalQuote) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WithdrawalQuote) ProtoMessage() {}
+
+func (x *WithdrawalQuote) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WithdrawalQuote.ProtoReflect.Descriptor instead.
+func (*WithdrawalQuote) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *WithdrawalQuote) GetQuoteId() string {
+	if x != nil {
+		return x.QuoteId
+	}
+	return ""
+}
+
+func (x *WithdrawalQuote) GetAccountId() string {
+	if x != nil {
+		return x.AccountId
+	}
+	return ""
+}
+
+func (x *WithdrawalQuote) GetChain() v1.Chain {
+	if x != nil {
+		return x.Chain
+	}
+	return v1.Chain(0)
+}
+
+func (x *WithdrawalQuote) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *WithdrawalQuote) GetPrincipalUsdt() int64 {
+	if x != nil {
+		return x.PrincipalUsdt
+	}
+	return 0
+}
+
+func (x *WithdrawalQuote) GetFeeUsdt() int64 {
+	if x != nil {
+		return x.FeeUsdt
+	}
+	return 0
+}
+
+func (x *WithdrawalQuote) GetTotalUsdt() int64 {
+	if x != nil {
+		return x.TotalUsdt
+	}
+	return 0
+}
+
+func (x *WithdrawalQuote) GetFeeVersion() string {
+	if x != nil {
+		return x.FeeVersion
+	}
+	return ""
+}
+
+func (x *WithdrawalQuote) GetMinimumUsdt() int64 {
+	if x != nil {
+		return x.MinimumUsdt
+	}
+	return 0
+}
+
+func (x *WithdrawalQuote) GetMaximumUsdt() int64 {
+	if x != nil {
+		return x.MaximumUsdt
+	}
+	return 0
+}
+
+func (x *WithdrawalQuote) GetPolicyVersion() string {
+	if x != nil {
+		return x.PolicyVersion
+	}
+	return ""
+}
+
+func (x *WithdrawalQuote) GetIssuedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.IssuedAt
+	}
+	return nil
+}
+
+func (x *WithdrawalQuote) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+type GetWithdrawalQuoteRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Chain         v1.Chain               `protobuf:"varint,1,opt,name=chain,proto3,enum=aipay.common.v1.Chain" json:"chain,omitempty"`
+	Address       string                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	PrincipalUsdt int64                  `protobuf:"varint,3,opt,name=principal_usdt,json=principalUsdt,proto3" json:"principal_usdt,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWithdrawalQuoteRequest) Reset() {
+	*x = GetWithdrawalQuoteRequest{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWithdrawalQuoteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWithdrawalQuoteRequest) ProtoMessage() {}
+
+func (x *GetWithdrawalQuoteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWithdrawalQuoteRequest.ProtoReflect.Descriptor instead.
+func (*GetWithdrawalQuoteRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetWithdrawalQuoteRequest) GetChain() v1.Chain {
+	if x != nil {
+		return x.Chain
+	}
+	return v1.Chain(0)
+}
+
+func (x *GetWithdrawalQuoteRequest) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *GetWithdrawalQuoteRequest) GetPrincipalUsdt() int64 {
+	if x != nil {
+		return x.PrincipalUsdt
+	}
+	return 0
+}
+
+type GetWithdrawalQuoteResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Quote         *WithdrawalQuote       `protobuf:"bytes,1,opt,name=quote,proto3" json:"quote,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWithdrawalQuoteResponse) Reset() {
+	*x = GetWithdrawalQuoteResponse{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWithdrawalQuoteResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWithdrawalQuoteResponse) ProtoMessage() {}
+
+func (x *GetWithdrawalQuoteResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWithdrawalQuoteResponse.ProtoReflect.Descriptor instead.
+func (*GetWithdrawalQuoteResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GetWithdrawalQuoteResponse) GetQuote() *WithdrawalQuote {
+	if x != nil {
+		return x.Quote
+	}
+	return nil
+}
+
+type Withdrawal struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	AccountId           string                 `protobuf:"bytes,2,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	RequestNo           string                 `protobuf:"bytes,3,opt,name=request_no,json=requestNo,proto3" json:"request_no,omitempty"`
+	AddressId           string                 `protobuf:"bytes,4,opt,name=address_id,json=addressId,proto3" json:"address_id,omitempty"`
+	Address             string                 `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
+	Chain               v1.Chain               `protobuf:"varint,6,opt,name=chain,proto3,enum=aipay.common.v1.Chain" json:"chain,omitempty"`
+	PrincipalUsdt       int64                  `protobuf:"varint,7,opt,name=principal_usdt,json=principalUsdt,proto3" json:"principal_usdt,omitempty"`
+	FeeUsdt             int64                  `protobuf:"varint,8,opt,name=fee_usdt,json=feeUsdt,proto3" json:"fee_usdt,omitempty"`
+	TotalUsdt           int64                  `protobuf:"varint,9,opt,name=total_usdt,json=totalUsdt,proto3" json:"total_usdt,omitempty"`
+	FeeVersion          string                 `protobuf:"bytes,10,opt,name=fee_version,json=feeVersion,proto3" json:"fee_version,omitempty"`
+	QuoteId             string                 `protobuf:"bytes,11,opt,name=quote_id,json=quoteId,proto3" json:"quote_id,omitempty"`
+	Status              WithdrawalStatus       `protobuf:"varint,12,opt,name=status,proto3,enum=aipay.settlement.v1.WithdrawalStatus" json:"status,omitempty"`
+	LedgerReservationId string                 `protobuf:"bytes,13,opt,name=ledger_reservation_id,json=ledgerReservationId,proto3" json:"ledger_reservation_id,omitempty"`
+	LedgerReserveSeq    uint64                 `protobuf:"varint,14,opt,name=ledger_reserve_seq,json=ledgerReserveSeq,proto3" json:"ledger_reserve_seq,omitempty"`
+	BatchId             string                 `protobuf:"bytes,15,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"`
+	ExecutionVersion    uint64                 `protobuf:"varint,16,opt,name=execution_version,json=executionVersion,proto3" json:"execution_version,omitempty"`
+	// Lowercase hex transaction hash once a signed attempt exists.
+	TransactionHash string                 `protobuf:"bytes,17,opt,name=transaction_hash,json=transactionHash,proto3" json:"transaction_hash,omitempty"`
+	FailureCode     string                 `protobuf:"bytes,18,opt,name=failure_code,json=failureCode,proto3" json:"failure_code,omitempty"`
+	FailureReason   string                 `protobuf:"bytes,19,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
+	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,20,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt       *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	ConfirmedAt     *timestamppb.Timestamp `protobuf:"bytes,22,opt,name=confirmed_at,json=confirmedAt,proto3" json:"confirmed_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *Withdrawal) Reset() {
+	*x = Withdrawal{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Withdrawal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Withdrawal) ProtoMessage() {}
+
+func (x *Withdrawal) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Withdrawal.ProtoReflect.Descriptor instead.
+func (*Withdrawal) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *Withdrawal) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetAccountId() string {
+	if x != nil {
+		return x.AccountId
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetRequestNo() string {
+	if x != nil {
+		return x.RequestNo
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetAddressId() string {
+	if x != nil {
+		return x.AddressId
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetChain() v1.Chain {
+	if x != nil {
+		return x.Chain
+	}
+	return v1.Chain(0)
+}
+
+func (x *Withdrawal) GetPrincipalUsdt() int64 {
+	if x != nil {
+		return x.PrincipalUsdt
+	}
+	return 0
+}
+
+func (x *Withdrawal) GetFeeUsdt() int64 {
+	if x != nil {
+		return x.FeeUsdt
+	}
+	return 0
+}
+
+func (x *Withdrawal) GetTotalUsdt() int64 {
+	if x != nil {
+		return x.TotalUsdt
+	}
+	return 0
+}
+
+func (x *Withdrawal) GetFeeVersion() string {
+	if x != nil {
+		return x.FeeVersion
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetQuoteId() string {
+	if x != nil {
+		return x.QuoteId
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetStatus() WithdrawalStatus {
+	if x != nil {
+		return x.Status
+	}
+	return WithdrawalStatus_WITHDRAWAL_STATUS_UNSPECIFIED
+}
+
+func (x *Withdrawal) GetLedgerReservationId() string {
+	if x != nil {
+		return x.LedgerReservationId
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetLedgerReserveSeq() uint64 {
+	if x != nil {
+		return x.LedgerReserveSeq
+	}
+	return 0
+}
+
+func (x *Withdrawal) GetBatchId() string {
+	if x != nil {
+		return x.BatchId
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetExecutionVersion() uint64 {
+	if x != nil {
+		return x.ExecutionVersion
+	}
+	return 0
+}
+
+func (x *Withdrawal) GetTransactionHash() string {
+	if x != nil {
+		return x.TransactionHash
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetFailureCode() string {
+	if x != nil {
+		return x.FailureCode
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetFailureReason() string {
+	if x != nil {
+		return x.FailureReason
+	}
+	return ""
+}
+
+func (x *Withdrawal) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *Withdrawal) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+func (x *Withdrawal) GetConfirmedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ConfirmedAt
+	}
+	return nil
+}
+
+type CreateWithdrawalRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 1-64 characters, unique per account for all history.
+	RequestNo     string   `protobuf:"bytes,1,opt,name=request_no,json=requestNo,proto3" json:"request_no,omitempty"`
+	QuoteId       string   `protobuf:"bytes,2,opt,name=quote_id,json=quoteId,proto3" json:"quote_id,omitempty"`
+	AddressId     string   `protobuf:"bytes,3,opt,name=address_id,json=addressId,proto3" json:"address_id,omitempty"`
+	Chain         v1.Chain `protobuf:"varint,4,opt,name=chain,proto3,enum=aipay.common.v1.Chain" json:"chain,omitempty"`
+	PrincipalUsdt int64    `protobuf:"varint,5,opt,name=principal_usdt,json=principalUsdt,proto3" json:"principal_usdt,omitempty"`
+	FeeUsdt       int64    `protobuf:"varint,6,opt,name=fee_usdt,json=feeUsdt,proto3" json:"fee_usdt,omitempty"`
+	FeeVersion    string   `protobuf:"bytes,7,opt,name=fee_version,json=feeVersion,proto3" json:"fee_version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateWithdrawalRequest) Reset() {
+	*x = CreateWithdrawalRequest{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateWithdrawalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateWithdrawalRequest) ProtoMessage() {}
+
+func (x *CreateWithdrawalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateWithdrawalRequest.ProtoReflect.Descriptor instead.
+func (*CreateWithdrawalRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *CreateWithdrawalRequest) GetRequestNo() string {
+	if x != nil {
+		return x.RequestNo
+	}
+	return ""
+}
+
+func (x *CreateWithdrawalRequest) GetQuoteId() string {
+	if x != nil {
+		return x.QuoteId
+	}
+	return ""
+}
+
+func (x *CreateWithdrawalRequest) GetAddressId() string {
+	if x != nil {
+		return x.AddressId
+	}
+	return ""
+}
+
+func (x *CreateWithdrawalRequest) GetChain() v1.Chain {
+	if x != nil {
+		return x.Chain
+	}
+	return v1.Chain(0)
+}
+
+func (x *CreateWithdrawalRequest) GetPrincipalUsdt() int64 {
+	if x != nil {
+		return x.PrincipalUsdt
+	}
+	return 0
+}
+
+func (x *CreateWithdrawalRequest) GetFeeUsdt() int64 {
+	if x != nil {
+		return x.FeeUsdt
+	}
+	return 0
+}
+
+func (x *CreateWithdrawalRequest) GetFeeVersion() string {
+	if x != nil {
+		return x.FeeVersion
+	}
+	return ""
+}
+
+type CreateWithdrawalResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Withdrawal    *Withdrawal            `protobuf:"bytes,1,opt,name=withdrawal,proto3" json:"withdrawal,omitempty"`
+	Replayed      bool                   `protobuf:"varint,2,opt,name=replayed,proto3" json:"replayed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateWithdrawalResponse) Reset() {
+	*x = CreateWithdrawalResponse{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateWithdrawalResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateWithdrawalResponse) ProtoMessage() {}
+
+func (x *CreateWithdrawalResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateWithdrawalResponse.ProtoReflect.Descriptor instead.
+func (*CreateWithdrawalResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *CreateWithdrawalResponse) GetWithdrawal() *Withdrawal {
+	if x != nil {
+		return x.Withdrawal
+	}
+	return nil
+}
+
+func (x *CreateWithdrawalResponse) GetReplayed() bool {
+	if x != nil {
+		return x.Replayed
+	}
+	return false
+}
+
+type GetWithdrawalRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Selector:
+	//
+	//	*GetWithdrawalRequest_WithdrawalId
+	//	*GetWithdrawalRequest_RequestNo
+	Selector      isGetWithdrawalRequest_Selector `protobuf_oneof:"selector"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWithdrawalRequest) Reset() {
+	*x = GetWithdrawalRequest{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWithdrawalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWithdrawalRequest) ProtoMessage() {}
+
+func (x *GetWithdrawalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWithdrawalRequest.ProtoReflect.Descriptor instead.
+func (*GetWithdrawalRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetWithdrawalRequest) GetSelector() isGetWithdrawalRequest_Selector {
+	if x != nil {
+		return x.Selector
+	}
+	return nil
+}
+
+func (x *GetWithdrawalRequest) GetWithdrawalId() string {
+	if x != nil {
+		if x, ok := x.Selector.(*GetWithdrawalRequest_WithdrawalId); ok {
+			return x.WithdrawalId
+		}
+	}
+	return ""
+}
+
+func (x *GetWithdrawalRequest) GetRequestNo() string {
+	if x != nil {
+		if x, ok := x.Selector.(*GetWithdrawalRequest_RequestNo); ok {
+			return x.RequestNo
+		}
+	}
+	return ""
+}
+
+type isGetWithdrawalRequest_Selector interface {
+	isGetWithdrawalRequest_Selector()
+}
+
+type GetWithdrawalRequest_WithdrawalId struct {
+	WithdrawalId string `protobuf:"bytes,1,opt,name=withdrawal_id,json=withdrawalId,proto3,oneof"`
+}
+
+type GetWithdrawalRequest_RequestNo struct {
+	RequestNo string `protobuf:"bytes,2,opt,name=request_no,json=requestNo,proto3,oneof"`
+}
+
+func (*GetWithdrawalRequest_WithdrawalId) isGetWithdrawalRequest_Selector() {}
+
+func (*GetWithdrawalRequest_RequestNo) isGetWithdrawalRequest_Selector() {}
+
+type GetWithdrawalResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Withdrawal    *Withdrawal            `protobuf:"bytes,1,opt,name=withdrawal,proto3" json:"withdrawal,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWithdrawalResponse) Reset() {
+	*x = GetWithdrawalResponse{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWithdrawalResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWithdrawalResponse) ProtoMessage() {}
+
+func (x *GetWithdrawalResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWithdrawalResponse.ProtoReflect.Descriptor instead.
+func (*GetWithdrawalResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetWithdrawalResponse) GetWithdrawal() *Withdrawal {
+	if x != nil {
+		return x.Withdrawal
+	}
+	return nil
+}
+
+type ListWithdrawalsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 1-100; reject values outside the range, never clamp.
+	Limit uint32 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	// Opaque cursor bound to account, filter and snapshot.
+	PageToken     string            `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Status        *WithdrawalStatus `protobuf:"varint,3,opt,name=status,proto3,enum=aipay.settlement.v1.WithdrawalStatus,oneof" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListWithdrawalsRequest) Reset() {
+	*x = ListWithdrawalsRequest{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWithdrawalsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWithdrawalsRequest) ProtoMessage() {}
+
+func (x *ListWithdrawalsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWithdrawalsRequest.ProtoReflect.Descriptor instead.
+func (*ListWithdrawalsRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ListWithdrawalsRequest) GetLimit() uint32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListWithdrawalsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+func (x *ListWithdrawalsRequest) GetStatus() WithdrawalStatus {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return WithdrawalStatus_WITHDRAWAL_STATUS_UNSPECIFIED
+}
+
+type ListWithdrawalsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Withdrawals   []*Withdrawal          `protobuf:"bytes,1,rep,name=withdrawals,proto3" json:"withdrawals,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListWithdrawalsResponse) Reset() {
+	*x = ListWithdrawalsResponse{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWithdrawalsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWithdrawalsResponse) ProtoMessage() {}
+
+func (x *ListWithdrawalsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWithdrawalsResponse.ProtoReflect.Descriptor instead.
+func (*ListWithdrawalsResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ListWithdrawalsResponse) GetWithdrawals() []*Withdrawal {
+	if x != nil {
+		return x.Withdrawals
+	}
+	return nil
+}
+
+func (x *ListWithdrawalsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type ChainFreeze struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Chain         v1.Chain               `protobuf:"varint,1,opt,name=chain,proto3,enum=aipay.common.v1.Chain" json:"chain,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChainFreeze) Reset() {
+	*x = ChainFreeze{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChainFreeze) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChainFreeze) ProtoMessage() {}
+
+func (x *ChainFreeze) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChainFreeze.ProtoReflect.Descriptor instead.
+func (*ChainFreeze) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ChainFreeze) GetChain() v1.Chain {
+	if x != nil {
+		return x.Chain
+	}
+	return v1.Chain(0)
+}
+
+func (x *ChainFreeze) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *ChainFreeze) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type AccountFreeze struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccountId     string                 `protobuf:"bytes,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AccountFreeze) Reset() {
+	*x = AccountFreeze{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccountFreeze) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountFreeze) ProtoMessage() {}
+
+func (x *AccountFreeze) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountFreeze.ProtoReflect.Descriptor instead.
+func (*AccountFreeze) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *AccountFreeze) GetAccountId() string {
+	if x != nil {
+		return x.AccountId
+	}
+	return ""
+}
+
+func (x *AccountFreeze) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *AccountFreeze) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type ControlState struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	GlobalFrozen   bool                   `protobuf:"varint,1,opt,name=global_frozen,json=globalFrozen,proto3" json:"global_frozen,omitempty"`
+	ChainFreezes   []*ChainFreeze         `protobuf:"bytes,2,rep,name=chain_freezes,json=chainFreezes,proto3" json:"chain_freezes,omitempty"`
+	AccountFreezes []*AccountFreeze       `protobuf:"bytes,3,rep,name=account_freezes,json=accountFreezes,proto3" json:"account_freezes,omitempty"`
+	Version        uint64                 `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`
+	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ControlState) Reset() {
+	*x = ControlState{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ControlState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ControlState) ProtoMessage() {}
+
+func (x *ControlState) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ControlState.ProtoReflect.Descriptor instead.
+func (*ControlState) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ControlState) GetGlobalFrozen() bool {
+	if x != nil {
+		return x.GlobalFrozen
+	}
+	return false
+}
+
+func (x *ControlState) GetChainFreezes() []*ChainFreeze {
+	if x != nil {
+		return x.ChainFreezes
+	}
+	return nil
+}
+
+func (x *ControlState) GetAccountFreezes() []*AccountFreeze {
+	if x != nil {
+		return x.AccountFreezes
+	}
+	return nil
+}
+
+func (x *ControlState) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *ControlState) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type GetControlStateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetControlStateRequest) Reset() {
+	*x = GetControlStateRequest{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetControlStateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetControlStateRequest) ProtoMessage() {}
+
+func (x *GetControlStateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetControlStateRequest.ProtoReflect.Descriptor instead.
+func (*GetControlStateRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{20}
+}
+
+type GetControlStateResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	State         *ControlState          `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetControlStateResponse) Reset() {
+	*x = GetControlStateResponse{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetControlStateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetControlStateResponse) ProtoMessage() {}
+
+func (x *GetControlStateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetControlStateResponse.ProtoReflect.Descriptor instead.
+func (*GetControlStateResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GetControlStateResponse) GetState() *ControlState {
+	if x != nil {
+		return x.State
+	}
+	return nil
+}
+
+type SetFreezeRequest struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Scope     FreezeScope            `protobuf:"varint,1,opt,name=scope,proto3,enum=aipay.settlement.v1.FreezeScope" json:"scope,omitempty"`
+	Chain     v1.Chain               `protobuf:"varint,2,opt,name=chain,proto3,enum=aipay.common.v1.Chain" json:"chain,omitempty"`
+	AccountId string                 `protobuf:"bytes,3,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	Frozen    bool                   `protobuf:"varint,4,opt,name=frozen,proto3" json:"frozen,omitempty"`
+	// 1-500 characters; stored in the immutable control audit.
+	Reason string `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`
+	// Required when unfreezing: an approved two-person request that matches the
+	// exact scope, target and current control version. Ignored when freezing.
+	ApprovalId    string `protobuf:"bytes,6,opt,name=approval_id,json=approvalId,proto3" json:"approval_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetFreezeRequest) Reset() {
+	*x = SetFreezeRequest{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetFreezeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetFreezeRequest) ProtoMessage() {}
+
+func (x *SetFreezeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetFreezeRequest.ProtoReflect.Descriptor instead.
+func (*SetFreezeRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *SetFreezeRequest) GetScope() FreezeScope {
+	if x != nil {
+		return x.Scope
+	}
+	return FreezeScope_FREEZE_SCOPE_UNSPECIFIED
+}
+
+func (x *SetFreezeRequest) GetChain() v1.Chain {
+	if x != nil {
+		return x.Chain
+	}
+	return v1.Chain(0)
+}
+
+func (x *SetFreezeRequest) GetAccountId() string {
+	if x != nil {
+		return x.AccountId
+	}
+	return ""
+}
+
+func (x *SetFreezeRequest) GetFrozen() bool {
+	if x != nil {
+		return x.Frozen
+	}
+	return false
+}
+
+func (x *SetFreezeRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *SetFreezeRequest) GetApprovalId() string {
+	if x != nil {
+		return x.ApprovalId
+	}
+	return ""
+}
+
+type SetFreezeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	State         *ControlState          `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetFreezeResponse) Reset() {
+	*x = SetFreezeResponse{}
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetFreezeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetFreezeResponse) ProtoMessage() {}
+
+func (x *SetFreezeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_settlement_v1_settlement_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetFreezeResponse.ProtoReflect.Descriptor instead.
+func (*SetFreezeResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_settlement_v1_settlement_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *SetFreezeResponse) GetState() *ControlState {
+	if x != nil {
+		return x.State
+	}
+	return nil
+}
+
 var File_aipay_settlement_v1_settlement_proto protoreflect.FileDescriptor
 
 const file_aipay_settlement_v1_settlement_proto_rawDesc = "" +
 	"\n" +
-	"$aipay/settlement/v1/settlement.proto\x12\x13aipay.settlement.v1BFZDgithub.com/Kaivodev/protobuf/gen/go/aipay/settlement/v1;settlementv1b\x06proto3"
+	"$aipay/settlement/v1/settlement.proto\x12\x13aipay.settlement.v1\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/asset.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xcd\x04\n" +
+	"\x10AddressBookEntry\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x02 \x01(\tR\taccountId\x12,\n" +
+	"\x05chain\x18\x03 \x01(\x0e2\x16.aipay.common.v1.ChainR\x05chain\x12\x18\n" +
+	"\aaddress\x18\x04 \x01(\tR\aaddress\x12\x14\n" +
+	"\x05label\x18\x05 \x01(\tR\x05label\x12:\n" +
+	"\x06status\x18\x06 \x01(\x0e2\".aipay.settlement.v1.AddressStatusR\x06status\x12?\n" +
+	"\rcooling_until\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\fcoolingUntil\x12=\n" +
+	"\factivated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vactivatedAt\x129\n" +
+	"\n" +
+	"revoked_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\trevokedAt\x12\x18\n" +
+	"\aversion\x18\n" +
+	" \x01(\x04R\aversion\x12%\n" +
+	"\x0epolicy_version\x18\v \x01(\tR\rpolicyVersion\x129\n" +
+	"\n" +
+	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x90\x01\n" +
+	"\x11AddAddressRequest\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\x12,\n" +
+	"\x05chain\x18\x02 \x01(\x0e2\x16.aipay.common.v1.ChainR\x05chain\x12\x18\n" +
+	"\aaddress\x18\x03 \x01(\tR\aaddress\x12\x14\n" +
+	"\x05label\x18\x04 \x01(\tR\x05label\"Q\n" +
+	"\x12AddAddressResponse\x12;\n" +
+	"\x05entry\x18\x01 \x01(\v2%.aipay.settlement.v1.AddressBookEntryR\x05entry\"`\n" +
+	"\x14RevokeAddressRequest\x12\x1d\n" +
+	"\n" +
+	"address_id\x18\x01 \x01(\tR\taddressId\x12)\n" +
+	"\x10expected_version\x18\x02 \x01(\x04R\x0fexpectedVersion\"T\n" +
+	"\x15RevokeAddressResponse\x12;\n" +
+	"\x05entry\x18\x01 \x01(\v2%.aipay.settlement.v1.AddressBookEntryR\x05entry\"K\n" +
+	"\x14ListAddressesRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\rR\x05limit\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\"\x80\x01\n" +
+	"\x15ListAddressesResponse\x12?\n" +
+	"\aentries\x18\x01 \x03(\v2%.aipay.settlement.v1.AddressBookEntryR\aentries\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xf6\x03\n" +
+	"\x0fWithdrawalQuote\x12\x19\n" +
+	"\bquote_id\x18\x01 \x01(\tR\aquoteId\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x02 \x01(\tR\taccountId\x12,\n" +
+	"\x05chain\x18\x03 \x01(\x0e2\x16.aipay.common.v1.ChainR\x05chain\x12\x18\n" +
+	"\aaddress\x18\x04 \x01(\tR\aaddress\x12%\n" +
+	"\x0eprincipal_usdt\x18\x05 \x01(\x03R\rprincipalUsdt\x12\x19\n" +
+	"\bfee_usdt\x18\x06 \x01(\x03R\afeeUsdt\x12\x1d\n" +
+	"\n" +
+	"total_usdt\x18\a \x01(\x03R\ttotalUsdt\x12\x1f\n" +
+	"\vfee_version\x18\b \x01(\tR\n" +
+	"feeVersion\x12!\n" +
+	"\fminimum_usdt\x18\t \x01(\x03R\vminimumUsdt\x12!\n" +
+	"\fmaximum_usdt\x18\n" +
+	" \x01(\x03R\vmaximumUsdt\x12%\n" +
+	"\x0epolicy_version\x18\v \x01(\tR\rpolicyVersion\x127\n" +
+	"\tissued_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x129\n" +
+	"\n" +
+	"expires_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x8a\x01\n" +
+	"\x19GetWithdrawalQuoteRequest\x12,\n" +
+	"\x05chain\x18\x01 \x01(\x0e2\x16.aipay.common.v1.ChainR\x05chain\x12\x18\n" +
+	"\aaddress\x18\x02 \x01(\tR\aaddress\x12%\n" +
+	"\x0eprincipal_usdt\x18\x03 \x01(\x03R\rprincipalUsdt\"X\n" +
+	"\x1aGetWithdrawalQuoteResponse\x12:\n" +
+	"\x05quote\x18\x01 \x01(\v2$.aipay.settlement.v1.WithdrawalQuoteR\x05quote\"\xf1\x06\n" +
+	"\n" +
+	"Withdrawal\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x02 \x01(\tR\taccountId\x12\x1d\n" +
+	"\n" +
+	"request_no\x18\x03 \x01(\tR\trequestNo\x12\x1d\n" +
+	"\n" +
+	"address_id\x18\x04 \x01(\tR\taddressId\x12\x18\n" +
+	"\aaddress\x18\x05 \x01(\tR\aaddress\x12,\n" +
+	"\x05chain\x18\x06 \x01(\x0e2\x16.aipay.common.v1.ChainR\x05chain\x12%\n" +
+	"\x0eprincipal_usdt\x18\a \x01(\x03R\rprincipalUsdt\x12\x19\n" +
+	"\bfee_usdt\x18\b \x01(\x03R\afeeUsdt\x12\x1d\n" +
+	"\n" +
+	"total_usdt\x18\t \x01(\x03R\ttotalUsdt\x12\x1f\n" +
+	"\vfee_version\x18\n" +
+	" \x01(\tR\n" +
+	"feeVersion\x12\x19\n" +
+	"\bquote_id\x18\v \x01(\tR\aquoteId\x12=\n" +
+	"\x06status\x18\f \x01(\x0e2%.aipay.settlement.v1.WithdrawalStatusR\x06status\x122\n" +
+	"\x15ledger_reservation_id\x18\r \x01(\tR\x13ledgerReservationId\x12,\n" +
+	"\x12ledger_reserve_seq\x18\x0e \x01(\x04R\x10ledgerReserveSeq\x12\x19\n" +
+	"\bbatch_id\x18\x0f \x01(\tR\abatchId\x12+\n" +
+	"\x11execution_version\x18\x10 \x01(\x04R\x10executionVersion\x12)\n" +
+	"\x10transaction_hash\x18\x11 \x01(\tR\x0ftransactionHash\x12!\n" +
+	"\ffailure_code\x18\x12 \x01(\tR\vfailureCode\x12%\n" +
+	"\x0efailure_reason\x18\x13 \x01(\tR\rfailureReason\x129\n" +
+	"\n" +
+	"created_at\x18\x14 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\x15 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12=\n" +
+	"\fconfirmed_at\x18\x16 \x01(\v2\x1a.google.protobuf.TimestampR\vconfirmedAt\"\x83\x02\n" +
+	"\x17CreateWithdrawalRequest\x12\x1d\n" +
+	"\n" +
+	"request_no\x18\x01 \x01(\tR\trequestNo\x12\x19\n" +
+	"\bquote_id\x18\x02 \x01(\tR\aquoteId\x12\x1d\n" +
+	"\n" +
+	"address_id\x18\x03 \x01(\tR\taddressId\x12,\n" +
+	"\x05chain\x18\x04 \x01(\x0e2\x16.aipay.common.v1.ChainR\x05chain\x12%\n" +
+	"\x0eprincipal_usdt\x18\x05 \x01(\x03R\rprincipalUsdt\x12\x19\n" +
+	"\bfee_usdt\x18\x06 \x01(\x03R\afeeUsdt\x12\x1f\n" +
+	"\vfee_version\x18\a \x01(\tR\n" +
+	"feeVersion\"w\n" +
+	"\x18CreateWithdrawalResponse\x12?\n" +
+	"\n" +
+	"withdrawal\x18\x01 \x01(\v2\x1f.aipay.settlement.v1.WithdrawalR\n" +
+	"withdrawal\x12\x1a\n" +
+	"\breplayed\x18\x02 \x01(\bR\breplayed\"j\n" +
+	"\x14GetWithdrawalRequest\x12%\n" +
+	"\rwithdrawal_id\x18\x01 \x01(\tH\x00R\fwithdrawalId\x12\x1f\n" +
+	"\n" +
+	"request_no\x18\x02 \x01(\tH\x00R\trequestNoB\n" +
+	"\n" +
+	"\bselector\"X\n" +
+	"\x15GetWithdrawalResponse\x12?\n" +
+	"\n" +
+	"withdrawal\x18\x01 \x01(\v2\x1f.aipay.settlement.v1.WithdrawalR\n" +
+	"withdrawal\"\x9c\x01\n" +
+	"\x16ListWithdrawalsRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\rR\x05limit\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\x12B\n" +
+	"\x06status\x18\x03 \x01(\x0e2%.aipay.settlement.v1.WithdrawalStatusH\x00R\x06status\x88\x01\x01B\t\n" +
+	"\a_status\"\x84\x01\n" +
+	"\x17ListWithdrawalsResponse\x12A\n" +
+	"\vwithdrawals\x18\x01 \x03(\v2\x1f.aipay.settlement.v1.WithdrawalR\vwithdrawals\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x8e\x01\n" +
+	"\vChainFreeze\x12,\n" +
+	"\x05chain\x18\x01 \x01(\x0e2\x16.aipay.common.v1.ChainR\x05chain\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x129\n" +
+	"\n" +
+	"updated_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x81\x01\n" +
+	"\rAccountFreeze\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x01 \x01(\tR\taccountId\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x129\n" +
+	"\n" +
+	"updated_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x9c\x02\n" +
+	"\fControlState\x12#\n" +
+	"\rglobal_frozen\x18\x01 \x01(\bR\fglobalFrozen\x12E\n" +
+	"\rchain_freezes\x18\x02 \x03(\v2 .aipay.settlement.v1.ChainFreezeR\fchainFreezes\x12K\n" +
+	"\x0faccount_freezes\x18\x03 \x03(\v2\".aipay.settlement.v1.AccountFreezeR\x0eaccountFreezes\x12\x18\n" +
+	"\aversion\x18\x04 \x01(\x04R\aversion\x129\n" +
+	"\n" +
+	"updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x18\n" +
+	"\x16GetControlStateRequest\"R\n" +
+	"\x17GetControlStateResponse\x127\n" +
+	"\x05state\x18\x01 \x01(\v2!.aipay.settlement.v1.ControlStateR\x05state\"\xe8\x01\n" +
+	"\x10SetFreezeRequest\x126\n" +
+	"\x05scope\x18\x01 \x01(\x0e2 .aipay.settlement.v1.FreezeScopeR\x05scope\x12,\n" +
+	"\x05chain\x18\x02 \x01(\x0e2\x16.aipay.common.v1.ChainR\x05chain\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x03 \x01(\tR\taccountId\x12\x16\n" +
+	"\x06frozen\x18\x04 \x01(\bR\x06frozen\x12\x16\n" +
+	"\x06reason\x18\x05 \x01(\tR\x06reason\x12\x1f\n" +
+	"\vapproval_id\x18\x06 \x01(\tR\n" +
+	"approvalId\"L\n" +
+	"\x11SetFreezeResponse\x127\n" +
+	"\x05state\x18\x01 \x01(\v2!.aipay.settlement.v1.ControlStateR\x05state*\x9f\x01\n" +
+	"\rAddressStatus\x12\x1e\n" +
+	"\x1aADDRESS_STATUS_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16ADDRESS_STATUS_COOLING\x10\x01\x12\x19\n" +
+	"\x15ADDRESS_STATUS_ACTIVE\x10\x02\x12\x1a\n" +
+	"\x16ADDRESS_STATUS_REVOKED\x10\x03\x12\x1b\n" +
+	"\x17ADDRESS_STATUS_REJECTED\x10\x04*\x9a\x03\n" +
+	"\x10WithdrawalStatus\x12!\n" +
+	"\x1dWITHDRAWAL_STATUS_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aWITHDRAWAL_STATUS_RESERVED\x10\x01\x12\x1a\n" +
+	"\x16WITHDRAWAL_STATUS_HELD\x10\x02\x12\x1e\n" +
+	"\x1aWITHDRAWAL_STATUS_PREPARED\x10\x03\x12\x1d\n" +
+	"\x19WITHDRAWAL_STATUS_SIGNING\x10\x04\x12(\n" +
+	"$WITHDRAWAL_STATUS_SIGNED_UNBROADCAST\x10\x05\x12\x1f\n" +
+	"\x1bWITHDRAWAL_STATUS_BROADCAST\x10\x06\x12\x1d\n" +
+	"\x19WITHDRAWAL_STATUS_UNKNOWN\x10\a\x12\x1f\n" +
+	"\x1bWITHDRAWAL_STATUS_CONFIRMED\x10\b\x12\x1c\n" +
+	"\x18WITHDRAWAL_STATUS_VOIDED\x10\t\x12\x1e\n" +
+	"\x1aWITHDRAWAL_STATUS_REJECTED\x10\n" +
+	"\x12\x1f\n" +
+	"\x1bWITHDRAWAL_STATUS_REQUESTED\x10\v*v\n" +
+	"\vFreezeScope\x12\x1c\n" +
+	"\x18FREEZE_SCOPE_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13FREEZE_SCOPE_GLOBAL\x10\x01\x12\x16\n" +
+	"\x12FREEZE_SCOPE_CHAIN\x10\x02\x12\x18\n" +
+	"\x14FREEZE_SCOPE_ACCOUNT\x10\x032\xd4\x03\n" +
+	"\x12AddressBookService\x12\x8e\x01\n" +
+	"\n" +
+	"AddAddress\x12&.aipay.settlement.v1.AddAddressRequest\x1a'.aipay.settlement.v1.AddAddressResponse\"/\xc2\xf3\x18+\n" +
+	")\n" +
+	"\abackend\x10\x04\x1a\x19settlement.address.manage \xac\x02\x12\x97\x01\n" +
+	"\rRevokeAddress\x12).aipay.settlement.v1.RevokeAddressRequest\x1a*.aipay.settlement.v1.RevokeAddressResponse\"/\xc2\xf3\x18+\n" +
+	")\n" +
+	"\abackend\x10\x04\x1a\x19settlement.address.manage \xac\x02\x12\x92\x01\n" +
+	"\rListAddresses\x12).aipay.settlement.v1.ListAddressesRequest\x1a*.aipay.settlement.v1.ListAddressesResponse\"*\xc2\xf3\x18&\n" +
+	"$\n" +
+	"\abackend\x10\x02\x1a\x17settlement.address.read2\x98\x05\n" +
+	"\x11WithdrawalService\x12\xa6\x01\n" +
+	"\x12GetWithdrawalQuote\x12..aipay.settlement.v1.GetWithdrawalQuoteRequest\x1a/.aipay.settlement.v1.GetWithdrawalQuoteResponse\"/\xc2\xf3\x18+\n" +
+	")\n" +
+	"\abackend\x10\x02\x1a\x1csettlement.withdrawal.create\x12\xa3\x01\n" +
+	"\x10CreateWithdrawal\x12,.aipay.settlement.v1.CreateWithdrawalRequest\x1a-.aipay.settlement.v1.CreateWithdrawalResponse\"2\xc2\xf3\x18.\n" +
+	",\n" +
+	"\abackend\x10\x04\x1a\x1csettlement.withdrawal.create \xac\x02\x12\x95\x01\n" +
+	"\rGetWithdrawal\x12).aipay.settlement.v1.GetWithdrawalRequest\x1a*.aipay.settlement.v1.GetWithdrawalResponse\"-\xc2\xf3\x18)\n" +
+	"'\n" +
+	"\abackend\x10\x02\x1a\x1asettlement.withdrawal.read\x12\x9b\x01\n" +
+	"\x0fListWithdrawals\x12+.aipay.settlement.v1.ListWithdrawalsRequest\x1a,.aipay.settlement.v1.ListWithdrawalsResponse\"-\xc2\xf3\x18)\n" +
+	"'\n" +
+	"\abackend\x10\x02\x1a\x1asettlement.withdrawal.read2\xc3\x02\n" +
+	"\x18SettlementControlService\x12\x98\x01\n" +
+	"\x0fGetControlState\x12+.aipay.settlement.v1.GetControlStateRequest\x1a,.aipay.settlement.v1.GetControlStateResponse\"*\xc2\xf3\x18&\n" +
+	"$\n" +
+	"\abackend\x10\x02\x1a\x17settlement.control.read\x12\x8b\x01\n" +
+	"\tSetFreeze\x12%.aipay.settlement.v1.SetFreezeRequest\x1a&.aipay.settlement.v1.SetFreezeResponse\"/\xc2\xf3\x18+\n" +
+	")\n" +
+	"\abackend\x10\x04\x1a\x19settlement.control.freeze \xac\x02BFZDgithub.com/Kaivodev/protobuf/gen/go/aipay/settlement/v1;settlementv1b\x06proto3"
 
-var file_aipay_settlement_v1_settlement_proto_goTypes = []any{}
+var (
+	file_aipay_settlement_v1_settlement_proto_rawDescOnce sync.Once
+	file_aipay_settlement_v1_settlement_proto_rawDescData []byte
+)
+
+func file_aipay_settlement_v1_settlement_proto_rawDescGZIP() []byte {
+	file_aipay_settlement_v1_settlement_proto_rawDescOnce.Do(func() {
+		file_aipay_settlement_v1_settlement_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_aipay_settlement_v1_settlement_proto_rawDesc), len(file_aipay_settlement_v1_settlement_proto_rawDesc)))
+	})
+	return file_aipay_settlement_v1_settlement_proto_rawDescData
+}
+
+var file_aipay_settlement_v1_settlement_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_aipay_settlement_v1_settlement_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_aipay_settlement_v1_settlement_proto_goTypes = []any{
+	(AddressStatus)(0),                 // 0: aipay.settlement.v1.AddressStatus
+	(WithdrawalStatus)(0),              // 1: aipay.settlement.v1.WithdrawalStatus
+	(FreezeScope)(0),                   // 2: aipay.settlement.v1.FreezeScope
+	(*AddressBookEntry)(nil),           // 3: aipay.settlement.v1.AddressBookEntry
+	(*AddAddressRequest)(nil),          // 4: aipay.settlement.v1.AddAddressRequest
+	(*AddAddressResponse)(nil),         // 5: aipay.settlement.v1.AddAddressResponse
+	(*RevokeAddressRequest)(nil),       // 6: aipay.settlement.v1.RevokeAddressRequest
+	(*RevokeAddressResponse)(nil),      // 7: aipay.settlement.v1.RevokeAddressResponse
+	(*ListAddressesRequest)(nil),       // 8: aipay.settlement.v1.ListAddressesRequest
+	(*ListAddressesResponse)(nil),      // 9: aipay.settlement.v1.ListAddressesResponse
+	(*WithdrawalQuote)(nil),            // 10: aipay.settlement.v1.WithdrawalQuote
+	(*GetWithdrawalQuoteRequest)(nil),  // 11: aipay.settlement.v1.GetWithdrawalQuoteRequest
+	(*GetWithdrawalQuoteResponse)(nil), // 12: aipay.settlement.v1.GetWithdrawalQuoteResponse
+	(*Withdrawal)(nil),                 // 13: aipay.settlement.v1.Withdrawal
+	(*CreateWithdrawalRequest)(nil),    // 14: aipay.settlement.v1.CreateWithdrawalRequest
+	(*CreateWithdrawalResponse)(nil),   // 15: aipay.settlement.v1.CreateWithdrawalResponse
+	(*GetWithdrawalRequest)(nil),       // 16: aipay.settlement.v1.GetWithdrawalRequest
+	(*GetWithdrawalResponse)(nil),      // 17: aipay.settlement.v1.GetWithdrawalResponse
+	(*ListWithdrawalsRequest)(nil),     // 18: aipay.settlement.v1.ListWithdrawalsRequest
+	(*ListWithdrawalsResponse)(nil),    // 19: aipay.settlement.v1.ListWithdrawalsResponse
+	(*ChainFreeze)(nil),                // 20: aipay.settlement.v1.ChainFreeze
+	(*AccountFreeze)(nil),              // 21: aipay.settlement.v1.AccountFreeze
+	(*ControlState)(nil),               // 22: aipay.settlement.v1.ControlState
+	(*GetControlStateRequest)(nil),     // 23: aipay.settlement.v1.GetControlStateRequest
+	(*GetControlStateResponse)(nil),    // 24: aipay.settlement.v1.GetControlStateResponse
+	(*SetFreezeRequest)(nil),           // 25: aipay.settlement.v1.SetFreezeRequest
+	(*SetFreezeResponse)(nil),          // 26: aipay.settlement.v1.SetFreezeResponse
+	(v1.Chain)(0),                      // 27: aipay.common.v1.Chain
+	(*timestamppb.Timestamp)(nil),      // 28: google.protobuf.Timestamp
+}
 var file_aipay_settlement_v1_settlement_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	27, // 0: aipay.settlement.v1.AddressBookEntry.chain:type_name -> aipay.common.v1.Chain
+	0,  // 1: aipay.settlement.v1.AddressBookEntry.status:type_name -> aipay.settlement.v1.AddressStatus
+	28, // 2: aipay.settlement.v1.AddressBookEntry.cooling_until:type_name -> google.protobuf.Timestamp
+	28, // 3: aipay.settlement.v1.AddressBookEntry.activated_at:type_name -> google.protobuf.Timestamp
+	28, // 4: aipay.settlement.v1.AddressBookEntry.revoked_at:type_name -> google.protobuf.Timestamp
+	28, // 5: aipay.settlement.v1.AddressBookEntry.created_at:type_name -> google.protobuf.Timestamp
+	28, // 6: aipay.settlement.v1.AddressBookEntry.updated_at:type_name -> google.protobuf.Timestamp
+	27, // 7: aipay.settlement.v1.AddAddressRequest.chain:type_name -> aipay.common.v1.Chain
+	3,  // 8: aipay.settlement.v1.AddAddressResponse.entry:type_name -> aipay.settlement.v1.AddressBookEntry
+	3,  // 9: aipay.settlement.v1.RevokeAddressResponse.entry:type_name -> aipay.settlement.v1.AddressBookEntry
+	3,  // 10: aipay.settlement.v1.ListAddressesResponse.entries:type_name -> aipay.settlement.v1.AddressBookEntry
+	27, // 11: aipay.settlement.v1.WithdrawalQuote.chain:type_name -> aipay.common.v1.Chain
+	28, // 12: aipay.settlement.v1.WithdrawalQuote.issued_at:type_name -> google.protobuf.Timestamp
+	28, // 13: aipay.settlement.v1.WithdrawalQuote.expires_at:type_name -> google.protobuf.Timestamp
+	27, // 14: aipay.settlement.v1.GetWithdrawalQuoteRequest.chain:type_name -> aipay.common.v1.Chain
+	10, // 15: aipay.settlement.v1.GetWithdrawalQuoteResponse.quote:type_name -> aipay.settlement.v1.WithdrawalQuote
+	27, // 16: aipay.settlement.v1.Withdrawal.chain:type_name -> aipay.common.v1.Chain
+	1,  // 17: aipay.settlement.v1.Withdrawal.status:type_name -> aipay.settlement.v1.WithdrawalStatus
+	28, // 18: aipay.settlement.v1.Withdrawal.created_at:type_name -> google.protobuf.Timestamp
+	28, // 19: aipay.settlement.v1.Withdrawal.updated_at:type_name -> google.protobuf.Timestamp
+	28, // 20: aipay.settlement.v1.Withdrawal.confirmed_at:type_name -> google.protobuf.Timestamp
+	27, // 21: aipay.settlement.v1.CreateWithdrawalRequest.chain:type_name -> aipay.common.v1.Chain
+	13, // 22: aipay.settlement.v1.CreateWithdrawalResponse.withdrawal:type_name -> aipay.settlement.v1.Withdrawal
+	13, // 23: aipay.settlement.v1.GetWithdrawalResponse.withdrawal:type_name -> aipay.settlement.v1.Withdrawal
+	1,  // 24: aipay.settlement.v1.ListWithdrawalsRequest.status:type_name -> aipay.settlement.v1.WithdrawalStatus
+	13, // 25: aipay.settlement.v1.ListWithdrawalsResponse.withdrawals:type_name -> aipay.settlement.v1.Withdrawal
+	27, // 26: aipay.settlement.v1.ChainFreeze.chain:type_name -> aipay.common.v1.Chain
+	28, // 27: aipay.settlement.v1.ChainFreeze.updated_at:type_name -> google.protobuf.Timestamp
+	28, // 28: aipay.settlement.v1.AccountFreeze.updated_at:type_name -> google.protobuf.Timestamp
+	20, // 29: aipay.settlement.v1.ControlState.chain_freezes:type_name -> aipay.settlement.v1.ChainFreeze
+	21, // 30: aipay.settlement.v1.ControlState.account_freezes:type_name -> aipay.settlement.v1.AccountFreeze
+	28, // 31: aipay.settlement.v1.ControlState.updated_at:type_name -> google.protobuf.Timestamp
+	22, // 32: aipay.settlement.v1.GetControlStateResponse.state:type_name -> aipay.settlement.v1.ControlState
+	2,  // 33: aipay.settlement.v1.SetFreezeRequest.scope:type_name -> aipay.settlement.v1.FreezeScope
+	27, // 34: aipay.settlement.v1.SetFreezeRequest.chain:type_name -> aipay.common.v1.Chain
+	22, // 35: aipay.settlement.v1.SetFreezeResponse.state:type_name -> aipay.settlement.v1.ControlState
+	4,  // 36: aipay.settlement.v1.AddressBookService.AddAddress:input_type -> aipay.settlement.v1.AddAddressRequest
+	6,  // 37: aipay.settlement.v1.AddressBookService.RevokeAddress:input_type -> aipay.settlement.v1.RevokeAddressRequest
+	8,  // 38: aipay.settlement.v1.AddressBookService.ListAddresses:input_type -> aipay.settlement.v1.ListAddressesRequest
+	11, // 39: aipay.settlement.v1.WithdrawalService.GetWithdrawalQuote:input_type -> aipay.settlement.v1.GetWithdrawalQuoteRequest
+	14, // 40: aipay.settlement.v1.WithdrawalService.CreateWithdrawal:input_type -> aipay.settlement.v1.CreateWithdrawalRequest
+	16, // 41: aipay.settlement.v1.WithdrawalService.GetWithdrawal:input_type -> aipay.settlement.v1.GetWithdrawalRequest
+	18, // 42: aipay.settlement.v1.WithdrawalService.ListWithdrawals:input_type -> aipay.settlement.v1.ListWithdrawalsRequest
+	23, // 43: aipay.settlement.v1.SettlementControlService.GetControlState:input_type -> aipay.settlement.v1.GetControlStateRequest
+	25, // 44: aipay.settlement.v1.SettlementControlService.SetFreeze:input_type -> aipay.settlement.v1.SetFreezeRequest
+	5,  // 45: aipay.settlement.v1.AddressBookService.AddAddress:output_type -> aipay.settlement.v1.AddAddressResponse
+	7,  // 46: aipay.settlement.v1.AddressBookService.RevokeAddress:output_type -> aipay.settlement.v1.RevokeAddressResponse
+	9,  // 47: aipay.settlement.v1.AddressBookService.ListAddresses:output_type -> aipay.settlement.v1.ListAddressesResponse
+	12, // 48: aipay.settlement.v1.WithdrawalService.GetWithdrawalQuote:output_type -> aipay.settlement.v1.GetWithdrawalQuoteResponse
+	15, // 49: aipay.settlement.v1.WithdrawalService.CreateWithdrawal:output_type -> aipay.settlement.v1.CreateWithdrawalResponse
+	17, // 50: aipay.settlement.v1.WithdrawalService.GetWithdrawal:output_type -> aipay.settlement.v1.GetWithdrawalResponse
+	19, // 51: aipay.settlement.v1.WithdrawalService.ListWithdrawals:output_type -> aipay.settlement.v1.ListWithdrawalsResponse
+	24, // 52: aipay.settlement.v1.SettlementControlService.GetControlState:output_type -> aipay.settlement.v1.GetControlStateResponse
+	26, // 53: aipay.settlement.v1.SettlementControlService.SetFreeze:output_type -> aipay.settlement.v1.SetFreezeResponse
+	45, // [45:54] is the sub-list for method output_type
+	36, // [36:45] is the sub-list for method input_type
+	36, // [36:36] is the sub-list for extension type_name
+	36, // [36:36] is the sub-list for extension extendee
+	0,  // [0:36] is the sub-list for field type_name
 }
 
 func init() { file_aipay_settlement_v1_settlement_proto_init() }
@@ -40,18 +2272,25 @@ func file_aipay_settlement_v1_settlement_proto_init() {
 	if File_aipay_settlement_v1_settlement_proto != nil {
 		return
 	}
+	file_aipay_settlement_v1_settlement_proto_msgTypes[13].OneofWrappers = []any{
+		(*GetWithdrawalRequest_WithdrawalId)(nil),
+		(*GetWithdrawalRequest_RequestNo)(nil),
+	}
+	file_aipay_settlement_v1_settlement_proto_msgTypes[15].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_settlement_v1_settlement_proto_rawDesc), len(file_aipay_settlement_v1_settlement_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   0,
+			NumEnums:      3,
+			NumMessages:   24,
 			NumExtensions: 0,
-			NumServices:   0,
+			NumServices:   3,
 		},
 		GoTypes:           file_aipay_settlement_v1_settlement_proto_goTypes,
 		DependencyIndexes: file_aipay_settlement_v1_settlement_proto_depIdxs,
+		EnumInfos:         file_aipay_settlement_v1_settlement_proto_enumTypes,
+		MessageInfos:      file_aipay_settlement_v1_settlement_proto_msgTypes,
 	}.Build()
 	File_aipay_settlement_v1_settlement_proto = out.File
 	file_aipay_settlement_v1_settlement_proto_goTypes = nil

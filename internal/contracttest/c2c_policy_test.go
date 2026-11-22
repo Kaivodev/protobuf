@@ -38,6 +38,8 @@ func TestC2CMethodAuthorization(t *testing.T) {
 				"ReserveRefund":               {[]string{"payment"}, serviceOnly, ""},
 				"HoldReleasedTradeForDispute": {[]string{"payment"}, serviceOnly, ""},
 				"ResolveReleasedTradeDispute": {[]string{"payment"}, serviceOnly, ""},
+				"ReserveWithdrawal":           {[]string{"settlement"}, serviceOnly, ""},
+				"GetWithdrawalReservation":    {[]string{"reconciliation", "settlement"}, serviceOnly, ""},
 			},
 		},
 		{

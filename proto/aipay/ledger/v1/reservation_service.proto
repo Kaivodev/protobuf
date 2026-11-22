@@ -3,8 +3,10 @@ syntax = "proto3";
 package aipay.ledger.v1;
 
 import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/asset.proto";
 import "aipay/common/v1/trade.proto";
 import "aipay/ledger/v1/trade.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
 
@@ -160,6 +162,66 @@ message GetTradeFreezeDetailsResponse {
   AccountRiskFreeze recipient_risk_freeze = 9;
 }
 
+// Withdrawal reservation state. RESERVED holds principal + fee on the user's
+// available balance without reducing the liability total. SETTLED and RELEASED
+// are reached only by the signed settlement.withdrawals event.
+enum WithdrawalReservationStatus {
+  WITHDRAWAL_RESERVATION_STATUS_UNSPECIFIED = 0;
+  WITHDRAWAL_RESERVATION_STATUS_RESERVED = 1;
+  WITHDRAWAL_RESERVATION_STATUS_SETTLED = 2;
+  WITHDRAWAL_RESERVATION_STATUS_RELEASED = 3;
+  // The command may have committed; callers must query by the same key, never
+  // create a second reservation or release funds from this state.
+  WITHDRAWAL_RESERVATION_STATUS_UNKNOWN = 4;
+}
+
+message WithdrawalReservation {
+  string reservation_id = 1;
+  string withdrawal_id = 2;
+  string account_id = 3;
+  aipay.common.v1.Chain chain = 4;
+  int64 principal_usdt = 5;
+  int64 fee_usdt = 6;
+  string fee_version = 7;
+  WithdrawalReservationStatus status = 8;
+  // Global journal sequence of the reserve posting; immutable.
+  uint64 reserve_seq = 9;
+  // Journal sequence of settlement or release; 0 until terminal.
+  uint64 final_seq = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+// Idempotent by withdrawal_id. Same key with different account, chain, amount,
+// fee version or request digest is AlreadyExists. The caller must never send a
+// second key for a retry of the same withdrawal. The request digest is the
+// 32-byte canonical settlement command digest, not a client-chosen value.
+message ReserveWithdrawalRequest {
+  string withdrawal_id = 1;
+  string account_id = 2;
+  aipay.common.v1.Chain chain = 3;
+  int64 principal_usdt = 4;
+  int64 fee_usdt = 5;
+  string fee_version = 6;
+  bytes request_digest = 7;
+}
+
+message ReserveWithdrawalResponse {
+  WithdrawalReservation reservation = 1;
+}
+
+message GetWithdrawalReservationRequest {
+  // Exactly one nonempty selector; unknown IDs return NotFound.
+  oneof selector {
+    string withdrawal_id = 1;
+    string reservation_id = 2;
+  }
+}
+
+message GetWithdrawalReservationResponse {
+  WithdrawalReservation reservation = 1;
+}
+
 // Service-only commands, with no user assertion. Payment first checks the
 // initiating refund/dispute authority. Queries also allow reconciliation to
 // independently verify the actual escrow. Every change serializes on the
@@ -174,7 +236,7 @@ message GetTradeFreezeDetailsResponse {
 // Unknown outcomes and TTLs never release funds. Inter-account release,
 // cancellation and refund settlement/restoration are driven only by verified
 // reconciliation signed events; payment has no unilateral inter-account release
-// RPC. ReserveWithdrawal is deferred to M5.
+// RPC. ReserveWithdrawal is settlement-only and idempotent by withdrawal ID.
 // Command digests use the field-order encoding in docs contracts.md, not proto
 // serialization.
 //
@@ -261,6 +323,25 @@ service ReservationService {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: "reconciliation"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc ReserveWithdrawal(ReserveWithdrawalRequest) returns (ReserveWithdrawalResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "settlement"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc GetWithdrawalReservation(GetWithdrawalReservationRequest) returns (GetWithdrawalReservationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: [
+          "settlement",
+          "reconciliation"
+        ]
         assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
       }
     };

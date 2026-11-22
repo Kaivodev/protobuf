@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package aipay.settlement.v1;
+
+import "aipay/common/v1/asset.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/settlement/v1;settlementv1";
+
+// settlement.withdrawals, producer settlement, receivers ledger and
+// reconciliation. event_type equals the message name; schema_version 1.
+//
+// The event is the only authority for ledger finalization. Receivers must
+// verify the signed envelope, the exact reservation/withdrawal/account/chain/
+// amount binding and the finality evidence before changing funds. Delivering
+// the same event twice never settles or releases twice.
+
+message WithdrawalCompleted {
+  string withdrawal_id = 1;
+  string ledger_reservation_id = 2;
+  string account_id = 3;
+  aipay.common.v1.Chain chain = 4;
+  string address = 5;
+  int64 principal_usdt = 6;
+  int64 fee_usdt = 7;
+  string fee_version = 8;
+  string logical_transfer_id = 9;
+  uint64 execution_version = 10;
+  // Lowercase hex; the exact transaction independently verified.
+  string transaction_hash = 11;
+  string block_hash = 12;
+  uint64 block_number = 13;
+  uint32 log_index = 14;
+  // Token raw amount actually transferred, decimal integer string.
+  string raw_amount = 15;
+  google.protobuf.Timestamp finalized_at = 16;
+}
+
+message WithdrawalFailed {
+  string withdrawal_id = 1;
+  string ledger_reservation_id = 2;
+  string account_id = 3;
+  aipay.common.v1.Chain chain = 4;
+  int64 principal_usdt = 5;
+  int64 fee_usdt = 6;
+  string fee_version = 7;
+  // Stable reason, e.g. preflight_rejected, voided, reservation_failed.
+  string failure_code = 8;
+  // Evidence that every related signature is void; never a timeout alone.
+  string void_proof_ref = 9;
+  google.protobuf.Timestamp failed_at = 10;
+}
