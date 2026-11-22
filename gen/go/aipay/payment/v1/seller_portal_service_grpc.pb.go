@@ -19,15 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SellerPortalService_ListSellerChannels_FullMethodName   = "/aipay.payment.v1.SellerPortalService/ListSellerChannels"
-	SellerPortalService_GetSellerChannel_FullMethodName     = "/aipay.payment.v1.SellerPortalService/GetSellerChannel"
-	SellerPortalService_ListSellerOrders_FullMethodName     = "/aipay.payment.v1.SellerPortalService/ListSellerOrders"
-	SellerPortalService_GetSellerOrder_FullMethodName       = "/aipay.payment.v1.SellerPortalService/GetSellerOrder"
-	SellerPortalService_ListSellerRefunds_FullMethodName    = "/aipay.payment.v1.SellerPortalService/ListSellerRefunds"
-	SellerPortalService_GetSellerRefund_FullMethodName      = "/aipay.payment.v1.SellerPortalService/GetSellerRefund"
-	SellerPortalService_ListSellerDisputes_FullMethodName   = "/aipay.payment.v1.SellerPortalService/ListSellerDisputes"
-	SellerPortalService_GetSellerDispute_FullMethodName     = "/aipay.payment.v1.SellerPortalService/GetSellerDispute"
-	SellerPortalService_AppendSellerEvidence_FullMethodName = "/aipay.payment.v1.SellerPortalService/AppendSellerEvidence"
+	SellerPortalService_ListSellerChannels_FullMethodName     = "/aipay.payment.v1.SellerPortalService/ListSellerChannels"
+	SellerPortalService_GetSellerChannel_FullMethodName       = "/aipay.payment.v1.SellerPortalService/GetSellerChannel"
+	SellerPortalService_ListSellerOrders_FullMethodName       = "/aipay.payment.v1.SellerPortalService/ListSellerOrders"
+	SellerPortalService_GetSellerOrder_FullMethodName         = "/aipay.payment.v1.SellerPortalService/GetSellerOrder"
+	SellerPortalService_ListSellerRefunds_FullMethodName      = "/aipay.payment.v1.SellerPortalService/ListSellerRefunds"
+	SellerPortalService_GetSellerRefund_FullMethodName        = "/aipay.payment.v1.SellerPortalService/GetSellerRefund"
+	SellerPortalService_ListSellerDisputes_FullMethodName     = "/aipay.payment.v1.SellerPortalService/ListSellerDisputes"
+	SellerPortalService_GetSellerDispute_FullMethodName       = "/aipay.payment.v1.SellerPortalService/GetSellerDispute"
+	SellerPortalService_AppendSellerEvidence_FullMethodName   = "/aipay.payment.v1.SellerPortalService/AppendSellerEvidence"
+	SellerPortalService_SetSellerChannelOnline_FullMethodName = "/aipay.payment.v1.SellerPortalService/SetSellerChannelOnline"
 )
 
 // SellerPortalServiceClient is the client API for SellerPortalService service.
@@ -63,6 +64,18 @@ type SellerPortalServiceClient interface {
 	ListSellerDisputes(ctx context.Context, in *ListSellerDisputesRequest, opts ...grpc.CallOption) (*ListSellerDisputesResponse, error)
 	GetSellerDispute(ctx context.Context, in *GetSellerDisputeRequest, opts ...grpc.CallOption) (*GetSellerDisputeResponse, error)
 	AppendSellerEvidence(ctx context.Context, in *AppendSellerEvidenceRequest, opts ...grpc.CallOption) (*AppendSellerEvidenceResponse, error)
+	// IAM requires recent reauthentication on this route without a per-switch TOTP
+	// challenge or second approver. Payment verifies the signed
+	// command_sha256 against the full method and canonical request before replay or CAS.
+	// For a new key, check the expected version even when intent already matches.
+	// On a match with unchanged intent, audit the no-op and return the current view
+	// without updating state or incrementing the version. On a switch,
+	// update seller intent, increment seller_online_version and audit the actor,
+	// reason and old/new values in one transaction. Platform control_version and pending
+	// approvals are independent. New routing and inventory checks require both seller
+	// intent and platform enablement. In-flight queries, closes, refunds and callbacks
+	// continue across a switch. This command emits no event.
+	SetSellerChannelOnline(ctx context.Context, in *SetSellerChannelOnlineRequest, opts ...grpc.CallOption) (*SetSellerChannelOnlineResponse, error)
 }
 
 type sellerPortalServiceClient struct {
@@ -163,6 +176,16 @@ func (c *sellerPortalServiceClient) AppendSellerEvidence(ctx context.Context, in
 	return out, nil
 }
 
+func (c *sellerPortalServiceClient) SetSellerChannelOnline(ctx context.Context, in *SetSellerChannelOnlineRequest, opts ...grpc.CallOption) (*SetSellerChannelOnlineResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetSellerChannelOnlineResponse)
+	err := c.cc.Invoke(ctx, SellerPortalService_SetSellerChannelOnline_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SellerPortalServiceServer is the server API for SellerPortalService service.
 // All implementations must embed UnimplementedSellerPortalServiceServer
 // for forward compatibility.
@@ -196,6 +219,18 @@ type SellerPortalServiceServer interface {
 	ListSellerDisputes(context.Context, *ListSellerDisputesRequest) (*ListSellerDisputesResponse, error)
 	GetSellerDispute(context.Context, *GetSellerDisputeRequest) (*GetSellerDisputeResponse, error)
 	AppendSellerEvidence(context.Context, *AppendSellerEvidenceRequest) (*AppendSellerEvidenceResponse, error)
+	// IAM requires recent reauthentication on this route without a per-switch TOTP
+	// challenge or second approver. Payment verifies the signed
+	// command_sha256 against the full method and canonical request before replay or CAS.
+	// For a new key, check the expected version even when intent already matches.
+	// On a match with unchanged intent, audit the no-op and return the current view
+	// without updating state or incrementing the version. On a switch,
+	// update seller intent, increment seller_online_version and audit the actor,
+	// reason and old/new values in one transaction. Platform control_version and pending
+	// approvals are independent. New routing and inventory checks require both seller
+	// intent and platform enablement. In-flight queries, closes, refunds and callbacks
+	// continue across a switch. This command emits no event.
+	SetSellerChannelOnline(context.Context, *SetSellerChannelOnlineRequest) (*SetSellerChannelOnlineResponse, error)
 	mustEmbedUnimplementedSellerPortalServiceServer()
 }
 
@@ -232,6 +267,9 @@ func (UnimplementedSellerPortalServiceServer) GetSellerDispute(context.Context, 
 }
 func (UnimplementedSellerPortalServiceServer) AppendSellerEvidence(context.Context, *AppendSellerEvidenceRequest) (*AppendSellerEvidenceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AppendSellerEvidence not implemented")
+}
+func (UnimplementedSellerPortalServiceServer) SetSellerChannelOnline(context.Context, *SetSellerChannelOnlineRequest) (*SetSellerChannelOnlineResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetSellerChannelOnline not implemented")
 }
 func (UnimplementedSellerPortalServiceServer) mustEmbedUnimplementedSellerPortalServiceServer() {}
 func (UnimplementedSellerPortalServiceServer) testEmbeddedByValue()                             {}
@@ -416,6 +454,24 @@ func _SellerPortalService_AppendSellerEvidence_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SellerPortalService_SetSellerChannelOnline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetSellerChannelOnlineRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SellerPortalServiceServer).SetSellerChannelOnline(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SellerPortalService_SetSellerChannelOnline_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SellerPortalServiceServer).SetSellerChannelOnline(ctx, req.(*SetSellerChannelOnlineRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SellerPortalService_ServiceDesc is the grpc.ServiceDesc for SellerPortalService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -458,6 +514,10 @@ var SellerPortalService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AppendSellerEvidence",
 			Handler:    _SellerPortalService_AppendSellerEvidence_Handler,
+		},
+		{
+			MethodName: "SetSellerChannelOnline",
+			Handler:    _SellerPortalService_SetSellerChannelOnline_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package aipay.ledger.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/query.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+
+enum MerchantStatementScopeKind {
+  MERCHANT_STATEMENT_SCOPE_KIND_UNSPECIFIED = 0;
+  MERCHANT_STATEMENT_SCOPE_KIND_ACCOUNT = 1;
+  MERCHANT_STATEMENT_SCOPE_KIND_BUSINESS = 2;
+  MERCHANT_STATEMENT_SCOPE_KIND_APPLICATION = 3;
+}
+
+// File selector within the authorized funds account.
+message MerchantStatementScope {
+  // Required. Reject UNSPECIFIED and unknown values.
+  MerchantStatementScopeKind kind = 1;
+  // Absent for ACCOUNT. Required and nonempty for BUSINESS or APPLICATION,
+  // selecting that business_id or application_id within the authorized scope.
+  optional string target_id = 2;
+}
+
+message ListMerchantStatementsRequest {
+  // Required on every page.
+  MerchantStatementScope scope = 1;
+  // Required, 1-100.
+  uint32 page_size = 2 [(aipay.common.v1.max_items) = 100];
+  // Opaque cursor bound to the scope and caller. Empty on the first page.
+  string page_token = 3;
+}
+
+message ListMerchantStatementsResponse {
+  // Downloadable UTC+8 business dates in YYYY-MM-DD format, newest first.
+  repeated string business_dates = 1;
+  // Empty at the end.
+  string next_page_token = 2;
+}
+
+message GetMerchantStatementRequest {
+  // Required calendar date in YYYY-MM-DD format, for a UTC+8 business day.
+  string business_date = 1;
+  // Required, including for an account-wide file.
+  MerchantStatementScope scope = 2;
+  // Backend must omit this field, even when empty (INVALID_ARGUMENT if present).
+  // Its funds account comes solely from the verified acting_scope.account_id.
+  // IAM must supply a nonempty account_id and request ACCOUNT scope.
+  optional string account_id = 3;
+}
+
+// All fields required. The complete response is limited to 12 MiB. Ledger
+// returns FailedPrecondition and alerts if it would exceed the limit.
+message GetMerchantStatementResponse {
+  // ZIP containing transactions.csv / transactions.json, summary.json and the
+  // signed manifest.json. The manifest binds the account, date, scope and target,
+  // daily checkpoint and file hashes. The ZIP is returned unchanged.
+  bytes package = 1;
+  // SHA-256 of the exact manifest.json bytes, 32 bytes.
+  bytes manifest_sha256 = 2;
+  // Positive ledger checkpoint ID for this business day.
+  uint64 checkpoint_id = 3;
+}
+
+// Ledger generates immutable account files after the daily checkpoint and
+// reconciliation of opening balance, entries and closing balance. On first
+// request it generates and separately signs business/application files with
+// only authorized entries and subtotals. Those files exclude account-wide
+// balances and unattributed operations. Each (account, date, scope and target)
+// has one immutable file. Later corrections appear on their own posting date.
+//
+// For backend, take account_id solely from the verified acting_scope. Validate
+// the requested scope and target against the authorized account and resource
+// constraints. A narrower proof cannot retrieve an account-wide file.
+service ReportService {
+  // List business days with a generated account file. BUSINESS and APPLICATION
+  // list the same dates and generate their scoped file on the first Get.
+  rpc ListMerchantStatements(ListMerchantStatementsRequest) returns (ListMerchantStatementsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.statement.read"
+      }
+    };
+  }
+  // IAM may retrieve only ACCOUNT files for subscription email. IAM verifies the
+  // active subscription. Ledger audits the account and business date on every IAM call.
+  rpc GetMerchantStatement(GetMerchantStatementRequest) returns (GetMerchantStatementResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.statement.read"
+      }
+      rules: {
+        callers: "iam"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}

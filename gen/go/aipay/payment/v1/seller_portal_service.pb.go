@@ -1042,6 +1042,133 @@ func (x *AppendSellerEvidenceResponse) GetAsOf() *timestamppb.Timestamp {
 	return nil
 }
 
+type SetSellerChannelOnlineRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Required. An authorized identical retry returns the original result before
+	// checking the version again. Changed content under the same key is AlreadyExists.
+	IdempotencyKey string `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	// Required. Payment checks the channel belongs to the assertion's bound seller.
+	ChannelAccountId string `protobuf:"bytes,2,opt,name=channel_account_id,json=channelAccountId,proto3" json:"channel_account_id,omitempty"`
+	// Required presence. Explicit false takes the seller offline for new orders.
+	Online *bool `protobuf:"varint,3,opt,name=online,proto3,oneof" json:"online,omitempty"`
+	// Required, positive. A stale version on first execution is FailedPrecondition.
+	ExpectedSellerOnlineVersion uint64 `protobuf:"varint,4,opt,name=expected_seller_online_version,json=expectedSellerOnlineVersion,proto3" json:"expected_seller_online_version,omitempty"`
+	// Required audit reason, 1 to 200 characters.
+	Reason        string `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetSellerChannelOnlineRequest) Reset() {
+	*x = SetSellerChannelOnlineRequest{}
+	mi := &file_aipay_payment_v1_seller_portal_service_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetSellerChannelOnlineRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetSellerChannelOnlineRequest) ProtoMessage() {}
+
+func (x *SetSellerChannelOnlineRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_seller_portal_service_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetSellerChannelOnlineRequest.ProtoReflect.Descriptor instead.
+func (*SetSellerChannelOnlineRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_seller_portal_service_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *SetSellerChannelOnlineRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *SetSellerChannelOnlineRequest) GetChannelAccountId() string {
+	if x != nil {
+		return x.ChannelAccountId
+	}
+	return ""
+}
+
+func (x *SetSellerChannelOnlineRequest) GetOnline() bool {
+	if x != nil && x.Online != nil {
+		return *x.Online
+	}
+	return false
+}
+
+func (x *SetSellerChannelOnlineRequest) GetExpectedSellerOnlineVersion() uint64 {
+	if x != nil {
+		return x.ExpectedSellerOnlineVersion
+	}
+	return 0
+}
+
+func (x *SetSellerChannelOnlineRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type SetSellerChannelOnlineResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Required seller view after the change.
+	Channel       *SellerChannelView `protobuf:"bytes,1,opt,name=channel,proto3" json:"channel,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetSellerChannelOnlineResponse) Reset() {
+	*x = SetSellerChannelOnlineResponse{}
+	mi := &file_aipay_payment_v1_seller_portal_service_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetSellerChannelOnlineResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetSellerChannelOnlineResponse) ProtoMessage() {}
+
+func (x *SetSellerChannelOnlineResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_seller_portal_service_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetSellerChannelOnlineResponse.ProtoReflect.Descriptor instead.
+func (*SetSellerChannelOnlineResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_seller_portal_service_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *SetSellerChannelOnlineResponse) GetChannel() *SellerChannelView {
+	if x != nil {
+		return x.Channel
+	}
+	return nil
+}
+
 var File_aipay_payment_v1_seller_portal_service_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_seller_portal_service_proto_rawDesc = "" +
@@ -1118,8 +1245,16 @@ const file_aipay_payment_v1_seller_portal_service_proto_rawDesc = "" +
 	"\x0fseller_evidence\x18\x04 \x01(\fR\x0esellerEvidence\"\x8e\x01\n" +
 	"\x1cAppendSellerEvidenceResponse\x12=\n" +
 	"\adispute\x18\x01 \x01(\v2#.aipay.payment.v1.SellerDisputeViewR\adispute\x12/\n" +
-	"\x05as_of\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf2\xe2\n" +
-	"\n" +
+	"\x05as_of\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf\"\xfb\x01\n" +
+	"\x1dSetSellerChannelOnlineRequest\x12'\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12,\n" +
+	"\x12channel_account_id\x18\x02 \x01(\tR\x10channelAccountId\x12\x1b\n" +
+	"\x06online\x18\x03 \x01(\bH\x00R\x06online\x88\x01\x01\x12C\n" +
+	"\x1eexpected_seller_online_version\x18\x04 \x01(\x04R\x1bexpectedSellerOnlineVersion\x12\x16\n" +
+	"\x06reason\x18\x05 \x01(\tR\x06reasonB\t\n" +
+	"\a_online\"_\n" +
+	"\x1eSetSellerChannelOnlineResponse\x12=\n" +
+	"\achannel\x18\x01 \x01(\v2#.aipay.payment.v1.SellerChannelViewR\achannel2\x8b\f\n" +
 	"\x13SellerPortalService\x12\x98\x01\n" +
 	"\x12ListSellerChannels\x12+.aipay.payment.v1.ListSellerChannelsRequest\x1a,.aipay.payment.v1.ListSellerChannelsResponse\"'\xc2\xf3\x18#\n" +
 	"!\n" +
@@ -1147,7 +1282,10 @@ const file_aipay_payment_v1_seller_portal_service_proto_rawDesc = "" +
 	"\abackend\x10\x02\x1a\x14payment.dispute.read\x12\xa2\x01\n" +
 	"\x14AppendSellerEvidence\x12-.aipay.payment.v1.AppendSellerEvidenceRequest\x1a..aipay.payment.v1.AppendSellerEvidenceResponse\"+\xc2\xf3\x18'\n" +
 	"%\n" +
-	"\abackend\x10\x02\x1a\x18payment.dispute.evidenceB@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"\abackend\x10\x02\x1a\x18payment.dispute.evidence\x12\xa6\x01\n" +
+	"\x16SetSellerChannelOnline\x12/.aipay.payment.v1.SetSellerChannelOnlineRequest\x1a0.aipay.payment.v1.SetSellerChannelOnlineResponse\")\xc2\xf3\x18%\n" +
+	"#\n" +
+	"\abackend\x10\x02\x1a\x16payment.channel.onlineB@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_aipay_payment_v1_seller_portal_service_proto_rawDescOnce sync.Once
@@ -1161,80 +1299,85 @@ func file_aipay_payment_v1_seller_portal_service_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_seller_portal_service_proto_rawDescData
 }
 
-var file_aipay_payment_v1_seller_portal_service_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_aipay_payment_v1_seller_portal_service_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_aipay_payment_v1_seller_portal_service_proto_goTypes = []any{
-	(*ListSellerChannelsRequest)(nil),    // 0: aipay.payment.v1.ListSellerChannelsRequest
-	(*ListSellerChannelsResponse)(nil),   // 1: aipay.payment.v1.ListSellerChannelsResponse
-	(*GetSellerChannelRequest)(nil),      // 2: aipay.payment.v1.GetSellerChannelRequest
-	(*GetSellerChannelResponse)(nil),     // 3: aipay.payment.v1.GetSellerChannelResponse
-	(*ListSellerOrdersRequest)(nil),      // 4: aipay.payment.v1.ListSellerOrdersRequest
-	(*ListSellerOrdersResponse)(nil),     // 5: aipay.payment.v1.ListSellerOrdersResponse
-	(*GetSellerOrderRequest)(nil),        // 6: aipay.payment.v1.GetSellerOrderRequest
-	(*GetSellerOrderResponse)(nil),       // 7: aipay.payment.v1.GetSellerOrderResponse
-	(*ListSellerRefundsRequest)(nil),     // 8: aipay.payment.v1.ListSellerRefundsRequest
-	(*ListSellerRefundsResponse)(nil),    // 9: aipay.payment.v1.ListSellerRefundsResponse
-	(*GetSellerRefundRequest)(nil),       // 10: aipay.payment.v1.GetSellerRefundRequest
-	(*GetSellerRefundResponse)(nil),      // 11: aipay.payment.v1.GetSellerRefundResponse
-	(*ListSellerDisputesRequest)(nil),    // 12: aipay.payment.v1.ListSellerDisputesRequest
-	(*ListSellerDisputesResponse)(nil),   // 13: aipay.payment.v1.ListSellerDisputesResponse
-	(*GetSellerDisputeRequest)(nil),      // 14: aipay.payment.v1.GetSellerDisputeRequest
-	(*GetSellerDisputeResponse)(nil),     // 15: aipay.payment.v1.GetSellerDisputeResponse
-	(*AppendSellerEvidenceRequest)(nil),  // 16: aipay.payment.v1.AppendSellerEvidenceRequest
-	(*AppendSellerEvidenceResponse)(nil), // 17: aipay.payment.v1.AppendSellerEvidenceResponse
-	(*SellerChannelView)(nil),            // 18: aipay.payment.v1.SellerChannelView
-	(*timestamppb.Timestamp)(nil),        // 19: google.protobuf.Timestamp
-	(OrderStatus)(0),                     // 20: aipay.payment.v1.OrderStatus
-	(*SellerOrderView)(nil),              // 21: aipay.payment.v1.SellerOrderView
-	(RefundStatus)(0),                    // 22: aipay.payment.v1.RefundStatus
-	(*SellerRefundView)(nil),             // 23: aipay.payment.v1.SellerRefundView
-	(DisputeCaseStatus)(0),               // 24: aipay.payment.v1.DisputeCaseStatus
-	(*SellerDisputeView)(nil),            // 25: aipay.payment.v1.SellerDisputeView
+	(*ListSellerChannelsRequest)(nil),      // 0: aipay.payment.v1.ListSellerChannelsRequest
+	(*ListSellerChannelsResponse)(nil),     // 1: aipay.payment.v1.ListSellerChannelsResponse
+	(*GetSellerChannelRequest)(nil),        // 2: aipay.payment.v1.GetSellerChannelRequest
+	(*GetSellerChannelResponse)(nil),       // 3: aipay.payment.v1.GetSellerChannelResponse
+	(*ListSellerOrdersRequest)(nil),        // 4: aipay.payment.v1.ListSellerOrdersRequest
+	(*ListSellerOrdersResponse)(nil),       // 5: aipay.payment.v1.ListSellerOrdersResponse
+	(*GetSellerOrderRequest)(nil),          // 6: aipay.payment.v1.GetSellerOrderRequest
+	(*GetSellerOrderResponse)(nil),         // 7: aipay.payment.v1.GetSellerOrderResponse
+	(*ListSellerRefundsRequest)(nil),       // 8: aipay.payment.v1.ListSellerRefundsRequest
+	(*ListSellerRefundsResponse)(nil),      // 9: aipay.payment.v1.ListSellerRefundsResponse
+	(*GetSellerRefundRequest)(nil),         // 10: aipay.payment.v1.GetSellerRefundRequest
+	(*GetSellerRefundResponse)(nil),        // 11: aipay.payment.v1.GetSellerRefundResponse
+	(*ListSellerDisputesRequest)(nil),      // 12: aipay.payment.v1.ListSellerDisputesRequest
+	(*ListSellerDisputesResponse)(nil),     // 13: aipay.payment.v1.ListSellerDisputesResponse
+	(*GetSellerDisputeRequest)(nil),        // 14: aipay.payment.v1.GetSellerDisputeRequest
+	(*GetSellerDisputeResponse)(nil),       // 15: aipay.payment.v1.GetSellerDisputeResponse
+	(*AppendSellerEvidenceRequest)(nil),    // 16: aipay.payment.v1.AppendSellerEvidenceRequest
+	(*AppendSellerEvidenceResponse)(nil),   // 17: aipay.payment.v1.AppendSellerEvidenceResponse
+	(*SetSellerChannelOnlineRequest)(nil),  // 18: aipay.payment.v1.SetSellerChannelOnlineRequest
+	(*SetSellerChannelOnlineResponse)(nil), // 19: aipay.payment.v1.SetSellerChannelOnlineResponse
+	(*SellerChannelView)(nil),              // 20: aipay.payment.v1.SellerChannelView
+	(*timestamppb.Timestamp)(nil),          // 21: google.protobuf.Timestamp
+	(OrderStatus)(0),                       // 22: aipay.payment.v1.OrderStatus
+	(*SellerOrderView)(nil),                // 23: aipay.payment.v1.SellerOrderView
+	(RefundStatus)(0),                      // 24: aipay.payment.v1.RefundStatus
+	(*SellerRefundView)(nil),               // 25: aipay.payment.v1.SellerRefundView
+	(DisputeCaseStatus)(0),                 // 26: aipay.payment.v1.DisputeCaseStatus
+	(*SellerDisputeView)(nil),              // 27: aipay.payment.v1.SellerDisputeView
 }
 var file_aipay_payment_v1_seller_portal_service_proto_depIdxs = []int32{
-	18, // 0: aipay.payment.v1.ListSellerChannelsResponse.channels:type_name -> aipay.payment.v1.SellerChannelView
-	19, // 1: aipay.payment.v1.ListSellerChannelsResponse.as_of:type_name -> google.protobuf.Timestamp
-	18, // 2: aipay.payment.v1.GetSellerChannelResponse.channel:type_name -> aipay.payment.v1.SellerChannelView
-	19, // 3: aipay.payment.v1.GetSellerChannelResponse.as_of:type_name -> google.protobuf.Timestamp
-	20, // 4: aipay.payment.v1.ListSellerOrdersRequest.status:type_name -> aipay.payment.v1.OrderStatus
-	21, // 5: aipay.payment.v1.ListSellerOrdersResponse.orders:type_name -> aipay.payment.v1.SellerOrderView
-	19, // 6: aipay.payment.v1.ListSellerOrdersResponse.as_of:type_name -> google.protobuf.Timestamp
-	21, // 7: aipay.payment.v1.GetSellerOrderResponse.order:type_name -> aipay.payment.v1.SellerOrderView
-	19, // 8: aipay.payment.v1.GetSellerOrderResponse.as_of:type_name -> google.protobuf.Timestamp
-	22, // 9: aipay.payment.v1.ListSellerRefundsRequest.status:type_name -> aipay.payment.v1.RefundStatus
-	23, // 10: aipay.payment.v1.ListSellerRefundsResponse.refunds:type_name -> aipay.payment.v1.SellerRefundView
-	19, // 11: aipay.payment.v1.ListSellerRefundsResponse.as_of:type_name -> google.protobuf.Timestamp
-	23, // 12: aipay.payment.v1.GetSellerRefundResponse.refund:type_name -> aipay.payment.v1.SellerRefundView
-	19, // 13: aipay.payment.v1.GetSellerRefundResponse.as_of:type_name -> google.protobuf.Timestamp
-	24, // 14: aipay.payment.v1.ListSellerDisputesRequest.status:type_name -> aipay.payment.v1.DisputeCaseStatus
-	25, // 15: aipay.payment.v1.ListSellerDisputesResponse.disputes:type_name -> aipay.payment.v1.SellerDisputeView
-	19, // 16: aipay.payment.v1.ListSellerDisputesResponse.as_of:type_name -> google.protobuf.Timestamp
-	25, // 17: aipay.payment.v1.GetSellerDisputeResponse.dispute:type_name -> aipay.payment.v1.SellerDisputeView
-	19, // 18: aipay.payment.v1.GetSellerDisputeResponse.as_of:type_name -> google.protobuf.Timestamp
-	25, // 19: aipay.payment.v1.AppendSellerEvidenceResponse.dispute:type_name -> aipay.payment.v1.SellerDisputeView
-	19, // 20: aipay.payment.v1.AppendSellerEvidenceResponse.as_of:type_name -> google.protobuf.Timestamp
-	0,  // 21: aipay.payment.v1.SellerPortalService.ListSellerChannels:input_type -> aipay.payment.v1.ListSellerChannelsRequest
-	2,  // 22: aipay.payment.v1.SellerPortalService.GetSellerChannel:input_type -> aipay.payment.v1.GetSellerChannelRequest
-	4,  // 23: aipay.payment.v1.SellerPortalService.ListSellerOrders:input_type -> aipay.payment.v1.ListSellerOrdersRequest
-	6,  // 24: aipay.payment.v1.SellerPortalService.GetSellerOrder:input_type -> aipay.payment.v1.GetSellerOrderRequest
-	8,  // 25: aipay.payment.v1.SellerPortalService.ListSellerRefunds:input_type -> aipay.payment.v1.ListSellerRefundsRequest
-	10, // 26: aipay.payment.v1.SellerPortalService.GetSellerRefund:input_type -> aipay.payment.v1.GetSellerRefundRequest
-	12, // 27: aipay.payment.v1.SellerPortalService.ListSellerDisputes:input_type -> aipay.payment.v1.ListSellerDisputesRequest
-	14, // 28: aipay.payment.v1.SellerPortalService.GetSellerDispute:input_type -> aipay.payment.v1.GetSellerDisputeRequest
-	16, // 29: aipay.payment.v1.SellerPortalService.AppendSellerEvidence:input_type -> aipay.payment.v1.AppendSellerEvidenceRequest
-	1,  // 30: aipay.payment.v1.SellerPortalService.ListSellerChannels:output_type -> aipay.payment.v1.ListSellerChannelsResponse
-	3,  // 31: aipay.payment.v1.SellerPortalService.GetSellerChannel:output_type -> aipay.payment.v1.GetSellerChannelResponse
-	5,  // 32: aipay.payment.v1.SellerPortalService.ListSellerOrders:output_type -> aipay.payment.v1.ListSellerOrdersResponse
-	7,  // 33: aipay.payment.v1.SellerPortalService.GetSellerOrder:output_type -> aipay.payment.v1.GetSellerOrderResponse
-	9,  // 34: aipay.payment.v1.SellerPortalService.ListSellerRefunds:output_type -> aipay.payment.v1.ListSellerRefundsResponse
-	11, // 35: aipay.payment.v1.SellerPortalService.GetSellerRefund:output_type -> aipay.payment.v1.GetSellerRefundResponse
-	13, // 36: aipay.payment.v1.SellerPortalService.ListSellerDisputes:output_type -> aipay.payment.v1.ListSellerDisputesResponse
-	15, // 37: aipay.payment.v1.SellerPortalService.GetSellerDispute:output_type -> aipay.payment.v1.GetSellerDisputeResponse
-	17, // 38: aipay.payment.v1.SellerPortalService.AppendSellerEvidence:output_type -> aipay.payment.v1.AppendSellerEvidenceResponse
-	30, // [30:39] is the sub-list for method output_type
-	21, // [21:30] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	20, // 0: aipay.payment.v1.ListSellerChannelsResponse.channels:type_name -> aipay.payment.v1.SellerChannelView
+	21, // 1: aipay.payment.v1.ListSellerChannelsResponse.as_of:type_name -> google.protobuf.Timestamp
+	20, // 2: aipay.payment.v1.GetSellerChannelResponse.channel:type_name -> aipay.payment.v1.SellerChannelView
+	21, // 3: aipay.payment.v1.GetSellerChannelResponse.as_of:type_name -> google.protobuf.Timestamp
+	22, // 4: aipay.payment.v1.ListSellerOrdersRequest.status:type_name -> aipay.payment.v1.OrderStatus
+	23, // 5: aipay.payment.v1.ListSellerOrdersResponse.orders:type_name -> aipay.payment.v1.SellerOrderView
+	21, // 6: aipay.payment.v1.ListSellerOrdersResponse.as_of:type_name -> google.protobuf.Timestamp
+	23, // 7: aipay.payment.v1.GetSellerOrderResponse.order:type_name -> aipay.payment.v1.SellerOrderView
+	21, // 8: aipay.payment.v1.GetSellerOrderResponse.as_of:type_name -> google.protobuf.Timestamp
+	24, // 9: aipay.payment.v1.ListSellerRefundsRequest.status:type_name -> aipay.payment.v1.RefundStatus
+	25, // 10: aipay.payment.v1.ListSellerRefundsResponse.refunds:type_name -> aipay.payment.v1.SellerRefundView
+	21, // 11: aipay.payment.v1.ListSellerRefundsResponse.as_of:type_name -> google.protobuf.Timestamp
+	25, // 12: aipay.payment.v1.GetSellerRefundResponse.refund:type_name -> aipay.payment.v1.SellerRefundView
+	21, // 13: aipay.payment.v1.GetSellerRefundResponse.as_of:type_name -> google.protobuf.Timestamp
+	26, // 14: aipay.payment.v1.ListSellerDisputesRequest.status:type_name -> aipay.payment.v1.DisputeCaseStatus
+	27, // 15: aipay.payment.v1.ListSellerDisputesResponse.disputes:type_name -> aipay.payment.v1.SellerDisputeView
+	21, // 16: aipay.payment.v1.ListSellerDisputesResponse.as_of:type_name -> google.protobuf.Timestamp
+	27, // 17: aipay.payment.v1.GetSellerDisputeResponse.dispute:type_name -> aipay.payment.v1.SellerDisputeView
+	21, // 18: aipay.payment.v1.GetSellerDisputeResponse.as_of:type_name -> google.protobuf.Timestamp
+	27, // 19: aipay.payment.v1.AppendSellerEvidenceResponse.dispute:type_name -> aipay.payment.v1.SellerDisputeView
+	21, // 20: aipay.payment.v1.AppendSellerEvidenceResponse.as_of:type_name -> google.protobuf.Timestamp
+	20, // 21: aipay.payment.v1.SetSellerChannelOnlineResponse.channel:type_name -> aipay.payment.v1.SellerChannelView
+	0,  // 22: aipay.payment.v1.SellerPortalService.ListSellerChannels:input_type -> aipay.payment.v1.ListSellerChannelsRequest
+	2,  // 23: aipay.payment.v1.SellerPortalService.GetSellerChannel:input_type -> aipay.payment.v1.GetSellerChannelRequest
+	4,  // 24: aipay.payment.v1.SellerPortalService.ListSellerOrders:input_type -> aipay.payment.v1.ListSellerOrdersRequest
+	6,  // 25: aipay.payment.v1.SellerPortalService.GetSellerOrder:input_type -> aipay.payment.v1.GetSellerOrderRequest
+	8,  // 26: aipay.payment.v1.SellerPortalService.ListSellerRefunds:input_type -> aipay.payment.v1.ListSellerRefundsRequest
+	10, // 27: aipay.payment.v1.SellerPortalService.GetSellerRefund:input_type -> aipay.payment.v1.GetSellerRefundRequest
+	12, // 28: aipay.payment.v1.SellerPortalService.ListSellerDisputes:input_type -> aipay.payment.v1.ListSellerDisputesRequest
+	14, // 29: aipay.payment.v1.SellerPortalService.GetSellerDispute:input_type -> aipay.payment.v1.GetSellerDisputeRequest
+	16, // 30: aipay.payment.v1.SellerPortalService.AppendSellerEvidence:input_type -> aipay.payment.v1.AppendSellerEvidenceRequest
+	18, // 31: aipay.payment.v1.SellerPortalService.SetSellerChannelOnline:input_type -> aipay.payment.v1.SetSellerChannelOnlineRequest
+	1,  // 32: aipay.payment.v1.SellerPortalService.ListSellerChannels:output_type -> aipay.payment.v1.ListSellerChannelsResponse
+	3,  // 33: aipay.payment.v1.SellerPortalService.GetSellerChannel:output_type -> aipay.payment.v1.GetSellerChannelResponse
+	5,  // 34: aipay.payment.v1.SellerPortalService.ListSellerOrders:output_type -> aipay.payment.v1.ListSellerOrdersResponse
+	7,  // 35: aipay.payment.v1.SellerPortalService.GetSellerOrder:output_type -> aipay.payment.v1.GetSellerOrderResponse
+	9,  // 36: aipay.payment.v1.SellerPortalService.ListSellerRefunds:output_type -> aipay.payment.v1.ListSellerRefundsResponse
+	11, // 37: aipay.payment.v1.SellerPortalService.GetSellerRefund:output_type -> aipay.payment.v1.GetSellerRefundResponse
+	13, // 38: aipay.payment.v1.SellerPortalService.ListSellerDisputes:output_type -> aipay.payment.v1.ListSellerDisputesResponse
+	15, // 39: aipay.payment.v1.SellerPortalService.GetSellerDispute:output_type -> aipay.payment.v1.GetSellerDisputeResponse
+	17, // 40: aipay.payment.v1.SellerPortalService.AppendSellerEvidence:output_type -> aipay.payment.v1.AppendSellerEvidenceResponse
+	19, // 41: aipay.payment.v1.SellerPortalService.SetSellerChannelOnline:output_type -> aipay.payment.v1.SetSellerChannelOnlineResponse
+	32, // [32:42] is the sub-list for method output_type
+	22, // [22:32] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_seller_portal_service_proto_init() }
@@ -1248,13 +1391,14 @@ func file_aipay_payment_v1_seller_portal_service_proto_init() {
 	file_aipay_payment_v1_seller_portal_service_proto_msgTypes[4].OneofWrappers = []any{}
 	file_aipay_payment_v1_seller_portal_service_proto_msgTypes[8].OneofWrappers = []any{}
 	file_aipay_payment_v1_seller_portal_service_proto_msgTypes[12].OneofWrappers = []any{}
+	file_aipay_payment_v1_seller_portal_service_proto_msgTypes[18].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_seller_portal_service_proto_rawDesc), len(file_aipay_payment_v1_seller_portal_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

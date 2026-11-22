@@ -116,6 +116,31 @@ message GetGroupBindingResponse {
   bool is_owner = 2;
 }
 
+enum AccountNotificationRecipientKind {
+  ACCOUNT_NOTIFICATION_RECIPIENT_KIND_UNSPECIFIED = 0;
+  ACCOUNT_NOTIFICATION_RECIPIENT_KIND_PRIVATE = 1;
+  // Includes confirmed supergroup bindings.
+  ACCOUNT_NOTIFICATION_RECIPIENT_KIND_GROUP = 2;
+}
+
+message AccountNotificationRecipient {
+  // Required signed, nonzero Telegram chat ID. Group IDs may be negative.
+  int64 chat_id = 1;
+  // Required. Reject UNSPECIFIED and unknown values.
+  AccountNotificationRecipientKind kind = 2;
+}
+
+message ListAccountNotificationRecipientsRequest {
+  // Required account from the verified notice, resolved by IAM at delivery time.
+  string account_id = 1;
+}
+
+message ListAccountNotificationRecipientsResponse {
+  // Only the owner's current private binding and confirmed group bindings.
+  // Empty when the account or its owner is disabled.
+  repeated AccountNotificationRecipient recipients = 1;
+}
+
 // backend includes the bot module (A116); no separate bot service identity.
 // IAM checks credentials directly, so no metadata assertion is accepted.
 // Required IDs/messages/timestamps/digests must be present, enum 0/unknown is
@@ -195,6 +220,15 @@ service TelegramService {
     };
   }
   rpc GetGroupBinding(GetGroupBindingRequest) returns (GetGroupBindingResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Backend service identity only. IAM rate-limits by caller.
+  rpc ListAccountNotificationRecipients(ListAccountNotificationRecipientsRequest) returns (ListAccountNotificationRecipientsResponse) {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: "backend"

@@ -19,14 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TelegramService_Register_FullMethodName               = "/aipay.iam.v1.TelegramService/Register"
-	TelegramService_CreateBindingCode_FullMethodName      = "/aipay.iam.v1.TelegramService/CreateBindingCode"
-	TelegramService_Bind_FullMethodName                   = "/aipay.iam.v1.TelegramService/Bind"
-	TelegramService_Unbind_FullMethodName                 = "/aipay.iam.v1.TelegramService/Unbind"
-	TelegramService_BeginGroupBinding_FullMethodName      = "/aipay.iam.v1.TelegramService/BeginGroupBinding"
-	TelegramService_ConfirmGroupBinding_FullMethodName    = "/aipay.iam.v1.TelegramService/ConfirmGroupBinding"
-	TelegramService_InvalidateGroupBinding_FullMethodName = "/aipay.iam.v1.TelegramService/InvalidateGroupBinding"
-	TelegramService_GetGroupBinding_FullMethodName        = "/aipay.iam.v1.TelegramService/GetGroupBinding"
+	TelegramService_Register_FullMethodName                          = "/aipay.iam.v1.TelegramService/Register"
+	TelegramService_CreateBindingCode_FullMethodName                 = "/aipay.iam.v1.TelegramService/CreateBindingCode"
+	TelegramService_Bind_FullMethodName                              = "/aipay.iam.v1.TelegramService/Bind"
+	TelegramService_Unbind_FullMethodName                            = "/aipay.iam.v1.TelegramService/Unbind"
+	TelegramService_BeginGroupBinding_FullMethodName                 = "/aipay.iam.v1.TelegramService/BeginGroupBinding"
+	TelegramService_ConfirmGroupBinding_FullMethodName               = "/aipay.iam.v1.TelegramService/ConfirmGroupBinding"
+	TelegramService_InvalidateGroupBinding_FullMethodName            = "/aipay.iam.v1.TelegramService/InvalidateGroupBinding"
+	TelegramService_GetGroupBinding_FullMethodName                   = "/aipay.iam.v1.TelegramService/GetGroupBinding"
+	TelegramService_ListAccountNotificationRecipients_FullMethodName = "/aipay.iam.v1.TelegramService/ListAccountNotificationRecipients"
 )
 
 // TelegramServiceClient is the client API for TelegramService service.
@@ -63,6 +64,8 @@ type TelegramServiceClient interface {
 	ConfirmGroupBinding(ctx context.Context, in *ConfirmGroupBindingRequest, opts ...grpc.CallOption) (*ConfirmGroupBindingResponse, error)
 	InvalidateGroupBinding(ctx context.Context, in *InvalidateGroupBindingRequest, opts ...grpc.CallOption) (*InvalidateGroupBindingResponse, error)
 	GetGroupBinding(ctx context.Context, in *GetGroupBindingRequest, opts ...grpc.CallOption) (*GetGroupBindingResponse, error)
+	// Backend service identity only. IAM rate-limits by caller.
+	ListAccountNotificationRecipients(ctx context.Context, in *ListAccountNotificationRecipientsRequest, opts ...grpc.CallOption) (*ListAccountNotificationRecipientsResponse, error)
 }
 
 type telegramServiceClient struct {
@@ -153,6 +156,16 @@ func (c *telegramServiceClient) GetGroupBinding(ctx context.Context, in *GetGrou
 	return out, nil
 }
 
+func (c *telegramServiceClient) ListAccountNotificationRecipients(ctx context.Context, in *ListAccountNotificationRecipientsRequest, opts ...grpc.CallOption) (*ListAccountNotificationRecipientsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAccountNotificationRecipientsResponse)
+	err := c.cc.Invoke(ctx, TelegramService_ListAccountNotificationRecipients_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TelegramServiceServer is the server API for TelegramService service.
 // All implementations must embed UnimplementedTelegramServiceServer
 // for forward compatibility.
@@ -187,6 +200,8 @@ type TelegramServiceServer interface {
 	ConfirmGroupBinding(context.Context, *ConfirmGroupBindingRequest) (*ConfirmGroupBindingResponse, error)
 	InvalidateGroupBinding(context.Context, *InvalidateGroupBindingRequest) (*InvalidateGroupBindingResponse, error)
 	GetGroupBinding(context.Context, *GetGroupBindingRequest) (*GetGroupBindingResponse, error)
+	// Backend service identity only. IAM rate-limits by caller.
+	ListAccountNotificationRecipients(context.Context, *ListAccountNotificationRecipientsRequest) (*ListAccountNotificationRecipientsResponse, error)
 	mustEmbedUnimplementedTelegramServiceServer()
 }
 
@@ -220,6 +235,9 @@ func (UnimplementedTelegramServiceServer) InvalidateGroupBinding(context.Context
 }
 func (UnimplementedTelegramServiceServer) GetGroupBinding(context.Context, *GetGroupBindingRequest) (*GetGroupBindingResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetGroupBinding not implemented")
+}
+func (UnimplementedTelegramServiceServer) ListAccountNotificationRecipients(context.Context, *ListAccountNotificationRecipientsRequest) (*ListAccountNotificationRecipientsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListAccountNotificationRecipients not implemented")
 }
 func (UnimplementedTelegramServiceServer) mustEmbedUnimplementedTelegramServiceServer() {}
 func (UnimplementedTelegramServiceServer) testEmbeddedByValue()                         {}
@@ -386,6 +404,24 @@ func _TelegramService_GetGroupBinding_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TelegramService_ListAccountNotificationRecipients_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAccountNotificationRecipientsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TelegramServiceServer).ListAccountNotificationRecipients(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TelegramService_ListAccountNotificationRecipients_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TelegramServiceServer).ListAccountNotificationRecipients(ctx, req.(*ListAccountNotificationRecipientsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TelegramService_ServiceDesc is the grpc.ServiceDesc for TelegramService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -424,6 +460,10 @@ var TelegramService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetGroupBinding",
 			Handler:    _TelegramService_GetGroupBinding_Handler,
+		},
+		{
+			MethodName: "ListAccountNotificationRecipients",
+			Handler:    _TelegramService_ListAccountNotificationRecipients_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

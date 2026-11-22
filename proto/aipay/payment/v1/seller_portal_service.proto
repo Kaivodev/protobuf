@@ -120,6 +120,25 @@ message AppendSellerEvidenceResponse {
   google.protobuf.Timestamp as_of = 2;
 }
 
+message SetSellerChannelOnlineRequest {
+  // Required. An authorized identical retry returns the original result before
+  // checking the version again. Changed content under the same key is AlreadyExists.
+  string idempotency_key = 1;
+  // Required. Payment checks the channel belongs to the assertion's bound seller.
+  string channel_account_id = 2;
+  // Required presence. Explicit false takes the seller offline for new orders.
+  optional bool online = 3;
+  // Required, positive. A stale version on first execution is FailedPrecondition.
+  uint64 expected_seller_online_version = 4;
+  // Required audit reason, 1 to 200 characters.
+  string reason = 5;
+}
+
+message SetSellerChannelOnlineResponse {
+  // Required seller view after the change.
+  SellerChannelView channel = 1;
+}
+
 // backend seller listener only. USER upstream_portal/TOTP account proof with
 // the trusted own-user seller funds binding. No request owner/scope selectors.
 // Check original seller on every order/refund/dispute, actual binding on channel;
@@ -218,6 +237,26 @@ service SellerPortalService {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_REQUIRED
         permissions: "payment.dispute.evidence"
+      }
+    };
+  }
+  // IAM requires recent reauthentication on this route without a per-switch TOTP
+  // challenge or second approver. Payment verifies the signed
+  // command_sha256 against the full method and canonical request before replay or CAS.
+  // For a new key, check the expected version even when intent already matches.
+  // On a match with unchanged intent, audit the no-op and return the current view
+  // without updating state or incrementing the version. On a switch,
+  // update seller intent, increment seller_online_version and audit the actor,
+  // reason and old/new values in one transaction. Platform control_version and pending
+  // approvals are independent. New routing and inventory checks require both seller
+  // intent and platform enablement. In-flight queries, closes, refunds and callbacks
+  // continue across a switch. This command emits no event.
+  rpc SetSellerChannelOnline(SetSellerChannelOnlineRequest) returns (SetSellerChannelOnlineResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.channel.online"
       }
     };
   }

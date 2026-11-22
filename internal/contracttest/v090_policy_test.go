@@ -17,14 +17,14 @@ import (
 type v090PolicyGroup struct {
 	file    protoreflect.FileDescriptor
 	service protoreflect.Name
-	// New service surfaces are exhaustive. Reconciliation also retains 13 v0.8 RPCs.
+	// Methods from other versions are checked in their respective policy tests.
 	retained int
 	methods  map[protoreflect.Name]string
 }
 
 func v090Groups() []v090PolicyGroup {
 	return []v090PolicyGroup{
-		{paymentv1.File_aipay_payment_v1_payment_admin_service_proto, "PaymentAdminService", 0, map[protoreflect.Name]string{
+		{paymentv1.File_aipay_payment_v1_payment_admin_service_proto, "PaymentAdminService", 2, map[protoreflect.Name]string{
 			"ListChannelAccounts": "payment.channel.read", "GetChannelAccount": "payment.channel.read",
 			"ListPaymentMethods": "payment.method.read", "GetPaymentMethod": "payment.method.read",
 			"ListRiskPolicies": "payment.risk.read", "GetRiskPolicy": "payment.risk.read",
@@ -38,7 +38,7 @@ func v090Groups() []v090PolicyGroup {
 			"ListApprovals": "payment.approval.read", "GetApproval": "payment.approval.read",
 			"EmergencyDisablePlugin": "payment.plugin.disable",
 		}},
-		{paymentv1.File_aipay_payment_v1_seller_portal_service_proto, "SellerPortalService", 0, map[protoreflect.Name]string{
+		{paymentv1.File_aipay_payment_v1_seller_portal_service_proto, "SellerPortalService", 1, map[protoreflect.Name]string{
 			"ListSellerChannels": "payment.channel.read", "GetSellerChannel": "payment.channel.read",
 			"ListSellerOrders": "payment.order.read", "GetSellerOrder": "payment.order.read",
 			"ListSellerRefunds": "payment.refund.read", "GetSellerRefund": "payment.refund.read",

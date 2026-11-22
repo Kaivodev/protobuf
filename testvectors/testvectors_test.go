@@ -174,6 +174,69 @@ func TestCollectionCommandV1(t *testing.T) {
 	}
 }
 
+func TestPaymentWebCommandV1(t *testing.T) {
+	var doc struct {
+		Spec, Description string
+		Vectors           []struct {
+			Name, Method, Encoding, SHA256 string
+			Request                        json.RawMessage
+		}
+	}
+	decodeJSON(t, testvectors.PaymentWebCommandV1(), &doc)
+	if doc.Spec != "aipay.web.command.v1" {
+		t.Fatal("unexpected command domain")
+	}
+	var online, offline, requeue bool
+	for _, v := range doc.Vectors {
+		t.Run(v.Name, func(t *testing.T) {
+			var w writer
+			w.str(doc.Spec)
+			w.str(v.Method)
+			switch v.Method {
+			case paymentv1.SellerPortalService_SetSellerChannelOnline_FullMethodName:
+				var req paymentv1.SetSellerChannelOnlineRequest
+				if err := protojson.Unmarshal(v.Request, &req); err != nil {
+					t.Fatal(err)
+				}
+				if req.Online == nil {
+					t.Fatal("online must be explicitly present")
+				}
+				w.str(req.IdempotencyKey)
+				w.str(req.ChannelAccountId)
+				w.raw(1) // optional scalar is present
+				if *req.Online {
+					w.raw(1)
+					online = true
+				} else {
+					w.raw(0)
+					offline = true
+				}
+				w.u64(req.ExpectedSellerOnlineVersion)
+				w.str(req.Reason)
+			case paymentv1.PaymentAdminService_RequeueArchivedWork_FullMethodName:
+				var req paymentv1.RequeueArchivedWorkRequest
+				if err := protojson.Unmarshal(v.Request, &req); err != nil {
+					t.Fatal(err)
+				}
+				w.str(req.IdempotencyKey)
+				w.str(req.Kind)
+				w.str(req.ObjectId)
+				w.u64(req.ExpectedVersion)
+				w.str(req.Reason)
+				requeue = true
+			default:
+				t.Fatalf("unreviewed payment command %q", v.Method)
+			}
+			if !equalHex(w.b, v.Encoding) || !equalHex(sum(w.b), v.SHA256) {
+				t.Fatal("canonical bytes or digest differ from fixture")
+			}
+		})
+	}
+	if !online || !offline || !requeue {
+		t.Fatal("expected both explicit online values and an archived work requeue")
+	}
+}
+
 func TestLedgerCanonicalV1(t *testing.T) {
 	var doc struct {
 		Spec, Description string

@@ -299,6 +299,55 @@ message GetApprovalResponse {
   google.protobuf.Timestamp as_of = 2;
 }
 
+// Task metadata after retries were exhausted or immediately after requeue.
+// The required pair (kind, object_id) identifies the task. object_type and a positive version are required.
+message ArchivedWork {
+  string kind = 1;
+  string object_type = 2;
+  string object_id = 3;
+  // Retry count at this version. Zero after requeue.
+  uint32 attempts = 4;
+  // From the fixed set of lowercase underscore codes registered by payment.
+  // Use internal for unclassified errors. Retain the code after requeue.
+  string last_error_code = 5;
+  // Required for archived items. Absent in the requeue result.
+  google.protobuf.Timestamp archived_at = 6;
+  uint64 version = 7;
+}
+
+message ListArchivedWorkRequest {
+  // Required, 1-100.
+  uint32 page_size = 1 [(aipay.common.v1.max_items) = 100];
+  // Opaque cursor bound to this query and authorization. Empty on the first page.
+  string page_token = 2;
+  // Optional exact kind filter. Omit to list all kinds.
+  optional string kind = 3;
+}
+
+message ListArchivedWorkResponse {
+  repeated ArchivedWork items = 1;
+  // Empty at the end.
+  string next_page_token = 2;
+}
+
+message RequeueArchivedWorkRequest {
+  // Required. An authorized identical retry returns the original result before
+  // the archive/version check. Changed content under the same key is AlreadyExists.
+  string idempotency_key = 1;
+  // Required task kind and object ID form the archived task key.
+  string kind = 2;
+  string object_id = 3;
+  // Required, positive. Must match the still-archived task.
+  uint64 expected_version = 4;
+  // Required audit reason, 1 to 200 characters.
+  string reason = 5;
+}
+
+message RequeueArchivedWorkResponse {
+  // Required view at the newly committed version.
+  ArchivedWork work = 1;
+}
+
 // backend internal management listener only: USER, platform_admin/WebAuthn,
 // platform scope and explicit authorized query constraints. IDs/filters are
 // selectors, not authority. Check every row's original ownership. Reject API
@@ -524,6 +573,32 @@ service PaymentAdminService {
         assertion: ASSERTION_REQUIREMENT_MFA_RECENT
         permissions: "payment.plugin.disable"
         recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  // Platform scope. List currently archived tasks by archived_at (newest first), then kind and object_id.
+  rpc ListArchivedWork(ListArchivedWorkRequest) returns (ListArchivedWorkResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.work.read"
+      }
+    };
+  }
+  // Platform scope with recent reauthentication on the backend route. Payment
+  // verifies command_sha256 against the full method and canonical request.
+  // Atomically check archive state/version, clear archived_at, reset attempts,
+  // make the task available now, increment version and audit actor, reason,
+  // prior attempts and error code. The handler rereads authoritative state.
+  // A possibly dispatched operation remains query-only. Requeue itself has
+  // no order or funds effect and requires only one operator.
+  rpc RequeueArchivedWork(RequeueArchivedWorkRequest) returns (RequeueArchivedWorkResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.work.requeue"
       }
     };
   }

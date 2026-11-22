@@ -31,6 +31,8 @@ const (
 // the contract's stream list; besides this method policy, the producer
 // authorizes each stream for its listed receivers and holds no receiver
 // credentials. An unknown or unauthorized stream returns PermissionDenied.
+// Payment permits only backend to read payment.account_notices. Backend's
+// membership below grants no access to the other streams.
 type EventStreamServiceClient interface {
 	ListEvents(ctx context.Context, in *ListEventsRequest, opts ...grpc.CallOption) (*ListEventsResponse, error)
 	GetStreamHead(ctx context.Context, in *GetStreamHeadRequest, opts ...grpc.CallOption) (*GetStreamHeadResponse, error)
@@ -72,6 +74,8 @@ func (c *eventStreamServiceClient) GetStreamHead(ctx context.Context, in *GetStr
 // the contract's stream list; besides this method policy, the producer
 // authorizes each stream for its listed receivers and holds no receiver
 // credentials. An unknown or unauthorized stream returns PermissionDenied.
+// Payment permits only backend to read payment.account_notices. Backend's
+// membership below grants no access to the other streams.
 type EventStreamServiceServer interface {
 	ListEvents(context.Context, *ListEventsRequest) (*ListEventsResponse, error)
 	GetStreamHead(context.Context, *GetStreamHeadRequest) (*GetStreamHeadResponse, error)

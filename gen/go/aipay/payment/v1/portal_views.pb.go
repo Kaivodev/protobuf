@@ -142,8 +142,14 @@ type ChannelAccountView struct {
 	DisabledAt        *timestamppb.Timestamp       `protobuf:"bytes,6,opt,name=disabled_at,json=disabledAt,proto3" json:"disabled_at,omitempty"`
 	CreatedAt         *timestamppb.Timestamp       `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt         *timestamppb.Timestamp       `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Required in v0.15 views. Seller intent defaults to true for existing and new channels.
+	SellerOnline *bool `protobuf:"varint,9,opt,name=seller_online,json=sellerOnline,proto3,oneof" json:"seller_online,omitempty"`
+	// Required, initially 1. Only a seller switch advances this version.
+	SellerOnlineVersion uint64 `protobuf:"varint,10,opt,name=seller_online_version,json=sellerOnlineVersion,proto3" json:"seller_online_version,omitempty"`
+	// UTC time of the last seller switch. Absent if the seller has never switched.
+	SellerOnlineChangedAt *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=seller_online_changed_at,json=sellerOnlineChangedAt,proto3" json:"seller_online_changed_at,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *ChannelAccountView) Reset() {
@@ -228,6 +234,27 @@ func (x *ChannelAccountView) GetCreatedAt() *timestamppb.Timestamp {
 func (x *ChannelAccountView) GetUpdatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.UpdatedAt
+	}
+	return nil
+}
+
+func (x *ChannelAccountView) GetSellerOnline() bool {
+	if x != nil && x.SellerOnline != nil {
+		return *x.SellerOnline
+	}
+	return false
+}
+
+func (x *ChannelAccountView) GetSellerOnlineVersion() uint64 {
+	if x != nil {
+		return x.SellerOnlineVersion
+	}
+	return 0
+}
+
+func (x *ChannelAccountView) GetSellerOnlineChangedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.SellerOnlineChangedAt
 	}
 	return nil
 }
@@ -784,23 +811,28 @@ func (x *PlatformDisputeView) GetUpdatedAt() *timestamppb.Timestamp {
 // notification configuration, recipient refund reservation, raw counterparty
 // evidence, credentials or platform approval/assertion records are permitted.
 type SellerChannelView struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	ChannelAccountId    string                 `protobuf:"bytes,1,opt,name=channel_account_id,json=channelAccountId,proto3" json:"channel_account_id,omitempty"`
-	SellerAccountId     string                 `protobuf:"bytes,2,opt,name=seller_account_id,json=sellerAccountId,proto3" json:"seller_account_id,omitempty"`
-	ChannelCode         string                 `protobuf:"bytes,3,opt,name=channel_code,json=channelCode,proto3" json:"channel_code,omitempty"`
-	Name                string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
-	PaymentMethods      []string               `protobuf:"bytes,5,rep,name=payment_methods,json=paymentMethods,proto3" json:"payment_methods,omitempty"`
-	Online              *bool                  `protobuf:"varint,6,opt,name=online,proto3,oneof" json:"online,omitempty"`
-	PlatformEnabled     *bool                  `protobuf:"varint,7,opt,name=platform_enabled,json=platformEnabled,proto3,oneof" json:"platform_enabled,omitempty"`
-	ControlVersion      uint64                 `protobuf:"varint,8,opt,name=control_version,json=controlVersion,proto3" json:"control_version,omitempty"`
-	FiatCurrency        string                 `protobuf:"bytes,9,opt,name=fiat_currency,json=fiatCurrency,proto3" json:"fiat_currency,omitempty"`
-	MinAmountFiat       int64                  `protobuf:"varint,10,opt,name=min_amount_fiat,json=minAmountFiat,proto3" json:"min_amount_fiat,omitempty"`
-	MaxAmountFiat       int64                  `protobuf:"varint,11,opt,name=max_amount_fiat,json=maxAmountFiat,proto3" json:"max_amount_fiat,omitempty"`
-	DailyLimitFiat      int64                  `protobuf:"varint,12,opt,name=daily_limit_fiat,json=dailyLimitFiat,proto3" json:"daily_limit_fiat,omitempty"`
-	RiskPolicyVersion   string                 `protobuf:"bytes,13,opt,name=risk_policy_version,json=riskPolicyVersion,proto3" json:"risk_policy_version,omitempty"`
-	HoldDurationSeconds *uint64                `protobuf:"varint,14,opt,name=hold_duration_seconds,json=holdDurationSeconds,proto3,oneof" json:"hold_duration_seconds,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	ChannelAccountId string                 `protobuf:"bytes,1,opt,name=channel_account_id,json=channelAccountId,proto3" json:"channel_account_id,omitempty"`
+	SellerAccountId  string                 `protobuf:"bytes,2,opt,name=seller_account_id,json=sellerAccountId,proto3" json:"seller_account_id,omitempty"`
+	ChannelCode      string                 `protobuf:"bytes,3,opt,name=channel_code,json=channelCode,proto3" json:"channel_code,omitempty"`
+	Name             string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	PaymentMethods   []string               `protobuf:"bytes,5,rep,name=payment_methods,json=paymentMethods,proto3" json:"payment_methods,omitempty"`
+	// Seller willingness to accept new orders. Defaults to true for existing and new channels.
+	Online              *bool   `protobuf:"varint,6,opt,name=online,proto3,oneof" json:"online,omitempty"`
+	PlatformEnabled     *bool   `protobuf:"varint,7,opt,name=platform_enabled,json=platformEnabled,proto3,oneof" json:"platform_enabled,omitempty"`
+	ControlVersion      uint64  `protobuf:"varint,8,opt,name=control_version,json=controlVersion,proto3" json:"control_version,omitempty"`
+	FiatCurrency        string  `protobuf:"bytes,9,opt,name=fiat_currency,json=fiatCurrency,proto3" json:"fiat_currency,omitempty"`
+	MinAmountFiat       int64   `protobuf:"varint,10,opt,name=min_amount_fiat,json=minAmountFiat,proto3" json:"min_amount_fiat,omitempty"`
+	MaxAmountFiat       int64   `protobuf:"varint,11,opt,name=max_amount_fiat,json=maxAmountFiat,proto3" json:"max_amount_fiat,omitempty"`
+	DailyLimitFiat      int64   `protobuf:"varint,12,opt,name=daily_limit_fiat,json=dailyLimitFiat,proto3" json:"daily_limit_fiat,omitempty"`
+	RiskPolicyVersion   string  `protobuf:"bytes,13,opt,name=risk_policy_version,json=riskPolicyVersion,proto3" json:"risk_policy_version,omitempty"`
+	HoldDurationSeconds *uint64 `protobuf:"varint,14,opt,name=hold_duration_seconds,json=holdDurationSeconds,proto3,oneof" json:"hold_duration_seconds,omitempty"`
+	// Required, initially 1. Independent of the platform control_version.
+	SellerOnlineVersion uint64 `protobuf:"varint,15,opt,name=seller_online_version,json=sellerOnlineVersion,proto3" json:"seller_online_version,omitempty"`
+	// UTC time of the last seller switch. Absent if the seller has never switched.
+	SellerOnlineChangedAt *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=seller_online_changed_at,json=sellerOnlineChangedAt,proto3" json:"seller_online_changed_at,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *SellerChannelView) Reset() {
@@ -929,6 +961,20 @@ func (x *SellerChannelView) GetHoldDurationSeconds() uint64 {
 		return *x.HoldDurationSeconds
 	}
 	return 0
+}
+
+func (x *SellerChannelView) GetSellerOnlineVersion() uint64 {
+	if x != nil {
+		return x.SellerOnlineVersion
+	}
+	return 0
+}
+
+func (x *SellerChannelView) GetSellerOnlineChangedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.SellerOnlineChangedAt
+	}
+	return nil
 }
 
 type SellerOrderView struct {
@@ -1411,7 +1457,7 @@ var File_aipay_payment_v1_portal_views_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_portal_views_proto_rawDesc = "" +
 	"\n" +
-	"#aipay/payment/v1/portal_views.proto\x12\x10aipay.payment.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/common/v1/money.proto\x1a\x1baipay/ledger/v1/trade.proto\x1a%aipay/payment/v1/admin_approval.proto\x1a&aipay/payment/v1/dispute_service.proto\x1a$aipay/payment/v1/order_service.proto\x1a%aipay/payment/v1/refund_service.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xca\x03\n" +
+	"#aipay/payment/v1/portal_views.proto\x12\x10aipay.payment.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/common/v1/money.proto\x1a\x1baipay/ledger/v1/trade.proto\x1a%aipay/payment/v1/admin_approval.proto\x1a&aipay/payment/v1/dispute_service.proto\x1a$aipay/payment/v1/order_service.proto\x1a%aipay/payment/v1/refund_service.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8f\x05\n" +
 	"\x12ChannelAccountView\x12S\n" +
 	"\rconfiguration\x18\x01 \x01(\v2-.aipay.payment.v1.ChannelAccountConfigurationR\rconfiguration\x12'\n" +
 	"\x0fcontrol_version\x18\x02 \x01(\x04R\x0econtrolVersion\x12*\n" +
@@ -1423,7 +1469,12 @@ const file_aipay_payment_v1_portal_views_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x82\x03\n" +
+	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12(\n" +
+	"\rseller_online\x18\t \x01(\bH\x00R\fsellerOnline\x88\x01\x01\x122\n" +
+	"\x15seller_online_version\x18\n" +
+	" \x01(\x04R\x13sellerOnlineVersion\x12S\n" +
+	"\x18seller_online_changed_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\x15sellerOnlineChangedAtB\x10\n" +
+	"\x0e_seller_online\"\x82\x03\n" +
 	"\x11PaymentMethodView\x12\x1f\n" +
 	"\vrevision_id\x18\x01 \x01(\tR\n" +
 	"revisionId\x12=\n" +
@@ -1483,7 +1534,7 @@ const file_aipay_payment_v1_portal_views_proto_rawDesc = "" +
 	"\x06ruling\x18\x05 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\x06ruling\x123\n" +
 	"\x15investigation_summary\x18\x06 \x01(\tR\x14investigationSummary\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x85\x05\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x8e\x06\n" +
 	"\x11SellerChannelView\x12,\n" +
 	"\x12channel_account_id\x18\x01 \x01(\tR\x10channelAccountId\x12*\n" +
 	"\x11seller_account_id\x18\x02 \x01(\tR\x0fsellerAccountId\x12!\n" +
@@ -1499,7 +1550,9 @@ const file_aipay_payment_v1_portal_views_proto_rawDesc = "" +
 	"\x0fmax_amount_fiat\x18\v \x01(\x03R\rmaxAmountFiat\x12(\n" +
 	"\x10daily_limit_fiat\x18\f \x01(\x03R\x0edailyLimitFiat\x12.\n" +
 	"\x13risk_policy_version\x18\r \x01(\tR\x11riskPolicyVersion\x127\n" +
-	"\x15hold_duration_seconds\x18\x0e \x01(\x04H\x02R\x13holdDurationSeconds\x88\x01\x01B\t\n" +
+	"\x15hold_duration_seconds\x18\x0e \x01(\x04H\x02R\x13holdDurationSeconds\x88\x01\x01\x122\n" +
+	"\x15seller_online_version\x18\x0f \x01(\x04R\x13sellerOnlineVersion\x12S\n" +
+	"\x18seller_online_changed_at\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\x15sellerOnlineChangedAtB\t\n" +
 	"\a_onlineB\x13\n" +
 	"\x11_platform_enabledB\x18\n" +
 	"\x16_hold_duration_seconds\"\x93\t\n" +
@@ -1634,54 +1687,56 @@ var file_aipay_payment_v1_portal_views_proto_depIdxs = []int32{
 	14, // 1: aipay.payment.v1.ChannelAccountView.disabled_at:type_name -> google.protobuf.Timestamp
 	14, // 2: aipay.payment.v1.ChannelAccountView.created_at:type_name -> google.protobuf.Timestamp
 	14, // 3: aipay.payment.v1.ChannelAccountView.updated_at:type_name -> google.protobuf.Timestamp
-	15, // 4: aipay.payment.v1.PaymentMethodView.change:type_name -> aipay.payment.v1.PaymentMethodChange
-	0,  // 5: aipay.payment.v1.PaymentMethodView.stage:type_name -> aipay.payment.v1.ConfigurationStage
-	14, // 6: aipay.payment.v1.PaymentMethodView.created_at:type_name -> google.protobuf.Timestamp
-	14, // 7: aipay.payment.v1.PaymentMethodView.effective_at:type_name -> google.protobuf.Timestamp
-	16, // 8: aipay.payment.v1.RiskPolicyView.change:type_name -> aipay.payment.v1.RiskPolicyChange
-	0,  // 9: aipay.payment.v1.RiskPolicyView.stage:type_name -> aipay.payment.v1.ConfigurationStage
-	14, // 10: aipay.payment.v1.RiskPolicyView.created_at:type_name -> google.protobuf.Timestamp
-	14, // 11: aipay.payment.v1.RiskPolicyView.effective_at:type_name -> google.protobuf.Timestamp
-	17, // 12: aipay.payment.v1.PricingDraftView.draft:type_name -> aipay.payment.v1.PricingDraft
-	14, // 13: aipay.payment.v1.PricingDraftView.created_at:type_name -> google.protobuf.Timestamp
-	14, // 14: aipay.payment.v1.PricingDraftView.updated_at:type_name -> google.protobuf.Timestamp
-	18, // 15: aipay.payment.v1.PricingVersionView.change:type_name -> aipay.payment.v1.PricingVersionChange
-	14, // 16: aipay.payment.v1.PricingVersionView.approved_at:type_name -> google.protobuf.Timestamp
-	14, // 17: aipay.payment.v1.PricingVersionView.effective_at:type_name -> google.protobuf.Timestamp
-	14, // 18: aipay.payment.v1.PricingVersionView.created_at:type_name -> google.protobuf.Timestamp
-	19, // 19: aipay.payment.v1.PluginVersionView.publication_status:type_name -> aipay.approval.v1.ApprovalStatus
-	14, // 20: aipay.payment.v1.PluginVersionView.disabled_at:type_name -> google.protobuf.Timestamp
-	14, // 21: aipay.payment.v1.PluginVersionView.created_at:type_name -> google.protobuf.Timestamp
-	20, // 22: aipay.payment.v1.PlatformDisputeView.dispute:type_name -> aipay.payment.v1.RegisteredDispute
-	1,  // 23: aipay.payment.v1.PlatformDisputeView.status:type_name -> aipay.payment.v1.DisputeCaseStatus
-	21, // 24: aipay.payment.v1.PlatformDisputeView.evidence:type_name -> aipay.payment.v1.DisputeEvidence
-	22, // 25: aipay.payment.v1.PlatformDisputeView.ruling:type_name -> aipay.payment.v1.PaymentApproval
-	14, // 26: aipay.payment.v1.PlatformDisputeView.updated_at:type_name -> google.protobuf.Timestamp
-	23, // 27: aipay.payment.v1.SellerOrderView.fiat_amount:type_name -> aipay.common.v1.Money
-	23, // 28: aipay.payment.v1.SellerOrderView.escrow_usdt:type_name -> aipay.common.v1.Money
-	24, // 29: aipay.payment.v1.SellerOrderView.status:type_name -> aipay.payment.v1.OrderStatus
-	25, // 30: aipay.payment.v1.SellerOrderView.upstream_payment_status:type_name -> aipay.payment.v1.UpstreamPaymentStatus
-	26, // 31: aipay.payment.v1.SellerOrderView.escrow_status:type_name -> aipay.ledger.v1.TradeReservationStatus
-	27, // 32: aipay.payment.v1.SellerOrderView.risk_status:type_name -> aipay.payment.v1.OrderRiskStatus
-	14, // 33: aipay.payment.v1.SellerOrderView.paid_verified_at:type_name -> google.protobuf.Timestamp
-	14, // 34: aipay.payment.v1.SellerOrderView.risk_release_at:type_name -> google.protobuf.Timestamp
-	14, // 35: aipay.payment.v1.SellerOrderView.effective_risk_release_at:type_name -> google.protobuf.Timestamp
-	14, // 36: aipay.payment.v1.SellerOrderView.created_at:type_name -> google.protobuf.Timestamp
-	14, // 37: aipay.payment.v1.SellerOrderView.updated_at:type_name -> google.protobuf.Timestamp
-	28, // 38: aipay.payment.v1.SellerRefundView.status:type_name -> aipay.payment.v1.RefundStatus
-	23, // 39: aipay.payment.v1.SellerRefundView.fiat_amount:type_name -> aipay.common.v1.Money
-	14, // 40: aipay.payment.v1.SellerRefundView.created_at:type_name -> google.protobuf.Timestamp
-	14, // 41: aipay.payment.v1.SellerRefundView.updated_at:type_name -> google.protobuf.Timestamp
-	14, // 42: aipay.payment.v1.SellerRefundView.verified_at:type_name -> google.protobuf.Timestamp
-	1,  // 43: aipay.payment.v1.SellerDisputeView.status:type_name -> aipay.payment.v1.DisputeCaseStatus
-	29, // 44: aipay.payment.v1.SellerDisputeView.ruling_outcome:type_name -> aipay.payment.v1.DisputeRulingOutcome
-	14, // 45: aipay.payment.v1.SellerDisputeView.registered_at:type_name -> google.protobuf.Timestamp
-	14, // 46: aipay.payment.v1.SellerDisputeView.updated_at:type_name -> google.protobuf.Timestamp
-	47, // [47:47] is the sub-list for method output_type
-	47, // [47:47] is the sub-list for method input_type
-	47, // [47:47] is the sub-list for extension type_name
-	47, // [47:47] is the sub-list for extension extendee
-	0,  // [0:47] is the sub-list for field type_name
+	14, // 4: aipay.payment.v1.ChannelAccountView.seller_online_changed_at:type_name -> google.protobuf.Timestamp
+	15, // 5: aipay.payment.v1.PaymentMethodView.change:type_name -> aipay.payment.v1.PaymentMethodChange
+	0,  // 6: aipay.payment.v1.PaymentMethodView.stage:type_name -> aipay.payment.v1.ConfigurationStage
+	14, // 7: aipay.payment.v1.PaymentMethodView.created_at:type_name -> google.protobuf.Timestamp
+	14, // 8: aipay.payment.v1.PaymentMethodView.effective_at:type_name -> google.protobuf.Timestamp
+	16, // 9: aipay.payment.v1.RiskPolicyView.change:type_name -> aipay.payment.v1.RiskPolicyChange
+	0,  // 10: aipay.payment.v1.RiskPolicyView.stage:type_name -> aipay.payment.v1.ConfigurationStage
+	14, // 11: aipay.payment.v1.RiskPolicyView.created_at:type_name -> google.protobuf.Timestamp
+	14, // 12: aipay.payment.v1.RiskPolicyView.effective_at:type_name -> google.protobuf.Timestamp
+	17, // 13: aipay.payment.v1.PricingDraftView.draft:type_name -> aipay.payment.v1.PricingDraft
+	14, // 14: aipay.payment.v1.PricingDraftView.created_at:type_name -> google.protobuf.Timestamp
+	14, // 15: aipay.payment.v1.PricingDraftView.updated_at:type_name -> google.protobuf.Timestamp
+	18, // 16: aipay.payment.v1.PricingVersionView.change:type_name -> aipay.payment.v1.PricingVersionChange
+	14, // 17: aipay.payment.v1.PricingVersionView.approved_at:type_name -> google.protobuf.Timestamp
+	14, // 18: aipay.payment.v1.PricingVersionView.effective_at:type_name -> google.protobuf.Timestamp
+	14, // 19: aipay.payment.v1.PricingVersionView.created_at:type_name -> google.protobuf.Timestamp
+	19, // 20: aipay.payment.v1.PluginVersionView.publication_status:type_name -> aipay.approval.v1.ApprovalStatus
+	14, // 21: aipay.payment.v1.PluginVersionView.disabled_at:type_name -> google.protobuf.Timestamp
+	14, // 22: aipay.payment.v1.PluginVersionView.created_at:type_name -> google.protobuf.Timestamp
+	20, // 23: aipay.payment.v1.PlatformDisputeView.dispute:type_name -> aipay.payment.v1.RegisteredDispute
+	1,  // 24: aipay.payment.v1.PlatformDisputeView.status:type_name -> aipay.payment.v1.DisputeCaseStatus
+	21, // 25: aipay.payment.v1.PlatformDisputeView.evidence:type_name -> aipay.payment.v1.DisputeEvidence
+	22, // 26: aipay.payment.v1.PlatformDisputeView.ruling:type_name -> aipay.payment.v1.PaymentApproval
+	14, // 27: aipay.payment.v1.PlatformDisputeView.updated_at:type_name -> google.protobuf.Timestamp
+	14, // 28: aipay.payment.v1.SellerChannelView.seller_online_changed_at:type_name -> google.protobuf.Timestamp
+	23, // 29: aipay.payment.v1.SellerOrderView.fiat_amount:type_name -> aipay.common.v1.Money
+	23, // 30: aipay.payment.v1.SellerOrderView.escrow_usdt:type_name -> aipay.common.v1.Money
+	24, // 31: aipay.payment.v1.SellerOrderView.status:type_name -> aipay.payment.v1.OrderStatus
+	25, // 32: aipay.payment.v1.SellerOrderView.upstream_payment_status:type_name -> aipay.payment.v1.UpstreamPaymentStatus
+	26, // 33: aipay.payment.v1.SellerOrderView.escrow_status:type_name -> aipay.ledger.v1.TradeReservationStatus
+	27, // 34: aipay.payment.v1.SellerOrderView.risk_status:type_name -> aipay.payment.v1.OrderRiskStatus
+	14, // 35: aipay.payment.v1.SellerOrderView.paid_verified_at:type_name -> google.protobuf.Timestamp
+	14, // 36: aipay.payment.v1.SellerOrderView.risk_release_at:type_name -> google.protobuf.Timestamp
+	14, // 37: aipay.payment.v1.SellerOrderView.effective_risk_release_at:type_name -> google.protobuf.Timestamp
+	14, // 38: aipay.payment.v1.SellerOrderView.created_at:type_name -> google.protobuf.Timestamp
+	14, // 39: aipay.payment.v1.SellerOrderView.updated_at:type_name -> google.protobuf.Timestamp
+	28, // 40: aipay.payment.v1.SellerRefundView.status:type_name -> aipay.payment.v1.RefundStatus
+	23, // 41: aipay.payment.v1.SellerRefundView.fiat_amount:type_name -> aipay.common.v1.Money
+	14, // 42: aipay.payment.v1.SellerRefundView.created_at:type_name -> google.protobuf.Timestamp
+	14, // 43: aipay.payment.v1.SellerRefundView.updated_at:type_name -> google.protobuf.Timestamp
+	14, // 44: aipay.payment.v1.SellerRefundView.verified_at:type_name -> google.protobuf.Timestamp
+	1,  // 45: aipay.payment.v1.SellerDisputeView.status:type_name -> aipay.payment.v1.DisputeCaseStatus
+	29, // 46: aipay.payment.v1.SellerDisputeView.ruling_outcome:type_name -> aipay.payment.v1.DisputeRulingOutcome
+	14, // 47: aipay.payment.v1.SellerDisputeView.registered_at:type_name -> google.protobuf.Timestamp
+	14, // 48: aipay.payment.v1.SellerDisputeView.updated_at:type_name -> google.protobuf.Timestamp
+	49, // [49:49] is the sub-list for method output_type
+	49, // [49:49] is the sub-list for method input_type
+	49, // [49:49] is the sub-list for extension type_name
+	49, // [49:49] is the sub-list for extension extendee
+	0,  // [0:49] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_portal_views_proto_init() }
@@ -1693,6 +1748,7 @@ func file_aipay_payment_v1_portal_views_proto_init() {
 	file_aipay_payment_v1_dispute_service_proto_init()
 	file_aipay_payment_v1_order_service_proto_init()
 	file_aipay_payment_v1_refund_service_proto_init()
+	file_aipay_payment_v1_portal_views_proto_msgTypes[0].OneofWrappers = []any{}
 	file_aipay_payment_v1_portal_views_proto_msgTypes[5].OneofWrappers = []any{}
 	file_aipay_payment_v1_portal_views_proto_msgTypes[7].OneofWrappers = []any{}
 	file_aipay_payment_v1_portal_views_proto_msgTypes[8].OneofWrappers = []any{}

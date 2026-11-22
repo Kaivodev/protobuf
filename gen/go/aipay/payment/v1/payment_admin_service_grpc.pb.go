@@ -42,6 +42,8 @@ const (
 	PaymentAdminService_ListApprovals_FullMethodName          = "/aipay.payment.v1.PaymentAdminService/ListApprovals"
 	PaymentAdminService_GetApproval_FullMethodName            = "/aipay.payment.v1.PaymentAdminService/GetApproval"
 	PaymentAdminService_EmergencyDisablePlugin_FullMethodName = "/aipay.payment.v1.PaymentAdminService/EmergencyDisablePlugin"
+	PaymentAdminService_ListArchivedWork_FullMethodName       = "/aipay.payment.v1.PaymentAdminService/ListArchivedWork"
+	PaymentAdminService_RequeueArchivedWork_FullMethodName    = "/aipay.payment.v1.PaymentAdminService/RequeueArchivedWork"
 )
 
 // PaymentAdminServiceClient is the client API for PaymentAdminService service.
@@ -91,6 +93,16 @@ type PaymentAdminServiceClient interface {
 	ListApprovals(ctx context.Context, in *ListApprovalsRequest, opts ...grpc.CallOption) (*ListApprovalsResponse, error)
 	GetApproval(ctx context.Context, in *GetApprovalRequest, opts ...grpc.CallOption) (*GetApprovalResponse, error)
 	EmergencyDisablePlugin(ctx context.Context, in *EmergencyDisablePluginRequest, opts ...grpc.CallOption) (*EmergencyDisablePluginResponse, error)
+	// Platform scope. List currently archived tasks by archived_at (newest first), then kind and object_id.
+	ListArchivedWork(ctx context.Context, in *ListArchivedWorkRequest, opts ...grpc.CallOption) (*ListArchivedWorkResponse, error)
+	// Platform scope with recent reauthentication on the backend route. Payment
+	// verifies command_sha256 against the full method and canonical request.
+	// Atomically check archive state/version, clear archived_at, reset attempts,
+	// make the task available now, increment version and audit actor, reason,
+	// prior attempts and error code. The handler rereads authoritative state.
+	// A possibly dispatched operation remains query-only. Requeue itself has
+	// no order or funds effect and requires only one operator.
+	RequeueArchivedWork(ctx context.Context, in *RequeueArchivedWorkRequest, opts ...grpc.CallOption) (*RequeueArchivedWorkResponse, error)
 }
 
 type paymentAdminServiceClient struct {
@@ -331,6 +343,26 @@ func (c *paymentAdminServiceClient) EmergencyDisablePlugin(ctx context.Context, 
 	return out, nil
 }
 
+func (c *paymentAdminServiceClient) ListArchivedWork(ctx context.Context, in *ListArchivedWorkRequest, opts ...grpc.CallOption) (*ListArchivedWorkResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListArchivedWorkResponse)
+	err := c.cc.Invoke(ctx, PaymentAdminService_ListArchivedWork_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentAdminServiceClient) RequeueArchivedWork(ctx context.Context, in *RequeueArchivedWorkRequest, opts ...grpc.CallOption) (*RequeueArchivedWorkResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RequeueArchivedWorkResponse)
+	err := c.cc.Invoke(ctx, PaymentAdminService_RequeueArchivedWork_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PaymentAdminServiceServer is the server API for PaymentAdminService service.
 // All implementations must embed UnimplementedPaymentAdminServiceServer
 // for forward compatibility.
@@ -378,6 +410,16 @@ type PaymentAdminServiceServer interface {
 	ListApprovals(context.Context, *ListApprovalsRequest) (*ListApprovalsResponse, error)
 	GetApproval(context.Context, *GetApprovalRequest) (*GetApprovalResponse, error)
 	EmergencyDisablePlugin(context.Context, *EmergencyDisablePluginRequest) (*EmergencyDisablePluginResponse, error)
+	// Platform scope. List currently archived tasks by archived_at (newest first), then kind and object_id.
+	ListArchivedWork(context.Context, *ListArchivedWorkRequest) (*ListArchivedWorkResponse, error)
+	// Platform scope with recent reauthentication on the backend route. Payment
+	// verifies command_sha256 against the full method and canonical request.
+	// Atomically check archive state/version, clear archived_at, reset attempts,
+	// make the task available now, increment version and audit actor, reason,
+	// prior attempts and error code. The handler rereads authoritative state.
+	// A possibly dispatched operation remains query-only. Requeue itself has
+	// no order or funds effect and requires only one operator.
+	RequeueArchivedWork(context.Context, *RequeueArchivedWorkRequest) (*RequeueArchivedWorkResponse, error)
 	mustEmbedUnimplementedPaymentAdminServiceServer()
 }
 
@@ -456,6 +498,12 @@ func (UnimplementedPaymentAdminServiceServer) GetApproval(context.Context, *GetA
 }
 func (UnimplementedPaymentAdminServiceServer) EmergencyDisablePlugin(context.Context, *EmergencyDisablePluginRequest) (*EmergencyDisablePluginResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method EmergencyDisablePlugin not implemented")
+}
+func (UnimplementedPaymentAdminServiceServer) ListArchivedWork(context.Context, *ListArchivedWorkRequest) (*ListArchivedWorkResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListArchivedWork not implemented")
+}
+func (UnimplementedPaymentAdminServiceServer) RequeueArchivedWork(context.Context, *RequeueArchivedWorkRequest) (*RequeueArchivedWorkResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequeueArchivedWork not implemented")
 }
 func (UnimplementedPaymentAdminServiceServer) mustEmbedUnimplementedPaymentAdminServiceServer() {}
 func (UnimplementedPaymentAdminServiceServer) testEmbeddedByValue()                             {}
@@ -892,6 +940,42 @@ func _PaymentAdminService_EmergencyDisablePlugin_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PaymentAdminService_ListArchivedWork_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListArchivedWorkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentAdminServiceServer).ListArchivedWork(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentAdminService_ListArchivedWork_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentAdminServiceServer).ListArchivedWork(ctx, req.(*ListArchivedWorkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaymentAdminService_RequeueArchivedWork_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequeueArchivedWorkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentAdminServiceServer).RequeueArchivedWork(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentAdminService_RequeueArchivedWork_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentAdminServiceServer).RequeueArchivedWork(ctx, req.(*RequeueArchivedWorkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PaymentAdminService_ServiceDesc is the grpc.ServiceDesc for PaymentAdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -990,6 +1074,14 @@ var PaymentAdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EmergencyDisablePlugin",
 			Handler:    _PaymentAdminService_EmergencyDisablePlugin_Handler,
+		},
+		{
+			MethodName: "ListArchivedWork",
+			Handler:    _PaymentAdminService_ListArchivedWork_Handler,
+		},
+		{
+			MethodName: "RequeueArchivedWork",
+			Handler:    _PaymentAdminService_RequeueArchivedWork_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

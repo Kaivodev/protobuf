@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// SignedEvent payloads on payment.account_notices. Producer payment, sole
+// receiver backend. event_type is the message name and schema_version is 1.
+// These merchant bot notifications are never payment or funds evidence.
+// Funds services must not subscribe. Backend verifies the envelope and chain,
+// deduplicates by event_id, and records deliveries per (event_id, chat_id).
+// All payload fields are required. Timestamps are UTC with microsecond precision.
+
+// MerchantPaymentReceived v1 on payment.account_notices. Payment writes it with
+// OrderPaid v2 in one local transaction. Only backend receives this bot notice.
+// It provides no payment or funds evidence.
+message MerchantPaymentReceived {
+  string account_id = 1;
+  string business_id = 2;
+  string application_id = 3;
+  string order_id = 4;
+  string trade_no = 5;
+  string out_trade_no = 6;
+  // Positive integer in the minor unit of fiat_currency from the original order.
+  int64 fiat_amount = 7;
+  // Registered fiat currency code, as in TradeQuoteSnapshot.
+  string fiat_currency = 8;
+  // Taken from OrderPaid.paid_verified_at.
+  google.protobuf.Timestamp paid_at = 9;
+}
+
+// MerchantFundsAvailable v1 on payment.account_notices. Payment writes it at most
+// once per order, in the inbox transaction processing the matching TradeReleased
+// from ledger.trades. Only backend receives this bot notice. It provides no funds evidence.
+message MerchantFundsAvailable {
+  string account_id = 1;
+  string business_id = 2;
+  string application_id = 3;
+  string order_id = 4;
+  string trade_no = 5;
+  string out_trade_no = 6;
+  // Positive original recipient amount N in 10^-6 USDT.
+  int64 recipient_usdt = 7;
+  // Taken from occurred_at on the TradeReleased envelope.
+  google.protobuf.Timestamp released_at = 8;
+}
+
+enum PaymentAccessReviewResult {
+  PAYMENT_ACCESS_REVIEW_RESULT_UNSPECIFIED = 0;
+  PAYMENT_ACCESS_REVIEW_RESULT_APPROVED = 1;
+  PAYMENT_ACCESS_REVIEW_RESULT_REJECTED = 2;
+}
+
+// PaymentAccessReviewed v1 on payment.account_notices. Payment writes it with the
+// state change approving or rejecting a payment-method application. Only backend
+// receives this bot notice. It provides no funds evidence. Review reasons stay private.
+message PaymentAccessReviewed {
+  string account_id = 1;
+  string business_id = 2;
+  string payment_access_id = 3;
+  uint64 revision_version = 4;
+  string method = 5;
+  // Required terminal result. Reject UNSPECIFIED and unknown values.
+  PaymentAccessReviewResult result = 6;
+  google.protobuf.Timestamp reviewed_at = 7;
+}

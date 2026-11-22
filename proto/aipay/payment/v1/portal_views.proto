@@ -39,6 +39,12 @@ message ChannelAccountView {
   google.protobuf.Timestamp disabled_at = 6;
   google.protobuf.Timestamp created_at = 7;
   google.protobuf.Timestamp updated_at = 8;
+  // Required in v0.15 views. Seller intent defaults to true for existing and new channels.
+  optional bool seller_online = 9;
+  // Required, initially 1. Only a seller switch advances this version.
+  uint64 seller_online_version = 10;
+  // UTC time of the last seller switch. Absent if the seller has never switched.
+  google.protobuf.Timestamp seller_online_changed_at = 11;
 }
 
 // revision_id is the immutable proposal/execution approval ID; the change
@@ -113,6 +119,7 @@ message SellerChannelView {
   string channel_code = 3;
   string name = 4;
   repeated string payment_methods = 5;
+  // Seller willingness to accept new orders. Defaults to true for existing and new channels.
   optional bool online = 6;
   optional bool platform_enabled = 7;
   uint64 control_version = 8;
@@ -122,6 +129,10 @@ message SellerChannelView {
   int64 daily_limit_fiat = 12;
   string risk_policy_version = 13;
   optional uint64 hold_duration_seconds = 14;
+  // Required, initially 1. Independent of the platform control_version.
+  uint64 seller_online_version = 15;
+  // UTC time of the last seller switch. Absent if the seller has never switched.
+  google.protobuf.Timestamp seller_online_changed_at = 16;
 }
 
 message SellerOrderView {

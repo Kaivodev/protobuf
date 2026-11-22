@@ -52,8 +52,8 @@ func TestC2CMethodAuthorization(t *testing.T) {
 		{
 			eventsv1.File_aipay_events_v1_event_stream_proto.Services().ByName("EventStreamService"),
 			map[string]expected{
-				"ListEvents":    {[]string{"collection", "ledger", "payment", "reconciliation", "settlement"}, serviceOnly, ""},
-				"GetStreamHead": {[]string{"collection", "ledger", "payment", "reconciliation", "settlement"}, serviceOnly, ""},
+				"ListEvents":    {[]string{"backend", "collection", "ledger", "payment", "reconciliation", "settlement"}, serviceOnly, ""},
+				"GetStreamHead": {[]string{"backend", "collection", "ledger", "payment", "reconciliation", "settlement"}, serviceOnly, ""},
 			},
 		},
 	}

@@ -85,11 +85,14 @@ message GetStreamHeadResponse {
 // the contract's stream list; besides this method policy, the producer
 // authorizes each stream for its listed receivers and holds no receiver
 // credentials. An unknown or unauthorized stream returns PermissionDenied.
+// Payment permits only backend to read payment.account_notices. Backend's
+// membership below grants no access to the other streams.
 service EventStreamService {
   rpc ListEvents(ListEventsRequest) returns (ListEventsResponse) {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: [
+          "backend",
           "collection",
           "payment",
           "ledger",
@@ -104,6 +107,7 @@ service EventStreamService {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: [
+          "backend",
           "collection",
           "payment",
           "ledger",

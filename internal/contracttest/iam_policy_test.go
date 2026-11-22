@@ -21,6 +21,7 @@ func TestIAMMethodAuthorization(t *testing.T) {
 		{iamv1.File_aipay_iam_v1_authorization_proto, "AuthorizationService", []protoreflect.Name{"Authorize"}},
 		{iamv1.File_aipay_iam_v1_telegram_service_proto, "TelegramService", []protoreflect.Name{
 			"Register", "CreateBindingCode", "Bind", "Unbind", "BeginGroupBinding", "ConfirmGroupBinding", "InvalidateGroupBinding", "GetGroupBinding",
+			"ListAccountNotificationRecipients",
 		}},
 		{iamv1.File_aipay_iam_v1_mfa_service_proto, "MfaService", []protoreflect.Name{
 			"IssueTotpEnrollmentToken", "GetTotpEnrollment", "CompleteTotpEnrollment", "UseRecoveryCode", "ResetTotp",
