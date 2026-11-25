@@ -1,0 +1,438 @@
+syntax = "proto3";
+
+package aipay.upstream.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/upstream/v1;upstreamv1";
+
+// Policies list the union of callers. The gateway narrows each method by startup role.
+// Trade accepts only payment. Verification accepts only reconciliation for QueryPayment and QueryRefund.
+// Both roles reject requests carrying x-aipay-assertion.
+// For a verified caller, the same key and request return the original completed result.
+// Reusing the key with different parameters or a different method returns AlreadyExists.
+service UpstreamService {
+  // Creates a payment from the persisted order snapshot on trade.
+  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Queries the original payment on trade or verification.
+  rpc QueryPayment(QueryPaymentRequest) returns (QueryPaymentResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        callers: "reconciliation"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Closes the original payment on trade.
+  rpc ClosePayment(ClosePaymentRequest) returns (ClosePaymentResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Requests a full refund on trade.
+  rpc Refund(RefundRequest) returns (RefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Queries the original refund on trade or verification.
+  rpc QueryRefund(QueryRefundRequest) returns (QueryRefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        callers: "reconciliation"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Routes a callback against a candidate historical binding on trade.
+  rpc RouteCallback(RouteCallbackRequest) returns (RouteCallbackResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Verifies the raw callback against the original order snapshot on trade.
+  rpc VerifyCallback(VerifyCallbackRequest) returns (VerifyCallbackResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // FetchStatement is reserved for M4.
+}
+
+// All five methods accept payment on trade or reconciliation on verification, according to startup role.
+// Both roles reject requests carrying x-aipay-assertion. For each caller and write method,
+// the same key and canonical material return the original result. Different material returns AlreadyExists.
+service UpstreamAdminService {
+  // Replays all fixtures offline and returns three digests.
+  rpc ReplayPackage(ReplayPackageRequest) returns (ReplayPackageResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        callers: "reconciliation"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Replays the approved package and checks the digests before making it dispatchable.
+  rpc RegisterPackage(RegisterPackageRequest) returns (RegisterPackageResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        callers: "reconciliation"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Permanently revokes the digest. Trade blocks new CreatePayment and Refund operations only.
+  // Verification blocks all new operations using the package. Previously granted operations may finish.
+  rpc RevokePackage(RevokePackageRequest) returns (RevokePackageResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        callers: "reconciliation"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Seals a write-only credential version and returns only its immutable reference and content digest.
+  rpc StoreCredentials(StoreCredentialsRequest) returns (StoreCredentialsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        callers: "reconciliation"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Returns evidence only to its original caller. Quarantined records return FailedPrecondition.
+  rpc GetExchange(GetExchangeRequest) returns (GetExchangeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        callers: "reconciliation"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}
+
+message OperationContext {
+  // Nonempty execution key persisted by the owner before the call.
+  string idempotency_key = 1;
+  // 32-byte digest of the requested package.
+  bytes package_sha256 = 2;
+  string channel_account_id = 3;
+  // Forbidden on trade and required on verification. Must be bound to the original channel.
+  optional string verification_account_id = 4;
+  // Positive version of the original channel configuration on trade or the verification account on verification.
+  uint64 control_version = 5;
+  // Approved canonical JSON bytes of a non-secret string-to-string object, at most 64 KiB.
+  bytes config_json = 6;
+  // Immutable sealed credential version for this domain and channel.
+  string credentials_ref = 7;
+  // 32-byte digest of the canonical credential content.
+  bytes credentials_sha256 = 8;
+}
+
+enum ExecutionCategory {
+  EXECUTION_CATEGORY_UNSPECIFIED = 0;
+  // Completed with structured facts. Only this category carries output for the owner state machine.
+  EXECUTION_CATEGORY_SUCCEEDED = 1;
+  // Verified upstream rejection. The owner records the upstream code and applies its state machine.
+  EXECUTION_CATEGORY_REJECTED = 2;
+  // Outcome uncertain. Query the original order or refund and never resend the operation.
+  EXECUTION_CATEGORY_UNKNOWN = 3;
+  // Dispatch definitely did not occur. A new execution key requires a fresh owner-side fence check.
+  EXECUTION_CATEGORY_NOT_SENT = 4;
+}
+
+message ExecutionResult {
+  ExecutionCategory category = 1;
+  // Fixed host failure code. Empty on success or normal upstream rejection.
+  string error_code = 2;
+  // Identifies the evidence for the entire operation, across all HTTP attempts.
+  string exchange_id = 3;
+  // 32-byte digest of the canonical exchange record, including operations with zero HTTP attempts.
+  bytes evidence_sha256 = 4;
+  // 32-byte digest of the package actually selected. Empty if no package was selected.
+  bytes package_sha256 = 5;
+  // Number of dispatch boundaries entered.
+  uint32 requests = 6;
+  // Number of valid responses.
+  uint32 responses = 7;
+  // Number of sandbox steps entered.
+  uint32 steps = 8;
+  // Verified upstream short code, required on rejection and optional on success.
+  optional string upstream_code = 9;
+}
+
+message Money {
+  // Decimal string in the smallest currency unit.
+  string amount = 1;
+  string currency = 2;
+}
+
+message HttpHeader {
+  string name = 1;
+  repeated string values = 2;
+}
+
+message HttpResponse {
+  uint32 status = 1;
+  repeated HttpHeader headers = 2;
+  bytes body = 3;
+}
+
+message CreatePaymentInput {
+  string order_id = 1;
+  Money money = 2;
+  string method = 3;
+  string callback_url = 4;
+  optional string bank_mode = 5;
+  optional string instruction = 6;
+}
+
+message PaymentInput {
+  string order_id = 1;
+  Money money = 2;
+}
+
+message RefundInput {
+  string order_id = 1;
+  string refund_id = 2;
+  Money money = 3;
+}
+
+message CallbackPayload {
+  string method = 1;
+  bytes raw_query = 2;
+  repeated HttpHeader headers = 3;
+  bytes body = 4;
+  optional string source_ip = 5;
+}
+
+message VerifyCallbackInput {
+  string order_id = 1;
+  Money money = 2;
+  CallbackPayload raw = 3;
+}
+
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PAYMENT_STATUS_PENDING = 1;
+  PAYMENT_STATUS_PAID = 2;
+  PAYMENT_STATUS_CLOSED = 3;
+  PAYMENT_STATUS_FAILED = 4;
+  PAYMENT_STATUS_UNKNOWN = 5;
+}
+
+enum RefundStatus {
+  REFUND_STATUS_UNSPECIFIED = 0;
+  REFUND_STATUS_PENDING = 1;
+  REFUND_STATUS_SUCCEEDED = 2;
+  REFUND_STATUS_FAILED = 3;
+  REFUND_STATUS_UNKNOWN = 4;
+}
+
+message PaymentOutput {
+  string order_id = 1;
+  string upstream_id = 2;
+  Money money = 3;
+  PaymentStatus status = 4;
+  optional string url = 5;
+  optional string qrcode = 6;
+  // UTC timestamp with nanosecond precision.
+  google.protobuf.Timestamp paid_at = 7;
+  // UTC timestamp with nanosecond precision.
+  google.protobuf.Timestamp expires_at = 8;
+}
+
+message RefundOutput {
+  string order_id = 1;
+  string refund_id = 2;
+  string upstream_refund_id = 3;
+  Money money = 4;
+  RefundStatus status = 5;
+}
+
+message RouteCallbackOutput {
+  string order_id = 1;
+}
+
+message CallbackOutput {
+  string event_id = 1;
+  string order_id = 2;
+  string upstream_id = 3;
+  Money money = 4;
+  PaymentStatus status = 5;
+  HttpResponse ack = 6;
+}
+
+message CreatePaymentRequest {
+  OperationContext context = 1;
+  CreatePaymentInput input = 2;
+}
+
+message CreatePaymentResponse {
+  ExecutionResult execution = 1;
+  PaymentOutput output = 2;
+}
+
+message QueryPaymentRequest {
+  OperationContext context = 1;
+  PaymentInput input = 2;
+}
+
+message QueryPaymentResponse {
+  ExecutionResult execution = 1;
+  PaymentOutput output = 2;
+}
+
+message ClosePaymentRequest {
+  OperationContext context = 1;
+  PaymentInput input = 2;
+}
+
+message ClosePaymentResponse {
+  ExecutionResult execution = 1;
+  PaymentOutput output = 2;
+}
+
+message RefundRequest {
+  OperationContext context = 1;
+  RefundInput input = 2;
+}
+
+message RefundResponse {
+  ExecutionResult execution = 1;
+  RefundOutput output = 2;
+}
+
+message QueryRefundRequest {
+  OperationContext context = 1;
+  RefundInput input = 2;
+}
+
+message QueryRefundResponse {
+  ExecutionResult execution = 1;
+  RefundOutput output = 2;
+}
+
+message RouteCallbackRequest {
+  OperationContext context = 1;
+  CallbackPayload input = 2;
+}
+
+message RouteCallbackResponse {
+  ExecutionResult execution = 1;
+  RouteCallbackOutput output = 2;
+}
+
+message VerifyCallbackRequest {
+  OperationContext context = 1;
+  VerifyCallbackInput input = 2;
+}
+
+message VerifyCallbackResponse {
+  ExecutionResult execution = 1;
+  CallbackOutput output = 2;
+}
+
+message PluginFixture {
+  string path = 1;
+  bytes content = 2;
+}
+
+message PluginPackage {
+  bytes manifest_json = 1;
+  bytes plugin_wasm = 2;
+  repeated PluginFixture fixtures = 3;
+  bytes package_sha256 = 4;
+}
+
+message PackageDigests {
+  bytes package_sha256 = 1;
+  bytes fixtures_sha256 = 2;
+  bytes regression_report_sha256 = 3;
+}
+
+message ApprovalReference {
+  string approval_request_id = 1;
+  bytes request_digest = 2;
+}
+
+message ReplayPackageRequest {
+  PluginPackage package = 1;
+}
+
+message ReplayPackageResponse {
+  PackageDigests digests = 1;
+}
+
+message RegisterPackageRequest {
+  string idempotency_key = 1;
+  PluginPackage package = 2;
+  PackageDigests approved_digests = 3;
+  ApprovalReference publication = 4;
+}
+
+message RegisterPackageResponse {
+  PackageDigests digests = 1;
+  ApprovalReference publication = 2;
+}
+
+message RevokePackageRequest {
+  string idempotency_key = 1;
+  bytes package_sha256 = 2;
+  string owner_action_id = 3;
+}
+
+message RevokePackageResponse {
+  bytes package_sha256 = 1;
+  // UTC timestamp with nanosecond precision.
+  google.protobuf.Timestamp revoked_at = 2;
+}
+
+message StoreCredentialsRequest {
+  string idempotency_key = 1;
+  string channel_account_id = 2;
+  string channel_code = 3;
+  bytes credentials_json = 4;
+}
+
+message StoreCredentialsResponse {
+  string credentials_ref = 1;
+  bytes credentials_sha256 = 2;
+}
+
+message GetExchangeRequest {
+  string exchange_id = 1;
+}
+
+message GetExchangeResponse {
+  string exchange_id = 1;
+  bytes canonical_record = 2;
+  bytes evidence_sha256 = 3;
+}

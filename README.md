@@ -14,6 +14,7 @@ proto/aipay/
   iam/v1/identity.proto            认证输入、主体、短期认证证明
   iam/v1/authorization.proto       角色、权限、绑定、授权检查与数据范围约束
   collection/v1/collection_service.proto  CollectionService：受限归集创建、查询、取消
+  upstream/v1/upstream_service.proto  上游网关业务与管理方法
   payment/v1/payment.proto         支付订单契约占位
   ledger/v1/ledger.proto           分录交易、分录行与 CheckpointSigned 检查点
   ledger/v1/journal_service.proto  JournalService：分录与检查点拉取
@@ -49,6 +50,10 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 `testvectors` 包以 JSON 发布分录规范编码 V1，余额摘要、科目余额表摘要、RFC 6962 Merkle 根与检查点签名，签名事件，以及 WebAuthn 审批断言的测试向量（输入、规范字节、期望哈希、公钥与签名，以及必须被拒绝的篡改样例）。包内只有数据，没有编码器或校验器：settlement 与 reconciliation 按规范自行实现分录哈希校验器（决策 A16），再用这些向量测试。向量中的密钥只为生成向量临时创建，私钥已丢弃。
 
 认证证明的签发格式、密钥托管、调用方绑定与撤销机制尚待 IAM 实现；EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
+
+## v0.17.0 上游网关契约（待发布）
+
+交易实例只接受 payment，可调用七个业务方法和五个管理方法。核验实例只接受 reconciliation，可调用 `QueryPayment`、`QueryRefund` 和五个管理方法。方法 policy 声明两种实例的调用方并集，网关按启动角色和经 mTLS 验证的对端逐方法收窄权限。幂等、派发结果、证据与管理方法的详细语义见[上游网关契约](https://github.com/Kaivodev/docs/blob/main/design/upstream-gateway-contract.md)。
 
 ## v0.15.1 两个写操作要求近期 MFA
 
