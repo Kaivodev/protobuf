@@ -11,7 +11,8 @@ import (
 func TestV0120CancellationTriggerPayload(t *testing.T) {
 	msg := &paymentv1.OrderCancellationVerificationRequested{}
 	desc := msg.ProtoReflect().Descriptor()
-	if desc.FullName() != "aipay.payment.v1.OrderCancellationVerificationRequested" || desc.Fields().Len() != 3 {
+	// v0.21.0 (A144) adds field 4 basis; see v0210_test.go.
+	if desc.FullName() != "aipay.payment.v1.OrderCancellationVerificationRequested" || desc.Fields().Len() != 4 {
 		t.Fatalf("unexpected cancellation trigger %s with %d fields", desc.FullName(), desc.Fields().Len())
 	}
 	for _, field := range []protoreflect.FieldDescriptor{

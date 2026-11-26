@@ -24,6 +24,60 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Basis of an OrderCancellationVerificationRequested event.
+type OrderCancellationBasis int32
+
+const (
+	// A close was dispatched, or a query observed the order closed upstream,
+	// including a timeout-inferred close (A140).
+	OrderCancellationBasis_ORDER_CANCELLATION_BASIS_UNSPECIFIED OrderCancellationBasis = 0
+	// A144: the create outcome stayed unknown, payment has no upstream order ID
+	// and never delivered a payment instruction, no payment was reported, and
+	// after the channel's unpaid timeout fresh queries reported the order as not
+	// found upstream. Reconciliation may then count its own not-found results as
+	// unpaid closed observations; evidence marks the cancellation as inferred.
+	OrderCancellationBasis_ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED OrderCancellationBasis = 1
+)
+
+// Enum value maps for OrderCancellationBasis.
+var (
+	OrderCancellationBasis_name = map[int32]string{
+		0: "ORDER_CANCELLATION_BASIS_UNSPECIFIED",
+		1: "ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED",
+	}
+	OrderCancellationBasis_value = map[string]int32{
+		"ORDER_CANCELLATION_BASIS_UNSPECIFIED":               0,
+		"ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED": 1,
+	}
+)
+
+func (x OrderCancellationBasis) Enum() *OrderCancellationBasis {
+	p := new(OrderCancellationBasis)
+	*p = x
+	return p
+}
+
+func (x OrderCancellationBasis) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OrderCancellationBasis) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_order_events_proto_enumTypes[0].Descriptor()
+}
+
+func (OrderCancellationBasis) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_order_events_proto_enumTypes[0]
+}
+
+func (x OrderCancellationBasis) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OrderCancellationBasis.Descriptor instead.
+func (OrderCancellationBasis) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_order_events_proto_rawDescGZIP(), []int{0}
+}
+
 // OrderPaid v2 confirms ONLY actively queried fiat payment (A111), never
 // upstream USDT receivables, recipient balance availability or release.
 type OrderPaid struct {
@@ -601,7 +655,9 @@ func (x *OrderDisputed) GetRegisteredAt() *timestamppb.Timestamp {
 // Reconciliation starts one review per (order_id, control_version), reads the
 // original snapshot from ledger and independently queries the original order.
 // Only two closed/unpaid observations separated by the late-payment window
-// can support cancellation. Ledger records this trigger without a funds action.
+// can support cancellation. A not-found query result counts as such an
+// observation only when basis is CREATE_NOT_FOUND_INFERRED (A144); otherwise
+// it is uncertain. Ledger records this trigger without a funds action.
 type OrderCancellationVerificationRequested struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Required UUIDv7 of the original order.
@@ -610,8 +666,11 @@ type OrderCancellationVerificationRequested struct {
 	EscrowReservationId string `protobuf:"bytes,2,opt,name=escrow_reservation_id,json=escrowReservationId,proto3" json:"escrow_reservation_id,omitempty"`
 	// Positive ledger escrow control version at the trigger.
 	ControlVersion uint64 `protobuf:"varint,3,opt,name=control_version,json=controlVersion,proto3" json:"control_version,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Why payment requests the review. UNSPECIFIED (0) keeps the original
+	// meaning and is not encoded. Receivers reject values they do not know.
+	Basis         OrderCancellationBasis `protobuf:"varint,4,opt,name=basis,proto3,enum=aipay.payment.v1.OrderCancellationBasis" json:"basis,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *OrderCancellationVerificationRequested) Reset() {
@@ -663,6 +722,13 @@ func (x *OrderCancellationVerificationRequested) GetControlVersion() uint64 {
 		return x.ControlVersion
 	}
 	return 0
+}
+
+func (x *OrderCancellationVerificationRequested) GetBasis() OrderCancellationBasis {
+	if x != nil {
+		return x.Basis
+	}
+	return OrderCancellationBasis_ORDER_CANCELLATION_BASIS_UNSPECIFIED
 }
 
 // Signed payment.orders event_type=DisputeRulingApproved, schema_version=1.
@@ -814,18 +880,22 @@ const file_aipay_payment_v1_order_events_proto_rawDesc = "" +
 	"\x06reason\x18\x05 \x01(\tR\x06reason\x12'\n" +
 	"\x0fevidence_sha256\x18\x06 \x01(\fR\x0eevidenceSha256\x12#\n" +
 	"\rregistered_by\x18\a \x01(\tR\fregisteredBy\x12?\n" +
-	"\rregistered_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\fregisteredAt\"\xa0\x01\n" +
+	"\rregistered_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\fregisteredAt\"\xe0\x01\n" +
 	"&OrderCancellationVerificationRequested\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x122\n" +
 	"\x15escrow_reservation_id\x18\x02 \x01(\tR\x13escrowReservationId\x12'\n" +
-	"\x0fcontrol_version\x18\x03 \x01(\x04R\x0econtrolVersion\"\xcb\x01\n" +
+	"\x0fcontrol_version\x18\x03 \x01(\x04R\x0econtrolVersion\x12>\n" +
+	"\x05basis\x18\x04 \x01(\x0e2(.aipay.payment.v1.OrderCancellationBasisR\x05basis\"\xcb\x01\n" +
 	"\x15DisputeRulingApproved\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x122\n" +
 	"\x15escrow_reservation_id\x18\x02 \x01(\tR\x13escrowReservationId\x12'\n" +
 	"\x0fcontrol_version\x18\x03 \x01(\x04R\x0econtrolVersion\x12\x1d\n" +
 	"\n" +
 	"dispute_id\x18\x04 \x01(\tR\tdisputeId\x12\x1b\n" +
-	"\truling_id\x18\x05 \x01(\tR\brulingIdB@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"\truling_id\x18\x05 \x01(\tR\brulingId*z\n" +
+	"\x16OrderCancellationBasis\x12(\n" +
+	"$ORDER_CANCELLATION_BASIS_UNSPECIFIED\x10\x00\x126\n" +
+	"2ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED\x10\x01B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_aipay_payment_v1_order_events_proto_rawDescOnce sync.Once
@@ -839,38 +909,41 @@ func file_aipay_payment_v1_order_events_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_order_events_proto_rawDescData
 }
 
+var file_aipay_payment_v1_order_events_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_aipay_payment_v1_order_events_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_aipay_payment_v1_order_events_proto_goTypes = []any{
-	(*OrderPaid)(nil),                              // 0: aipay.payment.v1.OrderPaid
-	(*RefundSucceeded)(nil),                        // 1: aipay.payment.v1.RefundSucceeded
-	(*RefundFailed)(nil),                           // 2: aipay.payment.v1.RefundFailed
-	(*OrderReversed)(nil),                          // 3: aipay.payment.v1.OrderReversed
-	(*OrderDisputed)(nil),                          // 4: aipay.payment.v1.OrderDisputed
-	(*OrderCancellationVerificationRequested)(nil), // 5: aipay.payment.v1.OrderCancellationVerificationRequested
-	(*DisputeRulingApproved)(nil),                  // 6: aipay.payment.v1.DisputeRulingApproved
-	(*v1.TradeSnapshot)(nil),                       // 7: aipay.common.v1.TradeSnapshot
-	(*timestamppb.Timestamp)(nil),                  // 8: google.protobuf.Timestamp
-	(v11.RefundReservationBranch)(0),               // 9: aipay.ledger.v1.RefundReservationBranch
+	(OrderCancellationBasis)(0),                    // 0: aipay.payment.v1.OrderCancellationBasis
+	(*OrderPaid)(nil),                              // 1: aipay.payment.v1.OrderPaid
+	(*RefundSucceeded)(nil),                        // 2: aipay.payment.v1.RefundSucceeded
+	(*RefundFailed)(nil),                           // 3: aipay.payment.v1.RefundFailed
+	(*OrderReversed)(nil),                          // 4: aipay.payment.v1.OrderReversed
+	(*OrderDisputed)(nil),                          // 5: aipay.payment.v1.OrderDisputed
+	(*OrderCancellationVerificationRequested)(nil), // 6: aipay.payment.v1.OrderCancellationVerificationRequested
+	(*DisputeRulingApproved)(nil),                  // 7: aipay.payment.v1.DisputeRulingApproved
+	(*v1.TradeSnapshot)(nil),                       // 8: aipay.common.v1.TradeSnapshot
+	(*timestamppb.Timestamp)(nil),                  // 9: google.protobuf.Timestamp
+	(v11.RefundReservationBranch)(0),               // 10: aipay.ledger.v1.RefundReservationBranch
 }
 var file_aipay_payment_v1_order_events_proto_depIdxs = []int32{
-	7,  // 0: aipay.payment.v1.OrderPaid.trade:type_name -> aipay.common.v1.TradeSnapshot
-	8,  // 1: aipay.payment.v1.OrderPaid.paid_verified_at:type_name -> google.protobuf.Timestamp
-	8,  // 2: aipay.payment.v1.OrderPaid.risk_release_at:type_name -> google.protobuf.Timestamp
-	7,  // 3: aipay.payment.v1.RefundSucceeded.trade:type_name -> aipay.common.v1.TradeSnapshot
-	9,  // 4: aipay.payment.v1.RefundSucceeded.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
-	8,  // 5: aipay.payment.v1.RefundSucceeded.verified_at:type_name -> google.protobuf.Timestamp
-	7,  // 6: aipay.payment.v1.RefundFailed.trade:type_name -> aipay.common.v1.TradeSnapshot
-	9,  // 7: aipay.payment.v1.RefundFailed.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
-	8,  // 8: aipay.payment.v1.RefundFailed.verified_at:type_name -> google.protobuf.Timestamp
-	7,  // 9: aipay.payment.v1.OrderReversed.trade:type_name -> aipay.common.v1.TradeSnapshot
-	8,  // 10: aipay.payment.v1.OrderReversed.reversed_at:type_name -> google.protobuf.Timestamp
-	7,  // 11: aipay.payment.v1.OrderDisputed.trade:type_name -> aipay.common.v1.TradeSnapshot
-	8,  // 12: aipay.payment.v1.OrderDisputed.registered_at:type_name -> google.protobuf.Timestamp
-	13, // [13:13] is the sub-list for method output_type
-	13, // [13:13] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	8,  // 0: aipay.payment.v1.OrderPaid.trade:type_name -> aipay.common.v1.TradeSnapshot
+	9,  // 1: aipay.payment.v1.OrderPaid.paid_verified_at:type_name -> google.protobuf.Timestamp
+	9,  // 2: aipay.payment.v1.OrderPaid.risk_release_at:type_name -> google.protobuf.Timestamp
+	8,  // 3: aipay.payment.v1.RefundSucceeded.trade:type_name -> aipay.common.v1.TradeSnapshot
+	10, // 4: aipay.payment.v1.RefundSucceeded.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
+	9,  // 5: aipay.payment.v1.RefundSucceeded.verified_at:type_name -> google.protobuf.Timestamp
+	8,  // 6: aipay.payment.v1.RefundFailed.trade:type_name -> aipay.common.v1.TradeSnapshot
+	10, // 7: aipay.payment.v1.RefundFailed.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
+	9,  // 8: aipay.payment.v1.RefundFailed.verified_at:type_name -> google.protobuf.Timestamp
+	8,  // 9: aipay.payment.v1.OrderReversed.trade:type_name -> aipay.common.v1.TradeSnapshot
+	9,  // 10: aipay.payment.v1.OrderReversed.reversed_at:type_name -> google.protobuf.Timestamp
+	8,  // 11: aipay.payment.v1.OrderDisputed.trade:type_name -> aipay.common.v1.TradeSnapshot
+	9,  // 12: aipay.payment.v1.OrderDisputed.registered_at:type_name -> google.protobuf.Timestamp
+	0,  // 13: aipay.payment.v1.OrderCancellationVerificationRequested.basis:type_name -> aipay.payment.v1.OrderCancellationBasis
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_order_events_proto_init() }
@@ -883,13 +956,14 @@ func file_aipay_payment_v1_order_events_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_order_events_proto_rawDesc), len(file_aipay_payment_v1_order_events_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_aipay_payment_v1_order_events_proto_goTypes,
 		DependencyIndexes: file_aipay_payment_v1_order_events_proto_depIdxs,
+		EnumInfos:         file_aipay_payment_v1_order_events_proto_enumTypes,
 		MessageInfos:      file_aipay_payment_v1_order_events_proto_msgTypes,
 	}.Build()
 	File_aipay_payment_v1_order_events_proto = out.File
