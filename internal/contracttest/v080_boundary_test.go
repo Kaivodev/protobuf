@@ -134,10 +134,10 @@ func TestV080ReconciliationDomainBoundary(t *testing.T) {
 	}
 	material := (&reconciliationv1.ReconciliationApprovalMaterial{}).ProtoReflect().Descriptor()
 	operation := material.Oneofs().ByName("operation")
-	if operation == nil || operation.Fields().Len() != 3 {
+	if operation == nil || operation.Fields().Len() != 4 {
 		t.Fatal("unreviewed approval union")
 	}
-	for i, name := range []protoreflect.Name{"verification_account", "plugin_version", "plugin_enable"} {
+	for i, name := range []protoreflect.Name{"verification_account", "plugin_version", "plugin_enable", "coverage_attestation"} {
 		field := operation.Fields().ByName(name)
 		if field == nil || field.Number() != protoreflect.FieldNumber(6+i) || field.Message().ParentFile().Package() != "aipay.reconciliation.v1" {
 			t.Fatalf("wrong material branch %s", name)

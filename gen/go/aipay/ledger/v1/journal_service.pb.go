@@ -8,8 +8,10 @@ package ledgerv1
 
 import (
 	_ "github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1"
+	_ "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -220,11 +222,324 @@ func (x *ListCheckpointsResponse) GetCheckpoints() []*CheckpointSigned {
 	return nil
 }
 
+type GetLiabilitySnapshotRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Zero pins the current head. Later pages repeat the first page's as_of_seq.
+	AsOfSeq uint64 `protobuf:"varint,1,opt,name=as_of_seq,json=asOfSeq,proto3" json:"as_of_seq,omitempty"`
+	// Exclusive lower bound on account_code bytes. Empty requests the first page.
+	AfterAccountCode string `protobuf:"bytes,2,opt,name=after_account_code,json=afterAccountCode,proto3" json:"after_account_code,omitempty"`
+	// Required 1-2000. Reject out-of-range values.
+	Limit         uint32 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLiabilitySnapshotRequest) Reset() {
+	*x = GetLiabilitySnapshotRequest{}
+	mi := &file_aipay_ledger_v1_journal_service_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLiabilitySnapshotRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLiabilitySnapshotRequest) ProtoMessage() {}
+
+func (x *GetLiabilitySnapshotRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_journal_service_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLiabilitySnapshotRequest.ProtoReflect.Descriptor instead.
+func (*GetLiabilitySnapshotRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_journal_service_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetLiabilitySnapshotRequest) GetAsOfSeq() uint64 {
+	if x != nil {
+		return x.AsOfSeq
+	}
+	return 0
+}
+
+func (x *GetLiabilitySnapshotRequest) GetAfterAccountCode() string {
+	if x != nil {
+		return x.AfterAccountCode
+	}
+	return ""
+}
+
+func (x *GetLiabilitySnapshotRequest) GetLimit() uint32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type SnapshotAccountBalance struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	AccountCode string                 `protobuf:"bytes,1,opt,name=account_code,json=accountCode,proto3" json:"account_code,omitempty"`
+	// Debit minus credit at as_of_seq, in account units as in the balances digest.
+	Units int64 `protobuf:"varint,2,opt,name=units,proto3" json:"units,omitempty"`
+	// Debit minus credit at as_of_seq, in 10^-6 USD.
+	UsdMicros     int64 `protobuf:"varint,3,opt,name=usd_micros,json=usdMicros,proto3" json:"usd_micros,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotAccountBalance) Reset() {
+	*x = SnapshotAccountBalance{}
+	mi := &file_aipay_ledger_v1_journal_service_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotAccountBalance) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotAccountBalance) ProtoMessage() {}
+
+func (x *SnapshotAccountBalance) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_journal_service_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotAccountBalance.ProtoReflect.Descriptor instead.
+func (*SnapshotAccountBalance) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_journal_service_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SnapshotAccountBalance) GetAccountCode() string {
+	if x != nil {
+		return x.AccountCode
+	}
+	return ""
+}
+
+func (x *SnapshotAccountBalance) GetUnits() int64 {
+	if x != nil {
+		return x.Units
+	}
+	return 0
+}
+
+func (x *SnapshotAccountBalance) GetUsdMicros() int64 {
+	if x != nil {
+		return x.UsdMicros
+	}
+	return 0
+}
+
+type CoverageTotals struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Version effective when transaction as_of_seq was recorded.
+	GlMappingVersion uint64 `protobuf:"varint,1,opt,name=gl_mapping_version,json=glMappingVersion,proto3" json:"gl_mapping_version,omitempty"`
+	// GL 1011, debit-positive, in 10^-6 USDT.
+	CustomerWalletUnits int64 `protobuf:"varint,2,opt,name=customer_wallet_units,json=customerWalletUnits,proto3" json:"customer_wallet_units,omitempty"`
+	// GL 2241, credit-positive, in 10^-6 USDT.
+	UnmatchedReceiptUnits int64 `protobuf:"varint,3,opt,name=unmatched_receipt_units,json=unmatchedReceiptUnits,proto3" json:"unmatched_receipt_units,omitempty"`
+	// GL 2101, 2102, 2103, 2204 and 2221, credit-positive, in 10^-6 USDT.
+	UserLiabilityUnits int64 `protobuf:"varint,4,opt,name=user_liability_units,json=userLiabilityUnits,proto3" json:"user_liability_units,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *CoverageTotals) Reset() {
+	*x = CoverageTotals{}
+	mi := &file_aipay_ledger_v1_journal_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CoverageTotals) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CoverageTotals) ProtoMessage() {}
+
+func (x *CoverageTotals) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_journal_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CoverageTotals.ProtoReflect.Descriptor instead.
+func (*CoverageTotals) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_journal_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *CoverageTotals) GetGlMappingVersion() uint64 {
+	if x != nil {
+		return x.GlMappingVersion
+	}
+	return 0
+}
+
+func (x *CoverageTotals) GetCustomerWalletUnits() int64 {
+	if x != nil {
+		return x.CustomerWalletUnits
+	}
+	return 0
+}
+
+func (x *CoverageTotals) GetUnmatchedReceiptUnits() int64 {
+	if x != nil {
+		return x.UnmatchedReceiptUnits
+	}
+	return 0
+}
+
+func (x *CoverageTotals) GetUserLiabilityUnits() int64 {
+	if x != nil {
+		return x.UserLiabilityUnits
+	}
+	return 0
+}
+
+type GetLiabilitySnapshotResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Fixed journal position for every page.
+	AsOfSeq uint64 `protobuf:"varint,1,opt,name=as_of_seq,json=asOfSeq,proto3" json:"as_of_seq,omitempty"`
+	// Hash of the transaction at as_of_seq, or 32 zero bytes for an empty journal.
+	HeadHash []byte `protobuf:"bytes,2,opt,name=head_hash,json=headHash,proto3" json:"head_hash,omitempty"`
+	// Balances in strictly ascending account_code byte order.
+	Balances []*SnapshotAccountBalance `protobuf:"bytes,3,rep,name=balances,proto3" json:"balances,omitempty"`
+	// Exclusive cursor to pass as after_account_code. Empty on the last page.
+	NextAccountCode string `protobuf:"bytes,4,opt,name=next_account_code,json=nextAccountCode,proto3" json:"next_account_code,omitempty"`
+	// Fields 5-9 are set only on the first page (empty after_account_code).
+	TakenAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=taken_at,json=takenAt,proto3" json:"taken_at,omitempty"`
+	// Number of accounts across all pages.
+	AccountCount uint64 `protobuf:"varint,6,opt,name=account_count,json=accountCount,proto3" json:"account_count,omitempty"`
+	// 32-byte AIPAY-LEDGER-BALANCES-V1 digest over all accounts at as_of_seq.
+	BalancesDigest []byte          `protobuf:"bytes,7,opt,name=balances_digest,json=balancesDigest,proto3" json:"balances_digest,omitempty"`
+	Totals         *CoverageTotals `protobuf:"bytes,8,opt,name=totals,proto3" json:"totals,omitempty"`
+	// Present only for a signed checkpoint with to_seq == as_of_seq. Use the highest matching ID.
+	Checkpoint    *CheckpointSigned `protobuf:"bytes,9,opt,name=checkpoint,proto3" json:"checkpoint,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLiabilitySnapshotResponse) Reset() {
+	*x = GetLiabilitySnapshotResponse{}
+	mi := &file_aipay_ledger_v1_journal_service_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLiabilitySnapshotResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLiabilitySnapshotResponse) ProtoMessage() {}
+
+func (x *GetLiabilitySnapshotResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_journal_service_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLiabilitySnapshotResponse.ProtoReflect.Descriptor instead.
+func (*GetLiabilitySnapshotResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_journal_service_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetLiabilitySnapshotResponse) GetAsOfSeq() uint64 {
+	if x != nil {
+		return x.AsOfSeq
+	}
+	return 0
+}
+
+func (x *GetLiabilitySnapshotResponse) GetHeadHash() []byte {
+	if x != nil {
+		return x.HeadHash
+	}
+	return nil
+}
+
+func (x *GetLiabilitySnapshotResponse) GetBalances() []*SnapshotAccountBalance {
+	if x != nil {
+		return x.Balances
+	}
+	return nil
+}
+
+func (x *GetLiabilitySnapshotResponse) GetNextAccountCode() string {
+	if x != nil {
+		return x.NextAccountCode
+	}
+	return ""
+}
+
+func (x *GetLiabilitySnapshotResponse) GetTakenAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.TakenAt
+	}
+	return nil
+}
+
+func (x *GetLiabilitySnapshotResponse) GetAccountCount() uint64 {
+	if x != nil {
+		return x.AccountCount
+	}
+	return 0
+}
+
+func (x *GetLiabilitySnapshotResponse) GetBalancesDigest() []byte {
+	if x != nil {
+		return x.BalancesDigest
+	}
+	return nil
+}
+
+func (x *GetLiabilitySnapshotResponse) GetTotals() *CoverageTotals {
+	if x != nil {
+		return x.Totals
+	}
+	return nil
+}
+
+func (x *GetLiabilitySnapshotResponse) GetCheckpoint() *CheckpointSigned {
+	if x != nil {
+		return x.Checkpoint
+	}
+	return nil
+}
+
 var File_aipay_ledger_v1_journal_service_proto protoreflect.FileDescriptor
 
 const file_aipay_ledger_v1_journal_service_proto_rawDesc = "" +
 	"\n" +
-	"%aipay/ledger/v1/journal_service.proto\x12\x0faipay.ledger.v1\x1a\x1baipay/authz/v1/policy.proto\x1a\x1caipay/ledger/v1/ledger.proto\"L\n" +
+	"%aipay/ledger/v1/journal_service.proto\x12\x0faipay.ledger.v1\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/query.proto\x1a\x1caipay/ledger/v1/ledger.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"L\n" +
 	"\x17ListTransactionsRequest\x12\x1b\n" +
 	"\tafter_seq\x18\x01 \x01(\x04R\bafterSeq\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\rR\x05limit\"c\n" +
@@ -234,7 +549,33 @@ const file_aipay_ledger_v1_journal_service_proto_rawDesc = "" +
 	"\bafter_id\x18\x01 \x01(\x04R\aafterId\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\rR\x05limit\"^\n" +
 	"\x17ListCheckpointsResponse\x12C\n" +
-	"\vcheckpoints\x18\x01 \x03(\v2!.aipay.ledger.v1.CheckpointSignedR\vcheckpoints2\xad\x02\n" +
+	"\vcheckpoints\x18\x01 \x03(\v2!.aipay.ledger.v1.CheckpointSignedR\vcheckpoints\"\x84\x01\n" +
+	"\x1bGetLiabilitySnapshotRequest\x12\x1a\n" +
+	"\tas_of_seq\x18\x01 \x01(\x04R\aasOfSeq\x12,\n" +
+	"\x12after_account_code\x18\x02 \x01(\tR\x10afterAccountCode\x12\x1b\n" +
+	"\x05limit\x18\x03 \x01(\rB\x05\xc8\xf3\x18\xd0\x0fR\x05limit\"p\n" +
+	"\x16SnapshotAccountBalance\x12!\n" +
+	"\faccount_code\x18\x01 \x01(\tR\vaccountCode\x12\x14\n" +
+	"\x05units\x18\x02 \x01(\x03R\x05units\x12\x1d\n" +
+	"\n" +
+	"usd_micros\x18\x03 \x01(\x03R\tusdMicros\"\xdc\x01\n" +
+	"\x0eCoverageTotals\x12,\n" +
+	"\x12gl_mapping_version\x18\x01 \x01(\x04R\x10glMappingVersion\x122\n" +
+	"\x15customer_wallet_units\x18\x02 \x01(\x03R\x13customerWalletUnits\x126\n" +
+	"\x17unmatched_receipt_units\x18\x03 \x01(\x03R\x15unmatchedReceiptUnits\x120\n" +
+	"\x14user_liability_units\x18\x04 \x01(\x03R\x12userLiabilityUnits\"\xc9\x03\n" +
+	"\x1cGetLiabilitySnapshotResponse\x12\x1a\n" +
+	"\tas_of_seq\x18\x01 \x01(\x04R\aasOfSeq\x12\x1b\n" +
+	"\thead_hash\x18\x02 \x01(\fR\bheadHash\x12C\n" +
+	"\bbalances\x18\x03 \x03(\v2'.aipay.ledger.v1.SnapshotAccountBalanceR\bbalances\x12*\n" +
+	"\x11next_account_code\x18\x04 \x01(\tR\x0fnextAccountCode\x125\n" +
+	"\btaken_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\atakenAt\x12#\n" +
+	"\raccount_count\x18\x06 \x01(\x04R\faccountCount\x12'\n" +
+	"\x0fbalances_digest\x18\a \x01(\fR\x0ebalancesDigest\x127\n" +
+	"\x06totals\x18\b \x01(\v2\x1f.aipay.ledger.v1.CoverageTotalsR\x06totals\x12A\n" +
+	"\n" +
+	"checkpoint\x18\t \x01(\v2!.aipay.ledger.v1.CheckpointSignedR\n" +
+	"checkpoint2\xbd\x03\n" +
 	"\x0eJournalService\x12\x8d\x01\n" +
 	"\x10ListTransactions\x12(.aipay.ledger.v1.ListTransactionsRequest\x1a).aipay.ledger.v1.ListTransactionsResponse\"$\xc2\xf3\x18 \n" +
 	"\x1e\n" +
@@ -245,7 +586,10 @@ const file_aipay_ledger_v1_journal_service_proto_rawDesc = "" +
 	"\x1e\n" +
 	"\x0ereconciliation\n" +
 	"\n" +
-	"settlement\x10\x01B>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
+	"settlement\x10\x01\x12\x8d\x01\n" +
+	"\x14GetLiabilitySnapshot\x12,.aipay.ledger.v1.GetLiabilitySnapshotRequest\x1a-.aipay.ledger.v1.GetLiabilitySnapshotResponse\"\x18\xc2\xf3\x18\x14\n" +
+	"\x12\n" +
+	"\x0ereconciliation\x10\x01B>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
 
 var (
 	file_aipay_ledger_v1_journal_service_proto_rawDescOnce sync.Once
@@ -259,27 +603,38 @@ func file_aipay_ledger_v1_journal_service_proto_rawDescGZIP() []byte {
 	return file_aipay_ledger_v1_journal_service_proto_rawDescData
 }
 
-var file_aipay_ledger_v1_journal_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_aipay_ledger_v1_journal_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_aipay_ledger_v1_journal_service_proto_goTypes = []any{
-	(*ListTransactionsRequest)(nil),  // 0: aipay.ledger.v1.ListTransactionsRequest
-	(*ListTransactionsResponse)(nil), // 1: aipay.ledger.v1.ListTransactionsResponse
-	(*ListCheckpointsRequest)(nil),   // 2: aipay.ledger.v1.ListCheckpointsRequest
-	(*ListCheckpointsResponse)(nil),  // 3: aipay.ledger.v1.ListCheckpointsResponse
-	(*JournalTransaction)(nil),       // 4: aipay.ledger.v1.JournalTransaction
-	(*CheckpointSigned)(nil),         // 5: aipay.ledger.v1.CheckpointSigned
+	(*ListTransactionsRequest)(nil),      // 0: aipay.ledger.v1.ListTransactionsRequest
+	(*ListTransactionsResponse)(nil),     // 1: aipay.ledger.v1.ListTransactionsResponse
+	(*ListCheckpointsRequest)(nil),       // 2: aipay.ledger.v1.ListCheckpointsRequest
+	(*ListCheckpointsResponse)(nil),      // 3: aipay.ledger.v1.ListCheckpointsResponse
+	(*GetLiabilitySnapshotRequest)(nil),  // 4: aipay.ledger.v1.GetLiabilitySnapshotRequest
+	(*SnapshotAccountBalance)(nil),       // 5: aipay.ledger.v1.SnapshotAccountBalance
+	(*CoverageTotals)(nil),               // 6: aipay.ledger.v1.CoverageTotals
+	(*GetLiabilitySnapshotResponse)(nil), // 7: aipay.ledger.v1.GetLiabilitySnapshotResponse
+	(*JournalTransaction)(nil),           // 8: aipay.ledger.v1.JournalTransaction
+	(*CheckpointSigned)(nil),             // 9: aipay.ledger.v1.CheckpointSigned
+	(*timestamppb.Timestamp)(nil),        // 10: google.protobuf.Timestamp
 }
 var file_aipay_ledger_v1_journal_service_proto_depIdxs = []int32{
-	4, // 0: aipay.ledger.v1.ListTransactionsResponse.transactions:type_name -> aipay.ledger.v1.JournalTransaction
-	5, // 1: aipay.ledger.v1.ListCheckpointsResponse.checkpoints:type_name -> aipay.ledger.v1.CheckpointSigned
-	0, // 2: aipay.ledger.v1.JournalService.ListTransactions:input_type -> aipay.ledger.v1.ListTransactionsRequest
-	2, // 3: aipay.ledger.v1.JournalService.ListCheckpoints:input_type -> aipay.ledger.v1.ListCheckpointsRequest
-	1, // 4: aipay.ledger.v1.JournalService.ListTransactions:output_type -> aipay.ledger.v1.ListTransactionsResponse
-	3, // 5: aipay.ledger.v1.JournalService.ListCheckpoints:output_type -> aipay.ledger.v1.ListCheckpointsResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	8,  // 0: aipay.ledger.v1.ListTransactionsResponse.transactions:type_name -> aipay.ledger.v1.JournalTransaction
+	9,  // 1: aipay.ledger.v1.ListCheckpointsResponse.checkpoints:type_name -> aipay.ledger.v1.CheckpointSigned
+	5,  // 2: aipay.ledger.v1.GetLiabilitySnapshotResponse.balances:type_name -> aipay.ledger.v1.SnapshotAccountBalance
+	10, // 3: aipay.ledger.v1.GetLiabilitySnapshotResponse.taken_at:type_name -> google.protobuf.Timestamp
+	6,  // 4: aipay.ledger.v1.GetLiabilitySnapshotResponse.totals:type_name -> aipay.ledger.v1.CoverageTotals
+	9,  // 5: aipay.ledger.v1.GetLiabilitySnapshotResponse.checkpoint:type_name -> aipay.ledger.v1.CheckpointSigned
+	0,  // 6: aipay.ledger.v1.JournalService.ListTransactions:input_type -> aipay.ledger.v1.ListTransactionsRequest
+	2,  // 7: aipay.ledger.v1.JournalService.ListCheckpoints:input_type -> aipay.ledger.v1.ListCheckpointsRequest
+	4,  // 8: aipay.ledger.v1.JournalService.GetLiabilitySnapshot:input_type -> aipay.ledger.v1.GetLiabilitySnapshotRequest
+	1,  // 9: aipay.ledger.v1.JournalService.ListTransactions:output_type -> aipay.ledger.v1.ListTransactionsResponse
+	3,  // 10: aipay.ledger.v1.JournalService.ListCheckpoints:output_type -> aipay.ledger.v1.ListCheckpointsResponse
+	7,  // 11: aipay.ledger.v1.JournalService.GetLiabilitySnapshot:output_type -> aipay.ledger.v1.GetLiabilitySnapshotResponse
+	9,  // [9:12] is the sub-list for method output_type
+	6,  // [6:9] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_aipay_ledger_v1_journal_service_proto_init() }
@@ -294,7 +649,7 @@ func file_aipay_ledger_v1_journal_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_ledger_v1_journal_service_proto_rawDesc), len(file_aipay_ledger_v1_journal_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

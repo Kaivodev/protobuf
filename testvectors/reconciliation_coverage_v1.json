@@ -1,0 +1,454 @@
+{
+  "description": "Independent synthetic examples. Approval material uses protobuf JSON with base64 byte fields. Hex request_bytes includes the length-prefixed reconciliation approval domain. The approval digest and revocation challenge use the raw ASCII AIPAY-APPROVAL-V1 prefix. Evidence and registry digests use their own length-prefixed domains. Standalone digests are lowercase hex.",
+  "approval_vectors": [
+    {
+      "name": "covered-at-buffer-wallet-cap",
+      "material": {
+        "approval_request_id": "01a20410-a000-7000-8000-0000000000c8",
+        "kind": "coverage_attestation",
+        "requested_by": "01a20410-a000-7000-8000-000000000001",
+        "requested_at": "2026-11-21T12:01:31.123456Z",
+        "expires_at": "2026-11-22T12:01:31.123456Z",
+        "coverage_attestation": {
+          "attestation_id": "01a20410-a000-7000-8000-000000000064",
+          "policy_version": "coverage-manual-v1",
+          "address_registry_version": "p3aePzP0XLAmv2CmGhi6+lbKgtT1afRT/6tWeZBXW58=",
+          "ledger": {
+            "as_of_seq": "1000",
+            "head_hash": "a6ca7DOvyhjUimORvt5RwJSl6yeFzt9u2PGJZCi655M=",
+            "taken_at": "2026-11-21T12:01:30.123456Z",
+            "balances_digest": "H05Uvdl5ma5ENTtrG4Mfo6WM1ZvSPAajxmS7nebt5sU=",
+            "account_count": "6",
+            "gl_mapping_version": "1",
+            "checkpoint_id": "18",
+            "customer_wallet_units": "104000000",
+            "unmatched_receipt_units": "2000000",
+            "user_liability_units": "100000000",
+            "liabilities": [
+              {
+                "account_type": "trade_escrow",
+                "units": "20000000",
+                "account_count": "1"
+              },
+              {
+                "account_type": "user_available",
+                "units": "75000000",
+                "account_count": "1"
+              }
+            ],
+            "unclassified": [
+              {
+                "account_type": "future_customer_credit",
+                "units": "5000000",
+                "account_count": "1"
+              }
+            ]
+          },
+          "observations": [
+            {
+              "chain": "TRON",
+              "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+              "role": "COVERAGE_ADDRESS_ROLE_COLD",
+              "token_contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+              "raw_balance": "85000000",
+              "units": "85000000",
+              "block_number": "70000000",
+              "block_hash": "lWft5luwT+Dt9bghSbcY4/Bcz2fjFMS4JF5b2Rff2cg=",
+              "block_time": "2026-11-21T12:00:00.123456Z",
+              "source": "own_node",
+              "evidence_sha256": "PvktyFj+Dqyfd16AjL4HUwZqweDJxvUq8DAhmBPZyy0="
+            },
+            {
+              "chain": "TRON",
+              "address": "TH7uFM8yJw5DEorr4L4xxtD4NdeBA5iDx9",
+              "role": "COVERAGE_ADDRESS_ROLE_HOT",
+              "token_contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+              "raw_balance": "30000000",
+              "units": "30000000",
+              "block_number": "70000001",
+              "block_hash": "YUfbPcV9PD7dAId8zZKSWquEAbp8MlQ7mIa+PHCSCgY=",
+              "block_time": "2026-11-21T12:00:03.123456Z",
+              "source": "trongrid",
+              "evidence_sha256": "I6yc6jb0R2qz/IxTPeEwKaL7LKUfkotVS6M95zE0qW4="
+            },
+            {
+              "chain": "TRON",
+              "address": "TV6ZREYEdYM9MAYpPtKtLGJDWafMsd8Cy5",
+              "role": "COVERAGE_ADDRESS_ROLE_DEPOSIT",
+              "token_contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+              "raw_balance": "5000000",
+              "units": "5000000",
+              "block_number": "70000002",
+              "block_hash": "TQieFOyVFww5/Syd0E966ASG+gx4Kp5opgQZnkEsjwk=",
+              "block_time": "2026-11-21T12:00:06.123456Z",
+              "source": "tronscan",
+              "evidence_sha256": "q/RudM9sYhkvum5aoo4xtUySvCmTeHs/K3jioUJqGBA="
+            }
+          ],
+          "unrecorded_inflows": [
+            {
+              "chain": "TRON",
+              "transaction_id": "08a464e3fd45939eec304079fce01a15ac6529da454b2159453dac388707f4f0",
+              "event_index": 2,
+              "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+              "counterparty": "TUwYDEzsQBSGihzbW76byszRpn6sztqmQL",
+              "units": "2000000",
+              "block_number": "69999999",
+              "block_time": "2026-11-21T11:59:57.123456Z",
+              "note": "Awaiting ledger entry."
+            },
+            {
+              "chain": "TRON",
+              "transaction_id": "08a464e3fd45939eec304079fce01a15ac6529da454b2159453dac388707f4f0",
+              "event_index": 10,
+              "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+              "counterparty": "TAA6gVgoF7LLuasonnuTuTMXM1t6RkSFQQ",
+              "units": "3000000",
+              "block_number": "69999999",
+              "block_time": "2026-11-21T11:59:57.123456Z",
+              "note": "Awaiting ledger entry."
+            }
+          ],
+          "window_outflows": [
+            {
+              "chain": "TRON",
+              "transaction_id": "80b05f6aade05ec1c90895dbe78ff8002fc64da34537ed3a03906330e9a91f8a",
+              "event_index": 2,
+              "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+              "counterparty": "TUwYDEzsQBSGihzbW76byszRpn6sztqmQL",
+              "units": "4000000",
+              "block_number": "70000005",
+              "block_time": "2026-11-21T12:00:15.123456Z",
+              "note": "Sent after observation."
+            }
+          ],
+          "observed_units": "120000000",
+          "counted_asset_units": "104000000",
+          "margin_units": "2000000",
+          "buffer_bps": 200,
+          "result": "COVERAGE_RESULT_COVERED",
+          "cutoff_at": "2026-11-21T12:00:00.123456Z",
+          "expires_at": "2026-11-22T14:00:00.123456Z",
+          "note": "Wallet cap binds at the 200 bps threshold."
+        }
+      },
+      "request_bytes": "0000001d61697061792e7265636f6e63696c696174696f6e2e61646d696e2e76310000002430316132303431302d613030302d373030302d383030302d30303030303030303030633800000014636f7665726167655f6174746573746174696f6e0000002430316132303431302d613030302d373030302d383030302d30303030303030303030303118ea0db955ff180018ea5c4de74e1800000000090000002430316132303431302d613030302d373030302d383030302d30303030303030303030363400000012636f7665726167652d6d616e75616c2d763100000020a7769e3f33f45cb026bf60a61a18bafa56ca82d4f569f453ffab567990575b9f00000000000003e8000000206ba71aec33afca18d48a6391bede51c094a5eb2785cedf6ed8f1896428bae79318ea0db91a644e00000000201f4e54bdd97999ae44353b6b1b831fa3a58cd59bd23c06a3c664bb9de6ede6c500000000000000060000000000000001010000000000000012000000000632ea0000000000001e84800000000005f5e100000000020000000c74726164655f657363726f770000000001312d0000000000000000010000000e757365725f617661696c61626c6500000000047868c0000000000000000100000001000000166675747572655f637573746f6d65725f63726564697400000000004c4b400000000000000001000000030000000454524f4e0000002254467a4d73334e5131796a4c41754c6237543467396a464a3763557a446b434c436200000001000000225452374e48716a654b5178475443693871385a5934704c386f74537a676a4c6a3674000000083835303030303030000000000510ff4000000000042c1d80000000209567ede65bb04fe0edf5b82149b718e3f05ccf67e314c4b8245e5bd917dfd9c818ea0da425f94a00000000086f776e5f6e6f6465000000203ef92dc858fe0eac9f775e808cbe0753066ac1e0c9c6f52af030219813d9cb2d0000000454524f4e0000002254483775464d38794a773544456f7272344c3478787444344e64654241356944783900000002000000225452374e48716a654b5178475443693871385a5934704c386f74537a676a4c6a36740000000833303030303030300000000001c9c38000000000042c1d81000000206147db3dc57d3c3edd00877ccd92925aab8401ba7c32543b9886be3c70920a0618ea0da4d8c9a8000000000874726f6e677269640000002023ac9cea36f4476ab3fc8c533de13029a2fb2ca51f928b554ba33de73134a96e0000000454524f4e000000225456365a5245594564594d394d41597050744b744c474a445761664d73643843793500000003000000225452374e48716a654b5178475443693871385a5934704c386f74537a676a4c6a3674000000073530303030303000000000004c4b4000000000042c1d82000000204d089e14ec95170c39fd2c9dd04f7ae80486fa0c782a9e68a604199e412c8f0918ea0da58b9a06000000000874726f6e7363616e00000020abf46e74cf6c62192fba6e5aa28e31b54c92bc2993787b3f2b78e2a1426a1810000000020000000454524f4e0000004030386134363465336664343539333965656333303430373966636530316131356163363532396461343534623231353934353364616333383837303766346630000000020000002254467a4d73334e5131796a4c41754c6237543467396a464a3763557a446b434c4362000000225455775944457a735142534769687a625737366279737a52706e36737a74716d514c00000000001e848000000000042c1d7f18ea0da37328ec00000000164177616974696e67206c656467657220656e7472792e0000000454524f4e00000040303861343634653366643435393339656563333034303739666365303161313561633635323964613435346232313539343533646163333838373037663466300000000a0000002254467a4d73334e5131796a4c41754c6237543467396a464a3763557a446b434c436200000022544141366756676f46374c4c7561736f6e6e755475544d584d317436526b5346515100000000002dc6c000000000042c1d7f18ea0da37328ec00000000164177616974696e67206c656467657220656e7472792e000000010000000454524f4e0000004038306230356636616164653035656331633930383935646265373866663830303266633634646133343533376564336130333930363333306539613931663861000000020000002254467a4d73334e5131796a4c41754c6237543467396a464a3763557a446b434c4362000000225455775944457a735142534769687a625737366279737a52706e36737a74716d514c00000000003d090000000000042c1d8518ea0da7a40b20000000001753656e74206166746572206f62736572766174696f6e2e0000000007270e00000000000632ea0000000000001e8480000000c80000000118ea0da425f94a0018ea62c518b98a00010000002a57616c6c6574206361702062696e6473206174207468652032303020627073207468726573686f6c642e",
+      "request_digest": "e68af3137c8b216db18e28320452c237b54a706f9d3bcdf739eb8d0870d581dd"
+    },
+    {
+      "name": "low-margin-one-unit-below-buffer",
+      "material": {
+        "approval_request_id": "01a20410-a000-7000-8000-0000000000c9",
+        "kind": "coverage_attestation",
+        "requested_by": "01a20410-a000-7000-8000-000000000001",
+        "requested_at": "2026-11-22T12:01:31.123456Z",
+        "expires_at": "2026-11-23T12:01:31.123456Z",
+        "coverage_attestation": {
+          "attestation_id": "01a20410-a000-7000-8000-000000000065",
+          "policy_version": "coverage-manual-v1",
+          "address_registry_version": "p3aePzP0XLAmv2CmGhi6+lbKgtT1afRT/6tWeZBXW58=",
+          "ledger": {
+            "as_of_seq": "1001",
+            "head_hash": "YwuEIUgzJqCHXxuwo/VkjKylgBPYYWQHwDrtvxZMLr4=",
+            "taken_at": "2026-11-22T12:01:30.123456Z",
+            "balances_digest": "hMFSbKGJ0nqHwHzDRBZZ5pVsbl0TH9kdUQHqJyP7/KA=",
+            "account_count": "6",
+            "gl_mapping_version": "1",
+            "customer_wallet_units": "110000000",
+            "unmatched_receipt_units": "1000000",
+            "user_liability_units": "100000000",
+            "liabilities": [
+              {
+                "account_type": "trade_escrow",
+                "units": "20000000",
+                "account_count": "1"
+              },
+              {
+                "account_type": "user_available",
+                "units": "75000000",
+                "account_count": "1"
+              }
+            ],
+            "unclassified": [
+              {
+                "account_type": "future_customer_credit",
+                "units": "5000000",
+                "account_count": "1"
+              }
+            ]
+          },
+          "observations": [
+            {
+              "chain": "TRON",
+              "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+              "role": "COVERAGE_ADDRESS_ROLE_COLD",
+              "token_contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+              "raw_balance": "105000000",
+              "units": "105000000",
+              "block_number": "70028800",
+              "block_hash": "01mAiEjefUAoaZP5IzlA55jLEWHV5BnLjZrkd0QT0BI=",
+              "block_time": "2026-11-22T12:00:00.123456Z",
+              "source": "own_node",
+              "evidence_sha256": "uPjjMTVw1+MN1P5svEtzKvGKkEiOhp2wjTg6KPWt3cE="
+            }
+          ],
+          "unrecorded_inflows": [
+            {
+              "chain": "TRON",
+              "transaction_id": "c3d856160fe83cf9842e9f438b27244d0aaeb09232a092c28cd46147f76c3301",
+              "event_index": 2,
+              "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+              "counterparty": "TUwYDEzsQBSGihzbW76byszRpn6sztqmQL",
+              "units": "1000000",
+              "block_number": "70028799",
+              "block_time": "2026-11-22T11:59:57.123456Z",
+              "note": "Awaiting ledger entry."
+            }
+          ],
+          "window_outflows": [
+            {
+              "chain": "TRON",
+              "transaction_id": "8a35216521b92d4046e788b4d66d2f440bfded86524ee906be7c09a24dc486f6",
+              "event_index": 2,
+              "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+              "counterparty": "TUwYDEzsQBSGihzbW76byszRpn6sztqmQL",
+              "units": "1000001",
+              "block_number": "70028805",
+              "block_time": "2026-11-22T12:00:15.123456Z",
+              "note": "Sent after observation."
+            }
+          ],
+          "observed_units": "105000000",
+          "counted_asset_units": "102999999",
+          "margin_units": "1999999",
+          "buffer_bps": 200,
+          "result": "COVERAGE_RESULT_COVERED_LOW_MARGIN",
+          "cutoff_at": "2026-11-22T12:00:00.123456Z",
+          "expires_at": "2026-11-23T14:00:00.123456Z"
+        }
+      },
+      "request_bytes": "0000001d61697061792e7265636f6e63696c696174696f6e2e61646d696e2e76310000002430316132303431302d613030302d373030302d383030302d30303030303030303030633900000014636f7665726167655f6174746573746174696f6e0000002430316132303431302d613030302d373030302d383030302d30303030303030303030303118ea5c4de74e180018eaaae2789d1800000000090000002430316132303431302d613030302d373030302d383030302d30303030303030303030363500000012636f7665726167652d6d616e75616c2d763100000020a7769e3f33f45cb026bf60a61a18bafa56ca82d4f569f453ffab567990575b9f00000000000003e900000020630b8421483326a0875f1bb0a3f5648caca58013d8616407c03aedbf164c2ebe18ea5c4dabb34e000000002084c1526ca189d27a87c07cc3441659e6956c6e5d131fd91d5101ea2723fbfca0000000000000000600000000000000010000000000068e778000000000000f42400000000005f5e100000000020000000c74726164655f657363726f770000000001312d0000000000000000010000000e757365725f617661696c61626c6500000000047868c0000000000000000100000001000000166675747572655f637573746f6d65725f63726564697400000000004c4b400000000000000001000000010000000454524f4e0000002254467a4d73334e5131796a4c41754c6237543467396a464a3763557a446b434c436200000001000000225452374e48716a654b5178475443693871385a5934704c386f74537a676a4c6a3674000000093130353030303030300000000006422c4000000000042c8e0000000020d359808848de7d40286993f9233940e798cb1161d5e419cb8d9ae4774413d01218ea5c38b7484a00000000086f776e5f6e6f646500000020b8f8e3313570d7e30dd4fe6cbc4b732af18a90488e869db08d383a28f5adddc1000000010000000454524f4e0000004063336438353631363066653833636639383432653966343338623237323434643061616562303932333261303932633238636434363134376637366333333031000000020000002254467a4d73334e5131796a4c41754c6237543467396a464a3763557a446b434c4362000000225455775944457a735142534769687a625737366279737a52706e36737a74716d514c00000000000f424000000000042c8dff18ea5c380477ec00000000164177616974696e67206c656467657220656e7472792e000000010000000454524f4e0000004038613335323136353231623932643430343665373838623464363664326634343062666465643836353234656539303662653763303961323464633438366636000000020000002254467a4d73334e5131796a4c41754c6237543467396a464a3763557a446b434c4362000000225455775944457a735142534769687a625737366279737a52706e36737a74716d514c00000000000f424100000000042c8e0518ea5c3c355a20000000001753656e74206166746572206f62736572766174696f6e2e0000000006422c40000000000623a7bf00000000001e847f000000c80000000218ea5c38b7484a0018eab159aa088a0000",
+      "request_digest": "362e8b956ca8f150c1201aa53e87803611c61c7480d96ae9c8b80217cb7f7663"
+    },
+    {
+      "name": "not-covered-after-window-outflows",
+      "material": {
+        "approval_request_id": "01a20410-a000-7000-8000-0000000000ca",
+        "kind": "coverage_attestation",
+        "requested_by": "01a20410-a000-7000-8000-000000000001",
+        "requested_at": "2026-11-23T12:01:31.123456Z",
+        "expires_at": "2026-11-24T12:01:31.123456Z",
+        "coverage_attestation": {
+          "attestation_id": "01a20410-a000-7000-8000-000000000066",
+          "policy_version": "coverage-manual-v1",
+          "address_registry_version": "p3aePzP0XLAmv2CmGhi6+lbKgtT1afRT/6tWeZBXW58=",
+          "ledger": {
+            "as_of_seq": "1002",
+            "head_hash": "1+wxX8LFTlGevGCGSK21+dOZPLcGg/EfXnMZVl3OpMw=",
+            "taken_at": "2026-11-23T12:01:30.123456Z",
+            "balances_digest": "B6vaGxfcriiYxQEc+jXtsR9TCuPCBiQdBIz68goFbOc=",
+            "account_count": "6",
+            "gl_mapping_version": "1",
+            "customer_wallet_units": "108000000",
+            "unmatched_receipt_units": "1000000",
+            "user_liability_units": "100000000",
+            "liabilities": [
+              {
+                "account_type": "trade_escrow",
+                "units": "20000000",
+                "account_count": "1"
+              },
+              {
+                "account_type": "user_available",
+                "units": "75000000",
+                "account_count": "1"
+              }
+            ],
+            "unclassified": [
+              {
+                "account_type": "future_customer_credit",
+                "units": "5000000",
+                "account_count": "1"
+              }
+            ]
+          },
+          "observations": [
+            {
+              "chain": "TRON",
+              "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+              "role": "COVERAGE_ADDRESS_ROLE_COLD",
+              "token_contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+              "raw_balance": "100000000",
+              "units": "100000000",
+              "block_number": "70057600",
+              "block_hash": "ZFnB7Mvfw61qjNm6eWiSGPyYTK3m9Dq8dfIX8GiMhhg=",
+              "block_time": "2026-11-23T12:00:00.123456Z",
+              "source": "own_node",
+              "evidence_sha256": "jw42qlBmPa0ooy2JQ8vCenw8CfRYUTF3MNt+gG0oix0="
+            }
+          ],
+          "unrecorded_inflows": [],
+          "window_outflows": [
+            {
+              "chain": "TRON",
+              "transaction_id": "67de2ed84383d2ab21307cb77016418e08b56dd0f1e68c6a2c347fcf76d8630f",
+              "event_index": 2,
+              "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+              "counterparty": "TUwYDEzsQBSGihzbW76byszRpn6sztqmQL",
+              "units": "200000",
+              "block_number": "70057605",
+              "block_time": "2026-11-23T12:00:15.123456Z",
+              "note": "Sent after observation."
+            },
+            {
+              "chain": "TRON",
+              "transaction_id": "67de2ed84383d2ab21307cb77016418e08b56dd0f1e68c6a2c347fcf76d8630f",
+              "event_index": 10,
+              "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+              "counterparty": "TAA6gVgoF7LLuasonnuTuTMXM1t6RkSFQQ",
+              "units": "300000",
+              "block_number": "70057605",
+              "block_time": "2026-11-23T12:00:15.123456Z",
+              "note": "Sent after observation."
+            }
+          ],
+          "observed_units": "100000000",
+          "counted_asset_units": "99500000",
+          "margin_units": "-1500000",
+          "buffer_bps": 200,
+          "result": "COVERAGE_RESULT_NOT_COVERED",
+          "cutoff_at": "2026-11-23T12:00:00.123456Z",
+          "expires_at": "2026-11-24T14:00:00.123456Z",
+          "note": ""
+        }
+      },
+      "request_bytes": "0000001d61697061792e7265636f6e63696c696174696f6e2e61646d696e2e76310000002430316132303431302d613030302d373030302d383030302d30303030303030303030636100000014636f7665726167655f6174746573746174696f6e0000002430316132303431302d613030302d373030302d383030302d30303030303030303030303118eaaae2789d180018eaf97709ec1800000000090000002430316132303431302d613030302d373030302d383030302d30303030303030303030363600000012636f7665726167652d6d616e75616c2d763100000020a7769e3f33f45cb026bf60a61a18bafa56ca82d4f569f453ffab567990575b9f00000000000003ea00000020d7ec315fc2c54e519ebc608648adb5f9d3993cb70683f11f5e7319565dcea4cc18eaaae23d024e000000002007abda1b17dcae2898c5011cfa35edb11f530ae3c206241d048cfaf20a056ce7000000000000000600000000000000010000000000066ff30000000000000f42400000000005f5e100000000020000000c74726164655f657363726f770000000001312d0000000000000000010000000e757365725f617661696c61626c6500000000047868c0000000000000000100000001000000166675747572655f637573746f6d65725f63726564697400000000004c4b400000000000000001000000010000000454524f4e0000002254467a4d73334e5131796a4c41754c6237543467396a464a3763557a446b434c436200000001000000225452374e48716a654b5178475443693871385a5934704c386f74537a676a4c6a3674000000093130303030303030300000000005f5e10000000000042cfe80000000206459c1eccbdfc3ad6a8cd9ba79689218fc984cade6f43abc75f217f0688c861818eaaacd48974a00000000086f776e5f6e6f6465000000208f0e36aa50663dad28a32d8943cbc27a7c3c09f45851317730db7e806d288b1d00000000000000020000000454524f4e0000004036376465326564383433383364326162323133303763623737303136343138653038623536646430663165363863366132633334376663663736643836333066000000020000002254467a4d73334e5131796a4c41754c6237543467396a464a3763557a446b434c4362000000225455775944457a735142534769687a625737366279737a52706e36737a74716d514c0000000000030d4000000000042cfe8518eaaad0c6a920000000001753656e74206166746572206f62736572766174696f6e2e0000000454524f4e00000040363764653265643834333833643261623231333037636237373031363431386530386235366464306631653638633661326333343766636637366438363330660000000a0000002254467a4d73334e5131796a4c41754c6237543467396a464a3763557a446b434c436200000022544141366756676f46374c4c7561736f6e6e755475544d584d317436526b5346515100000000000493e000000000042cfe8518eaaad0c6a920000000001753656e74206166746572206f62736572766174696f6e2e0000000005f5e1000000000005ee3fe0ffffffffffe91ca0000000c80000000318eaaacd48974a0018eaffee3b578a000100000000",
+      "request_digest": "f1c82a804410b4beb55cb7d01cd69693a9ff0658c8029fb8001ba1e9d8b33987"
+    },
+    {
+      "name": "covered-empty-ledger-short-validity",
+      "material": {
+        "approval_request_id": "01a20410-a000-7000-8000-0000000000cb",
+        "kind": "coverage_attestation",
+        "requested_by": "01a20410-a000-7000-8000-000000000001",
+        "requested_at": "2026-11-24T12:01:31.123456Z",
+        "expires_at": "2026-11-25T12:01:31.123456Z",
+        "coverage_attestation": {
+          "attestation_id": "01a20410-a000-7000-8000-000000000067",
+          "policy_version": "coverage-manual-v1",
+          "address_registry_version": "p3aePzP0XLAmv2CmGhi6+lbKgtT1afRT/6tWeZBXW58=",
+          "ledger": {
+            "as_of_seq": "0",
+            "head_hash": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+            "taken_at": "2026-11-24T12:01:30.123456Z",
+            "balances_digest": "N1sE3W8rBeq5yBy9eVKjIV6AY1AjL3KX2DaixEPB7Ic=",
+            "account_count": "0",
+            "gl_mapping_version": "1",
+            "customer_wallet_units": "0",
+            "unmatched_receipt_units": "0",
+            "user_liability_units": "0",
+            "liabilities": [],
+            "unclassified": []
+          },
+          "observations": [
+            {
+              "chain": "TRON",
+              "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+              "role": "COVERAGE_ADDRESS_ROLE_COLD",
+              "token_contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+              "raw_balance": "0",
+              "units": "0",
+              "block_number": "70086400",
+              "block_hash": "bIHF/31iWItLFYbDK68d987CQ47E7DyRuQOgZBEAQdw=",
+              "block_time": "2026-11-24T12:00:00.123456Z",
+              "source": "own_node",
+              "evidence_sha256": "eVaAmQqapqSbwKlZbjOl1N0INuvsGu0Ql09T8cqq5Cw="
+            }
+          ],
+          "unrecorded_inflows": [],
+          "window_outflows": [],
+          "observed_units": "0",
+          "counted_asset_units": "0",
+          "margin_units": "0",
+          "buffer_bps": 200,
+          "result": "COVERAGE_RESULT_COVERED",
+          "cutoff_at": "2026-11-24T12:00:00.123456Z",
+          "expires_at": "2026-11-24T13:00:00.123456Z"
+        }
+      },
+      "request_bytes": "0000001d61697061792e7265636f6e63696c696174696f6e2e61646d696e2e76310000002430316132303431302d613030302d373030302d383030302d30303030303030303030636200000014636f7665726167655f6174746573746174696f6e0000002430316132303431302d613030302d373030302d383030302d30303030303030303030303118eaf97709ec180018eb480b9b3b1800000000090000002430316132303431302d613030302d373030302d383030302d30303030303030303030363700000012636f7665726167652d6d616e75616c2d763100000020a7769e3f33f45cb026bf60a61a18bafa56ca82d4f569f453ffab567990575b9f000000000000000000000020000000000000000000000000000000000000000000000000000000000000000018eaf976ce514e0000000020375b04dd6f2b05eab9c81cbd7952a3215e806350232f7297d836a2c443c1ec8700000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000010000000454524f4e0000002254467a4d73334e5131796a4c41754c6237543467396a464a3763557a446b434c436200000001000000225452374e48716a654b5178475443693871385a5934704c386f74537a676a4c6a36740000000130000000000000000000000000042d6f00000000206c81c5ff7d62588b4b1586c32baf1df7cec2438ec4ec3c91b903a064110041dc18eaf961d9e64a00000000086f776e5f6e6f646500000020795680990a9aa6a49bc0a9596e33a5d4dd0836ebec1aed10974f53f1caaae42c0000000000000000000000000000000000000000000000000000000000000000000000c80000000118eaf961d9e64a0018eafca80a9eea0000",
+      "request_digest": "9c4a96b3185d6af671ce262044c31295b9e77fe7dd58b9cd0b1181c375579305"
+    }
+  ],
+  "evidence_vectors": [
+    {
+      "name": "covered-at-buffer-wallet-cap-observation-1",
+      "evidence": "Synthetic block 70000000: 85000000 µUSDT at TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb.",
+      "evidence_sha256": "3ef92dc858fe0eac9f775e808cbe0753066ac1e0c9c6f52af030219813d9cb2d"
+    },
+    {
+      "name": "covered-at-buffer-wallet-cap-observation-2",
+      "evidence": "Synthetic block 70000001: 30000000 µUSDT at TH7uFM8yJw5DEorr4L4xxtD4NdeBA5iDx9.",
+      "evidence_sha256": "23ac9cea36f4476ab3fc8c533de13029a2fb2ca51f928b554ba33de73134a96e"
+    },
+    {
+      "name": "covered-at-buffer-wallet-cap-observation-3",
+      "evidence": "Synthetic block 70000002: 5000000 µUSDT at TV6ZREYEdYM9MAYpPtKtLGJDWafMsd8Cy5.",
+      "evidence_sha256": "abf46e74cf6c62192fba6e5aa28e31b54c92bc2993787b3f2b78e2a1426a1810"
+    },
+    {
+      "name": "low-margin-one-unit-below-buffer-observation-1",
+      "evidence": "Synthetic block 70028800: 105000000 µUSDT at TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb.",
+      "evidence_sha256": "b8f8e3313570d7e30dd4fe6cbc4b732af18a90488e869db08d383a28f5adddc1"
+    },
+    {
+      "name": "not-covered-after-window-outflows-observation-1",
+      "evidence": "Synthetic block 70057600: 100000000 µUSDT at TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb.",
+      "evidence_sha256": "8f0e36aa50663dad28a32d8943cbc27a7c3c09f45851317730db7e806d288b1d"
+    },
+    {
+      "name": "covered-empty-ledger-short-validity-observation-1",
+      "evidence": "Synthetic block 70086400: 0 µUSDT at TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb.",
+      "evidence_sha256": "795680990a9aa6a49bc0a9596e33a5d4dd0836ebec1aed10974f53f1caaae42c"
+    }
+  ],
+  "revocation_vectors": [
+    {
+      "name": "revoke-covered-attestation",
+      "user_id": "01a20410-a000-7000-8000-000000000002",
+      "idempotency_key": "01a20410-a000-7000-8000-000000000005",
+      "attestation_id": "01a20410-a000-7000-8000-000000000064",
+      "request_digest": "e68af3137c8b216db18e28320452c237b54a706f9d3bcdf739eb8d0870d581dd",
+      "reason": "The observation source reported a stale block.",
+      "challenge": "8ae760659a1faccc97b6971249efdd2100592afb4270170a8ce17ec8f11b2ffa"
+    }
+  ],
+  "address_registry_vectors": [
+    {
+      "name": "empty-registry",
+      "entries": [],
+      "registry_version": "be7b59efa99b58c41f20576de7b32605d1b5355166ed8179ef189ea6b763e0e3"
+    },
+    {
+      "name": "three-active-roles",
+      "entries": [
+        {
+          "chain": "TRON",
+          "address": "TFzMs3NQ1yjLAuLb7T4g9jFJ7cUzDkCLCb",
+          "role": "COVERAGE_ADDRESS_ROLE_COLD"
+        },
+        {
+          "chain": "TRON",
+          "address": "TH7uFM8yJw5DEorr4L4xxtD4NdeBA5iDx9",
+          "role": "COVERAGE_ADDRESS_ROLE_HOT"
+        },
+        {
+          "chain": "TRON",
+          "address": "TV6ZREYEdYM9MAYpPtKtLGJDWafMsd8Cy5",
+          "role": "COVERAGE_ADDRESS_ROLE_DEPOSIT"
+        }
+      ],
+      "registry_version": "a7769e3f33f45cb026bf60a61a18bafa56ca82d4f569f453ffab567990575b9f"
+    }
+  ]
+}

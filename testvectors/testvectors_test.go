@@ -2,6 +2,7 @@ package testvectors_test
 
 import (
 	"bytes"
+	"cmp"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/sha256"
@@ -10,15 +11,18 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"math/big"
 	"slices"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	collectionv1 "github.com/Kaivodev/protobuf/gen/go/aipay/collection/v1"
 	ledgerv1 "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1"
 	paymentv1 "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1"
+	reconciliationv1 "github.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1"
 	"github.com/Kaivodev/protobuf/testvectors"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -871,4 +875,254 @@ func TestLedgerCheckpointV1(t *testing.T) {
 			t.Fatalf("%s verified", c.Name)
 		}
 	}
+}
+
+type coverageAddressKey struct{ chain, address string }
+
+func (k coverageAddressKey) compare(other coverageAddressKey) int {
+	return cmp.Or(strings.Compare(k.chain, other.chain), strings.Compare(k.address, other.address))
+}
+
+func TestReconciliationCoverageV1(t *testing.T) {
+	var doc struct {
+		Description string
+		Evidence    []struct {
+			Name, Evidence string
+			Digest         string `json:"evidence_sha256"`
+		} `json:"evidence_vectors"`
+		Registries []struct {
+			Name    string
+			Entries []json.RawMessage
+			Version string `json:"registry_version"`
+		} `json:"address_registry_vectors"`
+		Approvals []struct {
+			Name          string
+			Material      json.RawMessage
+			RequestBytes  string `json:"request_bytes"`
+			RequestDigest string `json:"request_digest"`
+		} `json:"approval_vectors"`
+		Revocations []struct {
+			Name, Reason, Challenge string
+			UserID                  string `json:"user_id"`
+			Key                     string `json:"idempotency_key"`
+			AttestationID           string `json:"attestation_id"`
+			RequestDigest           string `json:"request_digest"`
+		} `json:"revocation_vectors"`
+	}
+	decodeJSON(t, testvectors.ReconciliationCoverageV1(), &doc)
+	evidence := map[string]bool{}
+	var multibyte, emptyRegistry bool
+	for _, v := range doc.Evidence {
+		t.Run(v.Name, func(t *testing.T) {
+			if !utf8.ValidString(v.Evidence) || len(v.Evidence) < 1 || len(v.Evidence) > 4096 {
+				t.Fatal("invalid UTF-8 evidence or byte length")
+			}
+			var w writer
+			w.str("aipay.reconciliation.coverage_evidence.v1")
+			w.bytes([]byte(v.Evidence))
+			if !equalHex(sum(w.b), v.Digest) {
+				t.Fatal("evidence digest differs")
+			}
+			evidence[v.Digest] = true
+			multibyte = multibyte || len(v.Evidence) != utf8.RuneCountInString(v.Evidence)
+		})
+	}
+	registries := map[string]map[coverageAddressKey]reconciliationv1.CoverageAddressRole{}
+	for _, v := range doc.Registries {
+		t.Run(v.Name, func(t *testing.T) {
+			var w writer
+			w.str("aipay.reconciliation.coverage_addresses.v1")
+			w.u32(uint32(len(v.Entries)))
+			entries := map[coverageAddressKey]reconciliationv1.CoverageAddressRole{}
+			var previous coverageAddressKey
+			for i, raw := range v.Entries {
+				var entry reconciliationv1.CoverageAddress
+				if err := protojson.Unmarshal(raw, &entry); err != nil {
+					t.Fatal(err)
+				}
+				key := coverageAddressKey{entry.Chain, entry.Address}
+				if i > 0 && previous.compare(key) >= 0 {
+					t.Fatal("registry entries must be strictly ordered")
+				}
+				previous = key
+				entries[key] = entry.Role
+				w.str(entry.Chain)
+				w.str(entry.Address)
+				w.u32(uint32(entry.Role))
+			}
+			if !equalHex(sum(w.b), v.Version) {
+				t.Fatal("registry version differs")
+			}
+			registries[v.Version] = entries
+			emptyRegistry = emptyRegistry || len(entries) == 0
+		})
+	}
+	digests := map[string]string{} // Attestation ID to verified approval digest.
+	roles := map[reconciliationv1.CoverageAddressRole]bool{}
+	results := map[reconciliationv1.CoverageResult]bool{}
+	var withCheckpoint, withoutCheckpoint, withNote, withoutNote, capped, inflows, outflows, unclassified bool
+	for _, v := range doc.Approvals {
+		t.Run(v.Name, func(t *testing.T) {
+			var h reconciliationv1.ReconciliationApprovalMaterial
+			if err := protojson.Unmarshal(v.Material, &h); err != nil {
+				t.Fatal(err)
+			}
+			m := h.GetCoverageAttestation()
+			if h.Kind != "coverage_attestation" || m == nil || m.PolicyVersion != "coverage-manual-v1" {
+				t.Fatal("unexpected approval kind, branch or policy")
+			}
+			var w writer
+			w.str("aipay.reconciliation.admin.v1")
+			w.canonicalMessage(t, h.ProtoReflect())
+			if !equalHex(w.b, v.RequestBytes) || !equalHex(sum([]byte("AIPAY-APPROVAL-V1"), w.b), v.RequestDigest) {
+				t.Fatal("approval request bytes or digest differ")
+			}
+			registry := registries[hex.EncodeToString(m.AddressRegistryVersion)]
+			for _, obs := range m.Observations {
+				role, ok := registry[coverageAddressKey{obs.Chain, obs.Address}]
+				if !ok || role != obs.Role || !evidence[hex.EncodeToString(obs.EvidenceSha256)] {
+					t.Fatal("observation does not match its registry or evidence")
+				}
+				roles[role] = true
+			}
+			binds := checkCoverageCalculation(t, m)
+			capped = capped || binds
+			// Every reconciliation approval request expires exactly 24 hours after it
+			// was made; the attestation's own expires_at is checked at approval time.
+			if !h.ExpiresAt.AsTime().Equal(h.RequestedAt.AsTime().Add(24 * time.Hour)) {
+				t.Fatal("approval expiry is not 24 hours after the request")
+			}
+			withCheckpoint = withCheckpoint || m.Ledger.CheckpointId != nil
+			withoutCheckpoint = withoutCheckpoint || m.Ledger.CheckpointId == nil
+			withNote = withNote || m.Note != nil
+			withoutNote = withoutNote || m.Note == nil
+			inflows = inflows || len(m.UnrecordedInflows) > 0
+			outflows = outflows || len(m.WindowOutflows) > 0
+			unclassified = unclassified || len(m.Ledger.Unclassified) > 0 && len(m.Ledger.Liabilities) > 0
+			results[m.Result] = true
+			digests[m.AttestationId] = v.RequestDigest
+		})
+	}
+	for _, v := range doc.Revocations {
+		t.Run(v.Name, func(t *testing.T) {
+			if digest, ok := digests[v.AttestationID]; !ok || digest != v.RequestDigest {
+				t.Fatal("revocation does not bind a verified approval")
+			}
+			var w writer
+			w.str("aipay.reconciliation.coverage.revoke.v1")
+			w.str(v.UserID)
+			w.str(v.Key)
+			w.str(v.AttestationID)
+			w.bytes(unhex(t, v.RequestDigest))
+			w.str(v.Reason)
+			if !equalHex(sum([]byte("AIPAY-APPROVAL-V1"), w.b), v.Challenge) {
+				t.Fatal("revocation challenge differs")
+			}
+		})
+	}
+	if !roles[reconciliationv1.CoverageAddressRole_COVERAGE_ADDRESS_ROLE_COLD] ||
+		!roles[reconciliationv1.CoverageAddressRole_COVERAGE_ADDRESS_ROLE_HOT] ||
+		!roles[reconciliationv1.CoverageAddressRole_COVERAGE_ADDRESS_ROLE_DEPOSIT] ||
+		len(results) != 3 || !capped || !inflows || !outflows || !unclassified {
+		t.Error("missing coverage result, wallet role, cap, transfer or liability example")
+	}
+	if !multibyte || !emptyRegistry || len(doc.Revocations) == 0 || !withCheckpoint || !withoutCheckpoint || !withNote || !withoutNote {
+		t.Error("missing UTF-8 evidence, empty registry, revocation or optional field example")
+	}
+}
+
+// Check each intermediate amount before using it in another sum or difference.
+func checkedCoverageUnits(t *testing.T, n *big.Int) int64 {
+	t.Helper()
+	if !n.IsInt64() {
+		t.Fatal("coverage amount exceeds int64")
+	}
+	return n.Int64()
+}
+
+func coverageTransferUnits(t *testing.T, transfers []*reconciliationv1.CoverageTransfer, observed map[coverageAddressKey]bool) int64 {
+	t.Helper()
+	var total big.Int
+	for i, tr := range transfers {
+		if !observed[coverageAddressKey{tr.Chain, tr.Address}] || tr.Units <= 0 {
+			t.Fatal("transfer requires an observed address and positive amount")
+		}
+		if i > 0 {
+			prev := transfers[i-1]
+			if cmp.Or(strings.Compare(prev.Chain, tr.Chain), strings.Compare(prev.TransactionId, tr.TransactionId),
+				cmp.Compare(prev.EventIndex, tr.EventIndex)) >= 0 {
+				t.Fatal("transfer keys must be strictly ordered")
+			}
+		}
+		total.Add(&total, big.NewInt(tr.Units))
+	}
+	return checkedCoverageUnits(t, &total)
+}
+
+func checkCoverageCalculation(t *testing.T, m *reconciliationv1.CoverageAttestationMaterial) bool {
+	t.Helper()
+	if len(m.Observations) == 0 || len(m.Observations) > 200 || len(m.UnrecordedInflows) > 200 || len(m.WindowOutflows) > 200 {
+		t.Fatal("observation or transfer count out of range")
+	}
+	observed := map[coverageAddressKey]bool{}
+	var previous coverageAddressKey
+	var assets, liability big.Int
+	cutoff := m.Observations[0].BlockTime.AsTime()
+	for i, obs := range m.Observations {
+		key := coverageAddressKey{obs.Chain, obs.Address}
+		if i > 0 && previous.compare(key) >= 0 {
+			t.Fatal("observations must be strictly ordered")
+		}
+		previous = key
+		observed[key] = true
+		if obs.Chain != "TRON" || obs.TokenContract != "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t" ||
+			obs.Units < 0 || obs.RawBalance != strconv.FormatInt(obs.Units, 10) {
+			t.Fatal("expected canonical TRON USDT balance")
+		}
+		if obs.BlockTime.AsTime().Before(cutoff) {
+			cutoff = obs.BlockTime.AsTime()
+		}
+		assets.Add(&assets, big.NewInt(obs.Units))
+	}
+	if !m.CutoffAt.AsTime().Equal(cutoff) || checkedCoverageUnits(t, &assets) != m.ObservedUnits {
+		t.Fatal("observation cutoff or total differs")
+	}
+	types := map[string]bool{}
+	for _, rows := range [][]*reconciliationv1.CoverageTypeBalance{m.Ledger.Liabilities, m.Ledger.Unclassified} {
+		for i, row := range rows {
+			if types[row.AccountType] || i > 0 && rows[i-1].AccountType >= row.AccountType {
+				t.Fatal("liability types must be unique and each list strictly ordered")
+			}
+			types[row.AccountType] = true
+			liability.Add(&liability, big.NewInt(row.Units))
+			checkedCoverageUnits(t, &liability)
+		}
+	}
+	if liability.Int64() != m.Ledger.UserLiabilityUnits {
+		t.Fatal("ledger liability total differs")
+	}
+	for _, transfers := range [][]*reconciliationv1.CoverageTransfer{m.WindowOutflows, m.UnrecordedInflows} {
+		assets.Sub(&assets, big.NewInt(coverageTransferUnits(t, transfers, observed)))
+		checkedCoverageUnits(t, &assets)
+	}
+	counted := min(assets.Int64(), m.Ledger.CustomerWalletUnits)
+	margin := big.NewInt(counted)
+	margin.Sub(margin, big.NewInt(m.Ledger.UnmatchedReceiptUnits))
+	checkedCoverageUnits(t, margin)
+	margin.Sub(margin, &liability)
+	if checkedCoverageUnits(t, margin) != m.MarginUnits || counted != m.CountedAssetUnits {
+		t.Fatal("counted assets or margin differ")
+	}
+	scaledMargin := new(big.Int).Mul(margin, big.NewInt(10000))
+	target := new(big.Int).Mul(&liability, big.NewInt(int64(m.BufferBps)))
+	want := reconciliationv1.CoverageResult_COVERAGE_RESULT_COVERED
+	if margin.Sign() < 0 {
+		want = reconciliationv1.CoverageResult_COVERAGE_RESULT_NOT_COVERED
+	} else if liability.Sign() > 0 && scaledMargin.Cmp(target) < 0 {
+		want = reconciliationv1.CoverageResult_COVERAGE_RESULT_COVERED_LOW_MARGIN
+	}
+	if want != m.Result {
+		t.Fatalf("computed %s, material declares %s", want, m.Result)
+	}
+	return counted < assets.Int64()
 }

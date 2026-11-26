@@ -3,6 +3,7 @@ syntax = "proto3";
 package aipay.reconciliation.v1;
 
 import "aipay/approval/v1/approval.proto";
+import "aipay/reconciliation/v1/coverage_attestation.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1";
@@ -80,20 +81,32 @@ message PluginEnableChange {
 // Domain-owned material; never use aipay.payment.v1 approval material. Headers
 // equal ApprovalRequest. request_bytes = str("aipay.reconciliation.admin.v1")
 // || canonical(material), NOT protobuf serialization. Canonical field-order
-// encoding follows docs contracts.md: headers 1-5, u32 operation tag, recursive
+// encoding follows docs contracts.md: headers 1-5, u32 operation tag (6-9), recursive
 // operation content, JSON normalized, fixtures sorted; unknown fields rejected.
+// request_digest = SHA-256("AIPAY-APPROVAL-V1" || request_bytes), with a raw
+// 17-byte ASCII prefix. The WebAuthn challenge equals request_digest.
+// For coverage_attestation, expand field 9 recursively in field-number order
+// without message length prefixes. Write repeated values as a u32 count then
+// elements in the specified order. Prefix strings/bytes with a u32 byte length.
+// Encode int64/uint64 in 8 bytes, uint32/enums in 4 bytes, all big-endian.
+// Timestamps are i64 Unix nanoseconds at whole microseconds. Optional scalars
+// start with u8(0) for absence or u8(1) followed by the value for presence.
 message ReconciliationApprovalMaterial {
   string approval_request_id = 1;
   string kind = 2;
   string requested_by = 3;
   google.protobuf.Timestamp requested_at = 4;
   google.protobuf.Timestamp expires_at = 5;
-  // Exactly one, kind identical to branch. Always two different natural
-  // persons, neither initiator, using reconciliation's own offline key registry.
+  // Exactly one, with kind equal to the branch name. required_approvals is 2,
+  // from two different natural persons in reconciliation's own approver registry.
+  // Only for coverage_attestation may requested_by be one of the two approvers.
+  // Every approval request expires exactly 24h after requested_at. A
+  // coverage_attestation cannot be approved at or after its material's expires_at.
   oneof operation {
     VerificationAccountChange verification_account = 6;
     PluginVersionMaterial plugin_version = 7;
     PluginEnableChange plugin_enable = 8;
+    CoverageAttestationMaterial coverage_attestation = 9;
   }
 }
 

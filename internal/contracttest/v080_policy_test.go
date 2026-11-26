@@ -110,7 +110,11 @@ func TestV080MethodAuthorization(t *testing.T) {
 	} {
 		t.Run(string(group.service), func(t *testing.T) {
 			service := group.file.Services().ByName(group.service)
-			if group.file.Services().Len() != 1 || service == nil || service.Methods().Len() != len(group.methods) {
+			methodCount := len(group.methods)
+			if group.service == "ReconciliationAdminService" {
+				methodCount += 7 // Coverage policies are pinned by TestV0200CoveragePolicies.
+			}
+			if group.file.Services().Len() != 1 || service == nil || service.Methods().Len() != methodCount {
 				t.Fatal("unreviewed RPC surface")
 			}
 			for name, want := range group.methods {

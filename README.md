@@ -51,7 +51,14 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 认证证明的签发格式、密钥托管、调用方绑定与撤销机制尚待 IAM 实现；EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 
-## v0.19.0 seller manual refund (A139, unreleased)
+## v0.20.0 customer fund coverage attestation (A141, unreleased)
+
+- Operators submit daily TRON USDT observations for registered platform addresses. Reconciliation pages through ledger’s read-only `GetLiabilitySnapshot` at one journal sequence, verifies the balances digest, and classifies the accounts itself. Unclassified positive USDT credit balances count toward user liabilities.
+- Reconciliation deducts window outflows and unrecorded inflows from observed assets, caps the result at the ledger wallet balance, then deducts unmatched receipts and user liabilities. Two distinct platform approvers sign the material with WebAuthn. The submitter may be one approver. Approval requests expire 24 hours after submission, and an attestation cannot be approved once its own expiry has passed.
+- Backend can submit, approve, revoke and inspect attestations, read coverage status and list active addresses. Before issuing a release, cancellation or refund, reconciliation re-verifies the newest approved attestation. Low margin permits those issuances. Revenue transfers require the full buffer. Expiry or revocation closes both gates until a new approval.
+- `testvectors.ReconciliationCoverageV1()` publishes canonical approval bytes and digests for all three results, UTF-8 evidence digests, address registry versions and a WebAuthn revocation challenge. [Customer fund coverage design](https://github.com/Kaivodev/docs/blob/main/design/coverage-attestation.md)
+
+## v0.19.0 seller manual refund (A139, released)
 
 - Full refunds reserve ledger funds and enter `AWAITING_SELLER`. The seller refunds the buyer in the upstream back office and submits versioned JPEG evidence for two platform WebAuthn approvers. Approval starts the objection window (24 hours by default). Rejection or a timely objection reopens submission. A separate two-person approval can declare failure.
 - Payment exposes refund origin, seller and objection deadlines, and the approved upstream refund time. The seller portal accepts evidence and serves the seller's own screenshots. Platform operators can initiate refunds, inspect late payments and review submissions, duplicates, objections and failure requests. Late payments on cancelled orders close inside payment.

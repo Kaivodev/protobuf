@@ -52,7 +52,7 @@ func v090Groups() []v090PolicyGroup {
 			"ListPlatformSellerHolds": "ledger.trade.read", "ListSellerHolds": "ledger.trade.read",
 			"GetPlatformSellerHold": "ledger.trade.read", "GetSellerHold": "ledger.trade.read",
 		}},
-		{reconciliationv1.File_aipay_reconciliation_v1_reconciliation_admin_service_proto, "ReconciliationAdminService", 13, map[protoreflect.Name]string{
+		{reconciliationv1.File_aipay_reconciliation_v1_reconciliation_admin_service_proto, "ReconciliationAdminService", 20, map[protoreflect.Name]string{
 			"ListApprovals": "reconciliation.approval.read", "EmergencyDisablePlugin": "reconciliation.plugin.disable",
 		}},
 		{iamv1.File_aipay_iam_v1_notification_signing_service_proto, "NotificationSigningService", 0, map[protoreflect.Name]string{

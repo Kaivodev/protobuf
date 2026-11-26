@@ -104,8 +104,8 @@ type ApprovalRequest struct {
 	// 1 or 2. Two distinct approvers are required except for the operations the
 	// contract lists as single-approver.
 	RequiredApprovals uint32 `protobuf:"varint,5,opt,name=required_approvals,json=requiredApprovals,proto3" json:"required_approvals,omitempty"`
-	// IAM user taken from the requester's identity assertion; the requester can
-	// never approve the request.
+	// IAM user taken from the requester's identity assertion. The requester may
+	// approve only when the executing service's operation explicitly permits it.
 	RequestedBy string                 `protobuf:"bytes,6,opt,name=requested_by,json=requestedBy,proto3" json:"requested_by,omitempty"`
 	RequestedAt *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=requested_at,json=requestedAt,proto3" json:"requested_at,omitempty"`
 	// Expired requests are void.
@@ -211,8 +211,8 @@ func (x *ApprovalRequest) GetStatus() ApprovalStatus {
 // A WebAuthn assertion (AuthenticatorAssertionResponse) passed through from
 // the browser unchanged. The executor checks the ES256 signature over
 // authenticator_data || SHA-256(client_data_json) with the registered key,
-// type "webauthn.get", challenge equal to request_digest, the expected origin
-// and RP ID hash, the user-present and user-verified flags, and a signature
+// type "webauthn.get", the operation's challenge (request_digest for an approval),
+// the expected origin and RP ID hash, the user-present and user-verified flags, and a signature
 // counter greater than the largest one recorded for the key. A synced passkey
 // that always reports 0 is accepted while the recorded counter is also 0; a
 // counter returning to 0 after a non-zero value is a regression. Only ES256

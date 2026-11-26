@@ -34,6 +34,13 @@ const (
 	ReconciliationAdminService_GetApproval_FullMethodName                  = "/aipay.reconciliation.v1.ReconciliationAdminService/GetApproval"
 	ReconciliationAdminService_ListApprovals_FullMethodName                = "/aipay.reconciliation.v1.ReconciliationAdminService/ListApprovals"
 	ReconciliationAdminService_EmergencyDisablePlugin_FullMethodName       = "/aipay.reconciliation.v1.ReconciliationAdminService/EmergencyDisablePlugin"
+	ReconciliationAdminService_SubmitCoverageAttestation_FullMethodName    = "/aipay.reconciliation.v1.ReconciliationAdminService/SubmitCoverageAttestation"
+	ReconciliationAdminService_ApproveCoverageAttestation_FullMethodName   = "/aipay.reconciliation.v1.ReconciliationAdminService/ApproveCoverageAttestation"
+	ReconciliationAdminService_RevokeCoverageAttestation_FullMethodName    = "/aipay.reconciliation.v1.ReconciliationAdminService/RevokeCoverageAttestation"
+	ReconciliationAdminService_GetCoverageAttestation_FullMethodName       = "/aipay.reconciliation.v1.ReconciliationAdminService/GetCoverageAttestation"
+	ReconciliationAdminService_ListCoverageAttestations_FullMethodName     = "/aipay.reconciliation.v1.ReconciliationAdminService/ListCoverageAttestations"
+	ReconciliationAdminService_GetCoverageStatus_FullMethodName            = "/aipay.reconciliation.v1.ReconciliationAdminService/GetCoverageStatus"
+	ReconciliationAdminService_ListCoverageAddresses_FullMethodName        = "/aipay.reconciliation.v1.ReconciliationAdminService/ListCoverageAddresses"
 )
 
 // ReconciliationAdminServiceClient is the client API for ReconciliationAdminService service.
@@ -49,10 +56,13 @@ const (
 // management method releases funds or makes payment evidence independent.
 // All writes idempotent per method/verified user/key, changed content AlreadyExists;
 // authorized identical retries return original result before fresh CAS/expiry.
-// All approvals expire in 24h, two natural persons neither initiator. Approve
-// methods check kind, current CAS/channel/credential/package authority again on
-// second approval, atomically record approvals/result/configuration. No unknown
-// or failed state is success. Publication and enabling are separate approvals;
+// Approvals require two different natural persons and expire 24h after the request.
+// Only coverage_attestation allows the submitter as one of the two approvers.
+// It also cannot be approved at or after the material's expires_at.
+// On second approval, plugin and verification-account operations recheck the
+// kind, CAS, channel, credentials and package authority, then atomically record
+// the approvals, result and configuration. Unknown or failed states deny the
+// operation. Publication and enabling are separate approvals;
 // configuration changes disable and advance control_version. Emergency disable
 // is one designated person, stops new verification/authorization immediately;
 // in-flight issuance rechecks enabled/control_version. Resuming/rollback requires
@@ -74,6 +84,11 @@ const (
 // stop ALL verification and reject related authorizations, including in-flight
 // results at issuance. Recovery requires NEW two-person enable approvals. No
 // payment material/credentials or single-person resume. See contracts.md v0.9.0.
+// MFA_RECENT writes carry command_sha256. Coverage approval and revocation also
+// require a raw WebAuthn assertion verified against reconciliation's own admin
+// approver registry. ListApprovals and GetApproval also return coverage_attestation.
+// Before each release, cancellation or refund issuance, re-verify the latest
+// approved material, both signatures, registry membership, expiry and revocation.
 type ReconciliationAdminServiceClient interface {
 	UploadPlugin(ctx context.Context, in *UploadPluginRequest, opts ...grpc.CallOption) (*UploadPluginResponse, error)
 	ApprovePlugin(ctx context.Context, in *ApprovePluginRequest, opts ...grpc.CallOption) (*ApprovePluginResponse, error)
@@ -90,6 +105,13 @@ type ReconciliationAdminServiceClient interface {
 	GetApproval(ctx context.Context, in *GetApprovalRequest, opts ...grpc.CallOption) (*GetApprovalResponse, error)
 	ListApprovals(ctx context.Context, in *ListApprovalsRequest, opts ...grpc.CallOption) (*ListApprovalsResponse, error)
 	EmergencyDisablePlugin(ctx context.Context, in *EmergencyDisablePluginRequest, opts ...grpc.CallOption) (*EmergencyDisablePluginResponse, error)
+	SubmitCoverageAttestation(ctx context.Context, in *SubmitCoverageAttestationRequest, opts ...grpc.CallOption) (*SubmitCoverageAttestationResponse, error)
+	ApproveCoverageAttestation(ctx context.Context, in *ApproveCoverageAttestationRequest, opts ...grpc.CallOption) (*ApproveCoverageAttestationResponse, error)
+	RevokeCoverageAttestation(ctx context.Context, in *RevokeCoverageAttestationRequest, opts ...grpc.CallOption) (*RevokeCoverageAttestationResponse, error)
+	GetCoverageAttestation(ctx context.Context, in *GetCoverageAttestationRequest, opts ...grpc.CallOption) (*GetCoverageAttestationResponse, error)
+	ListCoverageAttestations(ctx context.Context, in *ListCoverageAttestationsRequest, opts ...grpc.CallOption) (*ListCoverageAttestationsResponse, error)
+	GetCoverageStatus(ctx context.Context, in *GetCoverageStatusRequest, opts ...grpc.CallOption) (*GetCoverageStatusResponse, error)
+	ListCoverageAddresses(ctx context.Context, in *ListCoverageAddressesRequest, opts ...grpc.CallOption) (*ListCoverageAddressesResponse, error)
 }
 
 type reconciliationAdminServiceClient struct {
@@ -250,6 +272,76 @@ func (c *reconciliationAdminServiceClient) EmergencyDisablePlugin(ctx context.Co
 	return out, nil
 }
 
+func (c *reconciliationAdminServiceClient) SubmitCoverageAttestation(ctx context.Context, in *SubmitCoverageAttestationRequest, opts ...grpc.CallOption) (*SubmitCoverageAttestationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitCoverageAttestationResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_SubmitCoverageAttestation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reconciliationAdminServiceClient) ApproveCoverageAttestation(ctx context.Context, in *ApproveCoverageAttestationRequest, opts ...grpc.CallOption) (*ApproveCoverageAttestationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApproveCoverageAttestationResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_ApproveCoverageAttestation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reconciliationAdminServiceClient) RevokeCoverageAttestation(ctx context.Context, in *RevokeCoverageAttestationRequest, opts ...grpc.CallOption) (*RevokeCoverageAttestationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RevokeCoverageAttestationResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_RevokeCoverageAttestation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reconciliationAdminServiceClient) GetCoverageAttestation(ctx context.Context, in *GetCoverageAttestationRequest, opts ...grpc.CallOption) (*GetCoverageAttestationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCoverageAttestationResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_GetCoverageAttestation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reconciliationAdminServiceClient) ListCoverageAttestations(ctx context.Context, in *ListCoverageAttestationsRequest, opts ...grpc.CallOption) (*ListCoverageAttestationsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCoverageAttestationsResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_ListCoverageAttestations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reconciliationAdminServiceClient) GetCoverageStatus(ctx context.Context, in *GetCoverageStatusRequest, opts ...grpc.CallOption) (*GetCoverageStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCoverageStatusResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_GetCoverageStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reconciliationAdminServiceClient) ListCoverageAddresses(ctx context.Context, in *ListCoverageAddressesRequest, opts ...grpc.CallOption) (*ListCoverageAddressesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCoverageAddressesResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_ListCoverageAddresses_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReconciliationAdminServiceServer is the server API for ReconciliationAdminService service.
 // All implementations must embed UnimplementedReconciliationAdminServiceServer
 // for forward compatibility.
@@ -263,10 +355,13 @@ func (c *reconciliationAdminServiceClient) EmergencyDisablePlugin(ctx context.Co
 // management method releases funds or makes payment evidence independent.
 // All writes idempotent per method/verified user/key, changed content AlreadyExists;
 // authorized identical retries return original result before fresh CAS/expiry.
-// All approvals expire in 24h, two natural persons neither initiator. Approve
-// methods check kind, current CAS/channel/credential/package authority again on
-// second approval, atomically record approvals/result/configuration. No unknown
-// or failed state is success. Publication and enabling are separate approvals;
+// Approvals require two different natural persons and expire 24h after the request.
+// Only coverage_attestation allows the submitter as one of the two approvers.
+// It also cannot be approved at or after the material's expires_at.
+// On second approval, plugin and verification-account operations recheck the
+// kind, CAS, channel, credentials and package authority, then atomically record
+// the approvals, result and configuration. Unknown or failed states deny the
+// operation. Publication and enabling are separate approvals;
 // configuration changes disable and advance control_version. Emergency disable
 // is one designated person, stops new verification/authorization immediately;
 // in-flight issuance rechecks enabled/control_version. Resuming/rollback requires
@@ -288,6 +383,11 @@ func (c *reconciliationAdminServiceClient) EmergencyDisablePlugin(ctx context.Co
 // stop ALL verification and reject related authorizations, including in-flight
 // results at issuance. Recovery requires NEW two-person enable approvals. No
 // payment material/credentials or single-person resume. See contracts.md v0.9.0.
+// MFA_RECENT writes carry command_sha256. Coverage approval and revocation also
+// require a raw WebAuthn assertion verified against reconciliation's own admin
+// approver registry. ListApprovals and GetApproval also return coverage_attestation.
+// Before each release, cancellation or refund issuance, re-verify the latest
+// approved material, both signatures, registry membership, expiry and revocation.
 type ReconciliationAdminServiceServer interface {
 	UploadPlugin(context.Context, *UploadPluginRequest) (*UploadPluginResponse, error)
 	ApprovePlugin(context.Context, *ApprovePluginRequest) (*ApprovePluginResponse, error)
@@ -304,6 +404,13 @@ type ReconciliationAdminServiceServer interface {
 	GetApproval(context.Context, *GetApprovalRequest) (*GetApprovalResponse, error)
 	ListApprovals(context.Context, *ListApprovalsRequest) (*ListApprovalsResponse, error)
 	EmergencyDisablePlugin(context.Context, *EmergencyDisablePluginRequest) (*EmergencyDisablePluginResponse, error)
+	SubmitCoverageAttestation(context.Context, *SubmitCoverageAttestationRequest) (*SubmitCoverageAttestationResponse, error)
+	ApproveCoverageAttestation(context.Context, *ApproveCoverageAttestationRequest) (*ApproveCoverageAttestationResponse, error)
+	RevokeCoverageAttestation(context.Context, *RevokeCoverageAttestationRequest) (*RevokeCoverageAttestationResponse, error)
+	GetCoverageAttestation(context.Context, *GetCoverageAttestationRequest) (*GetCoverageAttestationResponse, error)
+	ListCoverageAttestations(context.Context, *ListCoverageAttestationsRequest) (*ListCoverageAttestationsResponse, error)
+	GetCoverageStatus(context.Context, *GetCoverageStatusRequest) (*GetCoverageStatusResponse, error)
+	ListCoverageAddresses(context.Context, *ListCoverageAddressesRequest) (*ListCoverageAddressesResponse, error)
 	mustEmbedUnimplementedReconciliationAdminServiceServer()
 }
 
@@ -358,6 +465,27 @@ func (UnimplementedReconciliationAdminServiceServer) ListApprovals(context.Conte
 }
 func (UnimplementedReconciliationAdminServiceServer) EmergencyDisablePlugin(context.Context, *EmergencyDisablePluginRequest) (*EmergencyDisablePluginResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method EmergencyDisablePlugin not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) SubmitCoverageAttestation(context.Context, *SubmitCoverageAttestationRequest) (*SubmitCoverageAttestationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitCoverageAttestation not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) ApproveCoverageAttestation(context.Context, *ApproveCoverageAttestationRequest) (*ApproveCoverageAttestationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ApproveCoverageAttestation not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) RevokeCoverageAttestation(context.Context, *RevokeCoverageAttestationRequest) (*RevokeCoverageAttestationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeCoverageAttestation not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) GetCoverageAttestation(context.Context, *GetCoverageAttestationRequest) (*GetCoverageAttestationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCoverageAttestation not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) ListCoverageAttestations(context.Context, *ListCoverageAttestationsRequest) (*ListCoverageAttestationsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCoverageAttestations not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) GetCoverageStatus(context.Context, *GetCoverageStatusRequest) (*GetCoverageStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCoverageStatus not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) ListCoverageAddresses(context.Context, *ListCoverageAddressesRequest) (*ListCoverageAddressesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCoverageAddresses not implemented")
 }
 func (UnimplementedReconciliationAdminServiceServer) mustEmbedUnimplementedReconciliationAdminServiceServer() {
 }
@@ -651,6 +779,132 @@ func _ReconciliationAdminService_EmergencyDisablePlugin_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReconciliationAdminService_SubmitCoverageAttestation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitCoverageAttestationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).SubmitCoverageAttestation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_SubmitCoverageAttestation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).SubmitCoverageAttestation(ctx, req.(*SubmitCoverageAttestationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReconciliationAdminService_ApproveCoverageAttestation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveCoverageAttestationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).ApproveCoverageAttestation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_ApproveCoverageAttestation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).ApproveCoverageAttestation(ctx, req.(*ApproveCoverageAttestationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReconciliationAdminService_RevokeCoverageAttestation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeCoverageAttestationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).RevokeCoverageAttestation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_RevokeCoverageAttestation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).RevokeCoverageAttestation(ctx, req.(*RevokeCoverageAttestationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReconciliationAdminService_GetCoverageAttestation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCoverageAttestationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).GetCoverageAttestation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_GetCoverageAttestation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).GetCoverageAttestation(ctx, req.(*GetCoverageAttestationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReconciliationAdminService_ListCoverageAttestations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCoverageAttestationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).ListCoverageAttestations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_ListCoverageAttestations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).ListCoverageAttestations(ctx, req.(*ListCoverageAttestationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReconciliationAdminService_GetCoverageStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCoverageStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).GetCoverageStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_GetCoverageStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).GetCoverageStatus(ctx, req.(*GetCoverageStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReconciliationAdminService_ListCoverageAddresses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCoverageAddressesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).ListCoverageAddresses(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_ListCoverageAddresses_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).ListCoverageAddresses(ctx, req.(*ListCoverageAddressesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReconciliationAdminService_ServiceDesc is the grpc.ServiceDesc for ReconciliationAdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -717,6 +971,34 @@ var ReconciliationAdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EmergencyDisablePlugin",
 			Handler:    _ReconciliationAdminService_EmergencyDisablePlugin_Handler,
+		},
+		{
+			MethodName: "SubmitCoverageAttestation",
+			Handler:    _ReconciliationAdminService_SubmitCoverageAttestation_Handler,
+		},
+		{
+			MethodName: "ApproveCoverageAttestation",
+			Handler:    _ReconciliationAdminService_ApproveCoverageAttestation_Handler,
+		},
+		{
+			MethodName: "RevokeCoverageAttestation",
+			Handler:    _ReconciliationAdminService_RevokeCoverageAttestation_Handler,
+		},
+		{
+			MethodName: "GetCoverageAttestation",
+			Handler:    _ReconciliationAdminService_GetCoverageAttestation_Handler,
+		},
+		{
+			MethodName: "ListCoverageAttestations",
+			Handler:    _ReconciliationAdminService_ListCoverageAttestations_Handler,
+		},
+		{
+			MethodName: "GetCoverageStatus",
+			Handler:    _ReconciliationAdminService_GetCoverageStatus_Handler,
+		},
+		{
+			MethodName: "ListCoverageAddresses",
+			Handler:    _ReconciliationAdminService_ListCoverageAddresses_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

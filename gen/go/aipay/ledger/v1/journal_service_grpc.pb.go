@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	JournalService_ListTransactions_FullMethodName = "/aipay.ledger.v1.JournalService/ListTransactions"
-	JournalService_ListCheckpoints_FullMethodName  = "/aipay.ledger.v1.JournalService/ListCheckpoints"
+	JournalService_ListTransactions_FullMethodName     = "/aipay.ledger.v1.JournalService/ListTransactions"
+	JournalService_ListCheckpoints_FullMethodName      = "/aipay.ledger.v1.JournalService/ListCheckpoints"
+	JournalService_GetLiabilitySnapshot_FullMethodName = "/aipay.ledger.v1.JournalService/GetLiabilitySnapshot"
 )
 
 // JournalServiceClient is the client API for JournalService service.
@@ -35,6 +36,13 @@ const (
 type JournalServiceClient interface {
 	ListTransactions(ctx context.Context, in *ListTransactionsRequest, opts ...grpc.CallOption) (*ListTransactionsResponse, error)
 	ListCheckpoints(ctx context.Context, in *ListCheckpointsRequest, opts ...grpc.CallOption) (*ListCheckpointsResponse, error)
+	// Read-only, with no side effects. The first page reads the head, every balance,
+	// digest and totals in one REPEATABLE READ read-only transaction. Later pages
+	// calculate balances at the fixed as_of_seq. A sequence above the head or an
+	// out-of-range limit is InvalidArgument. Totals use the period-close coverage
+	// query. Receivers recompute the digest over all pages and accept the totals
+	// only after matching them against their own account classification.
+	GetLiabilitySnapshot(ctx context.Context, in *GetLiabilitySnapshotRequest, opts ...grpc.CallOption) (*GetLiabilitySnapshotResponse, error)
 }
 
 type journalServiceClient struct {
@@ -65,6 +73,16 @@ func (c *journalServiceClient) ListCheckpoints(ctx context.Context, in *ListChec
 	return out, nil
 }
 
+func (c *journalServiceClient) GetLiabilitySnapshot(ctx context.Context, in *GetLiabilitySnapshotRequest, opts ...grpc.CallOption) (*GetLiabilitySnapshotResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLiabilitySnapshotResponse)
+	err := c.cc.Invoke(ctx, JournalService_GetLiabilitySnapshot_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // JournalServiceServer is the server API for JournalService service.
 // All implementations must embed UnimplementedJournalServiceServer
 // for forward compatibility.
@@ -77,6 +95,13 @@ func (c *journalServiceClient) ListCheckpoints(ctx context.Context, in *ListChec
 type JournalServiceServer interface {
 	ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error)
 	ListCheckpoints(context.Context, *ListCheckpointsRequest) (*ListCheckpointsResponse, error)
+	// Read-only, with no side effects. The first page reads the head, every balance,
+	// digest and totals in one REPEATABLE READ read-only transaction. Later pages
+	// calculate balances at the fixed as_of_seq. A sequence above the head or an
+	// out-of-range limit is InvalidArgument. Totals use the period-close coverage
+	// query. Receivers recompute the digest over all pages and accept the totals
+	// only after matching them against their own account classification.
+	GetLiabilitySnapshot(context.Context, *GetLiabilitySnapshotRequest) (*GetLiabilitySnapshotResponse, error)
 	mustEmbedUnimplementedJournalServiceServer()
 }
 
@@ -92,6 +117,9 @@ func (UnimplementedJournalServiceServer) ListTransactions(context.Context, *List
 }
 func (UnimplementedJournalServiceServer) ListCheckpoints(context.Context, *ListCheckpointsRequest) (*ListCheckpointsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCheckpoints not implemented")
+}
+func (UnimplementedJournalServiceServer) GetLiabilitySnapshot(context.Context, *GetLiabilitySnapshotRequest) (*GetLiabilitySnapshotResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLiabilitySnapshot not implemented")
 }
 func (UnimplementedJournalServiceServer) mustEmbedUnimplementedJournalServiceServer() {}
 func (UnimplementedJournalServiceServer) testEmbeddedByValue()                        {}
@@ -150,6 +178,24 @@ func _JournalService_ListCheckpoints_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _JournalService_GetLiabilitySnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLiabilitySnapshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(JournalServiceServer).GetLiabilitySnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: JournalService_GetLiabilitySnapshot_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(JournalServiceServer).GetLiabilitySnapshot(ctx, req.(*GetLiabilitySnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // JournalService_ServiceDesc is the grpc.ServiceDesc for JournalService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -164,6 +210,10 @@ var JournalService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListCheckpoints",
 			Handler:    _JournalService_ListCheckpoints_Handler,
+		},
+		{
+			MethodName: "GetLiabilitySnapshot",
+			Handler:    _JournalService_GetLiabilitySnapshot_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

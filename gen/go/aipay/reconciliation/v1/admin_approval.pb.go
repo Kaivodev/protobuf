@@ -409,8 +409,16 @@ func (x *PluginEnableChange) GetExpectedPluginControlVersion() uint64 {
 // Domain-owned material; never use aipay.payment.v1 approval material. Headers
 // equal ApprovalRequest. request_bytes = str("aipay.reconciliation.admin.v1")
 // || canonical(material), NOT protobuf serialization. Canonical field-order
-// encoding follows docs contracts.md: headers 1-5, u32 operation tag, recursive
+// encoding follows docs contracts.md: headers 1-5, u32 operation tag (6-9), recursive
 // operation content, JSON normalized, fixtures sorted; unknown fields rejected.
+// request_digest = SHA-256("AIPAY-APPROVAL-V1" || request_bytes), with a raw
+// 17-byte ASCII prefix. The WebAuthn challenge equals request_digest.
+// For coverage_attestation, expand field 9 recursively in field-number order
+// without message length prefixes. Write repeated values as a u32 count then
+// elements in the specified order. Prefix strings/bytes with a u32 byte length.
+// Encode int64/uint64 in 8 bytes, uint32/enums in 4 bytes, all big-endian.
+// Timestamps are i64 Unix nanoseconds at whole microseconds. Optional scalars
+// start with u8(0) for absence or u8(1) followed by the value for presence.
 type ReconciliationApprovalMaterial struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	ApprovalRequestId string                 `protobuf:"bytes,1,opt,name=approval_request_id,json=approvalRequestId,proto3" json:"approval_request_id,omitempty"`
@@ -418,14 +426,18 @@ type ReconciliationApprovalMaterial struct {
 	RequestedBy       string                 `protobuf:"bytes,3,opt,name=requested_by,json=requestedBy,proto3" json:"requested_by,omitempty"`
 	RequestedAt       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=requested_at,json=requestedAt,proto3" json:"requested_at,omitempty"`
 	ExpiresAt         *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	// Exactly one, kind identical to branch. Always two different natural
-	// persons, neither initiator, using reconciliation's own offline key registry.
+	// Exactly one, with kind equal to the branch name. required_approvals is 2,
+	// from two different natural persons in reconciliation's own approver registry.
+	// Only for coverage_attestation may requested_by be one of the two approvers.
+	// Every approval request expires exactly 24h after requested_at. A
+	// coverage_attestation cannot be approved at or after its material's expires_at.
 	//
 	// Types that are valid to be assigned to Operation:
 	//
 	//	*ReconciliationApprovalMaterial_VerificationAccount
 	//	*ReconciliationApprovalMaterial_PluginVersion
 	//	*ReconciliationApprovalMaterial_PluginEnable
+	//	*ReconciliationApprovalMaterial_CoverageAttestation
 	Operation     isReconciliationApprovalMaterial_Operation `protobuf_oneof:"operation"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -530,6 +542,15 @@ func (x *ReconciliationApprovalMaterial) GetPluginEnable() *PluginEnableChange {
 	return nil
 }
 
+func (x *ReconciliationApprovalMaterial) GetCoverageAttestation() *CoverageAttestationMaterial {
+	if x != nil {
+		if x, ok := x.Operation.(*ReconciliationApprovalMaterial_CoverageAttestation); ok {
+			return x.CoverageAttestation
+		}
+	}
+	return nil
+}
+
 type isReconciliationApprovalMaterial_Operation interface {
 	isReconciliationApprovalMaterial_Operation()
 }
@@ -546,12 +567,19 @@ type ReconciliationApprovalMaterial_PluginEnable struct {
 	PluginEnable *PluginEnableChange `protobuf:"bytes,8,opt,name=plugin_enable,json=pluginEnable,proto3,oneof"`
 }
 
+type ReconciliationApprovalMaterial_CoverageAttestation struct {
+	CoverageAttestation *CoverageAttestationMaterial `protobuf:"bytes,9,opt,name=coverage_attestation,json=coverageAttestation,proto3,oneof"`
+}
+
 func (*ReconciliationApprovalMaterial_VerificationAccount) isReconciliationApprovalMaterial_Operation() {
 }
 
 func (*ReconciliationApprovalMaterial_PluginVersion) isReconciliationApprovalMaterial_Operation() {}
 
 func (*ReconciliationApprovalMaterial_PluginEnable) isReconciliationApprovalMaterial_Operation() {}
+
+func (*ReconciliationApprovalMaterial_CoverageAttestation) isReconciliationApprovalMaterial_Operation() {
+}
 
 type ReconciliationApproval struct {
 	state           protoimpl.MessageState          `protogen:"open.v1"`
@@ -627,7 +655,7 @@ var File_aipay_reconciliation_v1_admin_approval_proto protoreflect.FileDescripto
 
 const file_aipay_reconciliation_v1_admin_approval_proto_rawDesc = "" +
 	"\n" +
-	",aipay/reconciliation/v1/admin_approval.proto\x12\x17aipay.reconciliation.v1\x1a aipay/approval/v1/approval.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"=\n" +
+	",aipay/reconciliation/v1/admin_approval.proto\x12\x17aipay.reconciliation.v1\x1a aipay/approval/v1/approval.proto\x1a2aipay/reconciliation/v1/coverage_attestation.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"=\n" +
 	"\rPluginFixture\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\fR\acontent\"\xf8\x01\n" +
@@ -657,7 +685,7 @@ const file_aipay_reconciliation_v1_admin_approval_proto_rawDesc = "" +
 	"\x1fpublication_approval_request_id\x18\x05 \x01(\tR\x1cpublicationApprovalRequestId\x12<\n" +
 	"\x1apublication_request_digest\x18\x06 \x01(\fR\x18publicationRequestDigest\x12J\n" +
 	"\x1fexpected_plugin_control_version\x18\a \x01(\x04H\x00R\x1cexpectedPluginControlVersion\x88\x01\x01B\"\n" +
-	" _expected_plugin_control_version\"\xa4\x04\n" +
+	" _expected_plugin_control_version\"\x8f\x05\n" +
 	"\x1eReconciliationApprovalMaterial\x12.\n" +
 	"\x13approval_request_id\x18\x01 \x01(\tR\x11approvalRequestId\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12!\n" +
@@ -667,7 +695,8 @@ const file_aipay_reconciliation_v1_admin_approval_proto_rawDesc = "" +
 	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12g\n" +
 	"\x14verification_account\x18\x06 \x01(\v22.aipay.reconciliation.v1.VerificationAccountChangeH\x00R\x13verificationAccount\x12W\n" +
 	"\x0eplugin_version\x18\a \x01(\v2..aipay.reconciliation.v1.PluginVersionMaterialH\x00R\rpluginVersion\x12R\n" +
-	"\rplugin_enable\x18\b \x01(\v2+.aipay.reconciliation.v1.PluginEnableChangeH\x00R\fpluginEnableB\v\n" +
+	"\rplugin_enable\x18\b \x01(\v2+.aipay.reconciliation.v1.PluginEnableChangeH\x00R\fpluginEnable\x12i\n" +
+	"\x14coverage_attestation\x18\t \x01(\v24.aipay.reconciliation.v1.CoverageAttestationMaterialH\x00R\x13coverageAttestationB\v\n" +
 	"\toperation\"\xb4\x02\n" +
 	"\x16ReconciliationApproval\x12M\n" +
 	"\x10approval_request\x18\x01 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\x0fapprovalRequest\x12S\n" +
@@ -698,8 +727,9 @@ var file_aipay_reconciliation_v1_admin_approval_proto_goTypes = []any{
 	(*ReconciliationApprovalMaterial)(nil),   // 5: aipay.reconciliation.v1.ReconciliationApprovalMaterial
 	(*ReconciliationApproval)(nil),           // 6: aipay.reconciliation.v1.ReconciliationApproval
 	(*timestamppb.Timestamp)(nil),            // 7: google.protobuf.Timestamp
-	(*v1.ApprovalRequest)(nil),               // 8: aipay.approval.v1.ApprovalRequest
-	(*v1.Approval)(nil),                      // 9: aipay.approval.v1.Approval
+	(*CoverageAttestationMaterial)(nil),      // 8: aipay.reconciliation.v1.CoverageAttestationMaterial
+	(*v1.ApprovalRequest)(nil),               // 9: aipay.approval.v1.ApprovalRequest
+	(*v1.Approval)(nil),                      // 10: aipay.approval.v1.Approval
 }
 var file_aipay_reconciliation_v1_admin_approval_proto_depIdxs = []int32{
 	2,  // 0: aipay.reconciliation.v1.VerificationAccountChange.configuration:type_name -> aipay.reconciliation.v1.VerificationAccountConfiguration
@@ -708,15 +738,16 @@ var file_aipay_reconciliation_v1_admin_approval_proto_depIdxs = []int32{
 	3,  // 3: aipay.reconciliation.v1.ReconciliationApprovalMaterial.verification_account:type_name -> aipay.reconciliation.v1.VerificationAccountChange
 	1,  // 4: aipay.reconciliation.v1.ReconciliationApprovalMaterial.plugin_version:type_name -> aipay.reconciliation.v1.PluginVersionMaterial
 	4,  // 5: aipay.reconciliation.v1.ReconciliationApprovalMaterial.plugin_enable:type_name -> aipay.reconciliation.v1.PluginEnableChange
-	8,  // 6: aipay.reconciliation.v1.ReconciliationApproval.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	5,  // 7: aipay.reconciliation.v1.ReconciliationApproval.material:type_name -> aipay.reconciliation.v1.ReconciliationApprovalMaterial
-	9,  // 8: aipay.reconciliation.v1.ReconciliationApproval.approvals:type_name -> aipay.approval.v1.Approval
-	7,  // 9: aipay.reconciliation.v1.ReconciliationApproval.approved_at:type_name -> google.protobuf.Timestamp
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	8,  // 6: aipay.reconciliation.v1.ReconciliationApprovalMaterial.coverage_attestation:type_name -> aipay.reconciliation.v1.CoverageAttestationMaterial
+	9,  // 7: aipay.reconciliation.v1.ReconciliationApproval.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	5,  // 8: aipay.reconciliation.v1.ReconciliationApproval.material:type_name -> aipay.reconciliation.v1.ReconciliationApprovalMaterial
+	10, // 9: aipay.reconciliation.v1.ReconciliationApproval.approvals:type_name -> aipay.approval.v1.Approval
+	7,  // 10: aipay.reconciliation.v1.ReconciliationApproval.approved_at:type_name -> google.protobuf.Timestamp
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_aipay_reconciliation_v1_admin_approval_proto_init() }
@@ -724,12 +755,14 @@ func file_aipay_reconciliation_v1_admin_approval_proto_init() {
 	if File_aipay_reconciliation_v1_admin_approval_proto != nil {
 		return
 	}
+	file_aipay_reconciliation_v1_coverage_attestation_proto_init()
 	file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[2].OneofWrappers = []any{}
 	file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[4].OneofWrappers = []any{}
 	file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[5].OneofWrappers = []any{
 		(*ReconciliationApprovalMaterial_VerificationAccount)(nil),
 		(*ReconciliationApprovalMaterial_PluginVersion)(nil),
 		(*ReconciliationApprovalMaterial_PluginEnable)(nil),
+		(*ReconciliationApprovalMaterial_CoverageAttestation)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

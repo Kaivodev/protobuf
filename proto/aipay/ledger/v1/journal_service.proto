@@ -3,7 +3,9 @@ syntax = "proto3";
 package aipay.ledger.v1;
 
 import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/query.proto";
 import "aipay/ledger/v1/ledger.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
 
@@ -31,6 +33,54 @@ message ListCheckpointsResponse {
   repeated CheckpointSigned checkpoints = 1;
 }
 
+message GetLiabilitySnapshotRequest {
+  // Zero pins the current head. Later pages repeat the first page's as_of_seq.
+  uint64 as_of_seq = 1;
+  // Exclusive lower bound on account_code bytes. Empty requests the first page.
+  string after_account_code = 2;
+  // Required 1-2000. Reject out-of-range values.
+  uint32 limit = 3 [(aipay.common.v1.max_items) = 2000];
+}
+
+message SnapshotAccountBalance {
+  string account_code = 1;
+  // Debit minus credit at as_of_seq, in account units as in the balances digest.
+  int64 units = 2;
+  // Debit minus credit at as_of_seq, in 10^-6 USD.
+  int64 usd_micros = 3;
+}
+
+message CoverageTotals {
+  // Version effective when transaction as_of_seq was recorded.
+  uint64 gl_mapping_version = 1;
+  // GL 1011, debit-positive, in 10^-6 USDT.
+  int64 customer_wallet_units = 2;
+  // GL 2241, credit-positive, in 10^-6 USDT.
+  int64 unmatched_receipt_units = 3;
+  // GL 2101, 2102, 2103, 2204 and 2221, credit-positive, in 10^-6 USDT.
+  int64 user_liability_units = 4;
+}
+
+message GetLiabilitySnapshotResponse {
+  // Fixed journal position for every page.
+  uint64 as_of_seq = 1;
+  // Hash of the transaction at as_of_seq, or 32 zero bytes for an empty journal.
+  bytes head_hash = 2;
+  // Balances in strictly ascending account_code byte order.
+  repeated SnapshotAccountBalance balances = 3;
+  // Exclusive cursor to pass as after_account_code. Empty on the last page.
+  string next_account_code = 4;
+  // Fields 5-9 are set only on the first page (empty after_account_code).
+  google.protobuf.Timestamp taken_at = 5;
+  // Number of accounts across all pages.
+  uint64 account_count = 6;
+  // 32-byte AIPAY-LEDGER-BALANCES-V1 digest over all accounts at as_of_seq.
+  bytes balances_digest = 7;
+  CoverageTotals totals = 8;
+  // Present only for a signed checkpoint with to_seq == as_of_seq. Use the highest matching ID.
+  CheckpointSigned checkpoint = 9;
+}
+
 // Pull interface for the independent verifiers. Integrity comes from the hash
 // chain and the signed checkpoints, not from per-transaction signatures:
 // receivers replay from genesis or a verified checkpoint, recompute every
@@ -55,6 +105,20 @@ service JournalService {
           "reconciliation",
           "settlement"
         ]
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Read-only, with no side effects. The first page reads the head, every balance,
+  // digest and totals in one REPEATABLE READ read-only transaction. Later pages
+  // calculate balances at the fixed as_of_seq. A sequence above the head or an
+  // out-of-range limit is InvalidArgument. Totals use the period-close coverage
+  // query. Receivers recompute the digest over all pages and accept the totals
+  // only after matching them against their own account classification.
+  rpc GetLiabilitySnapshot(GetLiabilitySnapshotRequest) returns (GetLiabilitySnapshotResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "reconciliation"
         assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
       }
     };

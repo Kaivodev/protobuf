@@ -1,0 +1,193 @@
+syntax = "proto3";
+
+package aipay.reconciliation.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/common/v1/query.proto";
+import "aipay/reconciliation/v1/admin_approval.proto";
+import "aipay/reconciliation/v1/coverage_attestation.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1";
+
+// The operator supplies chain observations. Reconciliation resolves the registered
+// role and token contract, converts the balance to units and hashes the evidence.
+message CoverageObservationInput {
+  string chain = 1;
+  string address = 2;
+  string raw_balance = 3;
+  uint64 block_number = 4;
+  bytes block_hash = 5;
+  google.protobuf.Timestamp block_time = 6;
+  string source = 7;
+  // UTF-8 text, 1-4096 bytes, stored by reconciliation and bound by evidence_sha256.
+  string evidence = 8;
+}
+
+enum CoverageAttestationStatus {
+  COVERAGE_ATTESTATION_STATUS_UNSPECIFIED = 0;
+  // Awaiting approvals before the approval request expires.
+  COVERAGE_ATTESTATION_STATUS_PENDING = 1;
+  // Newest approved attestation, still unrevoked and unexpired.
+  COVERAGE_ATTESTATION_STATUS_CURRENT = 2;
+  // Approved and replaced by a newer approved attestation.
+  COVERAGE_ATTESTATION_STATUS_SUPERSEDED = 3;
+  // Formerly current and past the material's expires_at.
+  COVERAGE_ATTESTATION_STATUS_EXPIRED = 4;
+  COVERAGE_ATTESTATION_STATUS_REVOKED = 5;
+  // The approval request expired before two approvals were obtained.
+  COVERAGE_ATTESTATION_STATUS_APPROVAL_EXPIRED = 6;
+}
+
+enum CoverageState {
+  COVERAGE_STATE_UNSPECIFIED = 0;
+  COVERAGE_STATE_VALID = 1;
+  COVERAGE_STATE_LOW_MARGIN = 2;
+  COVERAGE_STATE_NOT_COVERED = 3;
+  COVERAGE_STATE_EXPIRED = 4;
+  COVERAGE_STATE_REVOKED = 5;
+  COVERAGE_STATE_NONE = 6;
+  // Re-verification of signatures, material or registry membership failed.
+  COVERAGE_STATE_INVALID = 7;
+}
+
+message CoverageRevocation {
+  // Verified IAM user ID of the revoking approver.
+  string revoked_by = 1;
+  google.protobuf.Timestamp revoked_at = 2;
+  string reason = 3;
+}
+
+message CoverageEvidence {
+  string chain = 1;
+  string address = 2;
+  // Domain-separated evidence_sha256 in the signed observation.
+  bytes sha256 = 3;
+  string text = 4;
+}
+
+message CoverageAttestation {
+  // Original approval request, material, approvals and approved_at.
+  ReconciliationApproval approval = 1;
+  CoverageAttestationStatus status = 2;
+  // Present only for REVOKED.
+  CoverageRevocation revocation = 3;
+  // Returned only by GetCoverageAttestation. Empty in list and write responses.
+  repeated CoverageEvidence evidence = 4;
+}
+
+message CoverageAddress {
+  string chain = 1;
+  string address = 2;
+  CoverageAddressRole role = 3;
+  string label = 4;
+  google.protobuf.Timestamp registered_at = 5;
+}
+
+// Each write is idempotent per method, verified user and key. Identical content
+// returns the original result. Reusing a key with different content is AlreadyExists.
+message SubmitCoverageAttestationRequest {
+  string idempotency_key = 1;
+  // 1-200 registered addresses. Ledger liabilities are fetched by reconciliation.
+  repeated CoverageObservationInput observations = 2 [(aipay.common.v1.max_items) = 200];
+  repeated CoverageTransfer unrecorded_inflows = 3 [(aipay.common.v1.max_items) = 200];
+  repeated CoverageTransfer window_outflows = 4 [(aipay.common.v1.max_items) = 200];
+  // Optional, 0-1000 characters.
+  optional string note = 5;
+}
+
+message SubmitCoverageAttestationResponse {
+  CoverageAttestation attestation = 1;
+}
+
+message ApproveCoverageAttestationRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  // Raw WebAuthn assertion with the approval request_digest as its challenge.
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveCoverageAttestationResponse {
+  CoverageAttestation attestation = 1;
+}
+
+// One registered approver can revoke the current attestation. Revocation never
+// restores an older attestation. As for EmergencyDisablePlugin, the WebAuthn
+// challenge binds the verified IAM identity and command.
+// challenge = SHA-256("AIPAY-APPROVAL-V1" || str("aipay.reconciliation.coverage.revoke.v1") ||
+// str(verified IAM user_id) || str(idempotency_key) || str(attestation_id) ||
+// bytes(request_digest) || str(reason)), using the current approval request_digest.
+message RevokeCoverageAttestationRequest {
+  string idempotency_key = 1;
+  string attestation_id = 2;
+  // Required revocation reason, 1-1000 characters.
+  string reason = 3;
+  aipay.approval.v1.WebAuthnAssertion assertion = 4;
+}
+
+message RevokeCoverageAttestationResponse {
+  CoverageAttestation attestation = 1;
+}
+
+message GetCoverageAttestationRequest {
+  string attestation_id = 1;
+}
+
+message GetCoverageAttestationResponse {
+  CoverageAttestation attestation = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+// Descending (requested_at, ID). As in ListApprovals, each page rechecks access
+// and uses the same as_of and an opaque method/user/scope/filter/limit-bound cursor.
+message ListCoverageAttestationsRequest {
+  // Required 1-100. Reject out-of-range values.
+  uint32 limit = 1 [(aipay.common.v1.max_items) = 100];
+  string page_token = 2;
+}
+
+message ListCoverageAttestationsResponse {
+  // Evidence text is omitted.
+  repeated CoverageAttestation attestations = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetCoverageStatusRequest {}
+
+// State of the newest approval by (as_of_seq, cutoff_at, approved_at).
+// A newer approval supersedes an older one regardless of its result.
+// Attestation fields are empty when state is NONE.
+message GetCoverageStatusResponse {
+  CoverageState state = 1;
+  string attestation_id = 2;
+  bytes request_digest = 3;
+  CoverageResult result = 4;
+  google.protobuf.Timestamp cutoff_at = 5;
+  google.protobuf.Timestamp expires_at = 6;
+  google.protobuf.Timestamp approved_at = 7;
+  int64 counted_asset_units = 8;
+  int64 user_liability_units = 9;
+  int64 margin_units = 10;
+  uint32 buffer_bps = 11;
+  // True exactly when state is VALID or LOW_MARGIN.
+  bool releases_allowed = 12;
+  // True exactly when state is VALID.
+  bool revenue_transfer_allowed = 13;
+  google.protobuf.Timestamp as_of = 14;
+}
+
+message ListCoverageAddressesRequest {
+  // Required 1-500. Reject out-of-range values.
+  uint32 limit = 1 [(aipay.common.v1.max_items) = 500];
+  string page_token = 2;
+}
+
+message ListCoverageAddressesResponse {
+  // Active entries only, in ascending (chain, address) byte order.
+  repeated CoverageAddress addresses = 1;
+  // Digest of the entire active registry at as_of, across all pages.
+  bytes registry_version = 2;
+  string next_page_token = 3;
+  google.protobuf.Timestamp as_of = 4;
+}

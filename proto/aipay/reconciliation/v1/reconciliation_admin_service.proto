@@ -6,6 +6,7 @@ import "aipay/approval/v1/approval.proto";
 import "aipay/authz/v1/policy.proto";
 import "aipay/common/v1/query.proto";
 import "aipay/reconciliation/v1/admin_approval.proto";
+import "aipay/reconciliation/v1/coverage_admin.proto";
 import "aipay/reconciliation/v1/plugin_control.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -219,10 +220,13 @@ message ListApprovalsResponse {
 // management method releases funds or makes payment evidence independent.
 // All writes idempotent per method/verified user/key, changed content AlreadyExists;
 // authorized identical retries return original result before fresh CAS/expiry.
-// All approvals expire in 24h, two natural persons neither initiator. Approve
-// methods check kind, current CAS/channel/credential/package authority again on
-// second approval, atomically record approvals/result/configuration. No unknown
-// or failed state is success. Publication and enabling are separate approvals;
+// Approvals require two different natural persons and expire 24h after the request.
+// Only coverage_attestation allows the submitter as one of the two approvers.
+// It also cannot be approved at or after the material's expires_at.
+// On second approval, plugin and verification-account operations recheck the
+// kind, CAS, channel, credentials and package authority, then atomically record
+// the approvals, result and configuration. Unknown or failed states deny the
+// operation. Publication and enabling are separate approvals;
 // configuration changes disable and advance control_version. Emergency disable
 // is one designated person, stops new verification/authorization immediately;
 // in-flight issuance rechecks enabled/control_version. Resuming/rollback requires
@@ -244,6 +248,11 @@ message ListApprovalsResponse {
 // stop ALL verification and reject related authorizations, including in-flight
 // results at issuance. Recovery requires NEW two-person enable approvals. No
 // payment material/credentials or single-person resume. See contracts.md v0.9.0.
+// MFA_RECENT writes carry command_sha256. Coverage approval and revocation also
+// require a raw WebAuthn assertion verified against reconciliation's own admin
+// approver registry. ListApprovals and GetApproval also return coverage_attestation.
+// Before each release, cancellation or refund issuance, re-verify the latest
+// approved material, both signatures, registry membership, expiry and revocation.
 service ReconciliationAdminService {
   rpc UploadPlugin(UploadPluginRequest) returns (UploadPluginResponse) {
     option (aipay.authz.v1.policy) = {
@@ -378,6 +387,72 @@ service ReconciliationAdminService {
         assertion: ASSERTION_REQUIREMENT_MFA_RECENT
         permissions: "reconciliation.plugin.disable"
         recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc SubmitCoverageAttestation(SubmitCoverageAttestationRequest) returns (SubmitCoverageAttestationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "reconciliation.coverage.submit"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ApproveCoverageAttestation(ApproveCoverageAttestationRequest) returns (ApproveCoverageAttestationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "reconciliation.coverage.approve"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc RevokeCoverageAttestation(RevokeCoverageAttestationRequest) returns (RevokeCoverageAttestationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "reconciliation.coverage.revoke"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc GetCoverageAttestation(GetCoverageAttestationRequest) returns (GetCoverageAttestationResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.coverage.read"
+      }
+    };
+  }
+  rpc ListCoverageAttestations(ListCoverageAttestationsRequest) returns (ListCoverageAttestationsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.coverage.read"
+      }
+    };
+  }
+  rpc GetCoverageStatus(GetCoverageStatusRequest) returns (GetCoverageStatusResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.coverage.read"
+      }
+    };
+  }
+  rpc ListCoverageAddresses(ListCoverageAddressesRequest) returns (ListCoverageAddressesResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.coverage.read"
       }
     };
   }

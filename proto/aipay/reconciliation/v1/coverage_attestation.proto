@@ -1,0 +1,163 @@
+// Daily manual customer fund coverage. Amounts are int64 in 10^-6 USDT,
+// timestamps are UTC whole microseconds, IDs are UUIDv7 strings (chain
+// transaction IDs are lowercase hex), and all digests are exactly 32 bytes.
+// Reconciliation classifies every ledger balance to derive the customer wallet
+// total B, unmatched receipts U_L and user liabilities L. L includes the sum
+// of both the classified liabilities and the unclassified positive credits.
+// A = sum(observations.units), O = sum(window_outflows.units),
+// I = sum(unrecorded_inflows.units), A_c = min(A - O - I, B), M = A_c - U_L - L.
+// Receivers recompute all sums and the result from the lists and reject any
+// mismatch or int64 amount overflow. Compare M*10000 and buffer_bps*L using
+// 128-bit or checked arithmetic. A negative M is NOT_COVERED. Otherwise, if
+// L > 0 and M*10000 < buffer_bps*L, the result is COVERED_LOW_MARGIN. All
+// other non-negative margins are COVERED, including when L == 0.
+//
+// str and bytes encode a u32 big-endian byte length followed by the bytes.
+// Hash the submitted UTF-8 evidence text (1-4096 bytes) verbatim.
+// evidence_sha256 = SHA-256(str("aipay.reconciliation.coverage_evidence.v1") || bytes(evidence)).
+// Sort all active registry entries by (chain, address) bytes.
+// address_registry_version = SHA-256(str("aipay.reconciliation.coverage_addresses.v1") || u32(count) ||
+// (str(chain) || str(address) || enum(role))*). Counts and enums are four-byte big-endian.
+syntax = "proto3";
+
+package aipay.reconciliation.v1;
+
+import "aipay/common/v1/query.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1";
+
+enum CoverageResult {
+  COVERAGE_RESULT_UNSPECIFIED = 0;
+  // M >= 0 and either L == 0 or M*10000 >= buffer_bps*L.
+  COVERAGE_RESULT_COVERED = 1;
+  // M >= 0, L > 0 and M*10000 < buffer_bps*L.
+  COVERAGE_RESULT_COVERED_LOW_MARGIN = 2;
+  // M < 0.
+  COVERAGE_RESULT_NOT_COVERED = 3;
+}
+
+enum CoverageAddressRole {
+  COVERAGE_ADDRESS_ROLE_UNSPECIFIED = 0;
+  COVERAGE_ADDRESS_ROLE_COLD = 1;
+  COVERAGE_ADDRESS_ROLE_HOT = 2;
+  COVERAGE_ADDRESS_ROLE_DEPOSIT = 3;
+}
+
+// One chain observation of one registered platform address.
+message CoverageObservation {
+  // Chain identifier, always "TRON" in v0.20.0.
+  string chain = 1;
+  // Canonical TRON Base58Check address, 34 characters with version byte 0x41.
+  string address = 2;
+  // Role copied by reconciliation from its active address registry.
+  CoverageAddressRole role = 3;
+  // TRC20 USDT contract TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t. Gas assets are excluded.
+  string token_contract = 4;
+  // Canonical non-negative decimal integer in chain precision.
+  string raw_balance = 5;
+  // Balance in 10^-6 USDT, numerically equal to raw_balance on TRON.
+  int64 units = 6;
+  // Height of the observed block.
+  uint64 block_number = 7;
+  // Hash of that block, exactly 32 bytes.
+  bytes block_hash = 8;
+  // Time of that block, at or before ledger.taken_at.
+  google.protobuf.Timestamp block_time = 9;
+  // Observation source, 1-64 characters, e.g. trongrid, tronscan or own_node.
+  string source = 10;
+  // Domain-separated SHA-256 of the original evidence text, exactly 32 bytes.
+  bytes evidence_sha256 = 11;
+}
+
+// One unrecorded inflow or one outflow between observation and ledger snapshot.
+message CoverageTransfer {
+  // Chain of the observed transfer, always "TRON" in v0.20.0.
+  string chain = 1;
+  // Chain transaction ID, 64 lowercase hex characters.
+  string transaction_id = 2;
+  // Event index within the transaction, used as the numeric sort tiebreaker.
+  uint32 event_index = 3;
+  // Observed platform address, recipient for inflows and sender for outflows.
+  string address = 4;
+  // Chain address at the other end of the transfer.
+  string counterparty = 5;
+  // Positive transfer amount in 10^-6 USDT.
+  int64 units = 6;
+  // Height of the block containing the transfer.
+  uint64 block_number = 7;
+  // UTC time of the transfer block in whole microseconds.
+  google.protobuf.Timestamp block_time = 8;
+  // Submitter's explanation, 0-500 characters.
+  string note = 9;
+}
+
+message CoverageTypeBalance {
+  // Ledger account type, e.g. user_available.
+  string account_type = 1;
+  // Aggregate USDT liability for this type, credit-positive.
+  int64 units = 2;
+  // Number of accounts contributing to this type.
+  uint64 account_count = 3;
+}
+
+// Reconciliation computes B, U_L and L from every GetLiabilitySnapshot page.
+message CoverageLedgerSnapshot {
+  // Journal sequence at which every balance was calculated.
+  uint64 as_of_seq = 1;
+  // Journal transaction hash at as_of_seq, or 32 zero bytes at sequence zero.
+  bytes head_hash = 2;
+  // UTC time at which ledger took the snapshot, in whole microseconds.
+  google.protobuf.Timestamp taken_at = 3;
+  // 32-byte AIPAY-LEDGER-BALANCES-V1 digest, as used in signed checkpoints.
+  bytes balances_digest = 4;
+  // Total accounts in the ledger snapshot across all pages.
+  uint64 account_count = 5;
+  // GL mapping version effective at as_of_seq.
+  uint64 gl_mapping_version = 6;
+  // Highest signed checkpoint ID with to_seq == as_of_seq. Absent without a match.
+  optional uint64 checkpoint_id = 7;
+  // B, the debit-positive total of USDT collection, hot and cold wallet balances.
+  int64 customer_wallet_units = 8;
+  // U_L, the credit-positive total of USDT unmatched_receipts balances.
+  int64 unmatched_receipt_units = 9;
+  // L = sum(liabilities.units) + sum(unclassified.units), in 10^-6 USDT.
+  int64 user_liability_units = 10;
+  // Every classified liability type present, unique and sorted by account_type bytes.
+  repeated CoverageTypeBalance liabilities = 11;
+  // Unknown types with positive USDT credit balances included in L, in the same unique order.
+  repeated CoverageTypeBalance unclassified = 12;
+}
+
+message CoverageAttestationMaterial {
+  // UUIDv7 assigned by reconciliation.
+  string attestation_id = 1;
+  // Coverage calculation policy, always "coverage-manual-v1".
+  string policy_version = 2;
+  // 32-byte digest of the active address registry at submission.
+  bytes address_registry_version = 3;
+  // Required summary of the independently classified ledger snapshot.
+  CoverageLedgerSnapshot ledger = 4;
+  // 1-200 observations, unique and sorted by (chain, address) bytes.
+  repeated CoverageObservation observations = 5 [(aipay.common.v1.max_items) = 200];
+  // 0-200 unbooked inflows, unique and sorted by (chain bytes, transaction_id bytes, event_index).
+  repeated CoverageTransfer unrecorded_inflows = 6 [(aipay.common.v1.max_items) = 200];
+  // 0-200 outflows after observation through the snapshot, in the same unique order.
+  repeated CoverageTransfer window_outflows = 7 [(aipay.common.v1.max_items) = 200];
+  // A, the sum of observed balances.
+  int64 observed_units = 8;
+  // A_c = min(A - O - I, B), in 10^-6 USDT.
+  int64 counted_asset_units = 9;
+  // M = A_c - U_L - L, in 10^-6 USDT.
+  int64 margin_units = 10;
+  // Target margin in basis points of L, 200 in production.
+  uint32 buffer_bps = 11;
+  // Calculated coverage result, required and never UNSPECIFIED.
+  CoverageResult result = 12;
+  // Earliest block_time among the observations.
+  google.protobuf.Timestamp cutoff_at = 13;
+  // cutoff_at plus the validity period (26 hours in production).
+  google.protobuf.Timestamp expires_at = 14;
+  // Optional submitter note, 0-1000 characters when present.
+  optional string note = 15;
+}
