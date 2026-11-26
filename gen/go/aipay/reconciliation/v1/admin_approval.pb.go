@@ -76,8 +76,8 @@ func (x *PluginFixture) GetContent() []byte {
 	return nil
 }
 
-// Only independently admitted verification packages: exactly query_payment
-// and query_refund. Not payment or statement, no payment secret references.
+// Independently admitted verification packages must declare query_payment
+// and may also declare query_refund. Not payment or statement, no payment secret references.
 // CI pins source and toolchain and rejects uncommitted code. Gateway mode
 // requires a canonical ABI v3 manifest with Rust build fields and a component
 // up to 4 MiB. The verification gateway verifies it with ReplayPackage.
@@ -89,7 +89,7 @@ type PluginVersionMaterial struct {
 	// The package is bound by digest; reconciliation stores the uploaded
 	// plugin.wasm and fixtures itself, keeping approval responses small.
 	// SHA-256 over the canonical encoding of the sorted fixtures (contracts.md).
-	// Replay covers both operations' success/reject/timeout/bad signature/amount
+	// Replay covers each declared operation's success/reject/timeout/bad signature/amount
 	// mismatch in the verification domain.
 	FixturesSha256 []byte `protobuf:"bytes,3,opt,name=fixtures_sha256,json=fixturesSha256,proto3" json:"fixtures_sha256,omitempty"`
 	// SHA-256(normalized manifest_json || plugin_wasm), matching CI artifact.

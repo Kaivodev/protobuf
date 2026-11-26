@@ -28,6 +28,8 @@ var (
 	paymentAccessMaterials []byte
 	//go:embed payment_web_command_v1.json
 	paymentWebCommandV1 []byte
+	//go:embed payment_seller_refund_v1.json
+	paymentSellerRefundV1 []byte
 )
 
 // LedgerCanonicalV1 holds journal transactions with their canonical encoding V1
@@ -57,5 +59,9 @@ func CollectionCommandV1() []byte { return bytes.Clone(collectionCommandV1) }
 func PaymentAccessMaterials() []byte { return bytes.Clone(paymentAccessMaterials) }
 
 // PaymentWebCommandV1 holds canonical command bytes and hashes for seller
-// channel switches and archived work requeues.
+// channel switches, archived work requeues and manual refund commands.
 func PaymentWebCommandV1() []byte { return bytes.Clone(paymentWebCommandV1) }
+
+// PaymentSellerRefundV1 holds canonical evidence and approval material for
+// manual refunds and late payments, including failure decisions.
+func PaymentSellerRefundV1() []byte { return bytes.Clone(paymentSellerRefundV1) }

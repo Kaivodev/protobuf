@@ -25,18 +25,23 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Independent original-route fiat refund workflow. Receivers reject
-// UNSPECIFIED (0)/unknown. SUCCEEDED/FAILED require active verification of a
-// definitive upstream outcome; neither means ledger has settled/restored funds.
+// A139 manual full refunds move from RESERVING to AWAITING_SELLER, then
+// AWAITING_REVIEW and CONFIRMING. A rejection or objection reopens seller
+// submission. PENDING and UNKNOWN are only for automatic refunds created
+// before v0.19.0. Reject UNSPECIFIED and unknown values. A terminal fiat
+// outcome precedes independent authorization and ledger settlement/restoration.
 type RefundStatus int32
 
 const (
-	RefundStatus_REFUND_STATUS_UNSPECIFIED RefundStatus = 0
-	RefundStatus_REFUND_STATUS_RESERVING   RefundStatus = 1
-	RefundStatus_REFUND_STATUS_PENDING     RefundStatus = 2
-	RefundStatus_REFUND_STATUS_SUCCEEDED   RefundStatus = 3
-	RefundStatus_REFUND_STATUS_FAILED      RefundStatus = 4
-	RefundStatus_REFUND_STATUS_UNKNOWN     RefundStatus = 5
+	RefundStatus_REFUND_STATUS_UNSPECIFIED     RefundStatus = 0
+	RefundStatus_REFUND_STATUS_RESERVING       RefundStatus = 1
+	RefundStatus_REFUND_STATUS_PENDING         RefundStatus = 2
+	RefundStatus_REFUND_STATUS_SUCCEEDED       RefundStatus = 3
+	RefundStatus_REFUND_STATUS_FAILED          RefundStatus = 4
+	RefundStatus_REFUND_STATUS_UNKNOWN         RefundStatus = 5
+	RefundStatus_REFUND_STATUS_AWAITING_SELLER RefundStatus = 6
+	RefundStatus_REFUND_STATUS_AWAITING_REVIEW RefundStatus = 7
+	RefundStatus_REFUND_STATUS_CONFIRMING      RefundStatus = 8
 )
 
 // Enum value maps for RefundStatus.
@@ -48,14 +53,20 @@ var (
 		3: "REFUND_STATUS_SUCCEEDED",
 		4: "REFUND_STATUS_FAILED",
 		5: "REFUND_STATUS_UNKNOWN",
+		6: "REFUND_STATUS_AWAITING_SELLER",
+		7: "REFUND_STATUS_AWAITING_REVIEW",
+		8: "REFUND_STATUS_CONFIRMING",
 	}
 	RefundStatus_value = map[string]int32{
-		"REFUND_STATUS_UNSPECIFIED": 0,
-		"REFUND_STATUS_RESERVING":   1,
-		"REFUND_STATUS_PENDING":     2,
-		"REFUND_STATUS_SUCCEEDED":   3,
-		"REFUND_STATUS_FAILED":      4,
-		"REFUND_STATUS_UNKNOWN":     5,
+		"REFUND_STATUS_UNSPECIFIED":     0,
+		"REFUND_STATUS_RESERVING":       1,
+		"REFUND_STATUS_PENDING":         2,
+		"REFUND_STATUS_SUCCEEDED":       3,
+		"REFUND_STATUS_FAILED":          4,
+		"REFUND_STATUS_UNKNOWN":         5,
+		"REFUND_STATUS_AWAITING_SELLER": 6,
+		"REFUND_STATUS_AWAITING_REVIEW": 7,
+		"REFUND_STATUS_CONFIRMING":      8,
 	}
 )
 
@@ -86,6 +97,58 @@ func (RefundStatus) EnumDescriptor() ([]byte, []int) {
 	return file_aipay_payment_v1_refund_service_proto_rawDescGZIP(), []int{0}
 }
 
+type RefundOrigin int32
+
+const (
+	RefundOrigin_REFUND_ORIGIN_UNSPECIFIED    RefundOrigin = 0
+	RefundOrigin_REFUND_ORIGIN_MERCHANT_API   RefundOrigin = 1
+	RefundOrigin_REFUND_ORIGIN_PLATFORM       RefundOrigin = 2
+	RefundOrigin_REFUND_ORIGIN_DISPUTE_RULING RefundOrigin = 3
+)
+
+// Enum value maps for RefundOrigin.
+var (
+	RefundOrigin_name = map[int32]string{
+		0: "REFUND_ORIGIN_UNSPECIFIED",
+		1: "REFUND_ORIGIN_MERCHANT_API",
+		2: "REFUND_ORIGIN_PLATFORM",
+		3: "REFUND_ORIGIN_DISPUTE_RULING",
+	}
+	RefundOrigin_value = map[string]int32{
+		"REFUND_ORIGIN_UNSPECIFIED":    0,
+		"REFUND_ORIGIN_MERCHANT_API":   1,
+		"REFUND_ORIGIN_PLATFORM":       2,
+		"REFUND_ORIGIN_DISPUTE_RULING": 3,
+	}
+)
+
+func (x RefundOrigin) Enum() *RefundOrigin {
+	p := new(RefundOrigin)
+	*p = x
+	return p
+}
+
+func (x RefundOrigin) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RefundOrigin) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_refund_service_proto_enumTypes[1].Descriptor()
+}
+
+func (RefundOrigin) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_refund_service_proto_enumTypes[1]
+}
+
+func (x RefundOrigin) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RefundOrigin.Descriptor instead.
+func (RefundOrigin) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_refund_service_proto_rawDescGZIP(), []int{1}
+}
+
 type Refund struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	RefundId    string                 `protobuf:"bytes,1,opt,name=refund_id,json=refundId,proto3" json:"refund_id,omitempty"`
@@ -96,18 +159,29 @@ type Refund struct {
 	Status              RefundStatus      `protobuf:"varint,5,opt,name=status,proto3,enum=aipay.payment.v1.RefundStatus" json:"status,omitempty"`
 	// Absent until confirmed. PRE_RELEASE occupies existing Q without another
 	// debit; POST_RELEASE first reserves N from the original recipient only.
-	Reservation      *v11.RefundReservation `protobuf:"bytes,6,opt,name=reservation,proto3" json:"reservation,omitempty"`
-	UpstreamRefundId string                 `protobuf:"bytes,7,opt,name=upstream_refund_id,json=upstreamRefundId,proto3" json:"upstream_refund_id,omitempty"`
+	Reservation *v11.RefundReservation `protobuf:"bytes,6,opt,name=reservation,proto3" json:"reservation,omitempty"`
+	// For manual refunds, the upstream refund number from the approved evidence.
+	UpstreamRefundId string `protobuf:"bytes,7,opt,name=upstream_refund_id,json=upstreamRefundId,proto3" json:"upstream_refund_id,omitempty"`
 	// Full original fiat amount only; partial allocation is deferred to D18.
-	FiatAmount *v1.Money              `protobuf:"bytes,8,opt,name=fiat_amount,json=fiatAmount,proto3" json:"fiat_amount,omitempty"`
-	Reason     string                 `protobuf:"bytes,9,opt,name=reason,proto3" json:"reason,omitempty"`
-	CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt  *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	FiatAmount *v1.Money `protobuf:"bytes,8,opt,name=fiat_amount,json=fiatAmount,proto3" json:"fiat_amount,omitempty"`
+	// Original initiation reason. Merchant-facing views may show the merchant's own
+	// reason for MERCHANT_API refunds. PLATFORM and DISPUTE_RULING reasons are
+	// internal and must not be shown to merchants.
+	Reason    string                 `protobuf:"bytes,9,opt,name=reason,proto3" json:"reason,omitempty"`
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// Both required only for verified terminal fiat outcomes; otherwise absent.
 	VerifiedAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=verified_at,json=verifiedAt,proto3" json:"verified_at,omitempty"`
 	EvidenceSha256 []byte                 `protobuf:"bytes,13,opt,name=evidence_sha256,json=evidenceSha256,proto3" json:"evidence_sha256,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	Origin         RefundOrigin           `protobuf:"varint,14,opt,name=origin,proto3,enum=aipay.payment.v1.RefundOrigin" json:"origin,omitempty"`
+	// Present while AWAITING_SELLER. Reset on each entry into that state.
+	SellerDueAt *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=seller_due_at,json=sellerDueAt,proto3" json:"seller_due_at,omitempty"`
+	// Present while CONFIRMING and after successful completion.
+	ObjectionDeadline *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=objection_deadline,json=objectionDeadline,proto3" json:"objection_deadline,omitempty"`
+	// Upstream refund time from approved evidence. Present only after approval.
+	SellerRefundedAt *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=seller_refunded_at,json=sellerRefundedAt,proto3" json:"seller_refunded_at,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Refund) Reset() {
@@ -227,6 +301,34 @@ func (x *Refund) GetVerifiedAt() *timestamppb.Timestamp {
 func (x *Refund) GetEvidenceSha256() []byte {
 	if x != nil {
 		return x.EvidenceSha256
+	}
+	return nil
+}
+
+func (x *Refund) GetOrigin() RefundOrigin {
+	if x != nil {
+		return x.Origin
+	}
+	return RefundOrigin_REFUND_ORIGIN_UNSPECIFIED
+}
+
+func (x *Refund) GetSellerDueAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.SellerDueAt
+	}
+	return nil
+}
+
+func (x *Refund) GetObjectionDeadline() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ObjectionDeadline
+	}
+	return nil
+}
+
+func (x *Refund) GetSellerRefundedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.SellerRefundedAt
 	}
 	return nil
 }
@@ -547,7 +649,7 @@ var File_aipay_payment_v1_refund_service_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_refund_service_proto_rawDesc = "" +
 	"\n" +
-	"%aipay/payment/v1/refund_service.proto\x12\x10aipay.payment.v1\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/money.proto\x1a\x1baipay/common/v1/trade.proto\x1a\x1baipay/ledger/v1/trade.proto\x1a$aipay/payment/v1/order_service.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8c\x05\n" +
+	"%aipay/payment/v1/refund_service.proto\x12\x10aipay.payment.v1\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/money.proto\x1a\x1baipay/common/v1/trade.proto\x1a\x1baipay/ledger/v1/trade.proto\x1a$aipay/payment/v1/order_service.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x99\a\n" +
 	"\x06Refund\x12\x1b\n" +
 	"\trefund_id\x18\x01 \x01(\tR\brefundId\x12\"\n" +
 	"\rout_refund_no\x18\x02 \x01(\tR\voutRefundNo\x124\n" +
@@ -566,7 +668,11 @@ const file_aipay_payment_v1_refund_service_proto_rawDesc = "" +
 	"updated_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12;\n" +
 	"\vverified_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"verifiedAt\x12'\n" +
-	"\x0fevidence_sha256\x18\r \x01(\fR\x0eevidenceSha256\"\x88\x01\n" +
+	"\x0fevidence_sha256\x18\r \x01(\fR\x0eevidenceSha256\x126\n" +
+	"\x06origin\x18\x0e \x01(\x0e2\x1e.aipay.payment.v1.RefundOriginR\x06origin\x12>\n" +
+	"\rseller_due_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\vsellerDueAt\x12I\n" +
+	"\x12objection_deadline\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\x11objectionDeadline\x12H\n" +
+	"\x12seller_refunded_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\x10sellerRefundedAt\"\x88\x01\n" +
 	"\x0eRefundSelector\x12%\n" +
 	"\x0eapplication_id\x18\x01 \x01(\tR\rapplicationId\x12\x1d\n" +
 	"\trefund_id\x18\x02 \x01(\tH\x00R\brefundId\x12$\n" +
@@ -586,14 +692,22 @@ const file_aipay_payment_v1_refund_service_proto_rawDesc = "" +
 	"\x10GetRefundRequest\x12<\n" +
 	"\bselector\x18\x01 \x01(\v2 .aipay.payment.v1.RefundSelectorR\bselector\"E\n" +
 	"\x11GetRefundResponse\x120\n" +
-	"\x06refund\x18\x01 \x01(\v2\x18.aipay.payment.v1.RefundR\x06refund*\xb7\x01\n" +
+	"\x06refund\x18\x01 \x01(\v2\x18.aipay.payment.v1.RefundR\x06refund*\x9b\x02\n" +
 	"\fRefundStatus\x12\x1d\n" +
 	"\x19REFUND_STATUS_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17REFUND_STATUS_RESERVING\x10\x01\x12\x19\n" +
 	"\x15REFUND_STATUS_PENDING\x10\x02\x12\x1b\n" +
 	"\x17REFUND_STATUS_SUCCEEDED\x10\x03\x12\x18\n" +
 	"\x14REFUND_STATUS_FAILED\x10\x04\x12\x19\n" +
-	"\x15REFUND_STATUS_UNKNOWN\x10\x052\x97\x02\n" +
+	"\x15REFUND_STATUS_UNKNOWN\x10\x05\x12!\n" +
+	"\x1dREFUND_STATUS_AWAITING_SELLER\x10\x06\x12!\n" +
+	"\x1dREFUND_STATUS_AWAITING_REVIEW\x10\a\x12\x1c\n" +
+	"\x18REFUND_STATUS_CONFIRMING\x10\b*\x8b\x01\n" +
+	"\fRefundOrigin\x12\x1d\n" +
+	"\x19REFUND_ORIGIN_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aREFUND_ORIGIN_MERCHANT_API\x10\x01\x12\x1a\n" +
+	"\x16REFUND_ORIGIN_PLATFORM\x10\x02\x12 \n" +
+	"\x1cREFUND_ORIGIN_DISPUTE_RULING\x10\x032\x97\x02\n" +
 	"\rRefundService\x12\x87\x01\n" +
 	"\fCreateRefund\x12%.aipay.payment.v1.CreateRefundRequest\x1a&.aipay.payment.v1.CreateRefundResponse\"(\xc2\xf3\x18$\n" +
 	"\"\n" +
@@ -614,44 +728,49 @@ func file_aipay_payment_v1_refund_service_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_refund_service_proto_rawDescData
 }
 
-var file_aipay_payment_v1_refund_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_aipay_payment_v1_refund_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_aipay_payment_v1_refund_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_aipay_payment_v1_refund_service_proto_goTypes = []any{
 	(RefundStatus)(0),             // 0: aipay.payment.v1.RefundStatus
-	(*Refund)(nil),                // 1: aipay.payment.v1.Refund
-	(*RefundSelector)(nil),        // 2: aipay.payment.v1.RefundSelector
-	(*CreateRefundRequest)(nil),   // 3: aipay.payment.v1.CreateRefundRequest
-	(*CreateRefundResponse)(nil),  // 4: aipay.payment.v1.CreateRefundResponse
-	(*GetRefundRequest)(nil),      // 5: aipay.payment.v1.GetRefundRequest
-	(*GetRefundResponse)(nil),     // 6: aipay.payment.v1.GetRefundResponse
-	(*v1.TradeSnapshot)(nil),      // 7: aipay.common.v1.TradeSnapshot
-	(*v11.RefundReservation)(nil), // 8: aipay.ledger.v1.RefundReservation
-	(*v1.Money)(nil),              // 9: aipay.common.v1.Money
-	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
-	(*OrderSelector)(nil),         // 11: aipay.payment.v1.OrderSelector
+	(RefundOrigin)(0),             // 1: aipay.payment.v1.RefundOrigin
+	(*Refund)(nil),                // 2: aipay.payment.v1.Refund
+	(*RefundSelector)(nil),        // 3: aipay.payment.v1.RefundSelector
+	(*CreateRefundRequest)(nil),   // 4: aipay.payment.v1.CreateRefundRequest
+	(*CreateRefundResponse)(nil),  // 5: aipay.payment.v1.CreateRefundResponse
+	(*GetRefundRequest)(nil),      // 6: aipay.payment.v1.GetRefundRequest
+	(*GetRefundResponse)(nil),     // 7: aipay.payment.v1.GetRefundResponse
+	(*v1.TradeSnapshot)(nil),      // 8: aipay.common.v1.TradeSnapshot
+	(*v11.RefundReservation)(nil), // 9: aipay.ledger.v1.RefundReservation
+	(*v1.Money)(nil),              // 10: aipay.common.v1.Money
+	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
+	(*OrderSelector)(nil),         // 12: aipay.payment.v1.OrderSelector
 }
 var file_aipay_payment_v1_refund_service_proto_depIdxs = []int32{
-	7,  // 0: aipay.payment.v1.Refund.trade:type_name -> aipay.common.v1.TradeSnapshot
+	8,  // 0: aipay.payment.v1.Refund.trade:type_name -> aipay.common.v1.TradeSnapshot
 	0,  // 1: aipay.payment.v1.Refund.status:type_name -> aipay.payment.v1.RefundStatus
-	8,  // 2: aipay.payment.v1.Refund.reservation:type_name -> aipay.ledger.v1.RefundReservation
-	9,  // 3: aipay.payment.v1.Refund.fiat_amount:type_name -> aipay.common.v1.Money
-	10, // 4: aipay.payment.v1.Refund.created_at:type_name -> google.protobuf.Timestamp
-	10, // 5: aipay.payment.v1.Refund.updated_at:type_name -> google.protobuf.Timestamp
-	10, // 6: aipay.payment.v1.Refund.verified_at:type_name -> google.protobuf.Timestamp
-	11, // 7: aipay.payment.v1.CreateRefundRequest.order:type_name -> aipay.payment.v1.OrderSelector
-	9,  // 8: aipay.payment.v1.CreateRefundRequest.fiat_amount:type_name -> aipay.common.v1.Money
-	1,  // 9: aipay.payment.v1.CreateRefundResponse.refund:type_name -> aipay.payment.v1.Refund
-	2,  // 10: aipay.payment.v1.GetRefundRequest.selector:type_name -> aipay.payment.v1.RefundSelector
-	1,  // 11: aipay.payment.v1.GetRefundResponse.refund:type_name -> aipay.payment.v1.Refund
-	3,  // 12: aipay.payment.v1.RefundService.CreateRefund:input_type -> aipay.payment.v1.CreateRefundRequest
-	5,  // 13: aipay.payment.v1.RefundService.GetRefund:input_type -> aipay.payment.v1.GetRefundRequest
-	4,  // 14: aipay.payment.v1.RefundService.CreateRefund:output_type -> aipay.payment.v1.CreateRefundResponse
-	6,  // 15: aipay.payment.v1.RefundService.GetRefund:output_type -> aipay.payment.v1.GetRefundResponse
-	14, // [14:16] is the sub-list for method output_type
-	12, // [12:14] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	9,  // 2: aipay.payment.v1.Refund.reservation:type_name -> aipay.ledger.v1.RefundReservation
+	10, // 3: aipay.payment.v1.Refund.fiat_amount:type_name -> aipay.common.v1.Money
+	11, // 4: aipay.payment.v1.Refund.created_at:type_name -> google.protobuf.Timestamp
+	11, // 5: aipay.payment.v1.Refund.updated_at:type_name -> google.protobuf.Timestamp
+	11, // 6: aipay.payment.v1.Refund.verified_at:type_name -> google.protobuf.Timestamp
+	1,  // 7: aipay.payment.v1.Refund.origin:type_name -> aipay.payment.v1.RefundOrigin
+	11, // 8: aipay.payment.v1.Refund.seller_due_at:type_name -> google.protobuf.Timestamp
+	11, // 9: aipay.payment.v1.Refund.objection_deadline:type_name -> google.protobuf.Timestamp
+	11, // 10: aipay.payment.v1.Refund.seller_refunded_at:type_name -> google.protobuf.Timestamp
+	12, // 11: aipay.payment.v1.CreateRefundRequest.order:type_name -> aipay.payment.v1.OrderSelector
+	10, // 12: aipay.payment.v1.CreateRefundRequest.fiat_amount:type_name -> aipay.common.v1.Money
+	2,  // 13: aipay.payment.v1.CreateRefundResponse.refund:type_name -> aipay.payment.v1.Refund
+	3,  // 14: aipay.payment.v1.GetRefundRequest.selector:type_name -> aipay.payment.v1.RefundSelector
+	2,  // 15: aipay.payment.v1.GetRefundResponse.refund:type_name -> aipay.payment.v1.Refund
+	4,  // 16: aipay.payment.v1.RefundService.CreateRefund:input_type -> aipay.payment.v1.CreateRefundRequest
+	6,  // 17: aipay.payment.v1.RefundService.GetRefund:input_type -> aipay.payment.v1.GetRefundRequest
+	5,  // 18: aipay.payment.v1.RefundService.CreateRefund:output_type -> aipay.payment.v1.CreateRefundResponse
+	7,  // 19: aipay.payment.v1.RefundService.GetRefund:output_type -> aipay.payment.v1.GetRefundResponse
+	18, // [18:20] is the sub-list for method output_type
+	16, // [16:18] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_refund_service_proto_init() }
@@ -669,7 +788,7 @@ func file_aipay_payment_v1_refund_service_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_refund_service_proto_rawDesc), len(file_aipay_payment_v1_refund_service_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,

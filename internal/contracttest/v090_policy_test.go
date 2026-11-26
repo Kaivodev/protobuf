@@ -24,7 +24,7 @@ type v090PolicyGroup struct {
 
 func v090Groups() []v090PolicyGroup {
 	return []v090PolicyGroup{
-		{paymentv1.File_aipay_payment_v1_payment_admin_service_proto, "PaymentAdminService", 2, map[protoreflect.Name]string{
+		{paymentv1.File_aipay_payment_v1_payment_admin_service_proto, "PaymentAdminService", 5, map[protoreflect.Name]string{
 			"ListChannelAccounts": "payment.channel.read", "GetChannelAccount": "payment.channel.read",
 			"ListPaymentMethods": "payment.method.read", "GetPaymentMethod": "payment.method.read",
 			"ListRiskPolicies": "payment.risk.read", "GetRiskPolicy": "payment.risk.read",
@@ -38,7 +38,7 @@ func v090Groups() []v090PolicyGroup {
 			"ListApprovals": "payment.approval.read", "GetApproval": "payment.approval.read",
 			"EmergencyDisablePlugin": "payment.plugin.disable",
 		}},
-		{paymentv1.File_aipay_payment_v1_seller_portal_service_proto, "SellerPortalService", 1, map[protoreflect.Name]string{
+		{paymentv1.File_aipay_payment_v1_seller_portal_service_proto, "SellerPortalService", 5, map[protoreflect.Name]string{
 			"ListSellerChannels": "payment.channel.read", "GetSellerChannel": "payment.channel.read",
 			"ListSellerOrders": "payment.order.read", "GetSellerOrder": "payment.order.read",
 			"ListSellerRefunds": "payment.refund.read", "GetSellerRefund": "payment.refund.read",

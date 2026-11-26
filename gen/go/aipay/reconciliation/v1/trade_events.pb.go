@@ -525,7 +525,12 @@ func (x *TradeCancellationAuthorized) GetDisputeResolution() *DisputeResolution 
 
 // TradeRefundAuthorized, schema version 1 on reconciliation.matches.
 // Binds the exact logical refund occupation, original quote and verified
-// original-route fiat outcome. The same single-use/CAS/validity checks apply.
+// original-route fiat outcome. Under A139, reconciliation checks both original
+// WebAuthn assertions with its own approver registry, rebuilds the evidence and
+// approval digests, and matches the material to the signed fact and ledger hold.
+// On success it also enforces its minimum objection window and expiry of the
+// signed window. evidence_sha256 binds reconciliation's verification record.
+// The same single-use/CAS/validity checks apply.
 // SUCCEEDED: before release restore seller escrow Q; after release settle
 // recipient reserve N, reverse all three fees F and restore seller Q (A112).
 // Customer wallets must cover the increased liability; replenish from

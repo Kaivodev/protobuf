@@ -2,16 +2,17 @@ syntax = "proto3";
 
 package aipay.payment.v1;
 
+import "aipay/payment/v1/admin_approval.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
 
 // SignedEvent payloads on payment.account_notices. Producer payment, sole
 // receiver backend. event_type is the message name and schema_version is 1.
-// These merchant bot notifications are never payment or funds evidence.
+// These account bot notifications are never payment or funds evidence.
 // Funds services must not subscribe. Backend verifies the envelope and chain,
 // deduplicates by event_id, and records deliveries per (event_id, chat_id).
-// All payload fields are required. Timestamps are UTC with microsecond precision.
+// All fields are required unless specified. Timestamps are UTC with microsecond precision.
 
 // MerchantPaymentReceived v1 on payment.account_notices. Payment writes it with
 // OrderPaid v2 in one local transaction. Only backend receives this bot notice.
@@ -65,4 +66,59 @@ message PaymentAccessReviewed {
   // Required terminal result. Reject UNSPECIFIED and unknown values.
   PaymentAccessReviewResult result = 6;
   google.protobuf.Timestamp reviewed_at = 7;
+}
+
+enum SellerRefundNoticeKind {
+  SELLER_REFUND_NOTICE_KIND_UNSPECIFIED = 0;
+  SELLER_REFUND_NOTICE_KIND_PENDING = 1;
+  SELLER_REFUND_NOTICE_KIND_OVERDUE = 2;
+  SELLER_REFUND_NOTICE_KIND_CLOSED = 3;
+}
+
+// SellerRefundNotice v1 on payment.account_notices. Backend is the sole
+// receiver. Notify the seller account on each entry into AWAITING_SELLER
+// (including after rejection or objection), when overdue, or on closure.
+// Bot notice only, never funds evidence.
+message SellerRefundNotice {
+  string seller_account_id = 1;
+  SellerRefundSubject subject = 2;
+  string order_id = 3;
+  string trade_no = 4;
+  string channel_account_id = 5;
+  // Original positive fiat amount in minor units.
+  int64 fiat_amount = 6;
+  string fiat_currency = 7;
+  google.protobuf.Timestamp seller_due_at = 8;
+  SellerRefundNoticeKind kind = 9;
+  google.protobuf.Timestamp occurred_at = 10;
+}
+
+enum MerchantRefundNoticeKind {
+  MERCHANT_REFUND_NOTICE_KIND_UNSPECIFIED = 0;
+  // Platform- or dispute-initiated refund.
+  MERCHANT_REFUND_NOTICE_KIND_CREATED = 1;
+  MERCHANT_REFUND_NOTICE_KIND_CONFIRMING = 2;
+  MERCHANT_REFUND_NOTICE_KIND_SUCCEEDED = 3;
+  MERCHANT_REFUND_NOTICE_KIND_FAILED = 4;
+}
+
+// MerchantRefundNotice v1 on payment.account_notices. Backend is the sole
+// receiver. Notify the original recipient account. SUCCEEDED follows ledger
+// settlement. Bot notice only, never funds evidence. Excludes buyer details,
+// screenshots, upstream refund numbers, reasons and approver identities.
+message MerchantRefundNotice {
+  string account_id = 1;
+  string business_id = 2;
+  string application_id = 3;
+  string order_id = 4;
+  string trade_no = 5;
+  string out_trade_no = 6;
+  string out_refund_no = 7;
+  // Original positive fiat amount in minor units.
+  int64 fiat_amount = 8;
+  string fiat_currency = 9;
+  // Present exactly when kind is CONFIRMING.
+  google.protobuf.Timestamp objection_deadline = 10;
+  MerchantRefundNoticeKind kind = 11;
+  google.protobuf.Timestamp occurred_at = 12;
 }

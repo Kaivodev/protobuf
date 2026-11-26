@@ -2182,6 +2182,385 @@ func (x *GetPlatformRefundResponse) GetAsOf() *timestamppb.Timestamp {
 	return nil
 }
 
+type CreatePlatformRefundRequest struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey         string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	OrderId                string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	EscrowReservationId    string                 `protobuf:"bytes,3,opt,name=escrow_reservation_id,json=escrowReservationId,proto3" json:"escrow_reservation_id,omitempty"`
+	ExpectedControlVersion uint64                 `protobuf:"varint,4,opt,name=expected_control_version,json=expectedControlVersion,proto3" json:"expected_control_version,omitempty"`
+	// Required, 1-1000 characters.
+	Reason        string `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreatePlatformRefundRequest) Reset() {
+	*x = CreatePlatformRefundRequest{}
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreatePlatformRefundRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreatePlatformRefundRequest) ProtoMessage() {}
+
+func (x *CreatePlatformRefundRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreatePlatformRefundRequest.ProtoReflect.Descriptor instead.
+func (*CreatePlatformRefundRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *CreatePlatformRefundRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *CreatePlatformRefundRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *CreatePlatformRefundRequest) GetEscrowReservationId() string {
+	if x != nil {
+		return x.EscrowReservationId
+	}
+	return ""
+}
+
+func (x *CreatePlatformRefundRequest) GetExpectedControlVersion() uint64 {
+	if x != nil {
+		return x.ExpectedControlVersion
+	}
+	return 0
+}
+
+func (x *CreatePlatformRefundRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type CreatePlatformRefundResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Refund        *Refund                `protobuf:"bytes,1,opt,name=refund,proto3" json:"refund,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreatePlatformRefundResponse) Reset() {
+	*x = CreatePlatformRefundResponse{}
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreatePlatformRefundResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreatePlatformRefundResponse) ProtoMessage() {}
+
+func (x *CreatePlatformRefundResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreatePlatformRefundResponse.ProtoReflect.Descriptor instead.
+func (*CreatePlatformRefundResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *CreatePlatformRefundResponse) GetRefund() *Refund {
+	if x != nil {
+		return x.Refund
+	}
+	return nil
+}
+
+type ListLatePaymentsRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	AccountId       string                 `protobuf:"bytes,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	ApplicationId   string                 `protobuf:"bytes,2,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	SellerAccountId string                 `protobuf:"bytes,3,opt,name=seller_account_id,json=sellerAccountId,proto3" json:"seller_account_id,omitempty"`
+	OrderId         string                 `protobuf:"bytes,4,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	Status          *LatePaymentStatus     `protobuf:"varint,5,opt,name=status,proto3,enum=aipay.payment.v1.LatePaymentStatus,oneof" json:"status,omitempty"`
+	// Required 1-100; reject values outside the range, never clamp.
+	Limit uint32 `protobuf:"varint,6,opt,name=limit,proto3" json:"limit,omitempty"`
+	// Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+	PageToken     string `protobuf:"bytes,7,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	BusinessId    string `protobuf:"bytes,8,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListLatePaymentsRequest) Reset() {
+	*x = ListLatePaymentsRequest{}
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListLatePaymentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListLatePaymentsRequest) ProtoMessage() {}
+
+func (x *ListLatePaymentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListLatePaymentsRequest.ProtoReflect.Descriptor instead.
+func (*ListLatePaymentsRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *ListLatePaymentsRequest) GetAccountId() string {
+	if x != nil {
+		return x.AccountId
+	}
+	return ""
+}
+
+func (x *ListLatePaymentsRequest) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
+func (x *ListLatePaymentsRequest) GetSellerAccountId() string {
+	if x != nil {
+		return x.SellerAccountId
+	}
+	return ""
+}
+
+func (x *ListLatePaymentsRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *ListLatePaymentsRequest) GetStatus() LatePaymentStatus {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return LatePaymentStatus_LATE_PAYMENT_STATUS_UNSPECIFIED
+}
+
+func (x *ListLatePaymentsRequest) GetLimit() uint32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListLatePaymentsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+func (x *ListLatePaymentsRequest) GetBusinessId() string {
+	if x != nil {
+		return x.BusinessId
+	}
+	return ""
+}
+
+type ListLatePaymentsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LatePayments  []*LatePayment         `protobuf:"bytes,1,rep,name=late_payments,json=latePayments,proto3" json:"late_payments,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	AsOf          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListLatePaymentsResponse) Reset() {
+	*x = ListLatePaymentsResponse{}
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListLatePaymentsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListLatePaymentsResponse) ProtoMessage() {}
+
+func (x *ListLatePaymentsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListLatePaymentsResponse.ProtoReflect.Descriptor instead.
+func (*ListLatePaymentsResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *ListLatePaymentsResponse) GetLatePayments() []*LatePayment {
+	if x != nil {
+		return x.LatePayments
+	}
+	return nil
+}
+
+func (x *ListLatePaymentsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+func (x *ListLatePaymentsResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
+	}
+	return nil
+}
+
+type GetLatePaymentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LatePaymentId string                 `protobuf:"bytes,1,opt,name=late_payment_id,json=latePaymentId,proto3" json:"late_payment_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLatePaymentRequest) Reset() {
+	*x = GetLatePaymentRequest{}
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLatePaymentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLatePaymentRequest) ProtoMessage() {}
+
+func (x *GetLatePaymentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLatePaymentRequest.ProtoReflect.Descriptor instead.
+func (*GetLatePaymentRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *GetLatePaymentRequest) GetLatePaymentId() string {
+	if x != nil {
+		return x.LatePaymentId
+	}
+	return ""
+}
+
+type GetLatePaymentResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LatePayment   *LatePayment           `protobuf:"bytes,1,opt,name=late_payment,json=latePayment,proto3" json:"late_payment,omitempty"`
+	AsOf          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLatePaymentResponse) Reset() {
+	*x = GetLatePaymentResponse{}
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLatePaymentResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLatePaymentResponse) ProtoMessage() {}
+
+func (x *GetLatePaymentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLatePaymentResponse.ProtoReflect.Descriptor instead.
+func (*GetLatePaymentResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *GetLatePaymentResponse) GetLatePayment() *LatePayment {
+	if x != nil {
+		return x.LatePayment
+	}
+	return nil
+}
+
+func (x *GetLatePaymentResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
+	}
+	return nil
+}
+
 type ListPlatformDisputesRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	SellerAccountId string                 `protobuf:"bytes,1,opt,name=seller_account_id,json=sellerAccountId,proto3" json:"seller_account_id,omitempty"`
@@ -2198,7 +2577,7 @@ type ListPlatformDisputesRequest struct {
 
 func (x *ListPlatformDisputesRequest) Reset() {
 	*x = ListPlatformDisputesRequest{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[36]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2210,7 +2589,7 @@ func (x *ListPlatformDisputesRequest) String() string {
 func (*ListPlatformDisputesRequest) ProtoMessage() {}
 
 func (x *ListPlatformDisputesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[36]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2223,7 +2602,7 @@ func (x *ListPlatformDisputesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPlatformDisputesRequest.ProtoReflect.Descriptor instead.
 func (*ListPlatformDisputesRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{36}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *ListPlatformDisputesRequest) GetSellerAccountId() string {
@@ -2279,7 +2658,7 @@ type ListPlatformDisputesResponse struct {
 
 func (x *ListPlatformDisputesResponse) Reset() {
 	*x = ListPlatformDisputesResponse{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[37]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2291,7 +2670,7 @@ func (x *ListPlatformDisputesResponse) String() string {
 func (*ListPlatformDisputesResponse) ProtoMessage() {}
 
 func (x *ListPlatformDisputesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[37]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2304,7 +2683,7 @@ func (x *ListPlatformDisputesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPlatformDisputesResponse.ProtoReflect.Descriptor instead.
 func (*ListPlatformDisputesResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{37}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ListPlatformDisputesResponse) GetDisputes() []*PlatformDisputeView {
@@ -2337,7 +2716,7 @@ type GetPlatformDisputeRequest struct {
 
 func (x *GetPlatformDisputeRequest) Reset() {
 	*x = GetPlatformDisputeRequest{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[38]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2349,7 +2728,7 @@ func (x *GetPlatformDisputeRequest) String() string {
 func (*GetPlatformDisputeRequest) ProtoMessage() {}
 
 func (x *GetPlatformDisputeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[38]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2362,7 +2741,7 @@ func (x *GetPlatformDisputeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlatformDisputeRequest.ProtoReflect.Descriptor instead.
 func (*GetPlatformDisputeRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{38}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *GetPlatformDisputeRequest) GetDisputeId() string {
@@ -2382,7 +2761,7 @@ type GetPlatformDisputeResponse struct {
 
 func (x *GetPlatformDisputeResponse) Reset() {
 	*x = GetPlatformDisputeResponse{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[39]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2394,7 +2773,7 @@ func (x *GetPlatformDisputeResponse) String() string {
 func (*GetPlatformDisputeResponse) ProtoMessage() {}
 
 func (x *GetPlatformDisputeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[39]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2407,7 +2786,7 @@ func (x *GetPlatformDisputeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlatformDisputeResponse.ProtoReflect.Descriptor instead.
 func (*GetPlatformDisputeResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{39}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *GetPlatformDisputeResponse) GetDispute() *PlatformDisputeView {
@@ -2437,7 +2816,7 @@ type ListApprovalsRequest struct {
 
 func (x *ListApprovalsRequest) Reset() {
 	*x = ListApprovalsRequest{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[40]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2449,7 +2828,7 @@ func (x *ListApprovalsRequest) String() string {
 func (*ListApprovalsRequest) ProtoMessage() {}
 
 func (x *ListApprovalsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[40]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2462,7 +2841,7 @@ func (x *ListApprovalsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListApprovalsRequest.ProtoReflect.Descriptor instead.
 func (*ListApprovalsRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{40}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *ListApprovalsRequest) GetKind() string {
@@ -2497,7 +2876,7 @@ type ListApprovalsResponse struct {
 
 func (x *ListApprovalsResponse) Reset() {
 	*x = ListApprovalsResponse{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[41]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2509,7 +2888,7 @@ func (x *ListApprovalsResponse) String() string {
 func (*ListApprovalsResponse) ProtoMessage() {}
 
 func (x *ListApprovalsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[41]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2522,7 +2901,7 @@ func (x *ListApprovalsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListApprovalsResponse.ProtoReflect.Descriptor instead.
 func (*ListApprovalsResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{41}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *ListApprovalsResponse) GetApprovals() []*v1.ApprovalRequest {
@@ -2555,7 +2934,7 @@ type GetApprovalRequest struct {
 
 func (x *GetApprovalRequest) Reset() {
 	*x = GetApprovalRequest{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[42]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2567,7 +2946,7 @@ func (x *GetApprovalRequest) String() string {
 func (*GetApprovalRequest) ProtoMessage() {}
 
 func (x *GetApprovalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[42]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2580,7 +2959,7 @@ func (x *GetApprovalRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetApprovalRequest.ProtoReflect.Descriptor instead.
 func (*GetApprovalRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{42}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *GetApprovalRequest) GetApprovalRequestId() string {
@@ -2600,7 +2979,7 @@ type GetApprovalResponse struct {
 
 func (x *GetApprovalResponse) Reset() {
 	*x = GetApprovalResponse{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[43]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2612,7 +2991,7 @@ func (x *GetApprovalResponse) String() string {
 func (*GetApprovalResponse) ProtoMessage() {}
 
 func (x *GetApprovalResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[43]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2625,7 +3004,7 @@ func (x *GetApprovalResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetApprovalResponse.ProtoReflect.Descriptor instead.
 func (*GetApprovalResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{43}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *GetApprovalResponse) GetApproval() *PaymentApproval {
@@ -2663,7 +3042,7 @@ type ArchivedWork struct {
 
 func (x *ArchivedWork) Reset() {
 	*x = ArchivedWork{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[44]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2675,7 +3054,7 @@ func (x *ArchivedWork) String() string {
 func (*ArchivedWork) ProtoMessage() {}
 
 func (x *ArchivedWork) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[44]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2688,7 +3067,7 @@ func (x *ArchivedWork) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ArchivedWork.ProtoReflect.Descriptor instead.
 func (*ArchivedWork) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{44}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *ArchivedWork) GetKind() string {
@@ -2754,7 +3133,7 @@ type ListArchivedWorkRequest struct {
 
 func (x *ListArchivedWorkRequest) Reset() {
 	*x = ListArchivedWorkRequest{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[45]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2766,7 +3145,7 @@ func (x *ListArchivedWorkRequest) String() string {
 func (*ListArchivedWorkRequest) ProtoMessage() {}
 
 func (x *ListArchivedWorkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[45]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2779,7 +3158,7 @@ func (x *ListArchivedWorkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListArchivedWorkRequest.ProtoReflect.Descriptor instead.
 func (*ListArchivedWorkRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{45}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *ListArchivedWorkRequest) GetPageSize() uint32 {
@@ -2814,7 +3193,7 @@ type ListArchivedWorkResponse struct {
 
 func (x *ListArchivedWorkResponse) Reset() {
 	*x = ListArchivedWorkResponse{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[46]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2826,7 +3205,7 @@ func (x *ListArchivedWorkResponse) String() string {
 func (*ListArchivedWorkResponse) ProtoMessage() {}
 
 func (x *ListArchivedWorkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[46]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2839,7 +3218,7 @@ func (x *ListArchivedWorkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListArchivedWorkResponse.ProtoReflect.Descriptor instead.
 func (*ListArchivedWorkResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{46}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *ListArchivedWorkResponse) GetItems() []*ArchivedWork {
@@ -2874,7 +3253,7 @@ type RequeueArchivedWorkRequest struct {
 
 func (x *RequeueArchivedWorkRequest) Reset() {
 	*x = RequeueArchivedWorkRequest{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[47]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2886,7 +3265,7 @@ func (x *RequeueArchivedWorkRequest) String() string {
 func (*RequeueArchivedWorkRequest) ProtoMessage() {}
 
 func (x *RequeueArchivedWorkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[47]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2899,7 +3278,7 @@ func (x *RequeueArchivedWorkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequeueArchivedWorkRequest.ProtoReflect.Descriptor instead.
 func (*RequeueArchivedWorkRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{47}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *RequeueArchivedWorkRequest) GetIdempotencyKey() string {
@@ -2947,7 +3326,7 @@ type RequeueArchivedWorkResponse struct {
 
 func (x *RequeueArchivedWorkResponse) Reset() {
 	*x = RequeueArchivedWorkResponse{}
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[48]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2959,7 +3338,7 @@ func (x *RequeueArchivedWorkResponse) String() string {
 func (*RequeueArchivedWorkResponse) ProtoMessage() {}
 
 func (x *RequeueArchivedWorkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[48]
+	mi := &file_aipay_payment_v1_payment_admin_service_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2972,7 +3351,7 @@ func (x *RequeueArchivedWorkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequeueArchivedWorkResponse.ProtoReflect.Descriptor instead.
 func (*RequeueArchivedWorkResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{48}
+	return file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *RequeueArchivedWorkResponse) GetWork() *ArchivedWork {
@@ -2986,7 +3365,7 @@ var File_aipay_payment_v1_payment_admin_service_proto protoreflect.FileDescripto
 
 const file_aipay_payment_v1_payment_admin_service_proto_rawDesc = "" +
 	"\n" +
-	",aipay/payment/v1/payment_admin_service.proto\x12\x10aipay.payment.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/query.proto\x1a%aipay/payment/v1/admin_approval.proto\x1a6aipay/payment/v1/merchant_payment_access_service.proto\x1a$aipay/payment/v1/order_service.proto\x1a%aipay/payment/v1/plugin_control.proto\x1a#aipay/payment/v1/portal_views.proto\x1a%aipay/payment/v1/pricing_events.proto\x1a%aipay/payment/v1/refund_service.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xff\x01\n" +
+	",aipay/payment/v1/payment_admin_service.proto\x12\x10aipay.payment.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/query.proto\x1a%aipay/payment/v1/admin_approval.proto\x1a6aipay/payment/v1/merchant_payment_access_service.proto\x1a$aipay/payment/v1/order_service.proto\x1a%aipay/payment/v1/plugin_control.proto\x1a#aipay/payment/v1/portal_views.proto\x1a%aipay/payment/v1/pricing_events.proto\x1a%aipay/payment/v1/refund_service.proto\x1a$aipay/payment/v1/seller_refund.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xff\x01\n" +
 	"\x1aListChannelAccountsRequest\x12*\n" +
 	"\x11seller_account_id\x18\x01 \x01(\tR\x0fsellerAccountId\x12!\n" +
 	"\fchannel_code\x18\x02 \x01(\tR\vchannelCode\x12\x1a\n" +
@@ -3157,6 +3536,36 @@ const file_aipay_payment_v1_payment_admin_service_proto_rawDesc = "" +
 	"\trefund_id\x18\x01 \x01(\tR\brefundId\"~\n" +
 	"\x19GetPlatformRefundResponse\x120\n" +
 	"\x06refund\x18\x01 \x01(\v2\x18.aipay.payment.v1.RefundR\x06refund\x12/\n" +
+	"\x05as_of\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf\"\xe7\x01\n" +
+	"\x1bCreatePlatformRefundRequest\x12'\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12\x19\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x122\n" +
+	"\x15escrow_reservation_id\x18\x03 \x01(\tR\x13escrowReservationId\x128\n" +
+	"\x18expected_control_version\x18\x04 \x01(\x04R\x16expectedControlVersion\x12\x16\n" +
+	"\x06reason\x18\x05 \x01(\tR\x06reason\"P\n" +
+	"\x1cCreatePlatformRefundResponse\x120\n" +
+	"\x06refund\x18\x01 \x01(\v2\x18.aipay.payment.v1.RefundR\x06refund\"\xcf\x02\n" +
+	"\x17ListLatePaymentsRequest\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x01 \x01(\tR\taccountId\x12%\n" +
+	"\x0eapplication_id\x18\x02 \x01(\tR\rapplicationId\x12*\n" +
+	"\x11seller_account_id\x18\x03 \x01(\tR\x0fsellerAccountId\x12\x19\n" +
+	"\border_id\x18\x04 \x01(\tR\aorderId\x12@\n" +
+	"\x06status\x18\x05 \x01(\x0e2#.aipay.payment.v1.LatePaymentStatusH\x00R\x06status\x88\x01\x01\x12\x1a\n" +
+	"\x05limit\x18\x06 \x01(\rB\x04\xc8\xf3\x18dR\x05limit\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\a \x01(\tR\tpageToken\x12\x1f\n" +
+	"\vbusiness_id\x18\b \x01(\tR\n" +
+	"businessIdB\t\n" +
+	"\a_status\"\xb7\x01\n" +
+	"\x18ListLatePaymentsResponse\x12B\n" +
+	"\rlate_payments\x18\x01 \x03(\v2\x1d.aipay.payment.v1.LatePaymentR\flatePayments\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12/\n" +
+	"\x05as_of\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf\"?\n" +
+	"\x15GetLatePaymentRequest\x12&\n" +
+	"\x0flate_payment_id\x18\x01 \x01(\tR\rlatePaymentId\"\x8b\x01\n" +
+	"\x16GetLatePaymentResponse\x12@\n" +
+	"\flate_payment\x18\x01 \x01(\v2\x1d.aipay.payment.v1.LatePaymentR\vlatePayment\x12/\n" +
 	"\x05as_of\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf\"\x8b\x02\n" +
 	"\x1bListPlatformDisputesRequest\x12*\n" +
 	"\x11seller_account_id\x18\x01 \x01(\tR\x0fsellerAccountId\x12\x19\n" +
@@ -3218,7 +3627,7 @@ const file_aipay_payment_v1_payment_admin_service_proto_rawDesc = "" +
 	"\x10expected_version\x18\x04 \x01(\x04R\x0fexpectedVersion\x12\x16\n" +
 	"\x06reason\x18\x05 \x01(\tR\x06reason\"Q\n" +
 	"\x1bRequeueArchivedWorkResponse\x122\n" +
-	"\x04work\x18\x01 \x01(\v2\x1e.aipay.payment.v1.ArchivedWorkR\x04work2\xb7\x1d\n" +
+	"\x04work\x18\x01 \x01(\v2\x1e.aipay.payment.v1.ArchivedWorkR\x04work2\x80!\n" +
 	"\x13PaymentAdminService\x12\x9b\x01\n" +
 	"\x13ListChannelAccounts\x12,.aipay.payment.v1.ListChannelAccountsRequest\x1a-.aipay.payment.v1.ListChannelAccountsResponse\"'\xc2\xf3\x18#\n" +
 	"!\n" +
@@ -3273,6 +3682,15 @@ const file_aipay_payment_v1_payment_admin_service_proto_rawDesc = "" +
 	"\abackend\x10\x02\x1a\x13payment.refund.read\x12\x94\x01\n" +
 	"\x11GetPlatformRefund\x12*.aipay.payment.v1.GetPlatformRefundRequest\x1a+.aipay.payment.v1.GetPlatformRefundResponse\"&\xc2\xf3\x18\"\n" +
 	" \n" +
+	"\abackend\x10\x02\x1a\x13payment.refund.read\x12\xa4\x01\n" +
+	"\x14CreatePlatformRefund\x12-.aipay.payment.v1.CreatePlatformRefundRequest\x1a..aipay.payment.v1.CreatePlatformRefundResponse\"-\xc2\xf3\x18)\n" +
+	"'\n" +
+	"\abackend\x10\x03\x1a\x17payment.refund.initiate \xd8\x04\x12\x91\x01\n" +
+	"\x10ListLatePayments\x12).aipay.payment.v1.ListLatePaymentsRequest\x1a*.aipay.payment.v1.ListLatePaymentsResponse\"&\xc2\xf3\x18\"\n" +
+	" \n" +
+	"\abackend\x10\x02\x1a\x13payment.refund.read\x12\x8b\x01\n" +
+	"\x0eGetLatePayment\x12'.aipay.payment.v1.GetLatePaymentRequest\x1a(.aipay.payment.v1.GetLatePaymentResponse\"&\xc2\xf3\x18\"\n" +
+	" \n" +
 	"\abackend\x10\x02\x1a\x13payment.refund.read\x12\x9e\x01\n" +
 	"\x14ListPlatformDisputes\x12-.aipay.payment.v1.ListPlatformDisputesRequest\x1a..aipay.payment.v1.ListPlatformDisputesResponse\"'\xc2\xf3\x18#\n" +
 	"!\n" +
@@ -3308,7 +3726,7 @@ func file_aipay_payment_v1_payment_admin_service_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_payment_admin_service_proto_rawDescData
 }
 
-var file_aipay_payment_v1_payment_admin_service_proto_msgTypes = make([]protoimpl.MessageInfo, 49)
+var file_aipay_payment_v1_payment_admin_service_proto_msgTypes = make([]protoimpl.MessageInfo, 55)
 var file_aipay_payment_v1_payment_admin_service_proto_goTypes = []any{
 	(*ListChannelAccountsRequest)(nil),     // 0: aipay.payment.v1.ListChannelAccountsRequest
 	(*ListChannelAccountsResponse)(nil),    // 1: aipay.payment.v1.ListChannelAccountsResponse
@@ -3346,155 +3764,175 @@ var file_aipay_payment_v1_payment_admin_service_proto_goTypes = []any{
 	(*ListPlatformRefundsResponse)(nil),    // 33: aipay.payment.v1.ListPlatformRefundsResponse
 	(*GetPlatformRefundRequest)(nil),       // 34: aipay.payment.v1.GetPlatformRefundRequest
 	(*GetPlatformRefundResponse)(nil),      // 35: aipay.payment.v1.GetPlatformRefundResponse
-	(*ListPlatformDisputesRequest)(nil),    // 36: aipay.payment.v1.ListPlatformDisputesRequest
-	(*ListPlatformDisputesResponse)(nil),   // 37: aipay.payment.v1.ListPlatformDisputesResponse
-	(*GetPlatformDisputeRequest)(nil),      // 38: aipay.payment.v1.GetPlatformDisputeRequest
-	(*GetPlatformDisputeResponse)(nil),     // 39: aipay.payment.v1.GetPlatformDisputeResponse
-	(*ListApprovalsRequest)(nil),           // 40: aipay.payment.v1.ListApprovalsRequest
-	(*ListApprovalsResponse)(nil),          // 41: aipay.payment.v1.ListApprovalsResponse
-	(*GetApprovalRequest)(nil),             // 42: aipay.payment.v1.GetApprovalRequest
-	(*GetApprovalResponse)(nil),            // 43: aipay.payment.v1.GetApprovalResponse
-	(*ArchivedWork)(nil),                   // 44: aipay.payment.v1.ArchivedWork
-	(*ListArchivedWorkRequest)(nil),        // 45: aipay.payment.v1.ListArchivedWorkRequest
-	(*ListArchivedWorkResponse)(nil),       // 46: aipay.payment.v1.ListArchivedWorkResponse
-	(*RequeueArchivedWorkRequest)(nil),     // 47: aipay.payment.v1.RequeueArchivedWorkRequest
-	(*RequeueArchivedWorkResponse)(nil),    // 48: aipay.payment.v1.RequeueArchivedWorkResponse
-	(*ChannelAccountView)(nil),             // 49: aipay.payment.v1.ChannelAccountView
-	(*timestamppb.Timestamp)(nil),          // 50: google.protobuf.Timestamp
-	(ConfigurationStage)(0),                // 51: aipay.payment.v1.ConfigurationStage
-	(*PaymentMethodView)(nil),              // 52: aipay.payment.v1.PaymentMethodView
-	(*RiskPolicyView)(nil),                 // 53: aipay.payment.v1.RiskPolicyView
-	(PricingSide)(0),                       // 54: aipay.payment.v1.PricingSide
-	(*PricingDraftView)(nil),               // 55: aipay.payment.v1.PricingDraftView
-	(*PricingVersionView)(nil),             // 56: aipay.payment.v1.PricingVersionView
-	(v1.ApprovalStatus)(0),                 // 57: aipay.approval.v1.ApprovalStatus
-	(*PluginVersionView)(nil),              // 58: aipay.payment.v1.PluginVersionView
-	(*PaymentApproval)(nil),                // 59: aipay.payment.v1.PaymentApproval
-	(PaymentAccessReviewStatus)(0),         // 60: aipay.payment.v1.PaymentAccessReviewStatus
-	(*MerchantPaymentAccess)(nil),          // 61: aipay.payment.v1.MerchantPaymentAccess
-	(OrderStatus)(0),                       // 62: aipay.payment.v1.OrderStatus
-	(*Order)(nil),                          // 63: aipay.payment.v1.Order
-	(RefundStatus)(0),                      // 64: aipay.payment.v1.RefundStatus
-	(*Refund)(nil),                         // 65: aipay.payment.v1.Refund
-	(DisputeCaseStatus)(0),                 // 66: aipay.payment.v1.DisputeCaseStatus
-	(*PlatformDisputeView)(nil),            // 67: aipay.payment.v1.PlatformDisputeView
-	(*v1.ApprovalRequest)(nil),             // 68: aipay.approval.v1.ApprovalRequest
-	(*EmergencyDisablePluginRequest)(nil),  // 69: aipay.payment.v1.EmergencyDisablePluginRequest
-	(*EmergencyDisablePluginResponse)(nil), // 70: aipay.payment.v1.EmergencyDisablePluginResponse
+	(*CreatePlatformRefundRequest)(nil),    // 36: aipay.payment.v1.CreatePlatformRefundRequest
+	(*CreatePlatformRefundResponse)(nil),   // 37: aipay.payment.v1.CreatePlatformRefundResponse
+	(*ListLatePaymentsRequest)(nil),        // 38: aipay.payment.v1.ListLatePaymentsRequest
+	(*ListLatePaymentsResponse)(nil),       // 39: aipay.payment.v1.ListLatePaymentsResponse
+	(*GetLatePaymentRequest)(nil),          // 40: aipay.payment.v1.GetLatePaymentRequest
+	(*GetLatePaymentResponse)(nil),         // 41: aipay.payment.v1.GetLatePaymentResponse
+	(*ListPlatformDisputesRequest)(nil),    // 42: aipay.payment.v1.ListPlatformDisputesRequest
+	(*ListPlatformDisputesResponse)(nil),   // 43: aipay.payment.v1.ListPlatformDisputesResponse
+	(*GetPlatformDisputeRequest)(nil),      // 44: aipay.payment.v1.GetPlatformDisputeRequest
+	(*GetPlatformDisputeResponse)(nil),     // 45: aipay.payment.v1.GetPlatformDisputeResponse
+	(*ListApprovalsRequest)(nil),           // 46: aipay.payment.v1.ListApprovalsRequest
+	(*ListApprovalsResponse)(nil),          // 47: aipay.payment.v1.ListApprovalsResponse
+	(*GetApprovalRequest)(nil),             // 48: aipay.payment.v1.GetApprovalRequest
+	(*GetApprovalResponse)(nil),            // 49: aipay.payment.v1.GetApprovalResponse
+	(*ArchivedWork)(nil),                   // 50: aipay.payment.v1.ArchivedWork
+	(*ListArchivedWorkRequest)(nil),        // 51: aipay.payment.v1.ListArchivedWorkRequest
+	(*ListArchivedWorkResponse)(nil),       // 52: aipay.payment.v1.ListArchivedWorkResponse
+	(*RequeueArchivedWorkRequest)(nil),     // 53: aipay.payment.v1.RequeueArchivedWorkRequest
+	(*RequeueArchivedWorkResponse)(nil),    // 54: aipay.payment.v1.RequeueArchivedWorkResponse
+	(*ChannelAccountView)(nil),             // 55: aipay.payment.v1.ChannelAccountView
+	(*timestamppb.Timestamp)(nil),          // 56: google.protobuf.Timestamp
+	(ConfigurationStage)(0),                // 57: aipay.payment.v1.ConfigurationStage
+	(*PaymentMethodView)(nil),              // 58: aipay.payment.v1.PaymentMethodView
+	(*RiskPolicyView)(nil),                 // 59: aipay.payment.v1.RiskPolicyView
+	(PricingSide)(0),                       // 60: aipay.payment.v1.PricingSide
+	(*PricingDraftView)(nil),               // 61: aipay.payment.v1.PricingDraftView
+	(*PricingVersionView)(nil),             // 62: aipay.payment.v1.PricingVersionView
+	(v1.ApprovalStatus)(0),                 // 63: aipay.approval.v1.ApprovalStatus
+	(*PluginVersionView)(nil),              // 64: aipay.payment.v1.PluginVersionView
+	(*PaymentApproval)(nil),                // 65: aipay.payment.v1.PaymentApproval
+	(PaymentAccessReviewStatus)(0),         // 66: aipay.payment.v1.PaymentAccessReviewStatus
+	(*MerchantPaymentAccess)(nil),          // 67: aipay.payment.v1.MerchantPaymentAccess
+	(OrderStatus)(0),                       // 68: aipay.payment.v1.OrderStatus
+	(*Order)(nil),                          // 69: aipay.payment.v1.Order
+	(RefundStatus)(0),                      // 70: aipay.payment.v1.RefundStatus
+	(*Refund)(nil),                         // 71: aipay.payment.v1.Refund
+	(LatePaymentStatus)(0),                 // 72: aipay.payment.v1.LatePaymentStatus
+	(*LatePayment)(nil),                    // 73: aipay.payment.v1.LatePayment
+	(DisputeCaseStatus)(0),                 // 74: aipay.payment.v1.DisputeCaseStatus
+	(*PlatformDisputeView)(nil),            // 75: aipay.payment.v1.PlatformDisputeView
+	(*v1.ApprovalRequest)(nil),             // 76: aipay.approval.v1.ApprovalRequest
+	(*EmergencyDisablePluginRequest)(nil),  // 77: aipay.payment.v1.EmergencyDisablePluginRequest
+	(*EmergencyDisablePluginResponse)(nil), // 78: aipay.payment.v1.EmergencyDisablePluginResponse
 }
 var file_aipay_payment_v1_payment_admin_service_proto_depIdxs = []int32{
-	49, // 0: aipay.payment.v1.ListChannelAccountsResponse.accounts:type_name -> aipay.payment.v1.ChannelAccountView
-	50, // 1: aipay.payment.v1.ListChannelAccountsResponse.as_of:type_name -> google.protobuf.Timestamp
-	49, // 2: aipay.payment.v1.GetChannelAccountResponse.account:type_name -> aipay.payment.v1.ChannelAccountView
-	50, // 3: aipay.payment.v1.GetChannelAccountResponse.as_of:type_name -> google.protobuf.Timestamp
-	51, // 4: aipay.payment.v1.ListPaymentMethodsRequest.stage:type_name -> aipay.payment.v1.ConfigurationStage
-	52, // 5: aipay.payment.v1.ListPaymentMethodsResponse.methods:type_name -> aipay.payment.v1.PaymentMethodView
-	50, // 6: aipay.payment.v1.ListPaymentMethodsResponse.as_of:type_name -> google.protobuf.Timestamp
-	52, // 7: aipay.payment.v1.GetPaymentMethodResponse.method:type_name -> aipay.payment.v1.PaymentMethodView
-	50, // 8: aipay.payment.v1.GetPaymentMethodResponse.as_of:type_name -> google.protobuf.Timestamp
-	51, // 9: aipay.payment.v1.ListRiskPoliciesRequest.stage:type_name -> aipay.payment.v1.ConfigurationStage
-	53, // 10: aipay.payment.v1.ListRiskPoliciesResponse.policies:type_name -> aipay.payment.v1.RiskPolicyView
-	50, // 11: aipay.payment.v1.ListRiskPoliciesResponse.as_of:type_name -> google.protobuf.Timestamp
-	53, // 12: aipay.payment.v1.GetRiskPolicyResponse.policy:type_name -> aipay.payment.v1.RiskPolicyView
-	50, // 13: aipay.payment.v1.GetRiskPolicyResponse.as_of:type_name -> google.protobuf.Timestamp
-	54, // 14: aipay.payment.v1.ListPricingDraftsRequest.side:type_name -> aipay.payment.v1.PricingSide
-	55, // 15: aipay.payment.v1.ListPricingDraftsResponse.drafts:type_name -> aipay.payment.v1.PricingDraftView
-	50, // 16: aipay.payment.v1.ListPricingDraftsResponse.as_of:type_name -> google.protobuf.Timestamp
-	55, // 17: aipay.payment.v1.GetPricingDraftResponse.draft:type_name -> aipay.payment.v1.PricingDraftView
-	50, // 18: aipay.payment.v1.GetPricingDraftResponse.as_of:type_name -> google.protobuf.Timestamp
-	54, // 19: aipay.payment.v1.ListPricingVersionsRequest.side:type_name -> aipay.payment.v1.PricingSide
-	56, // 20: aipay.payment.v1.ListPricingVersionsResponse.versions:type_name -> aipay.payment.v1.PricingVersionView
-	50, // 21: aipay.payment.v1.ListPricingVersionsResponse.as_of:type_name -> google.protobuf.Timestamp
-	56, // 22: aipay.payment.v1.GetPricingVersionResponse.version:type_name -> aipay.payment.v1.PricingVersionView
-	50, // 23: aipay.payment.v1.GetPricingVersionResponse.as_of:type_name -> google.protobuf.Timestamp
-	57, // 24: aipay.payment.v1.ListPluginsRequest.publication_status:type_name -> aipay.approval.v1.ApprovalStatus
-	58, // 25: aipay.payment.v1.ListPluginsResponse.plugins:type_name -> aipay.payment.v1.PluginVersionView
-	50, // 26: aipay.payment.v1.ListPluginsResponse.as_of:type_name -> google.protobuf.Timestamp
-	58, // 27: aipay.payment.v1.GetPluginResponse.plugin:type_name -> aipay.payment.v1.PluginVersionView
-	50, // 28: aipay.payment.v1.GetPluginResponse.as_of:type_name -> google.protobuf.Timestamp
-	59, // 29: aipay.payment.v1.GetPluginResponse.publication:type_name -> aipay.payment.v1.PaymentApproval
-	60, // 30: aipay.payment.v1.ListPaymentAccessesRequest.review_status:type_name -> aipay.payment.v1.PaymentAccessReviewStatus
-	61, // 31: aipay.payment.v1.ListPaymentAccessesResponse.accesses:type_name -> aipay.payment.v1.MerchantPaymentAccess
-	50, // 32: aipay.payment.v1.ListPaymentAccessesResponse.as_of:type_name -> google.protobuf.Timestamp
-	61, // 33: aipay.payment.v1.GetPaymentAccessResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
-	50, // 34: aipay.payment.v1.GetPaymentAccessResponse.as_of:type_name -> google.protobuf.Timestamp
-	62, // 35: aipay.payment.v1.ListPlatformOrdersRequest.status:type_name -> aipay.payment.v1.OrderStatus
-	63, // 36: aipay.payment.v1.ListPlatformOrdersResponse.orders:type_name -> aipay.payment.v1.Order
-	50, // 37: aipay.payment.v1.ListPlatformOrdersResponse.as_of:type_name -> google.protobuf.Timestamp
-	63, // 38: aipay.payment.v1.GetPlatformOrderResponse.order:type_name -> aipay.payment.v1.Order
-	50, // 39: aipay.payment.v1.GetPlatformOrderResponse.as_of:type_name -> google.protobuf.Timestamp
-	64, // 40: aipay.payment.v1.ListPlatformRefundsRequest.status:type_name -> aipay.payment.v1.RefundStatus
-	65, // 41: aipay.payment.v1.ListPlatformRefundsResponse.refunds:type_name -> aipay.payment.v1.Refund
-	50, // 42: aipay.payment.v1.ListPlatformRefundsResponse.as_of:type_name -> google.protobuf.Timestamp
-	65, // 43: aipay.payment.v1.GetPlatformRefundResponse.refund:type_name -> aipay.payment.v1.Refund
-	50, // 44: aipay.payment.v1.GetPlatformRefundResponse.as_of:type_name -> google.protobuf.Timestamp
-	66, // 45: aipay.payment.v1.ListPlatformDisputesRequest.status:type_name -> aipay.payment.v1.DisputeCaseStatus
-	67, // 46: aipay.payment.v1.ListPlatformDisputesResponse.disputes:type_name -> aipay.payment.v1.PlatformDisputeView
-	50, // 47: aipay.payment.v1.ListPlatformDisputesResponse.as_of:type_name -> google.protobuf.Timestamp
-	67, // 48: aipay.payment.v1.GetPlatformDisputeResponse.dispute:type_name -> aipay.payment.v1.PlatformDisputeView
-	50, // 49: aipay.payment.v1.GetPlatformDisputeResponse.as_of:type_name -> google.protobuf.Timestamp
-	68, // 50: aipay.payment.v1.ListApprovalsResponse.approvals:type_name -> aipay.approval.v1.ApprovalRequest
-	50, // 51: aipay.payment.v1.ListApprovalsResponse.as_of:type_name -> google.protobuf.Timestamp
-	59, // 52: aipay.payment.v1.GetApprovalResponse.approval:type_name -> aipay.payment.v1.PaymentApproval
-	50, // 53: aipay.payment.v1.GetApprovalResponse.as_of:type_name -> google.protobuf.Timestamp
-	50, // 54: aipay.payment.v1.ArchivedWork.archived_at:type_name -> google.protobuf.Timestamp
-	44, // 55: aipay.payment.v1.ListArchivedWorkResponse.items:type_name -> aipay.payment.v1.ArchivedWork
-	44, // 56: aipay.payment.v1.RequeueArchivedWorkResponse.work:type_name -> aipay.payment.v1.ArchivedWork
-	0,  // 57: aipay.payment.v1.PaymentAdminService.ListChannelAccounts:input_type -> aipay.payment.v1.ListChannelAccountsRequest
-	2,  // 58: aipay.payment.v1.PaymentAdminService.GetChannelAccount:input_type -> aipay.payment.v1.GetChannelAccountRequest
-	4,  // 59: aipay.payment.v1.PaymentAdminService.ListPaymentMethods:input_type -> aipay.payment.v1.ListPaymentMethodsRequest
-	6,  // 60: aipay.payment.v1.PaymentAdminService.GetPaymentMethod:input_type -> aipay.payment.v1.GetPaymentMethodRequest
-	8,  // 61: aipay.payment.v1.PaymentAdminService.ListRiskPolicies:input_type -> aipay.payment.v1.ListRiskPoliciesRequest
-	10, // 62: aipay.payment.v1.PaymentAdminService.GetRiskPolicy:input_type -> aipay.payment.v1.GetRiskPolicyRequest
-	12, // 63: aipay.payment.v1.PaymentAdminService.ListPricingDrafts:input_type -> aipay.payment.v1.ListPricingDraftsRequest
-	14, // 64: aipay.payment.v1.PaymentAdminService.GetPricingDraft:input_type -> aipay.payment.v1.GetPricingDraftRequest
-	16, // 65: aipay.payment.v1.PaymentAdminService.ListPricingVersions:input_type -> aipay.payment.v1.ListPricingVersionsRequest
-	18, // 66: aipay.payment.v1.PaymentAdminService.GetPricingVersion:input_type -> aipay.payment.v1.GetPricingVersionRequest
-	20, // 67: aipay.payment.v1.PaymentAdminService.ListPlugins:input_type -> aipay.payment.v1.ListPluginsRequest
-	22, // 68: aipay.payment.v1.PaymentAdminService.GetPlugin:input_type -> aipay.payment.v1.GetPluginRequest
-	24, // 69: aipay.payment.v1.PaymentAdminService.ListPaymentAccesses:input_type -> aipay.payment.v1.ListPaymentAccessesRequest
-	26, // 70: aipay.payment.v1.PaymentAdminService.GetPaymentAccess:input_type -> aipay.payment.v1.GetPaymentAccessRequest
-	28, // 71: aipay.payment.v1.PaymentAdminService.ListPlatformOrders:input_type -> aipay.payment.v1.ListPlatformOrdersRequest
-	30, // 72: aipay.payment.v1.PaymentAdminService.GetPlatformOrder:input_type -> aipay.payment.v1.GetPlatformOrderRequest
-	32, // 73: aipay.payment.v1.PaymentAdminService.ListPlatformRefunds:input_type -> aipay.payment.v1.ListPlatformRefundsRequest
-	34, // 74: aipay.payment.v1.PaymentAdminService.GetPlatformRefund:input_type -> aipay.payment.v1.GetPlatformRefundRequest
-	36, // 75: aipay.payment.v1.PaymentAdminService.ListPlatformDisputes:input_type -> aipay.payment.v1.ListPlatformDisputesRequest
-	38, // 76: aipay.payment.v1.PaymentAdminService.GetPlatformDispute:input_type -> aipay.payment.v1.GetPlatformDisputeRequest
-	40, // 77: aipay.payment.v1.PaymentAdminService.ListApprovals:input_type -> aipay.payment.v1.ListApprovalsRequest
-	42, // 78: aipay.payment.v1.PaymentAdminService.GetApproval:input_type -> aipay.payment.v1.GetApprovalRequest
-	69, // 79: aipay.payment.v1.PaymentAdminService.EmergencyDisablePlugin:input_type -> aipay.payment.v1.EmergencyDisablePluginRequest
-	45, // 80: aipay.payment.v1.PaymentAdminService.ListArchivedWork:input_type -> aipay.payment.v1.ListArchivedWorkRequest
-	47, // 81: aipay.payment.v1.PaymentAdminService.RequeueArchivedWork:input_type -> aipay.payment.v1.RequeueArchivedWorkRequest
-	1,  // 82: aipay.payment.v1.PaymentAdminService.ListChannelAccounts:output_type -> aipay.payment.v1.ListChannelAccountsResponse
-	3,  // 83: aipay.payment.v1.PaymentAdminService.GetChannelAccount:output_type -> aipay.payment.v1.GetChannelAccountResponse
-	5,  // 84: aipay.payment.v1.PaymentAdminService.ListPaymentMethods:output_type -> aipay.payment.v1.ListPaymentMethodsResponse
-	7,  // 85: aipay.payment.v1.PaymentAdminService.GetPaymentMethod:output_type -> aipay.payment.v1.GetPaymentMethodResponse
-	9,  // 86: aipay.payment.v1.PaymentAdminService.ListRiskPolicies:output_type -> aipay.payment.v1.ListRiskPoliciesResponse
-	11, // 87: aipay.payment.v1.PaymentAdminService.GetRiskPolicy:output_type -> aipay.payment.v1.GetRiskPolicyResponse
-	13, // 88: aipay.payment.v1.PaymentAdminService.ListPricingDrafts:output_type -> aipay.payment.v1.ListPricingDraftsResponse
-	15, // 89: aipay.payment.v1.PaymentAdminService.GetPricingDraft:output_type -> aipay.payment.v1.GetPricingDraftResponse
-	17, // 90: aipay.payment.v1.PaymentAdminService.ListPricingVersions:output_type -> aipay.payment.v1.ListPricingVersionsResponse
-	19, // 91: aipay.payment.v1.PaymentAdminService.GetPricingVersion:output_type -> aipay.payment.v1.GetPricingVersionResponse
-	21, // 92: aipay.payment.v1.PaymentAdminService.ListPlugins:output_type -> aipay.payment.v1.ListPluginsResponse
-	23, // 93: aipay.payment.v1.PaymentAdminService.GetPlugin:output_type -> aipay.payment.v1.GetPluginResponse
-	25, // 94: aipay.payment.v1.PaymentAdminService.ListPaymentAccesses:output_type -> aipay.payment.v1.ListPaymentAccessesResponse
-	27, // 95: aipay.payment.v1.PaymentAdminService.GetPaymentAccess:output_type -> aipay.payment.v1.GetPaymentAccessResponse
-	29, // 96: aipay.payment.v1.PaymentAdminService.ListPlatformOrders:output_type -> aipay.payment.v1.ListPlatformOrdersResponse
-	31, // 97: aipay.payment.v1.PaymentAdminService.GetPlatformOrder:output_type -> aipay.payment.v1.GetPlatformOrderResponse
-	33, // 98: aipay.payment.v1.PaymentAdminService.ListPlatformRefunds:output_type -> aipay.payment.v1.ListPlatformRefundsResponse
-	35, // 99: aipay.payment.v1.PaymentAdminService.GetPlatformRefund:output_type -> aipay.payment.v1.GetPlatformRefundResponse
-	37, // 100: aipay.payment.v1.PaymentAdminService.ListPlatformDisputes:output_type -> aipay.payment.v1.ListPlatformDisputesResponse
-	39, // 101: aipay.payment.v1.PaymentAdminService.GetPlatformDispute:output_type -> aipay.payment.v1.GetPlatformDisputeResponse
-	41, // 102: aipay.payment.v1.PaymentAdminService.ListApprovals:output_type -> aipay.payment.v1.ListApprovalsResponse
-	43, // 103: aipay.payment.v1.PaymentAdminService.GetApproval:output_type -> aipay.payment.v1.GetApprovalResponse
-	70, // 104: aipay.payment.v1.PaymentAdminService.EmergencyDisablePlugin:output_type -> aipay.payment.v1.EmergencyDisablePluginResponse
-	46, // 105: aipay.payment.v1.PaymentAdminService.ListArchivedWork:output_type -> aipay.payment.v1.ListArchivedWorkResponse
-	48, // 106: aipay.payment.v1.PaymentAdminService.RequeueArchivedWork:output_type -> aipay.payment.v1.RequeueArchivedWorkResponse
-	82, // [82:107] is the sub-list for method output_type
-	57, // [57:82] is the sub-list for method input_type
-	57, // [57:57] is the sub-list for extension type_name
-	57, // [57:57] is the sub-list for extension extendee
-	0,  // [0:57] is the sub-list for field type_name
+	55, // 0: aipay.payment.v1.ListChannelAccountsResponse.accounts:type_name -> aipay.payment.v1.ChannelAccountView
+	56, // 1: aipay.payment.v1.ListChannelAccountsResponse.as_of:type_name -> google.protobuf.Timestamp
+	55, // 2: aipay.payment.v1.GetChannelAccountResponse.account:type_name -> aipay.payment.v1.ChannelAccountView
+	56, // 3: aipay.payment.v1.GetChannelAccountResponse.as_of:type_name -> google.protobuf.Timestamp
+	57, // 4: aipay.payment.v1.ListPaymentMethodsRequest.stage:type_name -> aipay.payment.v1.ConfigurationStage
+	58, // 5: aipay.payment.v1.ListPaymentMethodsResponse.methods:type_name -> aipay.payment.v1.PaymentMethodView
+	56, // 6: aipay.payment.v1.ListPaymentMethodsResponse.as_of:type_name -> google.protobuf.Timestamp
+	58, // 7: aipay.payment.v1.GetPaymentMethodResponse.method:type_name -> aipay.payment.v1.PaymentMethodView
+	56, // 8: aipay.payment.v1.GetPaymentMethodResponse.as_of:type_name -> google.protobuf.Timestamp
+	57, // 9: aipay.payment.v1.ListRiskPoliciesRequest.stage:type_name -> aipay.payment.v1.ConfigurationStage
+	59, // 10: aipay.payment.v1.ListRiskPoliciesResponse.policies:type_name -> aipay.payment.v1.RiskPolicyView
+	56, // 11: aipay.payment.v1.ListRiskPoliciesResponse.as_of:type_name -> google.protobuf.Timestamp
+	59, // 12: aipay.payment.v1.GetRiskPolicyResponse.policy:type_name -> aipay.payment.v1.RiskPolicyView
+	56, // 13: aipay.payment.v1.GetRiskPolicyResponse.as_of:type_name -> google.protobuf.Timestamp
+	60, // 14: aipay.payment.v1.ListPricingDraftsRequest.side:type_name -> aipay.payment.v1.PricingSide
+	61, // 15: aipay.payment.v1.ListPricingDraftsResponse.drafts:type_name -> aipay.payment.v1.PricingDraftView
+	56, // 16: aipay.payment.v1.ListPricingDraftsResponse.as_of:type_name -> google.protobuf.Timestamp
+	61, // 17: aipay.payment.v1.GetPricingDraftResponse.draft:type_name -> aipay.payment.v1.PricingDraftView
+	56, // 18: aipay.payment.v1.GetPricingDraftResponse.as_of:type_name -> google.protobuf.Timestamp
+	60, // 19: aipay.payment.v1.ListPricingVersionsRequest.side:type_name -> aipay.payment.v1.PricingSide
+	62, // 20: aipay.payment.v1.ListPricingVersionsResponse.versions:type_name -> aipay.payment.v1.PricingVersionView
+	56, // 21: aipay.payment.v1.ListPricingVersionsResponse.as_of:type_name -> google.protobuf.Timestamp
+	62, // 22: aipay.payment.v1.GetPricingVersionResponse.version:type_name -> aipay.payment.v1.PricingVersionView
+	56, // 23: aipay.payment.v1.GetPricingVersionResponse.as_of:type_name -> google.protobuf.Timestamp
+	63, // 24: aipay.payment.v1.ListPluginsRequest.publication_status:type_name -> aipay.approval.v1.ApprovalStatus
+	64, // 25: aipay.payment.v1.ListPluginsResponse.plugins:type_name -> aipay.payment.v1.PluginVersionView
+	56, // 26: aipay.payment.v1.ListPluginsResponse.as_of:type_name -> google.protobuf.Timestamp
+	64, // 27: aipay.payment.v1.GetPluginResponse.plugin:type_name -> aipay.payment.v1.PluginVersionView
+	56, // 28: aipay.payment.v1.GetPluginResponse.as_of:type_name -> google.protobuf.Timestamp
+	65, // 29: aipay.payment.v1.GetPluginResponse.publication:type_name -> aipay.payment.v1.PaymentApproval
+	66, // 30: aipay.payment.v1.ListPaymentAccessesRequest.review_status:type_name -> aipay.payment.v1.PaymentAccessReviewStatus
+	67, // 31: aipay.payment.v1.ListPaymentAccessesResponse.accesses:type_name -> aipay.payment.v1.MerchantPaymentAccess
+	56, // 32: aipay.payment.v1.ListPaymentAccessesResponse.as_of:type_name -> google.protobuf.Timestamp
+	67, // 33: aipay.payment.v1.GetPaymentAccessResponse.access:type_name -> aipay.payment.v1.MerchantPaymentAccess
+	56, // 34: aipay.payment.v1.GetPaymentAccessResponse.as_of:type_name -> google.protobuf.Timestamp
+	68, // 35: aipay.payment.v1.ListPlatformOrdersRequest.status:type_name -> aipay.payment.v1.OrderStatus
+	69, // 36: aipay.payment.v1.ListPlatformOrdersResponse.orders:type_name -> aipay.payment.v1.Order
+	56, // 37: aipay.payment.v1.ListPlatformOrdersResponse.as_of:type_name -> google.protobuf.Timestamp
+	69, // 38: aipay.payment.v1.GetPlatformOrderResponse.order:type_name -> aipay.payment.v1.Order
+	56, // 39: aipay.payment.v1.GetPlatformOrderResponse.as_of:type_name -> google.protobuf.Timestamp
+	70, // 40: aipay.payment.v1.ListPlatformRefundsRequest.status:type_name -> aipay.payment.v1.RefundStatus
+	71, // 41: aipay.payment.v1.ListPlatformRefundsResponse.refunds:type_name -> aipay.payment.v1.Refund
+	56, // 42: aipay.payment.v1.ListPlatformRefundsResponse.as_of:type_name -> google.protobuf.Timestamp
+	71, // 43: aipay.payment.v1.GetPlatformRefundResponse.refund:type_name -> aipay.payment.v1.Refund
+	56, // 44: aipay.payment.v1.GetPlatformRefundResponse.as_of:type_name -> google.protobuf.Timestamp
+	71, // 45: aipay.payment.v1.CreatePlatformRefundResponse.refund:type_name -> aipay.payment.v1.Refund
+	72, // 46: aipay.payment.v1.ListLatePaymentsRequest.status:type_name -> aipay.payment.v1.LatePaymentStatus
+	73, // 47: aipay.payment.v1.ListLatePaymentsResponse.late_payments:type_name -> aipay.payment.v1.LatePayment
+	56, // 48: aipay.payment.v1.ListLatePaymentsResponse.as_of:type_name -> google.protobuf.Timestamp
+	73, // 49: aipay.payment.v1.GetLatePaymentResponse.late_payment:type_name -> aipay.payment.v1.LatePayment
+	56, // 50: aipay.payment.v1.GetLatePaymentResponse.as_of:type_name -> google.protobuf.Timestamp
+	74, // 51: aipay.payment.v1.ListPlatformDisputesRequest.status:type_name -> aipay.payment.v1.DisputeCaseStatus
+	75, // 52: aipay.payment.v1.ListPlatformDisputesResponse.disputes:type_name -> aipay.payment.v1.PlatformDisputeView
+	56, // 53: aipay.payment.v1.ListPlatformDisputesResponse.as_of:type_name -> google.protobuf.Timestamp
+	75, // 54: aipay.payment.v1.GetPlatformDisputeResponse.dispute:type_name -> aipay.payment.v1.PlatformDisputeView
+	56, // 55: aipay.payment.v1.GetPlatformDisputeResponse.as_of:type_name -> google.protobuf.Timestamp
+	76, // 56: aipay.payment.v1.ListApprovalsResponse.approvals:type_name -> aipay.approval.v1.ApprovalRequest
+	56, // 57: aipay.payment.v1.ListApprovalsResponse.as_of:type_name -> google.protobuf.Timestamp
+	65, // 58: aipay.payment.v1.GetApprovalResponse.approval:type_name -> aipay.payment.v1.PaymentApproval
+	56, // 59: aipay.payment.v1.GetApprovalResponse.as_of:type_name -> google.protobuf.Timestamp
+	56, // 60: aipay.payment.v1.ArchivedWork.archived_at:type_name -> google.protobuf.Timestamp
+	50, // 61: aipay.payment.v1.ListArchivedWorkResponse.items:type_name -> aipay.payment.v1.ArchivedWork
+	50, // 62: aipay.payment.v1.RequeueArchivedWorkResponse.work:type_name -> aipay.payment.v1.ArchivedWork
+	0,  // 63: aipay.payment.v1.PaymentAdminService.ListChannelAccounts:input_type -> aipay.payment.v1.ListChannelAccountsRequest
+	2,  // 64: aipay.payment.v1.PaymentAdminService.GetChannelAccount:input_type -> aipay.payment.v1.GetChannelAccountRequest
+	4,  // 65: aipay.payment.v1.PaymentAdminService.ListPaymentMethods:input_type -> aipay.payment.v1.ListPaymentMethodsRequest
+	6,  // 66: aipay.payment.v1.PaymentAdminService.GetPaymentMethod:input_type -> aipay.payment.v1.GetPaymentMethodRequest
+	8,  // 67: aipay.payment.v1.PaymentAdminService.ListRiskPolicies:input_type -> aipay.payment.v1.ListRiskPoliciesRequest
+	10, // 68: aipay.payment.v1.PaymentAdminService.GetRiskPolicy:input_type -> aipay.payment.v1.GetRiskPolicyRequest
+	12, // 69: aipay.payment.v1.PaymentAdminService.ListPricingDrafts:input_type -> aipay.payment.v1.ListPricingDraftsRequest
+	14, // 70: aipay.payment.v1.PaymentAdminService.GetPricingDraft:input_type -> aipay.payment.v1.GetPricingDraftRequest
+	16, // 71: aipay.payment.v1.PaymentAdminService.ListPricingVersions:input_type -> aipay.payment.v1.ListPricingVersionsRequest
+	18, // 72: aipay.payment.v1.PaymentAdminService.GetPricingVersion:input_type -> aipay.payment.v1.GetPricingVersionRequest
+	20, // 73: aipay.payment.v1.PaymentAdminService.ListPlugins:input_type -> aipay.payment.v1.ListPluginsRequest
+	22, // 74: aipay.payment.v1.PaymentAdminService.GetPlugin:input_type -> aipay.payment.v1.GetPluginRequest
+	24, // 75: aipay.payment.v1.PaymentAdminService.ListPaymentAccesses:input_type -> aipay.payment.v1.ListPaymentAccessesRequest
+	26, // 76: aipay.payment.v1.PaymentAdminService.GetPaymentAccess:input_type -> aipay.payment.v1.GetPaymentAccessRequest
+	28, // 77: aipay.payment.v1.PaymentAdminService.ListPlatformOrders:input_type -> aipay.payment.v1.ListPlatformOrdersRequest
+	30, // 78: aipay.payment.v1.PaymentAdminService.GetPlatformOrder:input_type -> aipay.payment.v1.GetPlatformOrderRequest
+	32, // 79: aipay.payment.v1.PaymentAdminService.ListPlatformRefunds:input_type -> aipay.payment.v1.ListPlatformRefundsRequest
+	34, // 80: aipay.payment.v1.PaymentAdminService.GetPlatformRefund:input_type -> aipay.payment.v1.GetPlatformRefundRequest
+	36, // 81: aipay.payment.v1.PaymentAdminService.CreatePlatformRefund:input_type -> aipay.payment.v1.CreatePlatformRefundRequest
+	38, // 82: aipay.payment.v1.PaymentAdminService.ListLatePayments:input_type -> aipay.payment.v1.ListLatePaymentsRequest
+	40, // 83: aipay.payment.v1.PaymentAdminService.GetLatePayment:input_type -> aipay.payment.v1.GetLatePaymentRequest
+	42, // 84: aipay.payment.v1.PaymentAdminService.ListPlatformDisputes:input_type -> aipay.payment.v1.ListPlatformDisputesRequest
+	44, // 85: aipay.payment.v1.PaymentAdminService.GetPlatformDispute:input_type -> aipay.payment.v1.GetPlatformDisputeRequest
+	46, // 86: aipay.payment.v1.PaymentAdminService.ListApprovals:input_type -> aipay.payment.v1.ListApprovalsRequest
+	48, // 87: aipay.payment.v1.PaymentAdminService.GetApproval:input_type -> aipay.payment.v1.GetApprovalRequest
+	77, // 88: aipay.payment.v1.PaymentAdminService.EmergencyDisablePlugin:input_type -> aipay.payment.v1.EmergencyDisablePluginRequest
+	51, // 89: aipay.payment.v1.PaymentAdminService.ListArchivedWork:input_type -> aipay.payment.v1.ListArchivedWorkRequest
+	53, // 90: aipay.payment.v1.PaymentAdminService.RequeueArchivedWork:input_type -> aipay.payment.v1.RequeueArchivedWorkRequest
+	1,  // 91: aipay.payment.v1.PaymentAdminService.ListChannelAccounts:output_type -> aipay.payment.v1.ListChannelAccountsResponse
+	3,  // 92: aipay.payment.v1.PaymentAdminService.GetChannelAccount:output_type -> aipay.payment.v1.GetChannelAccountResponse
+	5,  // 93: aipay.payment.v1.PaymentAdminService.ListPaymentMethods:output_type -> aipay.payment.v1.ListPaymentMethodsResponse
+	7,  // 94: aipay.payment.v1.PaymentAdminService.GetPaymentMethod:output_type -> aipay.payment.v1.GetPaymentMethodResponse
+	9,  // 95: aipay.payment.v1.PaymentAdminService.ListRiskPolicies:output_type -> aipay.payment.v1.ListRiskPoliciesResponse
+	11, // 96: aipay.payment.v1.PaymentAdminService.GetRiskPolicy:output_type -> aipay.payment.v1.GetRiskPolicyResponse
+	13, // 97: aipay.payment.v1.PaymentAdminService.ListPricingDrafts:output_type -> aipay.payment.v1.ListPricingDraftsResponse
+	15, // 98: aipay.payment.v1.PaymentAdminService.GetPricingDraft:output_type -> aipay.payment.v1.GetPricingDraftResponse
+	17, // 99: aipay.payment.v1.PaymentAdminService.ListPricingVersions:output_type -> aipay.payment.v1.ListPricingVersionsResponse
+	19, // 100: aipay.payment.v1.PaymentAdminService.GetPricingVersion:output_type -> aipay.payment.v1.GetPricingVersionResponse
+	21, // 101: aipay.payment.v1.PaymentAdminService.ListPlugins:output_type -> aipay.payment.v1.ListPluginsResponse
+	23, // 102: aipay.payment.v1.PaymentAdminService.GetPlugin:output_type -> aipay.payment.v1.GetPluginResponse
+	25, // 103: aipay.payment.v1.PaymentAdminService.ListPaymentAccesses:output_type -> aipay.payment.v1.ListPaymentAccessesResponse
+	27, // 104: aipay.payment.v1.PaymentAdminService.GetPaymentAccess:output_type -> aipay.payment.v1.GetPaymentAccessResponse
+	29, // 105: aipay.payment.v1.PaymentAdminService.ListPlatformOrders:output_type -> aipay.payment.v1.ListPlatformOrdersResponse
+	31, // 106: aipay.payment.v1.PaymentAdminService.GetPlatformOrder:output_type -> aipay.payment.v1.GetPlatformOrderResponse
+	33, // 107: aipay.payment.v1.PaymentAdminService.ListPlatformRefunds:output_type -> aipay.payment.v1.ListPlatformRefundsResponse
+	35, // 108: aipay.payment.v1.PaymentAdminService.GetPlatformRefund:output_type -> aipay.payment.v1.GetPlatformRefundResponse
+	37, // 109: aipay.payment.v1.PaymentAdminService.CreatePlatformRefund:output_type -> aipay.payment.v1.CreatePlatformRefundResponse
+	39, // 110: aipay.payment.v1.PaymentAdminService.ListLatePayments:output_type -> aipay.payment.v1.ListLatePaymentsResponse
+	41, // 111: aipay.payment.v1.PaymentAdminService.GetLatePayment:output_type -> aipay.payment.v1.GetLatePaymentResponse
+	43, // 112: aipay.payment.v1.PaymentAdminService.ListPlatformDisputes:output_type -> aipay.payment.v1.ListPlatformDisputesResponse
+	45, // 113: aipay.payment.v1.PaymentAdminService.GetPlatformDispute:output_type -> aipay.payment.v1.GetPlatformDisputeResponse
+	47, // 114: aipay.payment.v1.PaymentAdminService.ListApprovals:output_type -> aipay.payment.v1.ListApprovalsResponse
+	49, // 115: aipay.payment.v1.PaymentAdminService.GetApproval:output_type -> aipay.payment.v1.GetApprovalResponse
+	78, // 116: aipay.payment.v1.PaymentAdminService.EmergencyDisablePlugin:output_type -> aipay.payment.v1.EmergencyDisablePluginResponse
+	52, // 117: aipay.payment.v1.PaymentAdminService.ListArchivedWork:output_type -> aipay.payment.v1.ListArchivedWorkResponse
+	54, // 118: aipay.payment.v1.PaymentAdminService.RequeueArchivedWork:output_type -> aipay.payment.v1.RequeueArchivedWorkResponse
+	91, // [91:119] is the sub-list for method output_type
+	63, // [63:91] is the sub-list for method input_type
+	63, // [63:63] is the sub-list for extension type_name
+	63, // [63:63] is the sub-list for extension extendee
+	0,  // [0:63] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_payment_admin_service_proto_init() }
@@ -3509,6 +3947,7 @@ func file_aipay_payment_v1_payment_admin_service_proto_init() {
 	file_aipay_payment_v1_portal_views_proto_init()
 	file_aipay_payment_v1_pricing_events_proto_init()
 	file_aipay_payment_v1_refund_service_proto_init()
+	file_aipay_payment_v1_seller_refund_proto_init()
 	file_aipay_payment_v1_payment_admin_service_proto_msgTypes[0].OneofWrappers = []any{}
 	file_aipay_payment_v1_payment_admin_service_proto_msgTypes[4].OneofWrappers = []any{}
 	file_aipay_payment_v1_payment_admin_service_proto_msgTypes[8].OneofWrappers = []any{}
@@ -3518,15 +3957,16 @@ func file_aipay_payment_v1_payment_admin_service_proto_init() {
 	file_aipay_payment_v1_payment_admin_service_proto_msgTypes[24].OneofWrappers = []any{}
 	file_aipay_payment_v1_payment_admin_service_proto_msgTypes[28].OneofWrappers = []any{}
 	file_aipay_payment_v1_payment_admin_service_proto_msgTypes[32].OneofWrappers = []any{}
-	file_aipay_payment_v1_payment_admin_service_proto_msgTypes[36].OneofWrappers = []any{}
-	file_aipay_payment_v1_payment_admin_service_proto_msgTypes[45].OneofWrappers = []any{}
+	file_aipay_payment_v1_payment_admin_service_proto_msgTypes[38].OneofWrappers = []any{}
+	file_aipay_payment_v1_payment_admin_service_proto_msgTypes[42].OneofWrappers = []any{}
+	file_aipay_payment_v1_payment_admin_service_proto_msgTypes[51].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_payment_admin_service_proto_rawDesc), len(file_aipay_payment_v1_payment_admin_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   49,
+			NumMessages:   55,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

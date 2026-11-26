@@ -14,12 +14,16 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	collectionv1 "github.com/Kaivodev/protobuf/gen/go/aipay/collection/v1"
+	ledgerv1 "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1"
 	paymentv1 "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1"
 	"github.com/Kaivodev/protobuf/testvectors"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // This file re-derives every vector so the published data stays consistent.
@@ -186,7 +190,7 @@ func TestPaymentWebCommandV1(t *testing.T) {
 	if doc.Spec != "aipay.web.command.v1" {
 		t.Fatal("unexpected command domain")
 	}
-	var online, offline, requeue bool
+	var online, offline, requeue, submitEvidence, createRefund bool
 	for _, v := range doc.Vectors {
 		t.Run(v.Name, func(t *testing.T) {
 			var w writer
@@ -224,6 +228,23 @@ func TestPaymentWebCommandV1(t *testing.T) {
 				w.u64(req.ExpectedVersion)
 				w.str(req.Reason)
 				requeue = true
+			case paymentv1.SellerPortalService_SubmitSellerRefundEvidence_FullMethodName:
+				var req paymentv1.SubmitSellerRefundEvidenceRequest
+				if err := protojson.Unmarshal(v.Request, &req); err != nil {
+					t.Fatal(err)
+				}
+				if req.Note == nil || len(req.Files) == 0 {
+					t.Fatal("expected a note and a JPEG upload")
+				}
+				w.canonicalMessage(t, req.ProtoReflect())
+				submitEvidence = true
+			case paymentv1.PaymentAdminService_CreatePlatformRefund_FullMethodName:
+				var req paymentv1.CreatePlatformRefundRequest
+				if err := protojson.Unmarshal(v.Request, &req); err != nil {
+					t.Fatal(err)
+				}
+				w.canonicalMessage(t, req.ProtoReflect())
+				createRefund = true
 			default:
 				t.Fatalf("unreviewed payment command %q", v.Method)
 			}
@@ -232,8 +253,174 @@ func TestPaymentWebCommandV1(t *testing.T) {
 			}
 		})
 	}
-	if !online || !offline || !requeue {
-		t.Fatal("expected both explicit online values and an archived work requeue")
+	if !online || !offline || !requeue || !submitEvidence || !createRefund {
+		t.Fatal("missing payment web command fixture")
+	}
+}
+
+// Encode these fixtures from their generated descriptors, independently of
+// the field-by-field encoder used to produce the reference bytes.
+func (w *writer) canonicalMessage(t *testing.T, m protoreflect.Message) {
+	t.Helper()
+	if ts, ok := m.Interface().(*timestamppb.Timestamp); ok {
+		instant := ts.AsTime()
+		nanos := instant.UnixNano()
+		if ts.CheckValid() != nil || ts.Nanos%1000 != 0 || !instant.Equal(time.Unix(0, nanos)) {
+			t.Fatal("timestamp must fit whole microseconds in signed Unix nanoseconds")
+		}
+		w.u64(uint64(nanos))
+		return
+	}
+	fields := m.Descriptor().Fields()
+	// Every message used by these fixtures has consecutive field numbers.
+	for n := 1; n <= fields.Len(); n++ {
+		f := fields.ByNumber(protoreflect.FieldNumber(n))
+		if f == nil {
+			t.Fatalf("unexpected field numbering on %s", m.Descriptor().FullName())
+		}
+		if oneof := f.ContainingOneof(); oneof != nil && !oneof.IsSynthetic() {
+			selected := m.WhichOneof(oneof)
+			if selected == nil {
+				t.Fatalf("missing selection for %s", oneof.FullName())
+			}
+			if f != selected {
+				continue
+			}
+			w.u32(uint32(f.Number()))
+		}
+		if f.HasOptionalKeyword() {
+			if !m.Has(f) {
+				w.raw(0)
+				continue
+			}
+			w.raw(1)
+		}
+		if f.IsList() {
+			items := m.Get(f).List()
+			w.u32(uint32(items.Len()))
+			for i := 0; i < items.Len(); i++ {
+				w.canonicalValue(t, f, items.Get(i))
+			}
+		} else {
+			if f.Message() != nil && !m.Has(f) {
+				t.Fatalf("missing required %s", f.FullName())
+			}
+			w.canonicalValue(t, f, m.Get(f))
+		}
+	}
+}
+
+func (w *writer) canonicalValue(t *testing.T, f protoreflect.FieldDescriptor, v protoreflect.Value) {
+	t.Helper()
+	switch f.Kind() {
+	case protoreflect.StringKind:
+		w.str(v.String())
+	case protoreflect.BytesKind:
+		w.bytes(v.Bytes())
+	case protoreflect.Int64Kind:
+		w.u64(uint64(v.Int()))
+	case protoreflect.Uint64Kind:
+		w.u64(v.Uint())
+	case protoreflect.Uint32Kind:
+		w.u32(uint32(v.Uint()))
+	case protoreflect.Int32Kind:
+		w.u32(uint32(v.Int()))
+	case protoreflect.EnumKind:
+		w.u32(uint32(v.Enum()))
+	case protoreflect.MessageKind:
+		w.canonicalMessage(t, v.Message())
+	default:
+		t.Fatalf("unexpected kind %v on %s", f.Kind(), f.FullName())
+	}
+}
+
+func TestPaymentSellerRefundV1(t *testing.T) {
+	var doc struct {
+		Description string
+		Evidence    []struct {
+			Name, Encoding string
+			Material       json.RawMessage
+			Digest         string `json:"evidence_sha256"`
+		} `json:"evidence_vectors"`
+		Approvals []struct {
+			Name         string
+			Material     json.RawMessage
+			RequestBytes string `json:"request_bytes"`
+			Digest       string `json:"request_digest"`
+		} `json:"approval_vectors"`
+	}
+	decodeJSON(t, testvectors.PaymentSellerRefundV1(), &doc)
+	type evidenceRecord struct {
+		material *paymentv1.SellerRefundEvidenceMaterial
+		digest   []byte
+	}
+	records := map[string]evidenceRecord{}
+	var threeWithNote, lateWithoutNote bool
+	for _, v := range doc.Evidence {
+		t.Run(v.Name, func(t *testing.T) {
+			var m paymentv1.SellerRefundEvidenceMaterial
+			if err := protojson.Unmarshal(v.Material, &m); err != nil {
+				t.Fatal(err)
+			}
+			var w writer
+			w.str("aipay.payment.seller_refund_evidence.v1")
+			w.canonicalMessage(t, m.ProtoReflect())
+			digest := sum(w.b)
+			if !equalHex(w.b, v.Encoding) || !equalHex(digest, v.Digest) {
+				t.Fatal("evidence bytes or digest differ from fixture")
+			}
+			records[m.EvidenceId] = evidenceRecord{&m, digest}
+			threeWithNote = threeWithNote || m.Note != nil && len(m.Files) == 3
+			lateWithoutNote = lateWithoutNote || m.Note == nil && m.Subject.GetLatePaymentId() != ""
+		})
+	}
+	var postRelease, lateReview, failureWithEvidence, failureWithoutEvidence bool
+	for _, v := range doc.Approvals {
+		t.Run(v.Name, func(t *testing.T) {
+			var m paymentv1.PaymentApprovalMaterial
+			if err := protojson.Unmarshal(v.Material, &m); err != nil {
+				t.Fatal(err)
+			}
+			var w writer
+			w.str("aipay.payment.admin.v1")
+			w.canonicalMessage(t, m.ProtoReflect())
+			if !equalHex(w.b, v.RequestBytes) || !equalHex(sum([]byte("AIPAY-APPROVAL-V1"), w.b), v.Digest) {
+				t.Fatal("approval request bytes or digest differ from fixture")
+			}
+			switch m.Kind {
+			case "seller_refund":
+				review := m.GetSellerRefund()
+				record, ok := records[review.GetEvidenceId()]
+				if !ok || !bytes.Equal(record.digest, review.EvidenceSha256) ||
+					!proto.Equal(record.material.Subject, review.Subject) || record.material.Version != review.EvidenceVersion ||
+					record.material.SubmittedBy != m.RequestedBy || record.material.UpstreamRefundNo != review.UpstreamRefundNo ||
+					!proto.Equal(record.material.RefundedAt, review.RefundedAt) || !proto.Equal(record.material.RefundedAmount, review.RefundedAmount) {
+					t.Fatal("review does not bind its evidence fixture")
+				}
+				postRelease = postRelease || review.Subject.GetRefundId() != "" && review.GetBranch() == ledgerv1.RefundReservationBranch_REFUND_RESERVATION_BRANCH_POST_RELEASE
+				lateReview = lateReview || review.Subject.GetLatePaymentId() != "" && review.RefundReservationId == nil &&
+					review.Branch == nil && review.ReservationControlVersion == nil && review.OutRefundNo == nil && review.ObjectionWindowSeconds == 0
+			case "seller_refund_failure":
+				failure := m.GetSellerRefundFailure()
+				if failure == nil || (failure.EvidenceId == nil) != (failure.EvidenceSha256 == nil) {
+					t.Fatal("incomplete failure material")
+				}
+				if failure.EvidenceId == nil {
+					failureWithoutEvidence = true
+				} else {
+					record, ok := records[failure.GetEvidenceId()]
+					if !ok || !bytes.Equal(record.digest, failure.EvidenceSha256) || !proto.Equal(record.material.Subject, failure.Subject) {
+						t.Fatal("failure does not bind its evidence fixture")
+					}
+					failureWithEvidence = true
+				}
+			default:
+				t.Fatalf("unknown approval kind %q", m.Kind)
+			}
+		})
+	}
+	if !threeWithNote || !lateWithoutNote || !postRelease || !lateReview || !failureWithEvidence || !failureWithoutEvidence {
+		t.Fatal("missing evidence or approval fixture")
 	}
 }
 

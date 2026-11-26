@@ -33,10 +33,13 @@ message OrderPaid {
 }
 
 // RefundSucceeded v2: verified original-route FULL fiat refund only. The
-// signed fact starts reconciliation's independent refund query for either
+// signed fact starts reconciliation's independent verification for either
 // reservation branch. Both terminal types share (refund_id, control_version)
 // as the review key. Only reconciliation authorization permits ledger posting.
 // Post-release, A112 reverses N and all three F components, restoring seller Q.
+// Under A139, upstream_refund_id is the approved upstream_refund_no,
+// verified_at is the emission time at or after objection_deadline, and
+// query_evidence_sha256 is the approved seller_refund request_digest.
 message RefundSucceeded {
   aipay.common.v1.TradeSnapshot trade = 1;
   string escrow_reservation_id = 2;
@@ -50,11 +53,16 @@ message RefundSucceeded {
   bytes query_evidence_sha256 = 10;
 }
 
-// RefundFailed v2 requires a definitive actively verified failure. Pending or
+// RefundFailed v2 requires a definitive verified failure. Pending or
 // unknown refunds emit no terminal fact and keep funds occupied. As with
 // RefundSucceeded, this starts independent verification for either branch.
 // A conflicting terminal fact for the same review key is quarantined. Only
 // independent authorization restores this refund's source, preserving other barriers.
+// Under A139, emit at the second seller_refund_failure approval. verified_at
+// is that approval time, with no objection window. upstream_refund_id is the
+// number from the evidence bound to that approval, or the literal "none" if
+// absent. query_evidence_sha256 is its approved request_digest and
+// failure_reason is the fixed code "seller_refund_failed".
 message RefundFailed {
   aipay.common.v1.TradeSnapshot trade = 1;
   string escrow_reservation_id = 2;

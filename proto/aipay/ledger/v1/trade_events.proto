@@ -13,6 +13,9 @@ option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv
 // enter the outbox in the same local transaction. Times are carried by the
 // SignedEvent envelope; seq below always means the global journal seq, not the
 // event stream sequence. Every snapshot is the original immutable trade.
+// For refunds only (A139), reconciliation may independently reverify a
+// dual-reviewed seller attestation. Ledger still consumes TradeRefundAuthorized,
+// checks its 32-byte evidence digest and applies the same posting controls.
 
 // TradeReserved, schema version 1 on ledger.trades.
 message TradeReserved {

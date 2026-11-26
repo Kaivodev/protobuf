@@ -37,6 +37,9 @@ const (
 	PaymentAdminService_GetPlatformOrder_FullMethodName       = "/aipay.payment.v1.PaymentAdminService/GetPlatformOrder"
 	PaymentAdminService_ListPlatformRefunds_FullMethodName    = "/aipay.payment.v1.PaymentAdminService/ListPlatformRefunds"
 	PaymentAdminService_GetPlatformRefund_FullMethodName      = "/aipay.payment.v1.PaymentAdminService/GetPlatformRefund"
+	PaymentAdminService_CreatePlatformRefund_FullMethodName   = "/aipay.payment.v1.PaymentAdminService/CreatePlatformRefund"
+	PaymentAdminService_ListLatePayments_FullMethodName       = "/aipay.payment.v1.PaymentAdminService/ListLatePayments"
+	PaymentAdminService_GetLatePayment_FullMethodName         = "/aipay.payment.v1.PaymentAdminService/GetLatePayment"
 	PaymentAdminService_ListPlatformDisputes_FullMethodName   = "/aipay.payment.v1.PaymentAdminService/ListPlatformDisputes"
 	PaymentAdminService_GetPlatformDispute_FullMethodName     = "/aipay.payment.v1.PaymentAdminService/GetPlatformDispute"
 	PaymentAdminService_ListApprovals_FullMethodName          = "/aipay.payment.v1.PaymentAdminService/ListApprovals"
@@ -88,6 +91,15 @@ type PaymentAdminServiceClient interface {
 	GetPlatformOrder(ctx context.Context, in *GetPlatformOrderRequest, opts ...grpc.CallOption) (*GetPlatformOrderResponse, error)
 	ListPlatformRefunds(ctx context.Context, in *ListPlatformRefundsRequest, opts ...grpc.CallOption) (*ListPlatformRefundsResponse, error)
 	GetPlatformRefund(ctx context.Context, in *GetPlatformRefundRequest, opts ...grpc.CallOption) (*GetPlatformRefundResponse, error)
+	// Verify command_sha256 over the full request, including the idempotency key.
+	// Reserve the full original quote from its ledger source. RESERVED selects
+	// PRE_RELEASE, RELEASED selects POST_RELEASE. A disputed escrow requires a
+	// dispute ruling. Payment assigns out_refund_no as platform:<refund_id>.
+	// An authorized identical retry returns the original refund, and changed
+	// parameters under the same key return AlreadyExists.
+	CreatePlatformRefund(ctx context.Context, in *CreatePlatformRefundRequest, opts ...grpc.CallOption) (*CreatePlatformRefundResponse, error)
+	ListLatePayments(ctx context.Context, in *ListLatePaymentsRequest, opts ...grpc.CallOption) (*ListLatePaymentsResponse, error)
+	GetLatePayment(ctx context.Context, in *GetLatePaymentRequest, opts ...grpc.CallOption) (*GetLatePaymentResponse, error)
 	ListPlatformDisputes(ctx context.Context, in *ListPlatformDisputesRequest, opts ...grpc.CallOption) (*ListPlatformDisputesResponse, error)
 	GetPlatformDispute(ctx context.Context, in *GetPlatformDisputeRequest, opts ...grpc.CallOption) (*GetPlatformDisputeResponse, error)
 	ListApprovals(ctx context.Context, in *ListApprovalsRequest, opts ...grpc.CallOption) (*ListApprovalsResponse, error)
@@ -293,6 +305,36 @@ func (c *paymentAdminServiceClient) GetPlatformRefund(ctx context.Context, in *G
 	return out, nil
 }
 
+func (c *paymentAdminServiceClient) CreatePlatformRefund(ctx context.Context, in *CreatePlatformRefundRequest, opts ...grpc.CallOption) (*CreatePlatformRefundResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreatePlatformRefundResponse)
+	err := c.cc.Invoke(ctx, PaymentAdminService_CreatePlatformRefund_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentAdminServiceClient) ListLatePayments(ctx context.Context, in *ListLatePaymentsRequest, opts ...grpc.CallOption) (*ListLatePaymentsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListLatePaymentsResponse)
+	err := c.cc.Invoke(ctx, PaymentAdminService_ListLatePayments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentAdminServiceClient) GetLatePayment(ctx context.Context, in *GetLatePaymentRequest, opts ...grpc.CallOption) (*GetLatePaymentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLatePaymentResponse)
+	err := c.cc.Invoke(ctx, PaymentAdminService_GetLatePayment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *paymentAdminServiceClient) ListPlatformDisputes(ctx context.Context, in *ListPlatformDisputesRequest, opts ...grpc.CallOption) (*ListPlatformDisputesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListPlatformDisputesResponse)
@@ -405,6 +447,15 @@ type PaymentAdminServiceServer interface {
 	GetPlatformOrder(context.Context, *GetPlatformOrderRequest) (*GetPlatformOrderResponse, error)
 	ListPlatformRefunds(context.Context, *ListPlatformRefundsRequest) (*ListPlatformRefundsResponse, error)
 	GetPlatformRefund(context.Context, *GetPlatformRefundRequest) (*GetPlatformRefundResponse, error)
+	// Verify command_sha256 over the full request, including the idempotency key.
+	// Reserve the full original quote from its ledger source. RESERVED selects
+	// PRE_RELEASE, RELEASED selects POST_RELEASE. A disputed escrow requires a
+	// dispute ruling. Payment assigns out_refund_no as platform:<refund_id>.
+	// An authorized identical retry returns the original refund, and changed
+	// parameters under the same key return AlreadyExists.
+	CreatePlatformRefund(context.Context, *CreatePlatformRefundRequest) (*CreatePlatformRefundResponse, error)
+	ListLatePayments(context.Context, *ListLatePaymentsRequest) (*ListLatePaymentsResponse, error)
+	GetLatePayment(context.Context, *GetLatePaymentRequest) (*GetLatePaymentResponse, error)
 	ListPlatformDisputes(context.Context, *ListPlatformDisputesRequest) (*ListPlatformDisputesResponse, error)
 	GetPlatformDispute(context.Context, *GetPlatformDisputeRequest) (*GetPlatformDisputeResponse, error)
 	ListApprovals(context.Context, *ListApprovalsRequest) (*ListApprovalsResponse, error)
@@ -483,6 +534,15 @@ func (UnimplementedPaymentAdminServiceServer) ListPlatformRefunds(context.Contex
 }
 func (UnimplementedPaymentAdminServiceServer) GetPlatformRefund(context.Context, *GetPlatformRefundRequest) (*GetPlatformRefundResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPlatformRefund not implemented")
+}
+func (UnimplementedPaymentAdminServiceServer) CreatePlatformRefund(context.Context, *CreatePlatformRefundRequest) (*CreatePlatformRefundResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreatePlatformRefund not implemented")
+}
+func (UnimplementedPaymentAdminServiceServer) ListLatePayments(context.Context, *ListLatePaymentsRequest) (*ListLatePaymentsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListLatePayments not implemented")
+}
+func (UnimplementedPaymentAdminServiceServer) GetLatePayment(context.Context, *GetLatePaymentRequest) (*GetLatePaymentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLatePayment not implemented")
 }
 func (UnimplementedPaymentAdminServiceServer) ListPlatformDisputes(context.Context, *ListPlatformDisputesRequest) (*ListPlatformDisputesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPlatformDisputes not implemented")
@@ -850,6 +910,60 @@ func _PaymentAdminService_GetPlatformRefund_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PaymentAdminService_CreatePlatformRefund_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatePlatformRefundRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentAdminServiceServer).CreatePlatformRefund(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentAdminService_CreatePlatformRefund_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentAdminServiceServer).CreatePlatformRefund(ctx, req.(*CreatePlatformRefundRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaymentAdminService_ListLatePayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListLatePaymentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentAdminServiceServer).ListLatePayments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentAdminService_ListLatePayments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentAdminServiceServer).ListLatePayments(ctx, req.(*ListLatePaymentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaymentAdminService_GetLatePayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLatePaymentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentAdminServiceServer).GetLatePayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentAdminService_GetLatePayment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentAdminServiceServer).GetLatePayment(ctx, req.(*GetLatePaymentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _PaymentAdminService_ListPlatformDisputes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListPlatformDisputesRequest)
 	if err := dec(in); err != nil {
@@ -1054,6 +1168,18 @@ var PaymentAdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPlatformRefund",
 			Handler:    _PaymentAdminService_GetPlatformRefund_Handler,
+		},
+		{
+			MethodName: "CreatePlatformRefund",
+			Handler:    _PaymentAdminService_CreatePlatformRefund_Handler,
+		},
+		{
+			MethodName: "ListLatePayments",
+			Handler:    _PaymentAdminService_ListLatePayments_Handler,
+		},
+		{
+			MethodName: "GetLatePayment",
+			Handler:    _PaymentAdminService_GetLatePayment_Handler,
 		},
 		{
 			MethodName: "ListPlatformDisputes",

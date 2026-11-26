@@ -19,16 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SellerPortalService_ListSellerChannels_FullMethodName     = "/aipay.payment.v1.SellerPortalService/ListSellerChannels"
-	SellerPortalService_GetSellerChannel_FullMethodName       = "/aipay.payment.v1.SellerPortalService/GetSellerChannel"
-	SellerPortalService_ListSellerOrders_FullMethodName       = "/aipay.payment.v1.SellerPortalService/ListSellerOrders"
-	SellerPortalService_GetSellerOrder_FullMethodName         = "/aipay.payment.v1.SellerPortalService/GetSellerOrder"
-	SellerPortalService_ListSellerRefunds_FullMethodName      = "/aipay.payment.v1.SellerPortalService/ListSellerRefunds"
-	SellerPortalService_GetSellerRefund_FullMethodName        = "/aipay.payment.v1.SellerPortalService/GetSellerRefund"
-	SellerPortalService_ListSellerDisputes_FullMethodName     = "/aipay.payment.v1.SellerPortalService/ListSellerDisputes"
-	SellerPortalService_GetSellerDispute_FullMethodName       = "/aipay.payment.v1.SellerPortalService/GetSellerDispute"
-	SellerPortalService_AppendSellerEvidence_FullMethodName   = "/aipay.payment.v1.SellerPortalService/AppendSellerEvidence"
-	SellerPortalService_SetSellerChannelOnline_FullMethodName = "/aipay.payment.v1.SellerPortalService/SetSellerChannelOnline"
+	SellerPortalService_ListSellerChannels_FullMethodName          = "/aipay.payment.v1.SellerPortalService/ListSellerChannels"
+	SellerPortalService_GetSellerChannel_FullMethodName            = "/aipay.payment.v1.SellerPortalService/GetSellerChannel"
+	SellerPortalService_ListSellerOrders_FullMethodName            = "/aipay.payment.v1.SellerPortalService/ListSellerOrders"
+	SellerPortalService_GetSellerOrder_FullMethodName              = "/aipay.payment.v1.SellerPortalService/GetSellerOrder"
+	SellerPortalService_ListSellerRefunds_FullMethodName           = "/aipay.payment.v1.SellerPortalService/ListSellerRefunds"
+	SellerPortalService_GetSellerRefund_FullMethodName             = "/aipay.payment.v1.SellerPortalService/GetSellerRefund"
+	SellerPortalService_ListSellerLatePayments_FullMethodName      = "/aipay.payment.v1.SellerPortalService/ListSellerLatePayments"
+	SellerPortalService_GetSellerLatePayment_FullMethodName        = "/aipay.payment.v1.SellerPortalService/GetSellerLatePayment"
+	SellerPortalService_SubmitSellerRefundEvidence_FullMethodName  = "/aipay.payment.v1.SellerPortalService/SubmitSellerRefundEvidence"
+	SellerPortalService_GetSellerRefundEvidenceFile_FullMethodName = "/aipay.payment.v1.SellerPortalService/GetSellerRefundEvidenceFile"
+	SellerPortalService_ListSellerDisputes_FullMethodName          = "/aipay.payment.v1.SellerPortalService/ListSellerDisputes"
+	SellerPortalService_GetSellerDispute_FullMethodName            = "/aipay.payment.v1.SellerPortalService/GetSellerDispute"
+	SellerPortalService_AppendSellerEvidence_FullMethodName        = "/aipay.payment.v1.SellerPortalService/AppendSellerEvidence"
+	SellerPortalService_SetSellerChannelOnline_FullMethodName      = "/aipay.payment.v1.SellerPortalService/SetSellerChannelOnline"
 )
 
 // SellerPortalServiceClient is the client API for SellerPortalService service.
@@ -53,7 +57,9 @@ const (
 // digest/result atomically; same-key different bytes AlreadyExists, authorized
 // identical replay returns original before fresh version checks. New website
 // writes recompute IAM command_sha256 per contracts.md, including method/body.
-// No seller refund-processing or online/offline command is added in v0.9.0.
+// A139 permits sellers to submit evidence only for their own original seller
+// account in AWAITING_SELLER. Verify command_sha256 before idempotent replay.
+// Audit each screenshot read with the verified actor and file ID.
 type SellerPortalServiceClient interface {
 	ListSellerChannels(ctx context.Context, in *ListSellerChannelsRequest, opts ...grpc.CallOption) (*ListSellerChannelsResponse, error)
 	GetSellerChannel(ctx context.Context, in *GetSellerChannelRequest, opts ...grpc.CallOption) (*GetSellerChannelResponse, error)
@@ -61,6 +67,12 @@ type SellerPortalServiceClient interface {
 	GetSellerOrder(ctx context.Context, in *GetSellerOrderRequest, opts ...grpc.CallOption) (*GetSellerOrderResponse, error)
 	ListSellerRefunds(ctx context.Context, in *ListSellerRefundsRequest, opts ...grpc.CallOption) (*ListSellerRefundsResponse, error)
 	GetSellerRefund(ctx context.Context, in *GetSellerRefundRequest, opts ...grpc.CallOption) (*GetSellerRefundResponse, error)
+	// List only late payments owned by the authenticated seller account.
+	ListSellerLatePayments(ctx context.Context, in *ListSellerLatePaymentsRequest, opts ...grpc.CallOption) (*ListSellerLatePaymentsResponse, error)
+	// Verify the late payment belongs to the authenticated seller account.
+	GetSellerLatePayment(ctx context.Context, in *GetSellerLatePaymentRequest, opts ...grpc.CallOption) (*GetSellerLatePaymentResponse, error)
+	SubmitSellerRefundEvidence(ctx context.Context, in *SubmitSellerRefundEvidenceRequest, opts ...grpc.CallOption) (*SubmitSellerRefundEvidenceResponse, error)
+	GetSellerRefundEvidenceFile(ctx context.Context, in *SellerPortalServiceGetSellerRefundEvidenceFileRequest, opts ...grpc.CallOption) (*SellerPortalServiceGetSellerRefundEvidenceFileResponse, error)
 	ListSellerDisputes(ctx context.Context, in *ListSellerDisputesRequest, opts ...grpc.CallOption) (*ListSellerDisputesResponse, error)
 	GetSellerDispute(ctx context.Context, in *GetSellerDisputeRequest, opts ...grpc.CallOption) (*GetSellerDisputeResponse, error)
 	AppendSellerEvidence(ctx context.Context, in *AppendSellerEvidenceRequest, opts ...grpc.CallOption) (*AppendSellerEvidenceResponse, error)
@@ -146,6 +158,46 @@ func (c *sellerPortalServiceClient) GetSellerRefund(ctx context.Context, in *Get
 	return out, nil
 }
 
+func (c *sellerPortalServiceClient) ListSellerLatePayments(ctx context.Context, in *ListSellerLatePaymentsRequest, opts ...grpc.CallOption) (*ListSellerLatePaymentsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSellerLatePaymentsResponse)
+	err := c.cc.Invoke(ctx, SellerPortalService_ListSellerLatePayments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sellerPortalServiceClient) GetSellerLatePayment(ctx context.Context, in *GetSellerLatePaymentRequest, opts ...grpc.CallOption) (*GetSellerLatePaymentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSellerLatePaymentResponse)
+	err := c.cc.Invoke(ctx, SellerPortalService_GetSellerLatePayment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sellerPortalServiceClient) SubmitSellerRefundEvidence(ctx context.Context, in *SubmitSellerRefundEvidenceRequest, opts ...grpc.CallOption) (*SubmitSellerRefundEvidenceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitSellerRefundEvidenceResponse)
+	err := c.cc.Invoke(ctx, SellerPortalService_SubmitSellerRefundEvidence_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sellerPortalServiceClient) GetSellerRefundEvidenceFile(ctx context.Context, in *SellerPortalServiceGetSellerRefundEvidenceFileRequest, opts ...grpc.CallOption) (*SellerPortalServiceGetSellerRefundEvidenceFileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SellerPortalServiceGetSellerRefundEvidenceFileResponse)
+	err := c.cc.Invoke(ctx, SellerPortalService_GetSellerRefundEvidenceFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *sellerPortalServiceClient) ListSellerDisputes(ctx context.Context, in *ListSellerDisputesRequest, opts ...grpc.CallOption) (*ListSellerDisputesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListSellerDisputesResponse)
@@ -208,7 +260,9 @@ func (c *sellerPortalServiceClient) SetSellerChannelOnline(ctx context.Context, 
 // digest/result atomically; same-key different bytes AlreadyExists, authorized
 // identical replay returns original before fresh version checks. New website
 // writes recompute IAM command_sha256 per contracts.md, including method/body.
-// No seller refund-processing or online/offline command is added in v0.9.0.
+// A139 permits sellers to submit evidence only for their own original seller
+// account in AWAITING_SELLER. Verify command_sha256 before idempotent replay.
+// Audit each screenshot read with the verified actor and file ID.
 type SellerPortalServiceServer interface {
 	ListSellerChannels(context.Context, *ListSellerChannelsRequest) (*ListSellerChannelsResponse, error)
 	GetSellerChannel(context.Context, *GetSellerChannelRequest) (*GetSellerChannelResponse, error)
@@ -216,6 +270,12 @@ type SellerPortalServiceServer interface {
 	GetSellerOrder(context.Context, *GetSellerOrderRequest) (*GetSellerOrderResponse, error)
 	ListSellerRefunds(context.Context, *ListSellerRefundsRequest) (*ListSellerRefundsResponse, error)
 	GetSellerRefund(context.Context, *GetSellerRefundRequest) (*GetSellerRefundResponse, error)
+	// List only late payments owned by the authenticated seller account.
+	ListSellerLatePayments(context.Context, *ListSellerLatePaymentsRequest) (*ListSellerLatePaymentsResponse, error)
+	// Verify the late payment belongs to the authenticated seller account.
+	GetSellerLatePayment(context.Context, *GetSellerLatePaymentRequest) (*GetSellerLatePaymentResponse, error)
+	SubmitSellerRefundEvidence(context.Context, *SubmitSellerRefundEvidenceRequest) (*SubmitSellerRefundEvidenceResponse, error)
+	GetSellerRefundEvidenceFile(context.Context, *SellerPortalServiceGetSellerRefundEvidenceFileRequest) (*SellerPortalServiceGetSellerRefundEvidenceFileResponse, error)
 	ListSellerDisputes(context.Context, *ListSellerDisputesRequest) (*ListSellerDisputesResponse, error)
 	GetSellerDispute(context.Context, *GetSellerDisputeRequest) (*GetSellerDisputeResponse, error)
 	AppendSellerEvidence(context.Context, *AppendSellerEvidenceRequest) (*AppendSellerEvidenceResponse, error)
@@ -258,6 +318,18 @@ func (UnimplementedSellerPortalServiceServer) ListSellerRefunds(context.Context,
 }
 func (UnimplementedSellerPortalServiceServer) GetSellerRefund(context.Context, *GetSellerRefundRequest) (*GetSellerRefundResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSellerRefund not implemented")
+}
+func (UnimplementedSellerPortalServiceServer) ListSellerLatePayments(context.Context, *ListSellerLatePaymentsRequest) (*ListSellerLatePaymentsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSellerLatePayments not implemented")
+}
+func (UnimplementedSellerPortalServiceServer) GetSellerLatePayment(context.Context, *GetSellerLatePaymentRequest) (*GetSellerLatePaymentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSellerLatePayment not implemented")
+}
+func (UnimplementedSellerPortalServiceServer) SubmitSellerRefundEvidence(context.Context, *SubmitSellerRefundEvidenceRequest) (*SubmitSellerRefundEvidenceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitSellerRefundEvidence not implemented")
+}
+func (UnimplementedSellerPortalServiceServer) GetSellerRefundEvidenceFile(context.Context, *SellerPortalServiceGetSellerRefundEvidenceFileRequest) (*SellerPortalServiceGetSellerRefundEvidenceFileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSellerRefundEvidenceFile not implemented")
 }
 func (UnimplementedSellerPortalServiceServer) ListSellerDisputes(context.Context, *ListSellerDisputesRequest) (*ListSellerDisputesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListSellerDisputes not implemented")
@@ -400,6 +472,78 @@ func _SellerPortalService_GetSellerRefund_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SellerPortalService_ListSellerLatePayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSellerLatePaymentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SellerPortalServiceServer).ListSellerLatePayments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SellerPortalService_ListSellerLatePayments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SellerPortalServiceServer).ListSellerLatePayments(ctx, req.(*ListSellerLatePaymentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SellerPortalService_GetSellerLatePayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSellerLatePaymentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SellerPortalServiceServer).GetSellerLatePayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SellerPortalService_GetSellerLatePayment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SellerPortalServiceServer).GetSellerLatePayment(ctx, req.(*GetSellerLatePaymentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SellerPortalService_SubmitSellerRefundEvidence_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitSellerRefundEvidenceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SellerPortalServiceServer).SubmitSellerRefundEvidence(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SellerPortalService_SubmitSellerRefundEvidence_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SellerPortalServiceServer).SubmitSellerRefundEvidence(ctx, req.(*SubmitSellerRefundEvidenceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SellerPortalService_GetSellerRefundEvidenceFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SellerPortalServiceGetSellerRefundEvidenceFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SellerPortalServiceServer).GetSellerRefundEvidenceFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SellerPortalService_GetSellerRefundEvidenceFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SellerPortalServiceServer).GetSellerRefundEvidenceFile(ctx, req.(*SellerPortalServiceGetSellerRefundEvidenceFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SellerPortalService_ListSellerDisputes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListSellerDisputesRequest)
 	if err := dec(in); err != nil {
@@ -502,6 +646,22 @@ var SellerPortalService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSellerRefund",
 			Handler:    _SellerPortalService_GetSellerRefund_Handler,
+		},
+		{
+			MethodName: "ListSellerLatePayments",
+			Handler:    _SellerPortalService_ListSellerLatePayments_Handler,
+		},
+		{
+			MethodName: "GetSellerLatePayment",
+			Handler:    _SellerPortalService_GetSellerLatePayment_Handler,
+		},
+		{
+			MethodName: "SubmitSellerRefundEvidence",
+			Handler:    _SellerPortalService_SubmitSellerRefundEvidence_Handler,
+		},
+		{
+			MethodName: "GetSellerRefundEvidenceFile",
+			Handler:    _SellerPortalService_GetSellerRefundEvidenceFile_Handler,
 		},
 		{
 			MethodName: "ListSellerDisputes",

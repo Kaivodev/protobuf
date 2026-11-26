@@ -12,6 +12,7 @@ import "aipay/payment/v1/plugin_control.proto";
 import "aipay/payment/v1/portal_views.proto";
 import "aipay/payment/v1/pricing_events.proto";
 import "aipay/payment/v1/refund_service.proto";
+import "aipay/payment/v1/seller_refund.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
@@ -247,6 +248,47 @@ message GetPlatformRefundRequest {
 
 message GetPlatformRefundResponse {
   Refund refund = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message CreatePlatformRefundRequest {
+  string idempotency_key = 1;
+  string order_id = 2;
+  string escrow_reservation_id = 3;
+  uint64 expected_control_version = 4;
+  // Required, 1-1000 characters.
+  string reason = 5;
+}
+
+message CreatePlatformRefundResponse {
+  Refund refund = 1;
+}
+
+message ListLatePaymentsRequest {
+  string account_id = 1;
+  string application_id = 2;
+  string seller_account_id = 3;
+  string order_id = 4;
+  optional LatePaymentStatus status = 5;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 6 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 7;
+  string business_id = 8;
+}
+
+message ListLatePaymentsResponse {
+  repeated LatePayment late_payments = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetLatePaymentRequest {
+  string late_payment_id = 1;
+}
+
+message GetLatePaymentResponse {
+  LatePayment late_payment = 1;
   google.protobuf.Timestamp as_of = 2;
 }
 
@@ -522,6 +564,40 @@ service PaymentAdminService {
     };
   }
   rpc GetPlatformRefund(GetPlatformRefundRequest) returns (GetPlatformRefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.refund.read"
+      }
+    };
+  }
+  // Verify command_sha256 over the full request, including the idempotency key.
+  // Reserve the full original quote from its ledger source. RESERVED selects
+  // PRE_RELEASE, RELEASED selects POST_RELEASE. A disputed escrow requires a
+  // dispute ruling. Payment assigns out_refund_no as platform:<refund_id>.
+  // An authorized identical retry returns the original refund, and changed
+  // parameters under the same key return AlreadyExists.
+  rpc CreatePlatformRefund(CreatePlatformRefundRequest) returns (CreatePlatformRefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "payment.refund.initiate"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ListLatePayments(ListLatePaymentsRequest) returns (ListLatePaymentsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.refund.read"
+      }
+    };
+  }
+  rpc GetLatePayment(GetLatePaymentRequest) returns (GetLatePaymentResponse) {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: "backend"

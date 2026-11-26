@@ -51,6 +51,14 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 认证证明的签发格式、密钥托管、调用方绑定与撤销机制尚待 IAM 实现；EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 
+## v0.19.0 seller manual refund (A139, unreleased)
+
+- Full refunds reserve ledger funds and enter `AWAITING_SELLER`. The seller refunds the buyer in the upstream back office and submits versioned JPEG evidence for two platform WebAuthn approvers. Approval starts the objection window (24 hours by default). Rejection or a timely objection reopens submission. A separate two-person approval can declare failure.
+- Payment exposes refund origin, seller and objection deadlines, and the approved upstream refund time. The seller portal accepts evidence and serves the seller's own screenshots. Platform operators can initiate refunds, inspect late payments and review submissions, duplicates, objections and failure requests. Late payments on cancelled orders close inside payment.
+- Backend calls `ListSellerLatePayments` and `GetSellerLatePayment` with a required seller assertion and `payment.refund.read`. Both return `SellerLatePaymentView` scoped to the seller's own account, with current evidence when available. The list supports order, status and channel account filters and requires a page limit of 1–100.
+- Reconciliation retrieves the approval that produced the terminal fact and independently verifies both assertions against its own registry, the signed material, the payment event and the ledger occupation. The A139 comments document the manual mapping in `RefundSucceeded` and `RefundFailed` v2 and the existing `TradeRefundAuthorized` and ledger receiver rules. Under A136, verification plugins must declare `query_payment` and may declare `query_refund`.
+- Backend alone receives `SellerRefundNotice` and `MerchantRefundNotice` for bot delivery. The test vector package publishes canonical evidence and approval bytes in `PaymentSellerRefundV1()` and both recent-MFA command digests in `PaymentWebCommandV1()`. [Seller manual refund design](https://github.com/Kaivodev/docs/blob/main/design/manual-refund.md)
+
 ## v0.18.0 属主接入上游网关（已发布）
 
 网关模式下，backend 通过 payment 的 `StoreChannelCredentials` 登记交易凭据，取得不可变引用与内容摘要。reconciliation 的 `StoreVerificationCredentials` 在两种模式下都返回内容摘要。交易通道与核验账户在网关模式下提交配置时须绑定已登记的摘要，嵌入模式拒绝该字段。省略字段时可按原字节复验历史审批材料。网关模式只接收 ABI v3 组件包，由本域网关通过 `ReplayPackage` 复验。嵌入模式沿用 ABI v2。见[属主接入上游网关契约](https://github.com/Kaivodev/docs/blob/main/design/contracts.md#v0180-属主接入上游网关)。

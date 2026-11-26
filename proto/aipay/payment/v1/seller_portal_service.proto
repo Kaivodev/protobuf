@@ -3,10 +3,13 @@ syntax = "proto3";
 package aipay.payment.v1;
 
 import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/money.proto";
 import "aipay/common/v1/query.proto";
+import "aipay/payment/v1/admin_approval.proto";
 import "aipay/payment/v1/order_service.proto";
 import "aipay/payment/v1/portal_views.proto";
 import "aipay/payment/v1/refund_service.proto";
+import "aipay/payment/v1/seller_refund.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
@@ -80,6 +83,62 @@ message GetSellerRefundRequest {
 message GetSellerRefundResponse {
   SellerRefundView refund = 1;
   google.protobuf.Timestamp as_of = 2;
+}
+
+message ListSellerLatePaymentsRequest {
+  optional string order_id = 1;
+  optional LatePaymentStatus status = 2;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 3 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 4;
+  string channel_account_id = 5;
+}
+
+message ListSellerLatePaymentsResponse {
+  repeated SellerLatePaymentView late_payments = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetSellerLatePaymentRequest {
+  string late_payment_id = 1;
+}
+
+message GetSellerLatePaymentResponse {
+  SellerLatePaymentView late_payment = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message SubmitSellerRefundEvidenceRequest {
+  string idempotency_key = 1;
+  SellerRefundSubject subject = 2;
+  // Number of existing versions, zero for the first. A mismatch returns
+  // FailedPrecondition with reason EVIDENCE_VERSION_CONFLICT.
+  uint64 expected_evidence_version = 3;
+  // 1-64 characters from [A-Za-z0-9._:-]. Reuse across active subjects on
+  // the same channel account is rejected with UPSTREAM_REFUND_NO_REUSED.
+  string upstream_refund_no = 4;
+  google.protobuf.Timestamp refunded_at = 5;
+  // FULL_REFUND_ONLY: currency and minor units must equal the original fiat quote.
+  aipay.common.v1.Money refunded_amount = 6;
+  // Optional, 0-200 characters.
+  optional string note = 7;
+  // 1-3 backend-normalized JPEGs in submission order, each <=1 MiB, total <=3 MiB.
+  repeated SellerRefundEvidenceUpload files = 8 [(aipay.common.v1.max_items) = 3];
+}
+
+message SubmitSellerRefundEvidenceResponse {
+  SellerRefundEvidence evidence = 1;
+}
+
+message SellerPortalServiceGetSellerRefundEvidenceFileRequest {
+  string file_id = 1;
+}
+
+message SellerPortalServiceGetSellerRefundEvidenceFileResponse {
+  SellerRefundEvidenceFileDigest file = 1;
+  bytes data = 2;
 }
 
 message ListSellerDisputesRequest {
@@ -157,7 +216,9 @@ message SetSellerChannelOnlineResponse {
 // digest/result atomically; same-key different bytes AlreadyExists, authorized
 // identical replay returns original before fresh version checks. New website
 // writes recompute IAM command_sha256 per contracts.md, including method/body.
-// No seller refund-processing or online/offline command is added in v0.9.0.
+// A139 permits sellers to submit evidence only for their own original seller
+// account in AWAITING_SELLER. Verify command_sha256 before idempotent replay.
+// Audit each screenshot read with the verified actor and file ID.
 service SellerPortalService {
   rpc ListSellerChannels(ListSellerChannelsRequest) returns (ListSellerChannelsResponse) {
     option (aipay.authz.v1.policy) = {
@@ -205,6 +266,45 @@ service SellerPortalService {
     };
   }
   rpc GetSellerRefund(GetSellerRefundRequest) returns (GetSellerRefundResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.refund.read"
+      }
+    };
+  }
+  // List only late payments owned by the authenticated seller account.
+  rpc ListSellerLatePayments(ListSellerLatePaymentsRequest) returns (ListSellerLatePaymentsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.refund.read"
+      }
+    };
+  }
+  // Verify the late payment belongs to the authenticated seller account.
+  rpc GetSellerLatePayment(GetSellerLatePaymentRequest) returns (GetSellerLatePaymentResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.refund.read"
+      }
+    };
+  }
+  rpc SubmitSellerRefundEvidence(SubmitSellerRefundEvidenceRequest) returns (SubmitSellerRefundEvidenceResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "payment.refund.process"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc GetSellerRefundEvidenceFile(SellerPortalServiceGetSellerRefundEvidenceFileRequest) returns (SellerPortalServiceGetSellerRefundEvidenceFileResponse) {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: "backend"

@@ -31,7 +31,9 @@ const (
 // against the original order before reserving. Same key/different parameters
 // is AlreadyExists; an identical retry returns the original refund after access
 // checks, before fresh CAS checks. Unmatched current versions/states fail.
-// Full refunds only: unsupported upstream capability is explicitly rejected.
+// For new full refunds, payment reserves funds and waits for the seller to
+// refund the buyer in the upstream back office. No upstream API is called to
+// execute the refund. Merchant views exclude screenshots, notes and reasons.
 // No fiat refund before the matching ledger hold/reservation is confirmed;
 // insufficient original-recipient funds fail. Unknown outcomes keep occupation.
 // Reconciliation independently verifies outcomes and authorizes ledger action.
@@ -78,7 +80,9 @@ func (c *refundServiceClient) GetRefund(ctx context.Context, in *GetRefundReques
 // against the original order before reserving. Same key/different parameters
 // is AlreadyExists; an identical retry returns the original refund after access
 // checks, before fresh CAS checks. Unmatched current versions/states fail.
-// Full refunds only: unsupported upstream capability is explicitly rejected.
+// For new full refunds, payment reserves funds and waits for the seller to
+// refund the buyer in the upstream back office. No upstream API is called to
+// execute the refund. Merchant views exclude screenshots, notes and reasons.
 // No fiat refund before the matching ledger hold/reservation is confirmed;
 // insufficient original-recipient funds fail. Unknown outcomes keep occupation.
 // Reconciliation independently verifies outcomes and authorizes ledger action.

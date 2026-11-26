@@ -9,6 +9,7 @@ import "aipay/payment/v1/admin_approval.proto";
 import "aipay/payment/v1/dispute_service.proto";
 import "aipay/payment/v1/order_service.proto";
 import "aipay/payment/v1/refund_service.proto";
+import "aipay/payment/v1/seller_refund.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
@@ -171,6 +172,27 @@ message SellerRefundView {
   google.protobuf.Timestamp created_at = 11;
   google.protobuf.Timestamp updated_at = 12;
   google.protobuf.Timestamp verified_at = 13;
+  RefundOrigin origin = 14;
+  google.protobuf.Timestamp seller_due_at = 15;
+  google.protobuf.Timestamp objection_deadline = 16;
+  // Current evidence version when available, including a rejection or objection reason.
+  SellerRefundEvidence evidence = 17;
+}
+
+message SellerLatePaymentView {
+  string late_payment_id = 1;
+  string order_id = 2;
+  string seller_account_id = 3;
+  string channel_account_id = 4;
+  string upstream_order_id = 5;
+  aipay.common.v1.Money fiat_amount = 6;
+  LatePaymentStatus status = 7;
+  google.protobuf.Timestamp seller_due_at = 8;
+  google.protobuf.Timestamp detected_at = 9;
+  // Current evidence version, when available.
+  SellerRefundEvidence evidence = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
 }
 
 message SellerDisputeView {

@@ -71,6 +71,114 @@ func (PaymentAccessReviewResult) EnumDescriptor() ([]byte, []int) {
 	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{0}
 }
 
+type SellerRefundNoticeKind int32
+
+const (
+	SellerRefundNoticeKind_SELLER_REFUND_NOTICE_KIND_UNSPECIFIED SellerRefundNoticeKind = 0
+	SellerRefundNoticeKind_SELLER_REFUND_NOTICE_KIND_PENDING     SellerRefundNoticeKind = 1
+	SellerRefundNoticeKind_SELLER_REFUND_NOTICE_KIND_OVERDUE     SellerRefundNoticeKind = 2
+	SellerRefundNoticeKind_SELLER_REFUND_NOTICE_KIND_CLOSED      SellerRefundNoticeKind = 3
+)
+
+// Enum value maps for SellerRefundNoticeKind.
+var (
+	SellerRefundNoticeKind_name = map[int32]string{
+		0: "SELLER_REFUND_NOTICE_KIND_UNSPECIFIED",
+		1: "SELLER_REFUND_NOTICE_KIND_PENDING",
+		2: "SELLER_REFUND_NOTICE_KIND_OVERDUE",
+		3: "SELLER_REFUND_NOTICE_KIND_CLOSED",
+	}
+	SellerRefundNoticeKind_value = map[string]int32{
+		"SELLER_REFUND_NOTICE_KIND_UNSPECIFIED": 0,
+		"SELLER_REFUND_NOTICE_KIND_PENDING":     1,
+		"SELLER_REFUND_NOTICE_KIND_OVERDUE":     2,
+		"SELLER_REFUND_NOTICE_KIND_CLOSED":      3,
+	}
+)
+
+func (x SellerRefundNoticeKind) Enum() *SellerRefundNoticeKind {
+	p := new(SellerRefundNoticeKind)
+	*p = x
+	return p
+}
+
+func (x SellerRefundNoticeKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SellerRefundNoticeKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_account_notice_events_proto_enumTypes[1].Descriptor()
+}
+
+func (SellerRefundNoticeKind) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_account_notice_events_proto_enumTypes[1]
+}
+
+func (x SellerRefundNoticeKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SellerRefundNoticeKind.Descriptor instead.
+func (SellerRefundNoticeKind) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{1}
+}
+
+type MerchantRefundNoticeKind int32
+
+const (
+	MerchantRefundNoticeKind_MERCHANT_REFUND_NOTICE_KIND_UNSPECIFIED MerchantRefundNoticeKind = 0
+	// Platform- or dispute-initiated refund.
+	MerchantRefundNoticeKind_MERCHANT_REFUND_NOTICE_KIND_CREATED    MerchantRefundNoticeKind = 1
+	MerchantRefundNoticeKind_MERCHANT_REFUND_NOTICE_KIND_CONFIRMING MerchantRefundNoticeKind = 2
+	MerchantRefundNoticeKind_MERCHANT_REFUND_NOTICE_KIND_SUCCEEDED  MerchantRefundNoticeKind = 3
+	MerchantRefundNoticeKind_MERCHANT_REFUND_NOTICE_KIND_FAILED     MerchantRefundNoticeKind = 4
+)
+
+// Enum value maps for MerchantRefundNoticeKind.
+var (
+	MerchantRefundNoticeKind_name = map[int32]string{
+		0: "MERCHANT_REFUND_NOTICE_KIND_UNSPECIFIED",
+		1: "MERCHANT_REFUND_NOTICE_KIND_CREATED",
+		2: "MERCHANT_REFUND_NOTICE_KIND_CONFIRMING",
+		3: "MERCHANT_REFUND_NOTICE_KIND_SUCCEEDED",
+		4: "MERCHANT_REFUND_NOTICE_KIND_FAILED",
+	}
+	MerchantRefundNoticeKind_value = map[string]int32{
+		"MERCHANT_REFUND_NOTICE_KIND_UNSPECIFIED": 0,
+		"MERCHANT_REFUND_NOTICE_KIND_CREATED":     1,
+		"MERCHANT_REFUND_NOTICE_KIND_CONFIRMING":  2,
+		"MERCHANT_REFUND_NOTICE_KIND_SUCCEEDED":   3,
+		"MERCHANT_REFUND_NOTICE_KIND_FAILED":      4,
+	}
+)
+
+func (x MerchantRefundNoticeKind) Enum() *MerchantRefundNoticeKind {
+	p := new(MerchantRefundNoticeKind)
+	*p = x
+	return p
+}
+
+func (x MerchantRefundNoticeKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (MerchantRefundNoticeKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_account_notice_events_proto_enumTypes[2].Descriptor()
+}
+
+func (MerchantRefundNoticeKind) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_account_notice_events_proto_enumTypes[2]
+}
+
+func (x MerchantRefundNoticeKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use MerchantRefundNoticeKind.Descriptor instead.
+func (MerchantRefundNoticeKind) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{2}
+}
+
 // MerchantPaymentReceived v1 on payment.account_notices. Payment writes it with
 // OrderPaid v2 in one local transaction. Only backend receives this bot notice.
 // It provides no payment or funds evidence.
@@ -386,11 +494,270 @@ func (x *PaymentAccessReviewed) GetReviewedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// SellerRefundNotice v1 on payment.account_notices. Backend is the sole
+// receiver. Notify the seller account on each entry into AWAITING_SELLER
+// (including after rejection or objection), when overdue, or on closure.
+// Bot notice only, never funds evidence.
+type SellerRefundNotice struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	SellerAccountId  string                 `protobuf:"bytes,1,opt,name=seller_account_id,json=sellerAccountId,proto3" json:"seller_account_id,omitempty"`
+	Subject          *SellerRefundSubject   `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
+	OrderId          string                 `protobuf:"bytes,3,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	TradeNo          string                 `protobuf:"bytes,4,opt,name=trade_no,json=tradeNo,proto3" json:"trade_no,omitempty"`
+	ChannelAccountId string                 `protobuf:"bytes,5,opt,name=channel_account_id,json=channelAccountId,proto3" json:"channel_account_id,omitempty"`
+	// Original positive fiat amount in minor units.
+	FiatAmount    int64                  `protobuf:"varint,6,opt,name=fiat_amount,json=fiatAmount,proto3" json:"fiat_amount,omitempty"`
+	FiatCurrency  string                 `protobuf:"bytes,7,opt,name=fiat_currency,json=fiatCurrency,proto3" json:"fiat_currency,omitempty"`
+	SellerDueAt   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=seller_due_at,json=sellerDueAt,proto3" json:"seller_due_at,omitempty"`
+	Kind          SellerRefundNoticeKind `protobuf:"varint,9,opt,name=kind,proto3,enum=aipay.payment.v1.SellerRefundNoticeKind" json:"kind,omitempty"`
+	OccurredAt    *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SellerRefundNotice) Reset() {
+	*x = SellerRefundNotice{}
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SellerRefundNotice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SellerRefundNotice) ProtoMessage() {}
+
+func (x *SellerRefundNotice) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SellerRefundNotice.ProtoReflect.Descriptor instead.
+func (*SellerRefundNotice) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *SellerRefundNotice) GetSellerAccountId() string {
+	if x != nil {
+		return x.SellerAccountId
+	}
+	return ""
+}
+
+func (x *SellerRefundNotice) GetSubject() *SellerRefundSubject {
+	if x != nil {
+		return x.Subject
+	}
+	return nil
+}
+
+func (x *SellerRefundNotice) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *SellerRefundNotice) GetTradeNo() string {
+	if x != nil {
+		return x.TradeNo
+	}
+	return ""
+}
+
+func (x *SellerRefundNotice) GetChannelAccountId() string {
+	if x != nil {
+		return x.ChannelAccountId
+	}
+	return ""
+}
+
+func (x *SellerRefundNotice) GetFiatAmount() int64 {
+	if x != nil {
+		return x.FiatAmount
+	}
+	return 0
+}
+
+func (x *SellerRefundNotice) GetFiatCurrency() string {
+	if x != nil {
+		return x.FiatCurrency
+	}
+	return ""
+}
+
+func (x *SellerRefundNotice) GetSellerDueAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.SellerDueAt
+	}
+	return nil
+}
+
+func (x *SellerRefundNotice) GetKind() SellerRefundNoticeKind {
+	if x != nil {
+		return x.Kind
+	}
+	return SellerRefundNoticeKind_SELLER_REFUND_NOTICE_KIND_UNSPECIFIED
+}
+
+func (x *SellerRefundNotice) GetOccurredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.OccurredAt
+	}
+	return nil
+}
+
+// MerchantRefundNotice v1 on payment.account_notices. Backend is the sole
+// receiver. Notify the original recipient account. SUCCEEDED follows ledger
+// settlement. Bot notice only, never funds evidence. Excludes buyer details,
+// screenshots, upstream refund numbers, reasons and approver identities.
+type MerchantRefundNotice struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccountId     string                 `protobuf:"bytes,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	BusinessId    string                 `protobuf:"bytes,2,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
+	ApplicationId string                 `protobuf:"bytes,3,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	OrderId       string                 `protobuf:"bytes,4,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	TradeNo       string                 `protobuf:"bytes,5,opt,name=trade_no,json=tradeNo,proto3" json:"trade_no,omitempty"`
+	OutTradeNo    string                 `protobuf:"bytes,6,opt,name=out_trade_no,json=outTradeNo,proto3" json:"out_trade_no,omitempty"`
+	OutRefundNo   string                 `protobuf:"bytes,7,opt,name=out_refund_no,json=outRefundNo,proto3" json:"out_refund_no,omitempty"`
+	// Original positive fiat amount in minor units.
+	FiatAmount   int64  `protobuf:"varint,8,opt,name=fiat_amount,json=fiatAmount,proto3" json:"fiat_amount,omitempty"`
+	FiatCurrency string `protobuf:"bytes,9,opt,name=fiat_currency,json=fiatCurrency,proto3" json:"fiat_currency,omitempty"`
+	// Present exactly when kind is CONFIRMING.
+	ObjectionDeadline *timestamppb.Timestamp   `protobuf:"bytes,10,opt,name=objection_deadline,json=objectionDeadline,proto3" json:"objection_deadline,omitempty"`
+	Kind              MerchantRefundNoticeKind `protobuf:"varint,11,opt,name=kind,proto3,enum=aipay.payment.v1.MerchantRefundNoticeKind" json:"kind,omitempty"`
+	OccurredAt        *timestamppb.Timestamp   `protobuf:"bytes,12,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *MerchantRefundNotice) Reset() {
+	*x = MerchantRefundNotice{}
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MerchantRefundNotice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MerchantRefundNotice) ProtoMessage() {}
+
+func (x *MerchantRefundNotice) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MerchantRefundNotice.ProtoReflect.Descriptor instead.
+func (*MerchantRefundNotice) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *MerchantRefundNotice) GetAccountId() string {
+	if x != nil {
+		return x.AccountId
+	}
+	return ""
+}
+
+func (x *MerchantRefundNotice) GetBusinessId() string {
+	if x != nil {
+		return x.BusinessId
+	}
+	return ""
+}
+
+func (x *MerchantRefundNotice) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
+func (x *MerchantRefundNotice) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *MerchantRefundNotice) GetTradeNo() string {
+	if x != nil {
+		return x.TradeNo
+	}
+	return ""
+}
+
+func (x *MerchantRefundNotice) GetOutTradeNo() string {
+	if x != nil {
+		return x.OutTradeNo
+	}
+	return ""
+}
+
+func (x *MerchantRefundNotice) GetOutRefundNo() string {
+	if x != nil {
+		return x.OutRefundNo
+	}
+	return ""
+}
+
+func (x *MerchantRefundNotice) GetFiatAmount() int64 {
+	if x != nil {
+		return x.FiatAmount
+	}
+	return 0
+}
+
+func (x *MerchantRefundNotice) GetFiatCurrency() string {
+	if x != nil {
+		return x.FiatCurrency
+	}
+	return ""
+}
+
+func (x *MerchantRefundNotice) GetObjectionDeadline() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ObjectionDeadline
+	}
+	return nil
+}
+
+func (x *MerchantRefundNotice) GetKind() MerchantRefundNoticeKind {
+	if x != nil {
+		return x.Kind
+	}
+	return MerchantRefundNoticeKind_MERCHANT_REFUND_NOTICE_KIND_UNSPECIFIED
+}
+
+func (x *MerchantRefundNotice) GetOccurredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.OccurredAt
+	}
+	return nil
+}
+
 var File_aipay_payment_v1_account_notice_events_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_account_notice_events_proto_rawDesc = "" +
 	"\n" +
-	",aipay/payment/v1/account_notice_events.proto\x12\x10aipay.payment.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd3\x02\n" +
+	",aipay/payment/v1/account_notice_events.proto\x12\x10aipay.payment.v1\x1a%aipay/payment/v1/admin_approval.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd3\x02\n" +
 	"\x17MerchantPaymentReceived\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\tR\taccountId\x12\x1f\n" +
@@ -428,11 +795,55 @@ const file_aipay_payment_v1_account_notice_events_proto_rawDesc = "" +
 	"\x06method\x18\x05 \x01(\tR\x06method\x12C\n" +
 	"\x06result\x18\x06 \x01(\x0e2+.aipay.payment.v1.PaymentAccessReviewResultR\x06result\x12;\n" +
 	"\vreviewed_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"reviewedAt*\x9f\x01\n" +
+	"reviewedAt\"\xe6\x03\n" +
+	"\x12SellerRefundNotice\x12*\n" +
+	"\x11seller_account_id\x18\x01 \x01(\tR\x0fsellerAccountId\x12?\n" +
+	"\asubject\x18\x02 \x01(\v2%.aipay.payment.v1.SellerRefundSubjectR\asubject\x12\x19\n" +
+	"\border_id\x18\x03 \x01(\tR\aorderId\x12\x19\n" +
+	"\btrade_no\x18\x04 \x01(\tR\atradeNo\x12,\n" +
+	"\x12channel_account_id\x18\x05 \x01(\tR\x10channelAccountId\x12\x1f\n" +
+	"\vfiat_amount\x18\x06 \x01(\x03R\n" +
+	"fiatAmount\x12#\n" +
+	"\rfiat_currency\x18\a \x01(\tR\ffiatCurrency\x12>\n" +
+	"\rseller_due_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vsellerDueAt\x12<\n" +
+	"\x04kind\x18\t \x01(\x0e2(.aipay.payment.v1.SellerRefundNoticeKindR\x04kind\x12;\n" +
+	"\voccurred_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAt\"\x87\x04\n" +
+	"\x14MerchantRefundNotice\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x01 \x01(\tR\taccountId\x12\x1f\n" +
+	"\vbusiness_id\x18\x02 \x01(\tR\n" +
+	"businessId\x12%\n" +
+	"\x0eapplication_id\x18\x03 \x01(\tR\rapplicationId\x12\x19\n" +
+	"\border_id\x18\x04 \x01(\tR\aorderId\x12\x19\n" +
+	"\btrade_no\x18\x05 \x01(\tR\atradeNo\x12 \n" +
+	"\fout_trade_no\x18\x06 \x01(\tR\n" +
+	"outTradeNo\x12\"\n" +
+	"\rout_refund_no\x18\a \x01(\tR\voutRefundNo\x12\x1f\n" +
+	"\vfiat_amount\x18\b \x01(\x03R\n" +
+	"fiatAmount\x12#\n" +
+	"\rfiat_currency\x18\t \x01(\tR\ffiatCurrency\x12I\n" +
+	"\x12objection_deadline\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\x11objectionDeadline\x12>\n" +
+	"\x04kind\x18\v \x01(\x0e2*.aipay.payment.v1.MerchantRefundNoticeKindR\x04kind\x12;\n" +
+	"\voccurred_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAt*\x9f\x01\n" +
 	"\x19PaymentAccessReviewResult\x12,\n" +
 	"(PAYMENT_ACCESS_REVIEW_RESULT_UNSPECIFIED\x10\x00\x12)\n" +
 	"%PAYMENT_ACCESS_REVIEW_RESULT_APPROVED\x10\x01\x12)\n" +
-	"%PAYMENT_ACCESS_REVIEW_RESULT_REJECTED\x10\x02B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"%PAYMENT_ACCESS_REVIEW_RESULT_REJECTED\x10\x02*\xb7\x01\n" +
+	"\x16SellerRefundNoticeKind\x12)\n" +
+	"%SELLER_REFUND_NOTICE_KIND_UNSPECIFIED\x10\x00\x12%\n" +
+	"!SELLER_REFUND_NOTICE_KIND_PENDING\x10\x01\x12%\n" +
+	"!SELLER_REFUND_NOTICE_KIND_OVERDUE\x10\x02\x12$\n" +
+	" SELLER_REFUND_NOTICE_KIND_CLOSED\x10\x03*\xef\x01\n" +
+	"\x18MerchantRefundNoticeKind\x12+\n" +
+	"'MERCHANT_REFUND_NOTICE_KIND_UNSPECIFIED\x10\x00\x12'\n" +
+	"#MERCHANT_REFUND_NOTICE_KIND_CREATED\x10\x01\x12*\n" +
+	"&MERCHANT_REFUND_NOTICE_KIND_CONFIRMING\x10\x02\x12)\n" +
+	"%MERCHANT_REFUND_NOTICE_KIND_SUCCEEDED\x10\x03\x12&\n" +
+	"\"MERCHANT_REFUND_NOTICE_KIND_FAILED\x10\x04B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_aipay_payment_v1_account_notice_events_proto_rawDescOnce sync.Once
@@ -446,25 +857,37 @@ func file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_account_notice_events_proto_rawDescData
 }
 
-var file_aipay_payment_v1_account_notice_events_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_aipay_payment_v1_account_notice_events_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_aipay_payment_v1_account_notice_events_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_aipay_payment_v1_account_notice_events_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_aipay_payment_v1_account_notice_events_proto_goTypes = []any{
 	(PaymentAccessReviewResult)(0),  // 0: aipay.payment.v1.PaymentAccessReviewResult
-	(*MerchantPaymentReceived)(nil), // 1: aipay.payment.v1.MerchantPaymentReceived
-	(*MerchantFundsAvailable)(nil),  // 2: aipay.payment.v1.MerchantFundsAvailable
-	(*PaymentAccessReviewed)(nil),   // 3: aipay.payment.v1.PaymentAccessReviewed
-	(*timestamppb.Timestamp)(nil),   // 4: google.protobuf.Timestamp
+	(SellerRefundNoticeKind)(0),     // 1: aipay.payment.v1.SellerRefundNoticeKind
+	(MerchantRefundNoticeKind)(0),   // 2: aipay.payment.v1.MerchantRefundNoticeKind
+	(*MerchantPaymentReceived)(nil), // 3: aipay.payment.v1.MerchantPaymentReceived
+	(*MerchantFundsAvailable)(nil),  // 4: aipay.payment.v1.MerchantFundsAvailable
+	(*PaymentAccessReviewed)(nil),   // 5: aipay.payment.v1.PaymentAccessReviewed
+	(*SellerRefundNotice)(nil),      // 6: aipay.payment.v1.SellerRefundNotice
+	(*MerchantRefundNotice)(nil),    // 7: aipay.payment.v1.MerchantRefundNotice
+	(*timestamppb.Timestamp)(nil),   // 8: google.protobuf.Timestamp
+	(*SellerRefundSubject)(nil),     // 9: aipay.payment.v1.SellerRefundSubject
 }
 var file_aipay_payment_v1_account_notice_events_proto_depIdxs = []int32{
-	4, // 0: aipay.payment.v1.MerchantPaymentReceived.paid_at:type_name -> google.protobuf.Timestamp
-	4, // 1: aipay.payment.v1.MerchantFundsAvailable.released_at:type_name -> google.protobuf.Timestamp
-	0, // 2: aipay.payment.v1.PaymentAccessReviewed.result:type_name -> aipay.payment.v1.PaymentAccessReviewResult
-	4, // 3: aipay.payment.v1.PaymentAccessReviewed.reviewed_at:type_name -> google.protobuf.Timestamp
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	8,  // 0: aipay.payment.v1.MerchantPaymentReceived.paid_at:type_name -> google.protobuf.Timestamp
+	8,  // 1: aipay.payment.v1.MerchantFundsAvailable.released_at:type_name -> google.protobuf.Timestamp
+	0,  // 2: aipay.payment.v1.PaymentAccessReviewed.result:type_name -> aipay.payment.v1.PaymentAccessReviewResult
+	8,  // 3: aipay.payment.v1.PaymentAccessReviewed.reviewed_at:type_name -> google.protobuf.Timestamp
+	9,  // 4: aipay.payment.v1.SellerRefundNotice.subject:type_name -> aipay.payment.v1.SellerRefundSubject
+	8,  // 5: aipay.payment.v1.SellerRefundNotice.seller_due_at:type_name -> google.protobuf.Timestamp
+	1,  // 6: aipay.payment.v1.SellerRefundNotice.kind:type_name -> aipay.payment.v1.SellerRefundNoticeKind
+	8,  // 7: aipay.payment.v1.SellerRefundNotice.occurred_at:type_name -> google.protobuf.Timestamp
+	8,  // 8: aipay.payment.v1.MerchantRefundNotice.objection_deadline:type_name -> google.protobuf.Timestamp
+	2,  // 9: aipay.payment.v1.MerchantRefundNotice.kind:type_name -> aipay.payment.v1.MerchantRefundNoticeKind
+	8,  // 10: aipay.payment.v1.MerchantRefundNotice.occurred_at:type_name -> google.protobuf.Timestamp
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_account_notice_events_proto_init() }
@@ -472,13 +895,14 @@ func file_aipay_payment_v1_account_notice_events_proto_init() {
 	if File_aipay_payment_v1_account_notice_events_proto != nil {
 		return
 	}
+	file_aipay_payment_v1_admin_approval_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_account_notice_events_proto_rawDesc), len(file_aipay_payment_v1_account_notice_events_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   3,
+			NumEnums:      3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

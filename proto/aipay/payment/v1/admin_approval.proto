@@ -3,7 +3,9 @@ syntax = "proto3";
 package aipay.payment.v1;
 
 import "aipay/approval/v1/approval.proto";
+import "aipay/common/v1/money.proto";
 import "aipay/common/v1/trade.proto";
+import "aipay/ledger/v1/trade.proto";
 import "aipay/payment/v1/pricing_events.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -192,19 +194,72 @@ message DisputeRulingMaterial {
   bytes evidence_sha256 = 7;
 }
 
+// Exactly one nonempty ID. A late payment on a cancelled order closes inside
+// payment, without a terminal funds event, reconciliation or a ledger posting.
+message SellerRefundSubject {
+  oneof subject {
+    string refund_id = 1;
+    string late_payment_id = 2;
+  }
+}
+
+// Each WebAuthn assertion binds the original order, recipient, seller, channel
+// and full fiat amount/currency through trade. It also binds the subject and
+// the exact evidence version and digest, including the ordered screenshot
+// digests. Submitting a new version voids the request and all prior assertions.
+message SellerRefundReviewMaterial {
+  SellerRefundSubject subject = 1;
+  aipay.common.v1.TradeSnapshot trade = 2;
+  // Required for both subject types, including the original cancelled escrow.
+  string escrow_reservation_id = 3;
+  // Fields 4-7 must all be present for refunds and absent for late payments.
+  optional string refund_reservation_id = 4;
+  optional aipay.ledger.v1.RefundReservationBranch branch = 5;
+  optional uint64 reservation_control_version = 6;
+  optional string out_refund_no = 7;
+  string upstream_refund_no = 8;
+  google.protobuf.Timestamp refunded_at = 9;
+  // Equal to the original trade quote in currency and minor units.
+  aipay.common.v1.Money refunded_amount = 10;
+  string evidence_id = 11;
+  uint64 evidence_version = 12;
+  bytes evidence_sha256 = 13;
+  // Default 24 hours for refunds. Always zero for late payments.
+  uint64 objection_window_seconds = 14;
+}
+
+message SellerRefundFailureMaterial {
+  SellerRefundSubject subject = 1;
+  aipay.common.v1.TradeSnapshot trade = 2;
+  string escrow_reservation_id = 3;
+  // Fields 4-7 must all be present for refunds and absent for late payments.
+  optional string refund_reservation_id = 4;
+  optional aipay.ledger.v1.RefundReservationBranch branch = 5;
+  optional uint64 reservation_control_version = 6;
+  optional string out_refund_no = 7;
+  // Required, 1-1000 characters. Retained in the approval material.
+  string reason = 8;
+  // Both present exactly when the seller has submitted evidence.
+  optional string evidence_id = 9;
+  optional bytes evidence_sha256 = 10;
+}
+
 // The executor creates these immutable signed materials. Exactly one operation
 // must match kind. Header fields equal ApprovalRequest id/kind/requested_by/
 // requested_at/expires_at. Canonical field-order encoding is specified in docs;
 // request_bytes has a length-prefixed "aipay.payment.admin.v1" domain followed
 // by canonical field-order material, NOT protobuf serialization. Unknown fields
-// are rejected. Different encoding/material versions require a new domain.
+// are rejected. Encode the selected operation field number (6-15) as u32
+// before its expanded fields. Different encoding versions require a new domain.
 message PaymentApprovalMaterial {
   string approval_request_id = 1;
   string kind = 2;
   string requested_by = 3;
   google.protobuf.Timestamp requested_at = 4;
   google.protobuf.Timestamp expires_at = 5;
-  // All kinds require TWO distinct natural persons, neither the initiator.
+  // Two distinct platform natural persons must approve, neither equal to
+  // requested_by. For seller_refund this is the submitting seller user. For
+  // seller_refund_failure the initiating platform user is requested_by.
   oneof operation {
     ChannelAccountChange channel_account = 6;
     PaymentMethodChange payment_method = 7;
@@ -214,6 +269,8 @@ message PaymentApprovalMaterial {
     PluginEnableChange plugin_enable = 11;
     ReversalMaterial reversal = 12;
     DisputeRulingMaterial dispute_ruling = 13;
+    SellerRefundReviewMaterial seller_refund = 14;
+    SellerRefundFailureMaterial seller_refund_failure = 15;
   }
 }
 

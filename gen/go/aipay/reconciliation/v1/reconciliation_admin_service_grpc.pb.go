@@ -60,8 +60,9 @@ const (
 // Channel selectors are checked with payment ChannelVerificationService at
 // credential admission, account submission and final approval. No payment
 // secret is returned by that narrow read. Errors deny, never trust backend IDs.
-// Only query_payment/query_refund verification plugins, separately issued read-
-// only credentials and domain-local encrypted references. No secret in responses.
+// Verification plugins require query_payment and may also declare query_refund.
+// Credentials are separately issued, read-only and encrypted within this domain.
+// Responses exclude secrets.
 // List limit 1-500, opaque filter/scope-bound cursors. Full original approval
 // materials/bytes/assertions are returned for independent review, including pending
 // states, within the 16 MiB whole message bound. See contracts.md for encoding.
@@ -273,8 +274,9 @@ func (c *reconciliationAdminServiceClient) EmergencyDisablePlugin(ctx context.Co
 // Channel selectors are checked with payment ChannelVerificationService at
 // credential admission, account submission and final approval. No payment
 // secret is returned by that narrow read. Errors deny, never trust backend IDs.
-// Only query_payment/query_refund verification plugins, separately issued read-
-// only credentials and domain-local encrypted references. No secret in responses.
+// Verification plugins require query_payment and may also declare query_refund.
+// Credentials are separately issued, read-only and encrypted within this domain.
+// Responses exclude secrets.
 // List limit 1-500, opaque filter/scope-bound cursors. Full original approval
 // materials/bytes/assertions are returned for independent review, including pending
 // states, within the 16 MiB whole message bound. See contracts.md for encoding.

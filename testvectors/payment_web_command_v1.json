@@ -1,6 +1,6 @@
 {
   "spec": "aipay.web.command.v1",
-  "description": "Each independent fixture gives the full SHA-256 input, including the length-prefixed domain and full RPC method. Requests deliberately use a UTF-8 reason, a version larger than uint32, and both explicit values of the required optional bool. Omitting online is invalid.",
+  "description": "Each fixture gives the complete SHA-256 input, including the length-prefixed domain and full RPC method. The channel switches exercise both explicit online values and a UTF-8 reason. The evidence upload contains synthetic JPEG marker bytes for encoding only.",
   "vectors": [
     {
       "name": "seller-online",
@@ -40,6 +40,53 @@
       },
       "encoding": "0000001461697061792e7765622e636f6d6d616e642e7631000000392f61697061792e7061796d656e742e76312e5061796d656e7441646d696e536572766963652f526571756575654172636869766564576f726b0000002430313961333134322d343030302d373030302d383030302d303030303030303030303061000000056f726465720000002430313961333134322d343030302d373030302d383030302d30303030303030303030306200000001000000010000000ce4babae5b7a5e6a0b8e69fa5",
       "sha256": "3ffebbfbb0768c4947292385e7fd021910d599ca627c1b2ad21c3aa83a49a9bb"
+    },
+    {
+      "name": "submit-seller-refund-evidence",
+      "method": "/aipay.payment.v1.SellerPortalService/SubmitSellerRefundEvidence",
+      "request": {
+        "idempotency_key": "019a3142-4000-7000-8000-000000000033",
+        "subject": {
+          "refund_id": "019a3142-4000-7000-8000-00000000012c"
+        },
+        "expected_evidence_version": "0",
+        "upstream_refund_no": "RF:300-A.1",
+        "refunded_at": "2026-11-24T14:01:02.345678Z",
+        "refunded_amount": {
+          "currency": "CNY",
+          "units": "7000"
+        },
+        "note": "Full refund recorded in the upstream back office.",
+        "files": [
+          {
+            "content_type": "image/jpeg",
+            "data": "/9j/4AADAf/Z"
+          },
+          {
+            "content_type": "image/jpeg",
+            "data": "/9j/4AADAv/Z"
+          },
+          {
+            "content_type": "image/jpeg",
+            "data": "/9j/4AADA//Z"
+          }
+        ]
+      },
+      "encoding": "0000001461697061792e7765622e636f6d6d616e642e7631000000402f61697061792e7061796d656e742e76312e53656c6c6572506f7274616c536572766963652f5375626d697453656c6c6572526566756e6445766964656e63650000002430313961333134322d343030302d373030302d383030302d303030303030303030303333000000010000002430313961333134322d343030302d373030302d383030302d30303030303030303031326300000000000000000000000a52463a3330302d412e3118eafffcb8134cb000000003434e590000000000001b58010000003146756c6c20726566756e64207265636f7264656420696e2074686520757073747265616d206261636b206f66666963652e000000030000000a696d6167652f6a70656700000009ffd8ffe0000301ffd90000000a696d6167652f6a70656700000009ffd8ffe0000302ffd90000000a696d6167652f6a70656700000009ffd8ffe0000303ffd9",
+      "sha256": "e1b5244d39178b82b2f8bd4a2bcab3c833158c3869a5e88763011c6f09b6434e"
+    },
+    {
+      "name": "create-platform-refund",
+      "method": "/aipay.payment.v1.PaymentAdminService/CreatePlatformRefund",
+      "request": {
+        "idempotency_key": "019a3142-4000-7000-8000-000000000034",
+        "order_id": "019a3142-4000-7000-8000-00000000000b",
+        "escrow_reservation_id": "019a3142-4000-7000-8000-000000000004",
+        "expected_control_version": "4294967296",
+        "reason": "Original order requires a full refund."
+      },
+      "encoding": "0000001461697061792e7765622e636f6d6d616e642e76310000003a2f61697061792e7061796d656e742e76312e5061796d656e7441646d696e536572766963652f437265617465506c6174666f726d526566756e640000002430313961333134322d343030302d373030302d383030302d3030303030303030303033340000002430313961333134322d343030302d373030302d383030302d3030303030303030303030620000002430313961333134322d343030302d373030302d383030302d3030303030303030303030340000000100000000000000264f726967696e616c206f7264657220726571756972657320612066756c6c20726566756e642e",
+      "sha256": "c512a97f480041d262cee9698a6b89e9df81f2aae2b677a7f94a2dc6d5c6aa0c"
     }
   ]
 }
