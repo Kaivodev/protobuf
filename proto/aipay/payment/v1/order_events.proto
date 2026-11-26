@@ -121,7 +121,9 @@ message OrderDisputed {
 // Reconciliation starts one review per (order_id, control_version), reads the
 // original snapshot from ledger and independently queries the original order.
 // Only two closed/unpaid observations separated by the late-payment window
-// can support cancellation. Ledger records this trigger without a funds action.
+// can support cancellation. A not-found query result counts as such an
+// observation only when basis is CREATE_NOT_FOUND_INFERRED (A144); otherwise
+// it is uncertain. Ledger records this trigger without a funds action.
 message OrderCancellationVerificationRequested {
   // Required UUIDv7 of the original order.
   string order_id = 1;
@@ -129,6 +131,22 @@ message OrderCancellationVerificationRequested {
   string escrow_reservation_id = 2;
   // Positive ledger escrow control version at the trigger.
   uint64 control_version = 3;
+  // Why payment requests the review. UNSPECIFIED (0) keeps the original
+  // meaning and is not encoded. Receivers reject values they do not know.
+  OrderCancellationBasis basis = 4;
+}
+
+// Basis of an OrderCancellationVerificationRequested event.
+enum OrderCancellationBasis {
+  // A close was dispatched, or a query observed the order closed upstream,
+  // including a timeout-inferred close (A140).
+  ORDER_CANCELLATION_BASIS_UNSPECIFIED = 0;
+  // A144: the create outcome stayed unknown, payment has no upstream order ID
+  // and never delivered a payment instruction, no payment was reported, and
+  // after the channel's unpaid timeout fresh queries reported the order as not
+  // found upstream. Reconciliation may then count its own not-found results as
+  // unpaid closed observations; evidence marks the cancellation as inferred.
+  ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED = 1;
 }
 
 // Signed payment.orders event_type=DisputeRulingApproved, schema_version=1.
