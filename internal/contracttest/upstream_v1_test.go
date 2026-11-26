@@ -149,6 +149,8 @@ func TestUpstreamMessages(t *testing.T) {
 			{4, "callback_url", "string"},
 			{5, "bank_mode", "optional string"},
 			{6, "instruction", "optional string"},
+			{7, "client_ip", "optional string"},
+			{8, "device", "optional string"},
 		},
 		"PaymentInput": {
 			{1, "order_id", "string"},

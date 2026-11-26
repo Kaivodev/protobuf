@@ -205,6 +205,10 @@ message HttpResponse {
   bytes body = 3;
 }
 
+// Forward client_ip and device only when the upstream requires them to create
+// a payment. Never log either value. Retain them only in the evidence for this
+// exchange. Until UG-6, the gateway uses its v0.17.0 contract copy and rejects
+// requests containing either field as unknown.
 message CreatePaymentInput {
   string order_id = 1;
   Money money = 2;
@@ -212,6 +216,10 @@ message CreatePaymentInput {
   string callback_url = 4;
   optional string bank_mode = 5;
   optional string instruction = 6;
+  // Canonical buyer IP in dotted-decimal IPv4 or RFC 5952 IPv6 form, without a port or zone.
+  optional string client_ip = 7;
+  // Upstream protocol device type, up to 32 bytes of lowercase ASCII letters, digits or underscores.
+  optional string device = 8;
 }
 
 message PaymentInput {

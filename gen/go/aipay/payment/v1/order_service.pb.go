@@ -831,6 +831,11 @@ func (*OrderSelector_TradeNo) isOrderSelector_Selector() {}
 
 func (*OrderSelector_OutTradeNo) isOrderSelector_Selector() {}
 
+// Forward client_ip and device only when the upstream requires them to create
+// a payment. Never log either value. Retain them only in the evidence for that
+// gateway exchange. Until UG-6 and UG-7 implement forwarding, backend leaves
+// both fields unset and payment omits them from upstream requests. The gateway
+// uses its v0.17.0 contract copy until UG-6 and rejects either field as unknown.
 type CreateOrderRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Selectors checked against verified IAM ownership and trusted records.
@@ -847,8 +852,12 @@ type CreateOrderRequest struct {
 	Title             string                     `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
 	MerchantParameter string                     `protobuf:"bytes,9,opt,name=merchant_parameter,json=merchantParameter,proto3" json:"merchant_parameter,omitempty"`
 	Notification      *OrderNotificationSnapshot `protobuf:"bytes,10,opt,name=notification,proto3" json:"notification,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Canonical buyer IP in dotted-decimal IPv4 or RFC 5952 IPv6 form, without a port or zone.
+	ClientIp *string `protobuf:"bytes,11,opt,name=client_ip,json=clientIp,proto3,oneof" json:"client_ip,omitempty"`
+	// Upstream protocol device type, up to 32 bytes of lowercase ASCII letters, digits or underscores.
+	Device        *string `protobuf:"bytes,12,opt,name=device,proto3,oneof" json:"device,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateOrderRequest) Reset() {
@@ -949,6 +958,20 @@ func (x *CreateOrderRequest) GetNotification() *OrderNotificationSnapshot {
 		return x.Notification
 	}
 	return nil
+}
+
+func (x *CreateOrderRequest) GetClientIp() string {
+	if x != nil && x.ClientIp != nil {
+		return *x.ClientIp
+	}
+	return ""
+}
+
+func (x *CreateOrderRequest) GetDevice() string {
+	if x != nil && x.Device != nil {
+		return *x.Device
+	}
+	return ""
 }
 
 type CreateOrderResponse struct {
@@ -1407,7 +1430,7 @@ const file_aipay_payment_v1_order_service_proto_rawDesc = "" +
 	"\fout_trade_no\x18\x04 \x01(\tH\x00R\n" +
 	"outTradeNoB\n" +
 	"\n" +
-	"\bselector\"\xc0\x03\n" +
+	"\bselector\"\x98\x04\n" +
 	"\x12CreateOrderRequest\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\tR\taccountId\x12\x1f\n" +
@@ -1423,7 +1446,12 @@ const file_aipay_payment_v1_order_service_proto_rawDesc = "" +
 	"\x05title\x18\b \x01(\tR\x05title\x12-\n" +
 	"\x12merchant_parameter\x18\t \x01(\tR\x11merchantParameter\x12O\n" +
 	"\fnotification\x18\n" +
-	" \x01(\v2+.aipay.payment.v1.OrderNotificationSnapshotR\fnotification\"D\n" +
+	" \x01(\v2+.aipay.payment.v1.OrderNotificationSnapshotR\fnotification\x12 \n" +
+	"\tclient_ip\x18\v \x01(\tH\x00R\bclientIp\x88\x01\x01\x12\x1b\n" +
+	"\x06device\x18\f \x01(\tH\x01R\x06device\x88\x01\x01B\f\n" +
+	"\n" +
+	"_client_ipB\t\n" +
+	"\a_device\"D\n" +
 	"\x13CreateOrderResponse\x12-\n" +
 	"\x05order\x18\x01 \x01(\v2\x17.aipay.payment.v1.OrderR\x05order\"N\n" +
 	"\x0fGetOrderRequest\x12;\n" +
@@ -1591,6 +1619,7 @@ func file_aipay_payment_v1_order_service_proto_init() {
 		(*OrderSelector_TradeNo)(nil),
 		(*OrderSelector_OutTradeNo)(nil),
 	}
+	file_aipay_payment_v1_order_service_proto_msgTypes[5].OneofWrappers = []any{}
 	file_aipay_payment_v1_order_service_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

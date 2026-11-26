@@ -583,14 +583,22 @@ func (x *HttpResponse) GetBody() []byte {
 	return nil
 }
 
+// Forward client_ip and device only when the upstream requires them to create
+// a payment. Never log either value. Retain them only in the evidence for this
+// exchange. Until UG-6, the gateway uses its v0.17.0 contract copy and rejects
+// requests containing either field as unknown.
 type CreatePaymentInput struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	Money         *Money                 `protobuf:"bytes,2,opt,name=money,proto3" json:"money,omitempty"`
-	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
-	CallbackUrl   string                 `protobuf:"bytes,4,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
-	BankMode      *string                `protobuf:"bytes,5,opt,name=bank_mode,json=bankMode,proto3,oneof" json:"bank_mode,omitempty"`
-	Instruction   *string                `protobuf:"bytes,6,opt,name=instruction,proto3,oneof" json:"instruction,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	OrderId     string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	Money       *Money                 `protobuf:"bytes,2,opt,name=money,proto3" json:"money,omitempty"`
+	Method      string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
+	CallbackUrl string                 `protobuf:"bytes,4,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
+	BankMode    *string                `protobuf:"bytes,5,opt,name=bank_mode,json=bankMode,proto3,oneof" json:"bank_mode,omitempty"`
+	Instruction *string                `protobuf:"bytes,6,opt,name=instruction,proto3,oneof" json:"instruction,omitempty"`
+	// Canonical buyer IP in dotted-decimal IPv4 or RFC 5952 IPv6 form, without a port or zone.
+	ClientIp *string `protobuf:"bytes,7,opt,name=client_ip,json=clientIp,proto3,oneof" json:"client_ip,omitempty"`
+	// Upstream protocol device type, up to 32 bytes of lowercase ASCII letters, digits or underscores.
+	Device        *string `protobuf:"bytes,8,opt,name=device,proto3,oneof" json:"device,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -663,6 +671,20 @@ func (x *CreatePaymentInput) GetBankMode() string {
 func (x *CreatePaymentInput) GetInstruction() string {
 	if x != nil && x.Instruction != nil {
 		return *x.Instruction
+	}
+	return ""
+}
+
+func (x *CreatePaymentInput) GetClientIp() string {
+	if x != nil && x.ClientIp != nil {
+		return *x.ClientIp
+	}
+	return ""
+}
+
+func (x *CreatePaymentInput) GetDevice() string {
+	if x != nil && x.Device != nil {
+		return *x.Device
 	}
 	return ""
 }
@@ -2765,17 +2787,22 @@ const file_aipay_upstream_v1_upstream_service_proto_rawDesc = "" +
 	"\fHttpResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\rR\x06status\x127\n" +
 	"\aheaders\x18\x02 \x03(\v2\x1d.aipay.upstream.v1.HttpHeaderR\aheaders\x12\x12\n" +
-	"\x04body\x18\x03 \x01(\fR\x04body\"\x81\x02\n" +
+	"\x04body\x18\x03 \x01(\fR\x04body\"\xd9\x02\n" +
 	"\x12CreatePaymentInput\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12.\n" +
 	"\x05money\x18\x02 \x01(\v2\x18.aipay.upstream.v1.MoneyR\x05money\x12\x16\n" +
 	"\x06method\x18\x03 \x01(\tR\x06method\x12!\n" +
 	"\fcallback_url\x18\x04 \x01(\tR\vcallbackUrl\x12 \n" +
 	"\tbank_mode\x18\x05 \x01(\tH\x00R\bbankMode\x88\x01\x01\x12%\n" +
-	"\vinstruction\x18\x06 \x01(\tH\x01R\vinstruction\x88\x01\x01B\f\n" +
+	"\vinstruction\x18\x06 \x01(\tH\x01R\vinstruction\x88\x01\x01\x12 \n" +
+	"\tclient_ip\x18\a \x01(\tH\x02R\bclientIp\x88\x01\x01\x12\x1b\n" +
+	"\x06device\x18\b \x01(\tH\x03R\x06device\x88\x01\x01B\f\n" +
 	"\n" +
 	"_bank_modeB\x0e\n" +
-	"\f_instruction\"Y\n" +
+	"\f_instructionB\f\n" +
+	"\n" +
+	"_client_ipB\t\n" +
+	"\a_device\"Y\n" +
 	"\fPaymentInput\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12.\n" +
 	"\x05money\x18\x02 \x01(\v2\x18.aipay.upstream.v1.MoneyR\x05money\"u\n" +

@@ -140,6 +140,11 @@ message OrderSelector {
   }
 }
 
+// Forward client_ip and device only when the upstream requires them to create
+// a payment. Never log either value. Retain them only in the evidence for that
+// gateway exchange. Until UG-6 and UG-7 implement forwarding, backend leaves
+// both fields unset and payment omits them from upstream requests. The gateway
+// uses its v0.17.0 contract copy until UG-6 and rejects either field as unknown.
 message CreateOrderRequest {
   // Selectors checked against verified IAM ownership and trusted records.
   // They are never authorization evidence; personal accounts need no org_id.
@@ -155,6 +160,10 @@ message CreateOrderRequest {
   string title = 8;
   string merchant_parameter = 9;
   OrderNotificationSnapshot notification = 10;
+  // Canonical buyer IP in dotted-decimal IPv4 or RFC 5952 IPv6 form, without a port or zone.
+  optional string client_ip = 11;
+  // Upstream protocol device type, up to 32 bytes of lowercase ASCII letters, digits or underscores.
+  optional string device = 12;
 }
 
 message CreateOrderResponse {

@@ -19,22 +19,23 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ChannelAdminService_SubmitChannelAccount_FullMethodName  = "/aipay.payment.v1.ChannelAdminService/SubmitChannelAccount"
-	ChannelAdminService_ApproveChannelAccount_FullMethodName = "/aipay.payment.v1.ChannelAdminService/ApproveChannelAccount"
-	ChannelAdminService_DisableChannelAccount_FullMethodName = "/aipay.payment.v1.ChannelAdminService/DisableChannelAccount"
-	ChannelAdminService_SubmitPaymentMethod_FullMethodName   = "/aipay.payment.v1.ChannelAdminService/SubmitPaymentMethod"
-	ChannelAdminService_ApprovePaymentMethod_FullMethodName  = "/aipay.payment.v1.ChannelAdminService/ApprovePaymentMethod"
-	ChannelAdminService_SubmitRiskPolicy_FullMethodName      = "/aipay.payment.v1.ChannelAdminService/SubmitRiskPolicy"
-	ChannelAdminService_ApproveRiskPolicy_FullMethodName     = "/aipay.payment.v1.ChannelAdminService/ApproveRiskPolicy"
-	ChannelAdminService_SavePricingDraft_FullMethodName      = "/aipay.payment.v1.ChannelAdminService/SavePricingDraft"
-	ChannelAdminService_SubmitPricingVersion_FullMethodName  = "/aipay.payment.v1.ChannelAdminService/SubmitPricingVersion"
-	ChannelAdminService_ApprovePricingVersion_FullMethodName = "/aipay.payment.v1.ChannelAdminService/ApprovePricingVersion"
-	ChannelAdminService_UploadPlugin_FullMethodName          = "/aipay.payment.v1.ChannelAdminService/UploadPlugin"
-	ChannelAdminService_ApprovePlugin_FullMethodName         = "/aipay.payment.v1.ChannelAdminService/ApprovePlugin"
-	ChannelAdminService_RequestPluginEnable_FullMethodName   = "/aipay.payment.v1.ChannelAdminService/RequestPluginEnable"
-	ChannelAdminService_ApprovePluginEnable_FullMethodName   = "/aipay.payment.v1.ChannelAdminService/ApprovePluginEnable"
-	ChannelAdminService_SubmitReversal_FullMethodName        = "/aipay.payment.v1.ChannelAdminService/SubmitReversal"
-	ChannelAdminService_ApproveReversal_FullMethodName       = "/aipay.payment.v1.ChannelAdminService/ApproveReversal"
+	ChannelAdminService_SubmitChannelAccount_FullMethodName    = "/aipay.payment.v1.ChannelAdminService/SubmitChannelAccount"
+	ChannelAdminService_ApproveChannelAccount_FullMethodName   = "/aipay.payment.v1.ChannelAdminService/ApproveChannelAccount"
+	ChannelAdminService_DisableChannelAccount_FullMethodName   = "/aipay.payment.v1.ChannelAdminService/DisableChannelAccount"
+	ChannelAdminService_StoreChannelCredentials_FullMethodName = "/aipay.payment.v1.ChannelAdminService/StoreChannelCredentials"
+	ChannelAdminService_SubmitPaymentMethod_FullMethodName     = "/aipay.payment.v1.ChannelAdminService/SubmitPaymentMethod"
+	ChannelAdminService_ApprovePaymentMethod_FullMethodName    = "/aipay.payment.v1.ChannelAdminService/ApprovePaymentMethod"
+	ChannelAdminService_SubmitRiskPolicy_FullMethodName        = "/aipay.payment.v1.ChannelAdminService/SubmitRiskPolicy"
+	ChannelAdminService_ApproveRiskPolicy_FullMethodName       = "/aipay.payment.v1.ChannelAdminService/ApproveRiskPolicy"
+	ChannelAdminService_SavePricingDraft_FullMethodName        = "/aipay.payment.v1.ChannelAdminService/SavePricingDraft"
+	ChannelAdminService_SubmitPricingVersion_FullMethodName    = "/aipay.payment.v1.ChannelAdminService/SubmitPricingVersion"
+	ChannelAdminService_ApprovePricingVersion_FullMethodName   = "/aipay.payment.v1.ChannelAdminService/ApprovePricingVersion"
+	ChannelAdminService_UploadPlugin_FullMethodName            = "/aipay.payment.v1.ChannelAdminService/UploadPlugin"
+	ChannelAdminService_ApprovePlugin_FullMethodName           = "/aipay.payment.v1.ChannelAdminService/ApprovePlugin"
+	ChannelAdminService_RequestPluginEnable_FullMethodName     = "/aipay.payment.v1.ChannelAdminService/RequestPluginEnable"
+	ChannelAdminService_ApprovePluginEnable_FullMethodName     = "/aipay.payment.v1.ChannelAdminService/ApprovePluginEnable"
+	ChannelAdminService_SubmitReversal_FullMethodName          = "/aipay.payment.v1.ChannelAdminService/SubmitReversal"
+	ChannelAdminService_ApproveReversal_FullMethodName         = "/aipay.payment.v1.ChannelAdminService/ApproveReversal"
 )
 
 // ChannelAdminServiceClient is the client API for ChannelAdminService service.
@@ -66,6 +67,14 @@ type ChannelAdminServiceClient interface {
 	ApproveChannelAccount(ctx context.Context, in *ApproveChannelAccountRequest, opts ...grpc.CallOption) (*ApproveChannelAccountResponse, error)
 	// Existing emergency exception: one designated person stops new dispatch only. No funds movement.
 	DisableChannelAccount(ctx context.Context, in *DisableChannelAccountRequest, opts ...grpc.CallOption) (*DisableChannelAccountResponse, error)
+	// Gateway mode only. Embedded mode returns FailedPrecondition. Payment calls
+	// StoreCredentials on the trade gateway outside its local transaction, then
+	// records the verified ref, digest, channel ID/code and credential types by name
+	// in a new transaction. This neither binds nor enables the channel.
+	// Retry an unknown outcome with the original key. The same key, channel and
+	// content digest return the original result. A different channel or digest
+	// under the same key returns AlreadyExists.
+	StoreChannelCredentials(ctx context.Context, in *StoreChannelCredentialsRequest, opts ...grpc.CallOption) (*StoreChannelCredentialsResponse, error)
 	// Submit platform availability, independent of merchant eligibility.
 	SubmitPaymentMethod(ctx context.Context, in *SubmitPaymentMethodRequest, opts ...grpc.CallOption) (*SubmitPaymentMethodResponse, error)
 	// Approve kind payment_method; update availability and control version after two approvals.
@@ -126,6 +135,16 @@ func (c *channelAdminServiceClient) DisableChannelAccount(ctx context.Context, i
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DisableChannelAccountResponse)
 	err := c.cc.Invoke(ctx, ChannelAdminService_DisableChannelAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *channelAdminServiceClient) StoreChannelCredentials(ctx context.Context, in *StoreChannelCredentialsRequest, opts ...grpc.CallOption) (*StoreChannelCredentialsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StoreChannelCredentialsResponse)
+	err := c.cc.Invoke(ctx, ChannelAdminService_StoreChannelCredentials_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -291,6 +310,14 @@ type ChannelAdminServiceServer interface {
 	ApproveChannelAccount(context.Context, *ApproveChannelAccountRequest) (*ApproveChannelAccountResponse, error)
 	// Existing emergency exception: one designated person stops new dispatch only. No funds movement.
 	DisableChannelAccount(context.Context, *DisableChannelAccountRequest) (*DisableChannelAccountResponse, error)
+	// Gateway mode only. Embedded mode returns FailedPrecondition. Payment calls
+	// StoreCredentials on the trade gateway outside its local transaction, then
+	// records the verified ref, digest, channel ID/code and credential types by name
+	// in a new transaction. This neither binds nor enables the channel.
+	// Retry an unknown outcome with the original key. The same key, channel and
+	// content digest return the original result. A different channel or digest
+	// under the same key returns AlreadyExists.
+	StoreChannelCredentials(context.Context, *StoreChannelCredentialsRequest) (*StoreChannelCredentialsResponse, error)
 	// Submit platform availability, independent of merchant eligibility.
 	SubmitPaymentMethod(context.Context, *SubmitPaymentMethodRequest) (*SubmitPaymentMethodResponse, error)
 	// Approve kind payment_method; update availability and control version after two approvals.
@@ -335,6 +362,9 @@ func (UnimplementedChannelAdminServiceServer) ApproveChannelAccount(context.Cont
 }
 func (UnimplementedChannelAdminServiceServer) DisableChannelAccount(context.Context, *DisableChannelAccountRequest) (*DisableChannelAccountResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DisableChannelAccount not implemented")
+}
+func (UnimplementedChannelAdminServiceServer) StoreChannelCredentials(context.Context, *StoreChannelCredentialsRequest) (*StoreChannelCredentialsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StoreChannelCredentials not implemented")
 }
 func (UnimplementedChannelAdminServiceServer) SubmitPaymentMethod(context.Context, *SubmitPaymentMethodRequest) (*SubmitPaymentMethodResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SubmitPaymentMethod not implemented")
@@ -446,6 +476,24 @@ func _ChannelAdminService_DisableChannelAccount_Handler(srv interface{}, ctx con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ChannelAdminServiceServer).DisableChannelAccount(ctx, req.(*DisableChannelAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChannelAdminService_StoreChannelCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StoreChannelCredentialsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChannelAdminServiceServer).StoreChannelCredentials(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChannelAdminService_StoreChannelCredentials_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChannelAdminServiceServer).StoreChannelCredentials(ctx, req.(*StoreChannelCredentialsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -702,6 +750,10 @@ var ChannelAdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DisableChannelAccount",
 			Handler:    _ChannelAdminService_DisableChannelAccount_Handler,
+		},
+		{
+			MethodName: "StoreChannelCredentials",
+			Handler:    _ChannelAdminService_StoreChannelCredentials_Handler,
 		},
 		{
 			MethodName: "SubmitPaymentMethod",

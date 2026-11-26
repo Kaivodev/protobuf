@@ -20,7 +20,10 @@ message PluginFixture {
 
 // Only independently admitted verification packages: exactly query_payment
 // and query_refund. Not payment or statement, no payment secret references.
-// CI pinned source/toolchain and reproducible WASI reactor, no uncommitted code.
+// CI pins source and toolchain and rejects uncommitted code. Gateway mode
+// requires a canonical ABI v3 manifest with Rust build fields and a component
+// up to 4 MiB. The verification gateway verifies it with ReplayPackage.
+// Embedded mode uses ABI v2 Go wasip1 reactors up to 12 MiB.
 message PluginVersionMaterial {
   string plugin_version_id = 1;
   bytes manifest_json = 2;
@@ -28,17 +31,17 @@ message PluginVersionMaterial {
   // plugin.wasm and fixtures itself, keeping approval responses small.
   // SHA-256 over the canonical encoding of the sorted fixtures (contracts.md).
   // Replay covers both operations' success/reject/timeout/bad signature/amount
-  // mismatch in this service's sandbox, not payment's result.
+  // mismatch in the verification domain.
   bytes fixtures_sha256 = 3;
   reserved 4;
   // SHA-256(normalized manifest_json || plugin_wasm), matching CI artifact.
   bytes package_sha256 = 5;
-  // Computed by reconciliation after successful replay, never caller supplied.
+  // Digest of the successful replay report from the verification gateway or embedded host.
   bytes regression_report_sha256 = 6;
 }
 
-// No secret bytes. Immutable reference resolves only in reconciliation KMS,
-// scoped to this payment channel, separately issued read-only credentials.
+// The immutable reference identifies separately issued read-only credentials
+// for this payment channel in the verification domain.
 // New accounts start disabled; configuration changes also disable until a new
 // two-person plugin-enable approval validates the new control version.
 message VerificationAccountConfiguration {
@@ -48,6 +51,10 @@ message VerificationAccountConfiguration {
   string name = 3;
   bytes config_json = 4;
   string credentials_ref = 5;
+  // Gateway mode requires the digest reconciliation registered for this ref.
+  // Embedded mode rejects this field. Canonical encoding appends
+  // u8(1) || B(value) after field 5 when present. Absence adds no bytes.
+  optional bytes credentials_sha256 = 6;
 }
 
 message VerificationAccountChange {

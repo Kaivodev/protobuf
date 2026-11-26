@@ -78,7 +78,10 @@ func (x *PluginFixture) GetContent() []byte {
 
 // Only independently admitted verification packages: exactly query_payment
 // and query_refund. Not payment or statement, no payment secret references.
-// CI pinned source/toolchain and reproducible WASI reactor, no uncommitted code.
+// CI pins source and toolchain and rejects uncommitted code. Gateway mode
+// requires a canonical ABI v3 manifest with Rust build fields and a component
+// up to 4 MiB. The verification gateway verifies it with ReplayPackage.
+// Embedded mode uses ABI v2 Go wasip1 reactors up to 12 MiB.
 type PluginVersionMaterial struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	PluginVersionId string                 `protobuf:"bytes,1,opt,name=plugin_version_id,json=pluginVersionId,proto3" json:"plugin_version_id,omitempty"`
@@ -87,11 +90,11 @@ type PluginVersionMaterial struct {
 	// plugin.wasm and fixtures itself, keeping approval responses small.
 	// SHA-256 over the canonical encoding of the sorted fixtures (contracts.md).
 	// Replay covers both operations' success/reject/timeout/bad signature/amount
-	// mismatch in this service's sandbox, not payment's result.
+	// mismatch in the verification domain.
 	FixturesSha256 []byte `protobuf:"bytes,3,opt,name=fixtures_sha256,json=fixturesSha256,proto3" json:"fixtures_sha256,omitempty"`
 	// SHA-256(normalized manifest_json || plugin_wasm), matching CI artifact.
 	PackageSha256 []byte `protobuf:"bytes,5,opt,name=package_sha256,json=packageSha256,proto3" json:"package_sha256,omitempty"`
-	// Computed by reconciliation after successful replay, never caller supplied.
+	// Digest of the successful replay report from the verification gateway or embedded host.
 	RegressionReportSha256 []byte `protobuf:"bytes,6,opt,name=regression_report_sha256,json=regressionReportSha256,proto3" json:"regression_report_sha256,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
@@ -162,8 +165,8 @@ func (x *PluginVersionMaterial) GetRegressionReportSha256() []byte {
 	return nil
 }
 
-// No secret bytes. Immutable reference resolves only in reconciliation KMS,
-// scoped to this payment channel, separately issued read-only credentials.
+// The immutable reference identifies separately issued read-only credentials
+// for this payment channel in the verification domain.
 // New accounts start disabled; configuration changes also disable until a new
 // two-person plugin-enable approval validates the new control version.
 type VerificationAccountConfiguration struct {
@@ -174,8 +177,12 @@ type VerificationAccountConfiguration struct {
 	Name             string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	ConfigJson       []byte `protobuf:"bytes,4,opt,name=config_json,json=configJson,proto3" json:"config_json,omitempty"`
 	CredentialsRef   string `protobuf:"bytes,5,opt,name=credentials_ref,json=credentialsRef,proto3" json:"credentials_ref,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Gateway mode requires the digest reconciliation registered for this ref.
+	// Embedded mode rejects this field. Canonical encoding appends
+	// u8(1) || B(value) after field 5 when present. Absence adds no bytes.
+	CredentialsSha256 []byte `protobuf:"bytes,6,opt,name=credentials_sha256,json=credentialsSha256,proto3,oneof" json:"credentials_sha256,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *VerificationAccountConfiguration) Reset() {
@@ -241,6 +248,13 @@ func (x *VerificationAccountConfiguration) GetCredentialsRef() string {
 		return x.CredentialsRef
 	}
 	return ""
+}
+
+func (x *VerificationAccountConfiguration) GetCredentialsSha256() []byte {
+	if x != nil {
+		return x.CredentialsSha256
+	}
+	return nil
 }
 
 type VerificationAccountChange struct {
@@ -622,14 +636,16 @@ const file_aipay_reconciliation_v1_admin_approval_proto_rawDesc = "" +
 	"\rmanifest_json\x18\x02 \x01(\fR\fmanifestJson\x12'\n" +
 	"\x0ffixtures_sha256\x18\x03 \x01(\fR\x0efixturesSha256\x12%\n" +
 	"\x0epackage_sha256\x18\x05 \x01(\fR\rpackageSha256\x128\n" +
-	"\x18regression_report_sha256\x18\x06 \x01(\fR\x16regressionReportSha256J\x04\b\x04\x10\x05\"\xe6\x01\n" +
+	"\x18regression_report_sha256\x18\x06 \x01(\fR\x16regressionReportSha256J\x04\b\x04\x10\x05\"\xb1\x02\n" +
 	" VerificationAccountConfiguration\x126\n" +
 	"\x17verification_account_id\x18\x01 \x01(\tR\x15verificationAccountId\x12,\n" +
 	"\x12channel_account_id\x18\x02 \x01(\tR\x10channelAccountId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1f\n" +
 	"\vconfig_json\x18\x04 \x01(\fR\n" +
 	"configJson\x12'\n" +
-	"\x0fcredentials_ref\x18\x05 \x01(\tR\x0ecredentialsRef\"\xb6\x01\n" +
+	"\x0fcredentials_ref\x18\x05 \x01(\tR\x0ecredentialsRef\x122\n" +
+	"\x12credentials_sha256\x18\x06 \x01(\fH\x00R\x11credentialsSha256\x88\x01\x01B\x15\n" +
+	"\x13_credentials_sha256\"\xb6\x01\n" +
 	"\x19VerificationAccountChange\x12_\n" +
 	"\rconfiguration\x18\x01 \x01(\v29.aipay.reconciliation.v1.VerificationAccountConfigurationR\rconfiguration\x128\n" +
 	"\x18expected_control_version\x18\x02 \x01(\x04R\x16expectedControlVersion\"\xce\x03\n" +
@@ -708,6 +724,7 @@ func file_aipay_reconciliation_v1_admin_approval_proto_init() {
 	if File_aipay_reconciliation_v1_admin_approval_proto != nil {
 		return
 	}
+	file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[2].OneofWrappers = []any{}
 	file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[4].OneofWrappers = []any{}
 	file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[5].OneofWrappers = []any{
 		(*ReconciliationApprovalMaterial_VerificationAccount)(nil),

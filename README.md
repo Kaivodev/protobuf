@@ -51,7 +51,13 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 认证证明的签发格式、密钥托管、调用方绑定与撤销机制尚待 IAM 实现；EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 
-## v0.17.0 上游网关契约（待发布）
+## v0.18.0 属主接入上游网关（已发布）
+
+网关模式下，backend 通过 payment 的 `StoreChannelCredentials` 登记交易凭据，取得不可变引用与内容摘要。reconciliation 的 `StoreVerificationCredentials` 在两种模式下都返回内容摘要。交易通道与核验账户在网关模式下提交配置时须绑定已登记的摘要，嵌入模式拒绝该字段。省略字段时可按原字节复验历史审批材料。网关模式只接收 ABI v3 组件包，由本域网关通过 `ReplayPackage` 复验。嵌入模式沿用 ABI v2。见[属主接入上游网关契约](https://github.com/Kaivodev/docs/blob/main/design/contracts.md#v0180-属主接入上游网关)。
+
+下单契约 `CreateOrderRequest` 和 `CreatePaymentInput` 新增可选字段 `client_ip`（买家 IP）和 `device`（设备类型），待 UG-6、UG-7 实现后按上游要求透传。
+
+## v0.17.0 上游网关契约（已发布，提交 `8442a37`）
 
 交易实例只接受 payment，可调用七个业务方法和五个管理方法。核验实例只接受 reconciliation，可调用 `QueryPayment`、`QueryRefund` 和五个管理方法。方法 policy 声明两种实例的调用方并集，网关按启动角色和经 mTLS 验证的对端逐方法收窄权限。幂等、派发结果、证据与管理方法的详细语义见[上游网关契约](https://github.com/Kaivodev/docs/blob/main/design/upstream-gateway-contract.md)。
 
@@ -107,7 +113,7 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 新列表使用不透明游标、每页1–100条及一致读时点；`common/v1/query.proto` 的上限选项只是契约声明，运行时仍由属主校验。卖方身份仅来自 IAM 证明绑定，请求不接受卖方账户自报。权限、范围、签名规范、门户逐项映射和后续版本见 docs 仓库 `design/contracts.md` 的 v0.9.0 节。契约/SDK 不代表服务或 HTTP 已接通。
 
-`make breaking` 默认与本地 `v0.15.0` 标签比较。
+`make breaking` 默认与本地 `v0.17.0` 标签比较。
 
 ## 生成与检查
 
