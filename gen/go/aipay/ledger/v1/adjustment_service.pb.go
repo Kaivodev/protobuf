@@ -9,6 +9,7 @@ package ledgerv1
 import (
 	v1 "github.com/Kaivodev/protobuf/gen/go/aipay/approval/v1"
 	_ "github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1"
+	_ "github.com/Kaivodev/protobuf/gen/go/aipay/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -93,6 +94,147 @@ func (x *AdjustmentLine) GetUnits() int64 {
 	return 0
 }
 
+type AdjustmentEvidenceUpload struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Display name of 1-128 characters. Excludes '/', '\\', control characters and NUL.
+	FileName string `protobuf:"bytes,1,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	// application/pdf, image/png or image/jpeg. The ledger checks the magic bytes.
+	ContentType string `protobuf:"bytes,2,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
+	// 1 byte to 1 MiB per file, up to 3 MiB across the request.
+	Data          []byte `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdjustmentEvidenceUpload) Reset() {
+	*x = AdjustmentEvidenceUpload{}
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdjustmentEvidenceUpload) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdjustmentEvidenceUpload) ProtoMessage() {}
+
+func (x *AdjustmentEvidenceUpload) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdjustmentEvidenceUpload.ProtoReflect.Descriptor instead.
+func (*AdjustmentEvidenceUpload) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_adjustment_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *AdjustmentEvidenceUpload) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *AdjustmentEvidenceUpload) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+func (x *AdjustmentEvidenceUpload) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type AdjustmentEvidenceFile struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 1-based, in submission order.
+	FileNo      uint32 `protobuf:"varint,1,opt,name=file_no,json=fileNo,proto3" json:"file_no,omitempty"`
+	FileName    string `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	ContentType string `protobuf:"bytes,3,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
+	SizeBytes   uint32 `protobuf:"varint,4,opt,name=size_bytes,json=sizeBytes,proto3" json:"size_bytes,omitempty"`
+	// SHA-256 of the stored bytes, 32 bytes.
+	Sha256        []byte `protobuf:"bytes,5,opt,name=sha256,proto3" json:"sha256,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdjustmentEvidenceFile) Reset() {
+	*x = AdjustmentEvidenceFile{}
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdjustmentEvidenceFile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdjustmentEvidenceFile) ProtoMessage() {}
+
+func (x *AdjustmentEvidenceFile) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdjustmentEvidenceFile.ProtoReflect.Descriptor instead.
+func (*AdjustmentEvidenceFile) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_adjustment_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *AdjustmentEvidenceFile) GetFileNo() uint32 {
+	if x != nil {
+		return x.FileNo
+	}
+	return 0
+}
+
+func (x *AdjustmentEvidenceFile) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *AdjustmentEvidenceFile) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+func (x *AdjustmentEvidenceFile) GetSizeBytes() uint32 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+func (x *AdjustmentEvidenceFile) GetSha256() []byte {
+	if x != nil {
+		return x.Sha256
+	}
+	return nil
+}
+
 type SubmitAdjustmentRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The command's request ID: retries reuse it, and the same key with
@@ -100,19 +242,27 @@ type SubmitAdjustmentRequest struct {
 	IdempotencyKey string `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
 	// 1 to 1000 characters.
 	Reason string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
-	// SHA-256 of the supporting evidence, 32 bytes.
+	// Evidence manifest digest, 32 bytes. The ledger recomputes it from the
+	// uploaded files in submission order and rejects a mismatch with
+	// INVALID_EVIDENCE (InvalidArgument):
+	//   SHA-256(str "aipay.ledger.adjustment_evidence.v1" || u32 file_count ||
+	//           (str file_name || str content_type || u32 size_bytes || bytes sha256)*)
+	// Each file hash carries a u32 length prefix of 32. The signed request
+	// binds every file's name, content type, size and contents through this digest.
 	EvidenceSha256 []byte `protobuf:"bytes,3,opt,name=evidence_sha256,json=evidenceSha256,proto3" json:"evidence_sha256,omitempty"`
 	// seq of the transaction this adjustment corrects; 0 for none.
 	CorrectsSeq uint64 `protobuf:"varint,4,opt,name=corrects_seq,json=correctsSeq,proto3" json:"corrects_seq,omitempty"`
 	// 2 to 100 lines, balanced per currency.
-	Lines         []*AdjustmentLine `protobuf:"bytes,5,rep,name=lines,proto3" json:"lines,omitempty"`
+	Lines []*AdjustmentLine `protobuf:"bytes,5,rep,name=lines,proto3" json:"lines,omitempty"`
+	// Required, 1 to 5 files in submission order.
+	EvidenceFiles []*AdjustmentEvidenceUpload `protobuf:"bytes,6,rep,name=evidence_files,json=evidenceFiles,proto3" json:"evidence_files,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SubmitAdjustmentRequest) Reset() {
 	*x = SubmitAdjustmentRequest{}
-	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[1]
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -124,7 +274,7 @@ func (x *SubmitAdjustmentRequest) String() string {
 func (*SubmitAdjustmentRequest) ProtoMessage() {}
 
 func (x *SubmitAdjustmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[1]
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -137,7 +287,7 @@ func (x *SubmitAdjustmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitAdjustmentRequest.ProtoReflect.Descriptor instead.
 func (*SubmitAdjustmentRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_ledger_v1_adjustment_service_proto_rawDescGZIP(), []int{1}
+	return file_aipay_ledger_v1_adjustment_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SubmitAdjustmentRequest) GetIdempotencyKey() string {
@@ -175,18 +325,28 @@ func (x *SubmitAdjustmentRequest) GetLines() []*AdjustmentLine {
 	return nil
 }
 
+func (x *SubmitAdjustmentRequest) GetEvidenceFiles() []*AdjustmentEvidenceUpload {
+	if x != nil {
+		return x.EvidenceFiles
+	}
+	return nil
+}
+
 type SubmitAdjustmentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Kind "adjustment", pending, two required approvals, expiring 24 hours
 	// after requested_at.
 	ApprovalRequest *v1.ApprovalRequest `protobuf:"bytes,1,opt,name=approval_request,json=approvalRequest,proto3" json:"approval_request,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// Stored files in submission order. An absent list after an upload indicates
+	// an older ledger that ignored the evidence_files request field.
+	EvidenceFiles []*AdjustmentEvidenceFile `protobuf:"bytes,2,rep,name=evidence_files,json=evidenceFiles,proto3" json:"evidence_files,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SubmitAdjustmentResponse) Reset() {
 	*x = SubmitAdjustmentResponse{}
-	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[2]
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -198,7 +358,7 @@ func (x *SubmitAdjustmentResponse) String() string {
 func (*SubmitAdjustmentResponse) ProtoMessage() {}
 
 func (x *SubmitAdjustmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[2]
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -211,12 +371,19 @@ func (x *SubmitAdjustmentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitAdjustmentResponse.ProtoReflect.Descriptor instead.
 func (*SubmitAdjustmentResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_ledger_v1_adjustment_service_proto_rawDescGZIP(), []int{2}
+	return file_aipay_ledger_v1_adjustment_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SubmitAdjustmentResponse) GetApprovalRequest() *v1.ApprovalRequest {
 	if x != nil {
 		return x.ApprovalRequest
+	}
+	return nil
+}
+
+func (x *SubmitAdjustmentResponse) GetEvidenceFiles() []*AdjustmentEvidenceFile {
+	if x != nil {
+		return x.EvidenceFiles
 	}
 	return nil
 }
@@ -233,7 +400,7 @@ type ApproveAdjustmentRequest struct {
 
 func (x *ApproveAdjustmentRequest) Reset() {
 	*x = ApproveAdjustmentRequest{}
-	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[3]
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -245,7 +412,7 @@ func (x *ApproveAdjustmentRequest) String() string {
 func (*ApproveAdjustmentRequest) ProtoMessage() {}
 
 func (x *ApproveAdjustmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[3]
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -258,7 +425,7 @@ func (x *ApproveAdjustmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApproveAdjustmentRequest.ProtoReflect.Descriptor instead.
 func (*ApproveAdjustmentRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_ledger_v1_adjustment_service_proto_rawDescGZIP(), []int{3}
+	return file_aipay_ledger_v1_adjustment_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ApproveAdjustmentRequest) GetIdempotencyKey() string {
@@ -296,7 +463,7 @@ type ApproveAdjustmentResponse struct {
 
 func (x *ApproveAdjustmentResponse) Reset() {
 	*x = ApproveAdjustmentResponse{}
-	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[4]
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -308,7 +475,7 @@ func (x *ApproveAdjustmentResponse) String() string {
 func (*ApproveAdjustmentResponse) ProtoMessage() {}
 
 func (x *ApproveAdjustmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[4]
+	mi := &file_aipay_ledger_v1_adjustment_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -321,7 +488,7 @@ func (x *ApproveAdjustmentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApproveAdjustmentResponse.ProtoReflect.Descriptor instead.
 func (*ApproveAdjustmentResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_ledger_v1_adjustment_service_proto_rawDescGZIP(), []int{4}
+	return file_aipay_ledger_v1_adjustment_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ApproveAdjustmentResponse) GetApprovalRequest() *v1.ApprovalRequest {
@@ -349,20 +516,33 @@ var File_aipay_ledger_v1_adjustment_service_proto protoreflect.FileDescriptor
 
 const file_aipay_ledger_v1_adjustment_service_proto_rawDesc = "" +
 	"\n" +
-	"(aipay/ledger/v1/adjustment_service.proto\x12\x0faipay.ledger.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/authz/v1/policy.proto\x1a\x1caipay/ledger/v1/ledger.proto\"\xa4\x01\n" +
+	"(aipay/ledger/v1/adjustment_service.proto\x12\x0faipay.ledger.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/query.proto\x1a\x1caipay/ledger/v1/ledger.proto\"\xa4\x01\n" +
 	"\x0eAdjustmentLine\x12!\n" +
 	"\faccount_code\x18\x01 \x01(\tR\vaccountCode\x12=\n" +
 	"\tdirection\x18\x02 \x01(\x0e2\x1f.aipay.ledger.v1.EntryDirectionR\tdirection\x12\x1a\n" +
 	"\bcurrency\x18\x03 \x01(\tR\bcurrency\x12\x14\n" +
-	"\x05units\x18\x04 \x01(\x03R\x05units\"\xdd\x01\n" +
+	"\x05units\x18\x04 \x01(\x03R\x05units\"n\n" +
+	"\x18AdjustmentEvidenceUpload\x12\x1b\n" +
+	"\tfile_name\x18\x01 \x01(\tR\bfileName\x12!\n" +
+	"\fcontent_type\x18\x02 \x01(\tR\vcontentType\x12\x12\n" +
+	"\x04data\x18\x03 \x01(\fR\x04data\"\xa8\x01\n" +
+	"\x16AdjustmentEvidenceFile\x12\x17\n" +
+	"\afile_no\x18\x01 \x01(\rR\x06fileNo\x12\x1b\n" +
+	"\tfile_name\x18\x02 \x01(\tR\bfileName\x12!\n" +
+	"\fcontent_type\x18\x03 \x01(\tR\vcontentType\x12\x1d\n" +
+	"\n" +
+	"size_bytes\x18\x04 \x01(\rR\tsizeBytes\x12\x16\n" +
+	"\x06sha256\x18\x05 \x01(\fR\x06sha256\"\xb5\x02\n" +
 	"\x17SubmitAdjustmentRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x12'\n" +
 	"\x0fevidence_sha256\x18\x03 \x01(\fR\x0eevidenceSha256\x12!\n" +
 	"\fcorrects_seq\x18\x04 \x01(\x04R\vcorrectsSeq\x125\n" +
-	"\x05lines\x18\x05 \x03(\v2\x1f.aipay.ledger.v1.AdjustmentLineR\x05lines\"i\n" +
+	"\x05lines\x18\x05 \x03(\v2\x1f.aipay.ledger.v1.AdjustmentLineR\x05lines\x12V\n" +
+	"\x0eevidence_files\x18\x06 \x03(\v2).aipay.ledger.v1.AdjustmentEvidenceUploadB\x04\xc8\xf3\x18\x05R\revidenceFiles\"\xb9\x01\n" +
 	"\x18SubmitAdjustmentResponse\x12M\n" +
-	"\x10approval_request\x18\x01 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\x0fapprovalRequest\"\xb7\x01\n" +
+	"\x10approval_request\x18\x01 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\x0fapprovalRequest\x12N\n" +
+	"\x0eevidence_files\x18\x02 \x03(\v2'.aipay.ledger.v1.AdjustmentEvidenceFileR\revidenceFiles\"\xb7\x01\n" +
 	"\x18ApproveAdjustmentRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12.\n" +
 	"\x13approval_request_id\x18\x02 \x01(\tR\x11approvalRequestId\x12B\n" +
@@ -391,34 +571,38 @@ func file_aipay_ledger_v1_adjustment_service_proto_rawDescGZIP() []byte {
 	return file_aipay_ledger_v1_adjustment_service_proto_rawDescData
 }
 
-var file_aipay_ledger_v1_adjustment_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_aipay_ledger_v1_adjustment_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_aipay_ledger_v1_adjustment_service_proto_goTypes = []any{
 	(*AdjustmentLine)(nil),            // 0: aipay.ledger.v1.AdjustmentLine
-	(*SubmitAdjustmentRequest)(nil),   // 1: aipay.ledger.v1.SubmitAdjustmentRequest
-	(*SubmitAdjustmentResponse)(nil),  // 2: aipay.ledger.v1.SubmitAdjustmentResponse
-	(*ApproveAdjustmentRequest)(nil),  // 3: aipay.ledger.v1.ApproveAdjustmentRequest
-	(*ApproveAdjustmentResponse)(nil), // 4: aipay.ledger.v1.ApproveAdjustmentResponse
-	(EntryDirection)(0),               // 5: aipay.ledger.v1.EntryDirection
-	(*v1.ApprovalRequest)(nil),        // 6: aipay.approval.v1.ApprovalRequest
-	(*v1.WebAuthnAssertion)(nil),      // 7: aipay.approval.v1.WebAuthnAssertion
-	(*JournalTransaction)(nil),        // 8: aipay.ledger.v1.JournalTransaction
+	(*AdjustmentEvidenceUpload)(nil),  // 1: aipay.ledger.v1.AdjustmentEvidenceUpload
+	(*AdjustmentEvidenceFile)(nil),    // 2: aipay.ledger.v1.AdjustmentEvidenceFile
+	(*SubmitAdjustmentRequest)(nil),   // 3: aipay.ledger.v1.SubmitAdjustmentRequest
+	(*SubmitAdjustmentResponse)(nil),  // 4: aipay.ledger.v1.SubmitAdjustmentResponse
+	(*ApproveAdjustmentRequest)(nil),  // 5: aipay.ledger.v1.ApproveAdjustmentRequest
+	(*ApproveAdjustmentResponse)(nil), // 6: aipay.ledger.v1.ApproveAdjustmentResponse
+	(EntryDirection)(0),               // 7: aipay.ledger.v1.EntryDirection
+	(*v1.ApprovalRequest)(nil),        // 8: aipay.approval.v1.ApprovalRequest
+	(*v1.WebAuthnAssertion)(nil),      // 9: aipay.approval.v1.WebAuthnAssertion
+	(*JournalTransaction)(nil),        // 10: aipay.ledger.v1.JournalTransaction
 }
 var file_aipay_ledger_v1_adjustment_service_proto_depIdxs = []int32{
-	5, // 0: aipay.ledger.v1.AdjustmentLine.direction:type_name -> aipay.ledger.v1.EntryDirection
-	0, // 1: aipay.ledger.v1.SubmitAdjustmentRequest.lines:type_name -> aipay.ledger.v1.AdjustmentLine
-	6, // 2: aipay.ledger.v1.SubmitAdjustmentResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	7, // 3: aipay.ledger.v1.ApproveAdjustmentRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
-	6, // 4: aipay.ledger.v1.ApproveAdjustmentResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	8, // 5: aipay.ledger.v1.ApproveAdjustmentResponse.transaction:type_name -> aipay.ledger.v1.JournalTransaction
-	1, // 6: aipay.ledger.v1.AdjustmentService.SubmitAdjustment:input_type -> aipay.ledger.v1.SubmitAdjustmentRequest
-	3, // 7: aipay.ledger.v1.AdjustmentService.ApproveAdjustment:input_type -> aipay.ledger.v1.ApproveAdjustmentRequest
-	2, // 8: aipay.ledger.v1.AdjustmentService.SubmitAdjustment:output_type -> aipay.ledger.v1.SubmitAdjustmentResponse
-	4, // 9: aipay.ledger.v1.AdjustmentService.ApproveAdjustment:output_type -> aipay.ledger.v1.ApproveAdjustmentResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	7,  // 0: aipay.ledger.v1.AdjustmentLine.direction:type_name -> aipay.ledger.v1.EntryDirection
+	0,  // 1: aipay.ledger.v1.SubmitAdjustmentRequest.lines:type_name -> aipay.ledger.v1.AdjustmentLine
+	1,  // 2: aipay.ledger.v1.SubmitAdjustmentRequest.evidence_files:type_name -> aipay.ledger.v1.AdjustmentEvidenceUpload
+	8,  // 3: aipay.ledger.v1.SubmitAdjustmentResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	2,  // 4: aipay.ledger.v1.SubmitAdjustmentResponse.evidence_files:type_name -> aipay.ledger.v1.AdjustmentEvidenceFile
+	9,  // 5: aipay.ledger.v1.ApproveAdjustmentRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
+	8,  // 6: aipay.ledger.v1.ApproveAdjustmentResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	10, // 7: aipay.ledger.v1.ApproveAdjustmentResponse.transaction:type_name -> aipay.ledger.v1.JournalTransaction
+	3,  // 8: aipay.ledger.v1.AdjustmentService.SubmitAdjustment:input_type -> aipay.ledger.v1.SubmitAdjustmentRequest
+	5,  // 9: aipay.ledger.v1.AdjustmentService.ApproveAdjustment:input_type -> aipay.ledger.v1.ApproveAdjustmentRequest
+	4,  // 10: aipay.ledger.v1.AdjustmentService.SubmitAdjustment:output_type -> aipay.ledger.v1.SubmitAdjustmentResponse
+	6,  // 11: aipay.ledger.v1.AdjustmentService.ApproveAdjustment:output_type -> aipay.ledger.v1.ApproveAdjustmentResponse
+	10, // [10:12] is the sub-list for method output_type
+	8,  // [8:10] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_aipay_ledger_v1_adjustment_service_proto_init() }
@@ -433,7 +617,7 @@ func file_aipay_ledger_v1_adjustment_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_ledger_v1_adjustment_service_proto_rawDesc), len(file_aipay_ledger_v1_adjustment_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

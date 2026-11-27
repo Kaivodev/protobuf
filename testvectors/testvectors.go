@@ -16,6 +16,8 @@ import (
 var (
 	//go:embed ledger_canonical_v1.json
 	ledgerCanonicalV1 []byte
+	//go:embed ledger_adjustment_v1.json
+	ledgerAdjustmentV1 []byte
 	//go:embed event_signing_v1.json
 	eventSigningV1 []byte
 	//go:embed approval_v1.json
@@ -39,6 +41,10 @@ var (
 // LedgerCanonicalV1 holds journal transactions with their canonical encoding V1
 // and hashes, including a chain from the genesis prev_hash.
 func LedgerCanonicalV1() []byte { return bytes.Clone(ledgerCanonicalV1) }
+
+// LedgerAdjustmentV1 holds evidence files, manifest digests and canonical
+// approval bytes and digests for manual ledger adjustments.
+func LedgerAdjustmentV1() []byte { return bytes.Clone(ledgerAdjustmentV1) }
 
 // EventSigningV1 holds signed event envelopes with their AIPAY-EVENT-V1
 // signing input, event digests, the producer public key, and envelopes that

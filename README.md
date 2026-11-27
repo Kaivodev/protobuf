@@ -18,7 +18,8 @@ proto/aipay/
   payment/v1/payment.proto         支付订单契约占位
   ledger/v1/ledger.proto           分录交易、分录行与 CheckpointSigned 检查点
   ledger/v1/journal_service.proto  JournalService：分录与检查点拉取
-  ledger/v1/adjustment_service.proto  AdjustmentService：人工调账申请与审批
+  ledger/v1/adjustment_service.proto  AdjustmentService submits evidence files and approves manual adjustments
+  ledger/v1/approval_service.proto    AdjustmentQueryService reads adjustments and evidence, and LedgerApprovalService serves the approval inbox
   ledger/v1/trade.proto            担保状态、退款分支与预留凭证
   ledger/v1/reservation_service.proto  ReservationService：担保冻结、屏障与退款预留
   ledger/v1/trade_events.proto     ledger.trades 的四类账本事实
@@ -51,6 +52,14 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 `testvectors` 包以 JSON 发布分录规范编码 V1，余额摘要、科目余额表摘要、RFC 6962 Merkle 根与检查点签名，签名事件，以及 WebAuthn 审批断言的测试向量（输入、规范字节、期望哈希、公钥与签名，以及必须被拒绝的篡改样例）。包内只有数据，没有编码器或校验器：settlement 与 reconciliation 按规范自行实现分录哈希校验器（决策 A16），再用这些向量测试。向量中的密钥只为生成向量临时创建，私钥已丢弃。
 
 IAM 已有 Telegram/EPay 等签发实现；具体登录来源、密钥托管与撤销能力以其实际交付为准，不因协议存在推断平台管理路径已接通。EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
+
+## v0.25.0 ledger adjustment reads and unified ledger approvals (unreleased)
+
+- `SubmitAdjustment` accepts one to five PDF, PNG or JPEG files. The ledger recomputes the evidence manifest digest from each file's name, content type, size and SHA-256 in submission order. Approvers sign that digest through the existing request encoding. Each line encodes debit as ASCII `'D'` (0x44) and credit as ASCII `'C'` (0x43). `testvectors.LedgerAdjustmentV1()` provides the files, manifest digests, request bytes and approval digests.
+- Submission validates each line. The final approval opens eligible platform accounts and posts the entry in one transaction, in the period and business day open at posting. A posting failure leaves the request pending and rolls back the final approval.
+- With `ledger.adjustment.read`, backend can call `ListAdjustments` across statuses, inspect line accounts and journal entries with `GetAdjustment`, and download a numbered file with `GetAdjustmentEvidenceFile`. The reads work in read-only mode and honor the target funds account in the verified proof.
+- With `ledger.approval.read`, backend can call `LedgerApprovalService.ListApprovals` for pending adjustment, read-only exit, carryover and USD rate policy requests. `GetApproval` returns any state and includes the structured material and complete recorded assertions.
+- Deploy ledger before backend submits evidence files. An older ledger ignores request field 6. Callers can detect this from the missing `evidence_files` echo in the submission response.
 
 ## v0.24.0 ledger control permissions and reads (unreleased)
 

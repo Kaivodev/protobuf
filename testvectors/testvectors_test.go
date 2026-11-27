@@ -484,6 +484,123 @@ func TestPaymentForcedCloseV1(t *testing.T) {
 	}
 }
 
+// JSON decodes data from base64 into the original upload bytes.
+type adjustmentUpload struct {
+	FileName    string `json:"file_name"`
+	ContentType string `json:"content_type"`
+	Data        []byte `json:"data"`
+}
+
+func adjustmentManifestDigest(t *testing.T, uploads []adjustmentUpload, files []*ledgerv1.AdjustmentEvidenceFile) []byte {
+	t.Helper()
+	if len(uploads) == 0 || len(uploads) > 5 || len(uploads) != len(files) {
+		t.Fatalf("got %d uploads and %d manifest entries", len(uploads), len(files))
+	}
+	var w writer
+	w.str("aipay.ledger.adjustment_evidence.v1")
+	w.u32(uint32(len(uploads)))
+	for i, upload := range uploads {
+		size := uint32(len(upload.Data))
+		hash := sum(upload.Data)
+		file := files[i]
+		if file.GetFileNo() != uint32(i+1) || file.GetFileName() != upload.FileName ||
+			file.GetContentType() != upload.ContentType || file.GetSizeBytes() != size || !bytes.Equal(file.GetSha256(), hash) {
+			t.Fatalf("manifest entry %d differs from upload %q", i+1, upload.FileName)
+		}
+		w.str(upload.FileName)
+		w.str(upload.ContentType)
+		w.u32(size)
+		w.bytes(hash)
+	}
+	return sum(w.b)
+}
+
+func TestLedgerAdjustmentV1(t *testing.T) {
+	var doc struct {
+		Description string
+		Approvals   []struct {
+			Name         string
+			Material     json.RawMessage
+			Uploads      []adjustmentUpload `json:"evidence_files"`
+			RequestBytes string             `json:"request_bytes"`
+			Digest       string             `json:"request_digest"`
+		} `json:"approval_vectors"`
+	}
+	decodeJSON(t, testvectors.LedgerAdjustmentV1(), &doc)
+	var correction, noCorrection, multibyteReason, debit, credit bool
+	for _, v := range doc.Approvals {
+		t.Run(v.Name, func(t *testing.T) {
+			var m ledgerv1.LedgerApprovalMaterial
+			if err := protojson.Unmarshal(v.Material, &m); err != nil {
+				t.Fatal(err)
+			}
+			a := m.GetAdjustment()
+			if m.Kind != "adjustment" || a == nil {
+				t.Fatal("expected adjustment approval material")
+			}
+			manifest := adjustmentManifestDigest(t, v.Uploads, a.EvidenceFiles)
+			if !bytes.Equal(manifest, a.EvidenceSha256) {
+				t.Fatal("manifest digest differs from signed evidence_sha256")
+			}
+			id := unhex(t, strings.ReplaceAll(m.ApprovalRequestId, "-", ""))
+			if len(id) != 16 {
+				t.Fatal("approval_request_id must be a UUID")
+			}
+			var w writer
+			w.str("aipay.ledger.adjustment.v1")
+			w.raw(id...)
+			w.str(m.RequestedBy)
+			w.u64(uint64(m.RequestedAt.AsTime().UnixNano()))
+			w.u64(uint64(m.ExpiresAt.AsTime().UnixNano()))
+			w.str(a.Reason)
+			w.bytes(manifest)
+			w.u64(a.CorrectsSeq)
+			w.u32(uint32(len(a.Lines)))
+			balances := map[string]int64{}
+			for _, line := range a.Lines {
+				if line.Units <= 0 {
+					t.Fatal("line units must be positive")
+				}
+				w.str(line.AccountCode)
+				switch line.Direction {
+				case ledgerv1.EntryDirection_ENTRY_DIRECTION_DEBIT:
+					w.raw('D')
+					balances[line.Currency] += line.Units
+					debit = true
+				case ledgerv1.EntryDirection_ENTRY_DIRECTION_CREDIT:
+					w.raw('C')
+					balances[line.Currency] -= line.Units
+					credit = true
+				default:
+					t.Fatalf("invalid entry direction %v", line.Direction)
+				}
+				w.str(line.Currency)
+				w.u64(uint64(line.Units))
+			}
+			for currency, net := range balances {
+				if net != 0 {
+					t.Fatalf("%s lines do not balance: net %d", currency, net)
+				}
+			}
+			if !equalHex(w.b, v.RequestBytes) || !equalHex(sum([]byte("AIPAY-APPROVAL-V1"), w.b), v.Digest) {
+				t.Fatal("canonical request bytes or approval digest differ from fixture")
+			}
+			multibyteReason = multibyteReason || len(a.Reason) > utf8.RuneCountInString(a.Reason)
+			switch v.Name {
+			case "four-lines-two-currencies-correction":
+				_, usdt := balances["USDT"]
+				_, trx := balances["TRX"]
+				correction = a.CorrectsSeq != 0 && usdt && trx && len(balances) == 2 && len(v.Uploads) == 2
+			case "single-currency-no-correction":
+				noCorrection = a.CorrectsSeq == 0 && len(balances) == 1 && len(a.Lines) == 2 && len(v.Uploads) == 1
+			}
+		})
+	}
+	if !correction || !noCorrection || !debit || !credit || !multibyteReason {
+		t.Fatal("expected both named adjustment cases, debit and credit lines, and a multibyte reason")
+	}
+}
+
 func TestLedgerCanonicalV1(t *testing.T) {
 	var doc struct {
 		Spec, Description string

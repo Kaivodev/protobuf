@@ -4,6 +4,7 @@ package aipay.ledger.v1;
 
 import "aipay/approval/v1/approval.proto";
 import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/query.proto";
 import "aipay/ledger/v1/ledger.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
@@ -17,24 +18,54 @@ message AdjustmentLine {
   int64 units = 4;
 }
 
+message AdjustmentEvidenceUpload {
+  // Display name of 1-128 characters. Excludes '/', '\\', control characters and NUL.
+  string file_name = 1;
+  // application/pdf, image/png or image/jpeg. The ledger checks the magic bytes.
+  string content_type = 2;
+  // 1 byte to 1 MiB per file, up to 3 MiB across the request.
+  bytes data = 3;
+}
+
+message AdjustmentEvidenceFile {
+  // 1-based, in submission order.
+  uint32 file_no = 1;
+  string file_name = 2;
+  string content_type = 3;
+  uint32 size_bytes = 4;
+  // SHA-256 of the stored bytes, 32 bytes.
+  bytes sha256 = 5;
+}
+
 message SubmitAdjustmentRequest {
   // The command's request ID: retries reuse it, and the same key with
   // different content is AlreadyExists.
   string idempotency_key = 1;
   // 1 to 1000 characters.
   string reason = 2;
-  // SHA-256 of the supporting evidence, 32 bytes.
+  // Evidence manifest digest, 32 bytes. The ledger recomputes it from the
+  // uploaded files in submission order and rejects a mismatch with
+  // INVALID_EVIDENCE (InvalidArgument):
+  //   SHA-256(str "aipay.ledger.adjustment_evidence.v1" || u32 file_count ||
+  //           (str file_name || str content_type || u32 size_bytes || bytes sha256)*)
+  // Each file hash carries a u32 length prefix of 32. The signed request
+  // binds every file's name, content type, size and contents through this digest.
   bytes evidence_sha256 = 3;
   // seq of the transaction this adjustment corrects; 0 for none.
   uint64 corrects_seq = 4;
   // 2 to 100 lines, balanced per currency.
   repeated AdjustmentLine lines = 5;
+  // Required, 1 to 5 files in submission order.
+  repeated AdjustmentEvidenceUpload evidence_files = 6 [(aipay.common.v1.max_items) = 5];
 }
 
 message SubmitAdjustmentResponse {
   // Kind "adjustment", pending, two required approvals, expiring 24 hours
   // after requested_at.
   aipay.approval.v1.ApprovalRequest approval_request = 1;
+  // Stored files in submission order. An absent list after an upload indicates
+  // an older ledger that ignored the evidence_files request field.
+  repeated AdjustmentEvidenceFile evidence_files = 2;
 }
 
 message ApproveAdjustmentRequest {
@@ -59,12 +90,29 @@ message ApproveAdjustmentResponse {
 // unfinished request expires after 24 hours. Both methods also require the
 // platform acting scope, which the ledger checks itself.
 //
+// Submission validates every line. An unregistered account code must parse as
+// type:currency or type:currency:chain for a registered, platform-owned account
+// type that is not a reservation hold. The currency and chain must be valid,
+// with a chain segment exactly when the type requires one. The ledger opens
+// these accounts only in the transaction that executes the final approval.
+// An unexecuted request leaves no new account behind.
+//
+// Both methods return READ_ONLY in read-only mode. The final approval posts the
+// entry with occurred_at equal to the time that approval is recorded, in the
+// period and business day open at that time. The signed request has no period.
+// If posting fails (for example, INSUFFICIENT_BALANCE or NO_USD_RATE), the
+// transaction rolls back, including the final approval, and the request stays pending.
+//
 // request_bytes of the approval request, whose digest approvers sign:
 //   str "aipay.ledger.adjustment.v1" || bytes16 approval_request_id ||
 //   str requested_by || i64 requested_at_unix_nanos ||
 //   i64 expires_at_unix_nanos || str reason || bytes evidence_sha256 ||
 //   u64 corrects_seq || u32 line_count ||
 //   (str account_code || u8 direction || str currency || i64 units)*
+// Integers are big-endian. Strings (UTF-8) and byte strings carry u32 byte
+// lengths, UUIDs are 16 raw bytes, and times are Unix nanoseconds at microsecond
+// precision. The direction byte is ASCII 'D' (0x44) for debit or 'C' (0x43)
+// for credit.
 service AdjustmentService {
   rpc SubmitAdjustment(SubmitAdjustmentRequest) returns (SubmitAdjustmentResponse) {
     option (aipay.authz.v1.policy) = {

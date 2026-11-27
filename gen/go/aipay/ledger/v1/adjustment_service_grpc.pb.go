@@ -33,6 +33,19 @@ const (
 // unfinished request expires after 24 hours. Both methods also require the
 // platform acting scope, which the ledger checks itself.
 //
+// Submission validates every line. An unregistered account code must parse as
+// type:currency or type:currency:chain for a registered, platform-owned account
+// type that is not a reservation hold. The currency and chain must be valid,
+// with a chain segment exactly when the type requires one. The ledger opens
+// these accounts only in the transaction that executes the final approval.
+// An unexecuted request leaves no new account behind.
+//
+// Both methods return READ_ONLY in read-only mode. The final approval posts the
+// entry with occurred_at equal to the time that approval is recorded, in the
+// period and business day open at that time. The signed request has no period.
+// If posting fails (for example, INSUFFICIENT_BALANCE or NO_USD_RATE), the
+// transaction rolls back, including the final approval, and the request stays pending.
+//
 // request_bytes of the approval request, whose digest approvers sign:
 //
 //	str "aipay.ledger.adjustment.v1" || bytes16 approval_request_id ||
@@ -40,6 +53,11 @@ const (
 //	i64 expires_at_unix_nanos || str reason || bytes evidence_sha256 ||
 //	u64 corrects_seq || u32 line_count ||
 //	(str account_code || u8 direction || str currency || i64 units)*
+//
+// Integers are big-endian. Strings (UTF-8) and byte strings carry u32 byte
+// lengths, UUIDs are 16 raw bytes, and times are Unix nanoseconds at microsecond
+// precision. The direction byte is ASCII 'D' (0x44) for debit or 'C' (0x43)
+// for credit.
 type AdjustmentServiceClient interface {
 	SubmitAdjustment(ctx context.Context, in *SubmitAdjustmentRequest, opts ...grpc.CallOption) (*SubmitAdjustmentResponse, error)
 	ApproveAdjustment(ctx context.Context, in *ApproveAdjustmentRequest, opts ...grpc.CallOption) (*ApproveAdjustmentResponse, error)
@@ -83,6 +101,19 @@ func (c *adjustmentServiceClient) ApproveAdjustment(ctx context.Context, in *App
 // unfinished request expires after 24 hours. Both methods also require the
 // platform acting scope, which the ledger checks itself.
 //
+// Submission validates every line. An unregistered account code must parse as
+// type:currency or type:currency:chain for a registered, platform-owned account
+// type that is not a reservation hold. The currency and chain must be valid,
+// with a chain segment exactly when the type requires one. The ledger opens
+// these accounts only in the transaction that executes the final approval.
+// An unexecuted request leaves no new account behind.
+//
+// Both methods return READ_ONLY in read-only mode. The final approval posts the
+// entry with occurred_at equal to the time that approval is recorded, in the
+// period and business day open at that time. The signed request has no period.
+// If posting fails (for example, INSUFFICIENT_BALANCE or NO_USD_RATE), the
+// transaction rolls back, including the final approval, and the request stays pending.
+//
 // request_bytes of the approval request, whose digest approvers sign:
 //
 //	str "aipay.ledger.adjustment.v1" || bytes16 approval_request_id ||
@@ -90,6 +121,11 @@ func (c *adjustmentServiceClient) ApproveAdjustment(ctx context.Context, in *App
 //	i64 expires_at_unix_nanos || str reason || bytes evidence_sha256 ||
 //	u64 corrects_seq || u32 line_count ||
 //	(str account_code || u8 direction || str currency || i64 units)*
+//
+// Integers are big-endian. Strings (UTF-8) and byte strings carry u32 byte
+// lengths, UUIDs are 16 raw bytes, and times are Unix nanoseconds at microsecond
+// precision. The direction byte is ASCII 'D' (0x44) for debit or 'C' (0x43)
+// for credit.
 type AdjustmentServiceServer interface {
 	SubmitAdjustment(context.Context, *SubmitAdjustmentRequest) (*SubmitAdjustmentResponse, error)
 	ApproveAdjustment(context.Context, *ApproveAdjustmentRequest) (*ApproveAdjustmentResponse, error)

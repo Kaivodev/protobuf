@@ -1,0 +1,123 @@
+{
+  "description": "Synthetic ledger adjustment approvals. Material uses protobuf JSON. Each vector's evidence_files contains the uploaded bytes in base64. Request bytes and request digests are hexadecimal. All integers are big-endian. str (UTF-8) and bytes have a u32 byte-length prefix. request_bytes = str \"aipay.ledger.adjustment.v1\" || bytes16 approval_request_id (raw UUID) || str requested_by || i64 requested_at_unix_nanos || i64 expires_at_unix_nanos || str reason || bytes evidence_sha256 || u64 corrects_seq || u32 line_count || (str account_code || u8 direction || str currency || i64 units)*. Timestamps have microsecond precision. Direction is ASCII 'D' (0x44) for debit or 'C' (0x43) for credit. evidence_sha256 = SHA-256(str \"aipay.ledger.adjustment_evidence.v1\" || u32 file_count || (str file_name || str content_type || u32 size_bytes || bytes sha256)*), in submission order. sha256 is the hash of the uploaded bytes and carries a u32 length of 32. request_digest = SHA-256(raw ASCII \"AIPAY-APPROVAL-V1\" || request_bytes).",
+  "approval_vectors": [
+    {
+      "name": "four-lines-two-currencies-correction",
+      "material": {
+        "approval_request_id": "01a21306-4a83-7000-8000-0000000004d2",
+        "kind": "adjustment",
+        "requested_by": "019a3142-4000-7000-8000-000000000123",
+        "requested_at": "2026-11-25T14:05:09.123456Z",
+        "expires_at": "2026-11-26T14:05:09.123456Z",
+        "adjustment": {
+          "reason": "Correct the merchant’s payout and record the network fee.",
+          "evidence_sha256": "QQ68gYWqXAGHGXqNV2gRdVgu2adnTj+TqAYyj/qHCkQ=",
+          "corrects_seq": "412",
+          "lines": [
+            {
+              "account_code": "funds_loss:USDT",
+              "direction": "ENTRY_DIRECTION_DEBIT",
+              "currency": "USDT",
+              "units": "2350000"
+            },
+            {
+              "account_code": "user_available:USDT:019a3142-4000-7000-8000-000000000015",
+              "direction": "ENTRY_DIRECTION_CREDIT",
+              "currency": "USDT",
+              "units": "2350000"
+            },
+            {
+              "account_code": "gas_expense:TRX:TRON",
+              "direction": "ENTRY_DIRECTION_DEBIT",
+              "currency": "TRX",
+              "units": "41000"
+            },
+            {
+              "account_code": "hot_wallet:TRX:TRON:019a3142-4000-7000-8000-000000000016",
+              "direction": "ENTRY_DIRECTION_CREDIT",
+              "currency": "TRX",
+              "units": "41000"
+            }
+          ],
+          "evidence_files": [
+            {
+              "file_no": 1,
+              "file_name": "payout.pdf",
+              "content_type": "application/pdf",
+              "size_bytes": 15,
+              "sha256": "FLzQkLrzHtumTpy9jN/BX5QzRKpyyzZ1rY6Rv8vOA60="
+            },
+            {
+              "file_no": 2,
+              "file_name": "receipt.png",
+              "content_type": "image/png",
+              "size_bytes": 8,
+              "sha256": "TEtqO+ExSrhhOL70MU3eAi5gCWDYaJosj4YxgC0g2rY="
+            }
+          ]
+        }
+      },
+      "evidence_files": [
+        {
+          "file_name": "payout.pdf",
+          "content_type": "application/pdf",
+          "data": "JVBERi0xLjQKJSVFT0YK"
+        },
+        {
+          "file_name": "receipt.png",
+          "content_type": "image/png",
+          "data": "iVBORw0KGgo="
+        }
+      ],
+      "request_bytes": "0000001a61697061792e6c65646765722e61646a7573746d656e742e763101a213064a83700080000000000004d20000002430313961333134322d343030302d373030302d383030302d30303030303030303031323318eb4ecabe7c5c0018eb9d5f4fcb5c000000003b436f727265637420746865206d65726368616e74e2809973207061796f757420616e64207265636f726420746865206e6574776f726b206665652e00000020410ebc8185aa5c0187197a8d57681175582ed9a7674e3f93a806328ffa870a44000000000000019c000000040000000f66756e64735f6c6f73733a55534454440000000455534454000000000023dbb000000038757365725f617661696c61626c653a555344543a30313961333134322d343030302d373030302d383030302d303030303030303030303135430000000455534454000000000023dbb0000000146761735f657870656e73653a5452583a54524f4e4400000003545258000000000000a02800000038686f745f77616c6c65743a5452583a54524f4e3a30313961333134322d343030302d373030302d383030302d3030303030303030303031364300000003545258000000000000a028",
+      "request_digest": "897912e7bf9b4574f2005849aad0cc91608fbf69aebe0094d33a17f3bf1efa35"
+    },
+    {
+      "name": "single-currency-no-correction",
+      "material": {
+        "approval_request_id": "01a216de-9673-7000-8000-0000000004d2",
+        "kind": "adjustment",
+        "requested_by": "019a3142-4000-7000-8000-000000000123",
+        "requested_at": "2026-11-26T08:00:15.987654Z",
+        "expires_at": "2026-11-27T08:00:15.987654Z",
+        "adjustment": {
+          "reason": "Record a small payout shortfall.",
+          "evidence_sha256": "4MdzAPC/7HhfdjDnu2Ez9hSyQz9qvcQQaF1QDMYw/xY=",
+          "corrects_seq": "0",
+          "lines": [
+            {
+              "account_code": "funds_loss:USDT",
+              "direction": "ENTRY_DIRECTION_DEBIT",
+              "currency": "USDT",
+              "units": "175000"
+            },
+            {
+              "account_code": "user_available:USDT:019a3142-4000-7000-8000-000000000015",
+              "direction": "ENTRY_DIRECTION_CREDIT",
+              "currency": "USDT",
+              "units": "175000"
+            }
+          ],
+          "evidence_files": [
+            {
+              "file_no": 1,
+              "file_name": "shortfall.jpg",
+              "content_type": "image/jpeg",
+              "size_bytes": 22,
+              "sha256": "0g9v/VI7eKhs0vkW+jSvXRkY1197FCI3x1KtayVCE6s="
+            }
+          ]
+        }
+      },
+      "evidence_files": [
+        {
+          "file_name": "shortfall.jpg",
+          "content_type": "image/jpeg",
+          "data": "/9j/4AAQSkZJRgABAQAAAQABAAD/2Q=="
+        }
+      ],
+      "request_bytes": "0000001a61697061792e6c65646765722e61646a7573746d656e742e763101a216de9673700080000000000004d20000002430313961333134322d343030302d373030302d383030302d30303030303030303031323318eb8975eb363d7018ebd80a7c853d70000000205265636f7264206120736d616c6c207061796f75742073686f727466616c6c2e00000020e0c77300f0bfec785f7630e7bb6133f614b2433f6abdc410685d500cc630ff160000000000000000000000020000000f66756e64735f6c6f73733a55534454440000000455534454000000000002ab9800000038757365725f617661696c61626c653a555344543a30313961333134322d343030302d373030302d383030302d303030303030303030303135430000000455534454000000000002ab98",
+      "request_digest": "280514a4dc8d1a9871dfd3784a0075d3315ea45d7c5fb678fcaf27654b866772"
+    }
+  ]
+}

@@ -1,0 +1,225 @@
+syntax = "proto3";
+
+package aipay.ledger.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/query.proto";
+import "aipay/ledger/v1/adjustment_service.proto";
+import "aipay/ledger/v1/control_service.proto";
+import "aipay/ledger/v1/ledger.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1";
+
+message AdjustmentMaterial {
+  string reason = 1;
+  // Digest of the ordered evidence_files manifest, as in SubmitAdjustmentRequest.
+  bytes evidence_sha256 = 2;
+  uint64 corrects_seq = 3;
+  repeated AdjustmentLine lines = 4;
+  repeated AdjustmentEvidenceFile evidence_files = 5;
+}
+
+message CarryoverMaterial {
+  string period_id = 1;
+  string account_code = 2;
+  int64 units = 3;
+  string reason = 4;
+}
+
+message UsdRatePolicyMaterial {
+  uint64 version = 1;
+  uint64 expected_version = 2;
+  uint32 threshold_ppm = 3;
+  uint32 ceiling_ppm = 4;
+  string reason = 5;
+}
+
+// Structured view of the signed request. Callers decode request_bytes and
+// compare each field, recomputing the manifest digest for adjustment evidence.
+// kind equals the name of the selected operation branch.
+message LedgerApprovalMaterial {
+  string approval_request_id = 1;
+  string kind = 2;
+  string requested_by = 3;
+  google.protobuf.Timestamp requested_at = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  oneof operation {
+    AdjustmentMaterial adjustment = 6;
+    ReadOnlyExitSnapshot read_only_exit = 7;
+    CarryoverMaterial carryover = 8;
+    UsdRatePolicyMaterial usd_rate_policy = 9;
+  }
+}
+
+message LedgerAccountView {
+  string account_code = 1;
+  string account_type = 2;
+  string currency = 3;
+  // Empty when the account has no chain.
+  string chain = 4;
+  // account, upstream_account, wallet or platform.
+  string owner_kind = 5;
+  string owner_id = 6;
+  EntryDirection normal_side = 7;
+  bool non_negative = 8;
+  // Signed debit-positive balance at as_of, zero for an account execution would open.
+  int64 balance_units = 9;
+  // True for an unregistered account that would be opened on execution.
+  bool opens_on_execution = 10;
+}
+
+message AdjustmentReview {
+  // Distinct line accounts in first-appearance order.
+  repeated LedgerAccountView accounts = 1;
+  // Present when corrects_seq > 0.
+  JournalTransaction corrected_transaction = 2;
+  // Present once executed.
+  JournalTransaction posted_transaction = 3;
+}
+
+message LedgerApproval {
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+  LedgerApprovalMaterial material = 2;
+  // In verified_at order. Only LedgerApprovalService.GetApproval includes assertions.
+  repeated aipay.approval.v1.Approval approvals = 3;
+  // Set once the required approvals were reached, equal to the last verified_at.
+  google.protobuf.Timestamp approved_at = 4;
+  google.protobuf.Timestamp executed_at = 5;
+  // Present for adjustments in GetApproval and GetAdjustment only.
+  AdjustmentReview adjustment_review = 6;
+}
+
+message GetAdjustmentRequest {
+  string approval_request_id = 1;
+}
+
+message GetAdjustmentResponse {
+  // Kind adjustment only. Includes adjustment_review and omits assertions.
+  LedgerApproval approval = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+message ListAdjustmentsRequest {
+  // Optional exact status filter. UNSPECIFIED lists all statuses.
+  aipay.approval.v1.ApprovalStatus status = 1;
+  // Required, 1-100. Values outside the range are rejected.
+  uint32 limit = 2 [(aipay.common.v1.max_items) = 100];
+  // Empty on the first page. The opaque cursor binds the method, verified
+  // subject, scope, status filter, limit and the first page's as_of.
+  string page_token = 3;
+}
+
+message ListAdjustmentsResponse {
+  // Newest first by (requested_at, id). Omits assertions and adjustment_review.
+  repeated LedgerApproval adjustments = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetAdjustmentEvidenceFileRequest {
+  string approval_request_id = 1;
+  // 1-based file number from the adjustment's evidence manifest.
+  uint32 file_no = 2;
+}
+
+message GetAdjustmentEvidenceFileResponse {
+  AdjustmentEvidenceFile file = 1;
+  bytes data = 2;
+}
+
+message ListApprovalsRequest {
+  // Optional exact kind: adjustment, read_only_exit, carryover or usd_rate_policy.
+  string kind = 1;
+  // Required, 1-100. Values outside the range are rejected.
+  uint32 limit = 2 [(aipay.common.v1.max_items) = 100];
+  // Empty on the first page. The opaque cursor binds the method, verified
+  // subject, scope, kind, limit and the first page's as_of.
+  string page_token = 3;
+}
+
+message ListApprovalsResponse {
+  repeated aipay.approval.v1.ApprovalRequest approvals = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message GetApprovalRequest {
+  string approval_request_id = 1;
+}
+
+message GetApprovalResponse {
+  LedgerApproval approval = 1;
+  google.protobuf.Timestamp as_of = 2;
+}
+
+// All three reads are available in read-only mode. A proof scoped to a single
+// target funds account can read only adjustments involving that account,
+// including their evidence files.
+service AdjustmentQueryService {
+  rpc GetAdjustment(GetAdjustmentRequest) returns (GetAdjustmentResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.adjustment.read"
+      }
+    };
+  }
+  rpc ListAdjustments(ListAdjustmentsRequest) returns (ListAdjustmentsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.adjustment.read"
+      }
+    };
+  }
+  rpc GetAdjustmentEvidenceFile(GetAdjustmentEvidenceFileRequest) returns (GetAdjustmentEvidenceFileResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.adjustment.read"
+      }
+    };
+  }
+}
+
+// Ledger approvals for the backend approval inbox. Both reads are available in
+// read-only mode and perform no self-check or anchoring.
+//
+// ListApprovals returns unexpired PENDING requests in descending (requested_at, id)
+// order. An empty kind includes all four kinds. A nonempty filter must be
+// adjustment, read_only_exit, carryover or usd_rate_policy, otherwise the ledger
+// returns InvalidArgument. Carryover requires one approver and the other kinds
+// require two. As in GetReadOnlyStatus, exit requests from earlier episodes are excluded.
+// Every page returns the first page's as_of. Requests approved or expired between
+// pages disappear from later pages.
+//
+// GetApproval returns any state with the full structured material, approvals,
+// approved_at and executed_at, and the review for adjustments. Each recorded
+// assertion is returned in full, with the registry's credential_id and an empty user_handle.
+// Before responding, the ledger re-encodes request_bytes from the stored material
+// and returns Internal on any difference.
+service LedgerApprovalService {
+  rpc ListApprovals(ListApprovalsRequest) returns (ListApprovalsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.approval.read"
+      }
+    };
+  }
+  rpc GetApproval(GetApprovalRequest) returns (GetApprovalResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.approval.read"
+      }
+    };
+  }
+}
