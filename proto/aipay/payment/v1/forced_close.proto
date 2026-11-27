@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/authz/v1/policy.proto";
+import "aipay/payment/v1/admin_approval.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// A145 platform forced close of unpaid orders whose upstream cannot close
+// them. Payment owns eligibility, approval and the resulting close intent;
+// reconciliation independently verifies the upstream before any cancellation.
+
+// Why an order cannot be force-closed now. Receivers reject UNSPECIFIED and
+// unknown values.
+enum ForcedCloseBlocker {
+  FORCED_CLOSE_BLOCKER_UNSPECIFIED = 0;
+  // Not AWAITING_PAYMENT or UNKNOWN.
+  FORCED_CLOSE_BLOCKER_ORDER_STATUS = 1;
+  // Not querying, not retrying an unsent create, and not stopped after an
+  // upstream-rejected create.
+  FORCED_CLOSE_BLOCKER_ORDER_STAGE = 2;
+  // A merchant close is being dispatched.
+  FORCED_CLOSE_BLOCKER_CLOSE_IN_PROGRESS = 3;
+  // The order never received a dispatch grant.
+  FORCED_CLOSE_BLOCKER_DISPATCH_NOT_GRANTED = 4;
+  FORCED_CLOSE_BLOCKER_ESCROW_NOT_RESERVED = 5;
+  // Ledger's escrow version, reservation or trade differs from payment's
+  // projection or from the approval material.
+  FORCED_CLOSE_BLOCKER_LEDGER_VERSION_CHANGED = 6;
+  FORCED_CLOSE_BLOCKER_LEDGER_PAID = 7;
+  FORCED_CLOSE_BLOCKER_LEDGER_DISPUTED = 8;
+  // A create, query, close, callback or gateway execution reported payment.
+  FORCED_CLOSE_BLOCKER_PAYMENT_REPORTED = 9;
+  // A cancellation verification was already requested for this version.
+  FORCED_CLOSE_BLOCKER_CANCELLATION_REQUESTED = 10;
+  // The instruction validity has not elapsed; see eligible_at.
+  FORCED_CLOSE_BLOCKER_TOO_EARLY = 11;
+  // No create or instruction time to measure the instruction validity from.
+  FORCED_CLOSE_BLOCKER_MISSING_ANCHOR = 12;
+  // The order changed since the approval material was created.
+  FORCED_CLOSE_BLOCKER_STATE_CHANGED = 13;
+}
+
+enum ForcedCloseState {
+  FORCED_CLOSE_STATE_UNSPECIFIED = 0;
+  // No pending or approved forced close.
+  FORCED_CLOSE_STATE_NONE = 1;
+  FORCED_CLOSE_STATE_PENDING_APPROVAL = 2;
+  // Approved; the cancellation verification is outstanding.
+  FORCED_CLOSE_STATE_VERIFYING = 3;
+  FORCED_CLOSE_STATE_CANCELLED = 4;
+  // Payment was reported after approval; the order follows the paid path.
+  FORCED_CLOSE_STATE_PAID = 5;
+  // The ledger escrow version advanced; a new request is required.
+  FORCED_CLOSE_STATE_FENCED = 6;
+}
+
+message ForcedCloseView {
+  string order_id = 1;
+  // Current escrow control version, to pass as expected_control_version.
+  uint64 control_version = 2;
+  bool eligible = 3;
+  // Empty exactly when eligible.
+  repeated ForcedCloseBlocker blockers = 4;
+  // Earliest time a close may take effect. Absent when never_sent or when
+  // no anchor exists.
+  google.protobuf.Timestamp eligible_at = 5;
+  bool never_sent = 6;
+  bool upstream_bound = 7;
+  ForcedCloseState state = 8;
+  // Set when state is PENDING_APPROVAL.
+  string pending_approval_request_id = 9;
+  // Latest approved request, set for VERIFYING, CANCELLED, PAID and FENCED.
+  string approved_approval_request_id = 10;
+  google.protobuf.Timestamp as_of = 11;
+}
+
+message GetForcedCloseRequest {
+  string order_id = 1;
+}
+message GetForcedCloseResponse {
+  ForcedCloseView forced_close = 1;
+}
+
+// A new submission for the same order voids any pending forced_close
+// request for it.
+message SubmitForcedCloseRequest {
+  string idempotency_key = 1;
+  string order_id = 2;
+  uint64 expected_control_version = 3;
+  // Required, 1-1000 characters.
+  string reason = 4;
+}
+message SubmitForcedCloseResponse {
+  PaymentApproval approval = 1;
+}
+
+message ApproveForcedCloseRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+message ApproveForcedCloseResponse {
+  PaymentApproval approval = 1;
+}
+
+service OrderForcedCloseService {
+  rpc GetForcedClose(GetForcedCloseRequest) returns (GetForcedCloseResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.order.force_close.read"
+      }
+    };
+  }
+  rpc SubmitForcedClose(SubmitForcedCloseRequest) returns (SubmitForcedCloseResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "payment.order.force_close.submit"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ApproveForcedClose(ApproveForcedCloseRequest) returns (ApproveForcedCloseResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.order.force_close.approve"
+      }
+    };
+  }
+}

@@ -96,6 +96,9 @@ message LatePayment {
   google.protobuf.Timestamp seller_due_at = 9;
   google.protobuf.Timestamp created_at = 10;
   google.protobuf.Timestamp updated_at = 11;
+  // A145: present when the order was cancelled after a platform forced
+  // close; the ID of that approved forced_close request.
+  optional string forced_close_approval_request_id = 12;
 }
 
 enum SellerRefundDuplicateKind {

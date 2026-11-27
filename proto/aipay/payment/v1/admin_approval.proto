@@ -6,6 +6,7 @@ import "aipay/approval/v1/approval.proto";
 import "aipay/common/v1/money.proto";
 import "aipay/common/v1/trade.proto";
 import "aipay/ledger/v1/trade.proto";
+import "aipay/payment/v1/order_service.proto";
 import "aipay/payment/v1/pricing_events.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -244,12 +245,37 @@ message SellerRefundFailureMaterial {
   optional bytes evidence_sha256 = 10;
 }
 
+// A145. Facts payment loaded from its own order and from ledger when a
+// platform user submitted the forced close of an unpaid order. The caller
+// supplies only the order, the expected escrow control version and the
+// reason. Each approval rechecks eligibility under the order lock and is
+// refused if the trade, escrow reservation, control version,
+// upstream_order_id or never_sent changed. status records the order state at
+// submission; it may since have moved between AWAITING_PAYMENT and UNKNOWN.
+message OrderForcedCloseMaterial {
+  aipay.common.v1.TradeSnapshot trade = 1;
+  string escrow_reservation_id = 2;
+  // Positive ledger escrow control version at submission.
+  uint64 expected_control_version = 3;
+  // Required, 1-1000 characters.
+  string reason = 4;
+  // ORDER_STATUS_AWAITING_PAYMENT or ORDER_STATUS_UNKNOWN.
+  OrderStatus status = 5;
+  // Empty when payment never learned an upstream order ID.
+  string upstream_order_id = 6;
+  // True only when no create request can have reached the upstream and no
+  // payment instruction was ever delivered.
+  bool never_sent = 7;
+  // Earliest time the close may take effect. Not after requested_at.
+  google.protobuf.Timestamp eligible_at = 8;
+}
+
 // The executor creates these immutable signed materials. Exactly one operation
 // must match kind. Header fields equal ApprovalRequest id/kind/requested_by/
 // requested_at/expires_at. Canonical field-order encoding is specified in docs;
 // request_bytes has a length-prefixed "aipay.payment.admin.v1" domain followed
 // by canonical field-order material, NOT protobuf serialization. Unknown fields
-// are rejected. Encode the selected operation field number (6-15) as u32
+// are rejected. Encode the selected operation field number (6-16) as u32
 // before its expanded fields. Different encoding versions require a new domain.
 message PaymentApprovalMaterial {
   string approval_request_id = 1;
@@ -259,7 +285,8 @@ message PaymentApprovalMaterial {
   google.protobuf.Timestamp expires_at = 5;
   // Two distinct platform natural persons must approve, neither equal to
   // requested_by. For seller_refund this is the submitting seller user. For
-  // seller_refund_failure the initiating platform user is requested_by.
+  // seller_refund_failure and forced_close the initiating platform user is
+  // requested_by.
   oneof operation {
     ChannelAccountChange channel_account = 6;
     PaymentMethodChange payment_method = 7;
@@ -271,6 +298,7 @@ message PaymentApprovalMaterial {
     DisputeRulingMaterial dispute_ruling = 13;
     SellerRefundReviewMaterial seller_refund = 14;
     SellerRefundFailureMaterial seller_refund_failure = 15;
+    OrderForcedCloseMaterial forced_close = 16;
   }
 }
 

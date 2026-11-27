@@ -37,6 +37,15 @@ const (
 	// found upstream. Reconciliation may then count its own not-found results as
 	// unpaid closed observations; evidence marks the cancellation as inferred.
 	OrderCancellationBasis_ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED OrderCancellationBasis = 1
+	// A145: two platform approvers forced the close of an unpaid order whose
+	// upstream has no close API, and payment never learned an upstream order
+	// ID, so no payment instruction was ever delivered. Reconciliation may count
+	// its own not-found query results as unpaid observations, as for value 1.
+	OrderCancellationBasis_ORDER_CANCELLATION_BASIS_OPERATOR_FORCED_CLOSE OrderCancellationBasis = 2
+	// A145: as OPERATOR_FORCED_CLOSE, but payment holds an upstream order ID.
+	// Only closed observations of that upstream order count; not-found results
+	// stay inconclusive.
+	OrderCancellationBasis_ORDER_CANCELLATION_BASIS_OPERATOR_FORCED_CLOSE_BOUND OrderCancellationBasis = 3
 )
 
 // Enum value maps for OrderCancellationBasis.
@@ -44,10 +53,14 @@ var (
 	OrderCancellationBasis_name = map[int32]string{
 		0: "ORDER_CANCELLATION_BASIS_UNSPECIFIED",
 		1: "ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED",
+		2: "ORDER_CANCELLATION_BASIS_OPERATOR_FORCED_CLOSE",
+		3: "ORDER_CANCELLATION_BASIS_OPERATOR_FORCED_CLOSE_BOUND",
 	}
 	OrderCancellationBasis_value = map[string]int32{
-		"ORDER_CANCELLATION_BASIS_UNSPECIFIED":               0,
-		"ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED": 1,
+		"ORDER_CANCELLATION_BASIS_UNSPECIFIED":                 0,
+		"ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED":   1,
+		"ORDER_CANCELLATION_BASIS_OPERATOR_FORCED_CLOSE":       2,
+		"ORDER_CANCELLATION_BASIS_OPERATOR_FORCED_CLOSE_BOUND": 3,
 	}
 )
 
@@ -652,12 +665,15 @@ func (x *OrderDisputed) GetRegisteredAt() *timestamppb.Timestamp {
 // dispatch confirmation and outbox together while no payment is known.
 // After an uncertain send, an active query confirming closure of the same
 // order can recover that trigger. Local acceptance or expiry alone cannot.
+// For a platform forced close, payment commits the close intent and outbox
+// together on the second WebAuthn approval.
 // Reconciliation starts one review per (order_id, control_version), reads the
 // original snapshot from ledger and independently queries the original order.
 // Only two closed/unpaid observations separated by the late-payment window
-// can support cancellation. A not-found query result counts as such an
-// observation only when basis is CREATE_NOT_FOUND_INFERRED (A144); otherwise
-// it is uncertain. Ledger records this trigger without a funds action.
+// can support cancellation. Reconciliation may count its own not-found results
+// only for CREATE_NOT_FOUND_INFERRED or OPERATOR_FORCED_CLOSE. For
+// OPERATOR_FORCED_CLOSE_BOUND it must observe the bound upstream order closed.
+// Ledger records this trigger without a funds action.
 type OrderCancellationVerificationRequested struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Required UUIDv7 of the original order.
@@ -892,10 +908,12 @@ const file_aipay_payment_v1_order_events_proto_rawDesc = "" +
 	"\x0fcontrol_version\x18\x03 \x01(\x04R\x0econtrolVersion\x12\x1d\n" +
 	"\n" +
 	"dispute_id\x18\x04 \x01(\tR\tdisputeId\x12\x1b\n" +
-	"\truling_id\x18\x05 \x01(\tR\brulingId*z\n" +
+	"\truling_id\x18\x05 \x01(\tR\brulingId*\xe8\x01\n" +
 	"\x16OrderCancellationBasis\x12(\n" +
 	"$ORDER_CANCELLATION_BASIS_UNSPECIFIED\x10\x00\x126\n" +
-	"2ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED\x10\x01B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"2ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED\x10\x01\x122\n" +
+	".ORDER_CANCELLATION_BASIS_OPERATOR_FORCED_CLOSE\x10\x02\x128\n" +
+	"4ORDER_CANCELLATION_BASIS_OPERATOR_FORCED_CLOSE_BOUND\x10\x03B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_aipay_payment_v1_order_events_proto_rawDescOnce sync.Once

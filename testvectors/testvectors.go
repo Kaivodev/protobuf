@@ -30,6 +30,8 @@ var (
 	paymentWebCommandV1 []byte
 	//go:embed payment_seller_refund_v1.json
 	paymentSellerRefundV1 []byte
+	//go:embed payment_forced_close_v1.json
+	paymentForcedCloseV1 []byte
 	//go:embed reconciliation_coverage_v1.json
 	reconciliationCoverageV1 []byte
 )
@@ -67,6 +69,10 @@ func PaymentWebCommandV1() []byte { return bytes.Clone(paymentWebCommandV1) }
 // PaymentSellerRefundV1 holds canonical evidence and approval material for
 // manual refunds and late payments, including failure decisions.
 func PaymentSellerRefundV1() []byte { return bytes.Clone(paymentSellerRefundV1) }
+
+// PaymentForcedCloseV1 holds canonical approval bytes and digests for forced
+// closes of unbound and bound orders.
+func PaymentForcedCloseV1() []byte { return bytes.Clone(paymentForcedCloseV1) }
 
 // ReconciliationCoverageV1 holds manual coverage approval bytes and digests,
 // evidence digests, address registry versions and revocation challenges.

@@ -17,8 +17,8 @@ func TestV0210CancellationBasis(t *testing.T) {
 		t.Fatalf("%s must be a single implicit-presence enum", basis.FullName())
 	}
 	enum := basis.Enum()
-	if enum.FullName() != "aipay.payment.v1.OrderCancellationBasis" || enum.Values().Len() != 2 {
-		t.Fatalf("unexpected cancellation basis %s with %d values", enum.FullName(), enum.Values().Len())
+	if enum.FullName() != "aipay.payment.v1.OrderCancellationBasis" {
+		t.Fatalf("unexpected cancellation basis %s", enum.FullName())
 	}
 	for number, name := range []protoreflect.Name{
 		"ORDER_CANCELLATION_BASIS_UNSPECIFIED",

@@ -547,8 +547,11 @@ type LatePayment struct {
 	SellerDueAt         *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=seller_due_at,json=sellerDueAt,proto3" json:"seller_due_at,omitempty"`
 	CreatedAt           *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt           *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// A145: present when the order was cancelled after a platform forced
+	// close; the ID of that approved forced_close request.
+	ForcedCloseApprovalRequestId *string `protobuf:"bytes,12,opt,name=forced_close_approval_request_id,json=forcedCloseApprovalRequestId,proto3,oneof" json:"forced_close_approval_request_id,omitempty"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *LatePayment) Reset() {
@@ -656,6 +659,13 @@ func (x *LatePayment) GetUpdatedAt() *timestamppb.Timestamp {
 		return x.UpdatedAt
 	}
 	return nil
+}
+
+func (x *LatePayment) GetForcedCloseApprovalRequestId() string {
+	if x != nil && x.ForcedCloseApprovalRequestId != nil {
+		return *x.ForcedCloseApprovalRequestId
+	}
+	return ""
 }
 
 type SellerRefundDuplicate struct {
@@ -1670,7 +1680,7 @@ const file_aipay_payment_v1_seller_refund_proto_rawDesc = "" +
 	"\x11status_changed_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x0fstatusChangedAt\"S\n" +
 	"\x1aSellerRefundEvidenceUpload\x12!\n" +
 	"\fcontent_type\x18\x01 \x01(\tR\vcontentType\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"\xe8\x04\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"\xda\x05\n" +
 	"\vLatePayment\x12&\n" +
 	"\x0flate_payment_id\x18\x01 \x01(\tR\rlatePaymentId\x124\n" +
 	"\x05trade\x18\x02 \x01(\v2\x1e.aipay.common.v1.TradeSnapshotR\x05trade\x122\n" +
@@ -1687,7 +1697,9 @@ const file_aipay_payment_v1_seller_refund_proto_rawDesc = "" +
 	"created_at\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x95\x01\n" +
+	"updated_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12K\n" +
+	" forced_close_approval_request_id\x18\f \x01(\tH\x00R\x1cforcedCloseApprovalRequestId\x88\x01\x01B#\n" +
+	"!_forced_close_approval_request_id\"\x95\x01\n" +
 	"\x15SellerRefundDuplicate\x12?\n" +
 	"\x04kind\x18\x01 \x01(\x0e2+.aipay.payment.v1.SellerRefundDuplicateKindR\x04kind\x12;\n" +
 	"\x05other\x18\x02 \x01(\v2%.aipay.payment.v1.SellerRefundSubjectR\x05other\"\xb6\x03\n" +
@@ -1904,6 +1916,7 @@ func file_aipay_payment_v1_seller_refund_proto_init() {
 	file_aipay_payment_v1_admin_approval_proto_init()
 	file_aipay_payment_v1_refund_service_proto_init()
 	file_aipay_payment_v1_seller_refund_proto_msgTypes[1].OneofWrappers = []any{}
+	file_aipay_payment_v1_seller_refund_proto_msgTypes[4].OneofWrappers = []any{}
 	file_aipay_payment_v1_seller_refund_proto_msgTypes[6].OneofWrappers = []any{
 		(*SellerRefundReview_Refund)(nil),
 		(*SellerRefundReview_LatePayment)(nil),

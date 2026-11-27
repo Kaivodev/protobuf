@@ -118,12 +118,15 @@ message OrderDisputed {
 // dispatch confirmation and outbox together while no payment is known.
 // After an uncertain send, an active query confirming closure of the same
 // order can recover that trigger. Local acceptance or expiry alone cannot.
+// For a platform forced close, payment commits the close intent and outbox
+// together on the second WebAuthn approval.
 // Reconciliation starts one review per (order_id, control_version), reads the
 // original snapshot from ledger and independently queries the original order.
 // Only two closed/unpaid observations separated by the late-payment window
-// can support cancellation. A not-found query result counts as such an
-// observation only when basis is CREATE_NOT_FOUND_INFERRED (A144); otherwise
-// it is uncertain. Ledger records this trigger without a funds action.
+// can support cancellation. Reconciliation may count its own not-found results
+// only for CREATE_NOT_FOUND_INFERRED or OPERATOR_FORCED_CLOSE. For
+// OPERATOR_FORCED_CLOSE_BOUND it must observe the bound upstream order closed.
+// Ledger records this trigger without a funds action.
 message OrderCancellationVerificationRequested {
   // Required UUIDv7 of the original order.
   string order_id = 1;
@@ -147,6 +150,15 @@ enum OrderCancellationBasis {
   // found upstream. Reconciliation may then count its own not-found results as
   // unpaid closed observations; evidence marks the cancellation as inferred.
   ORDER_CANCELLATION_BASIS_CREATE_NOT_FOUND_INFERRED = 1;
+  // A145: two platform approvers forced the close of an unpaid order whose
+  // upstream has no close API, and payment never learned an upstream order
+  // ID, so no payment instruction was ever delivered. Reconciliation may count
+  // its own not-found query results as unpaid observations, as for value 1.
+  ORDER_CANCELLATION_BASIS_OPERATOR_FORCED_CLOSE = 2;
+  // A145: as OPERATOR_FORCED_CLOSE, but payment holds an upstream order ID.
+  // Only closed observations of that upstream order count; not-found results
+  // stay inconclusive.
+  ORDER_CANCELLATION_BASIS_OPERATOR_FORCED_CLOSE_BOUND = 3;
 }
 
 // Signed payment.orders event_type=DisputeRulingApproved, schema_version=1.

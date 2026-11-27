@@ -321,6 +321,12 @@ func (w *writer) canonicalValue(t *testing.T, f protoreflect.FieldDescriptor, v 
 		w.str(v.String())
 	case protoreflect.BytesKind:
 		w.bytes(v.Bytes())
+	case protoreflect.BoolKind:
+		if v.Bool() {
+			w.raw(1)
+		} else {
+			w.raw(0)
+		}
 	case protoreflect.Int64Kind:
 		w.u64(uint64(v.Int()))
 	case protoreflect.Uint64Kind:
@@ -425,6 +431,56 @@ func TestPaymentSellerRefundV1(t *testing.T) {
 	}
 	if !threeWithNote || !lateWithoutNote || !postRelease || !lateReview || !failureWithEvidence || !failureWithoutEvidence {
 		t.Fatal("missing evidence or approval fixture")
+	}
+}
+
+func TestPaymentForcedCloseV1(t *testing.T) {
+	var doc struct {
+		Description string
+		Approvals   []struct {
+			Name         string
+			Material     json.RawMessage
+			RequestBytes string `json:"request_bytes"`
+			Digest       string `json:"request_digest"`
+		} `json:"approval_vectors"`
+	}
+	decodeJSON(t, testvectors.PaymentForcedCloseV1(), &doc)
+	var unbound, bound, multibyteReason bool
+	for _, v := range doc.Approvals {
+		t.Run(v.Name, func(t *testing.T) {
+			var m paymentv1.PaymentApprovalMaterial
+			if err := protojson.Unmarshal(v.Material, &m); err != nil {
+				t.Fatal(err)
+			}
+			f := m.GetForcedClose()
+			if m.Kind != "forced_close" || f == nil {
+				t.Fatal("expected forced_close approval material")
+			}
+			var w writer
+			w.str("aipay.payment.admin.v1")
+			w.canonicalMessage(t, m.ProtoReflect())
+			if !equalHex(w.b, v.RequestBytes) || !equalHex(sum([]byte("AIPAY-APPROVAL-V1"), w.b), v.Digest) {
+				t.Fatal("approval request bytes or digest differ from fixture")
+			}
+			multibyteReason = multibyteReason || len(f.Reason) > utf8.RuneCountInString(f.Reason)
+			switch v.Name {
+			case "never-sent-unbound":
+				if f.Status != paymentv1.OrderStatus_ORDER_STATUS_UNKNOWN || f.UpstreamOrderId != "" ||
+					!f.NeverSent || !proto.Equal(f.EligibleAt, m.RequestedAt) {
+					t.Fatal("expected an unsent, unbound order eligible at submission")
+				}
+				unbound = true
+			case "bound-after-ttl":
+				if f.Status != paymentv1.OrderStatus_ORDER_STATUS_AWAITING_PAYMENT || f.UpstreamOrderId == "" ||
+					f.NeverSent || !f.EligibleAt.AsTime().Before(m.RequestedAt.AsTime()) {
+					t.Fatal("expected a bound order eligible before submission")
+				}
+				bound = true
+			}
+		})
+	}
+	if !unbound || !bound || !multibyteReason {
+		t.Fatal("expected never-sent-unbound, bound-after-ttl and a multibyte reason")
 	}
 }
 
