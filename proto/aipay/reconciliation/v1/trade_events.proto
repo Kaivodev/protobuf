@@ -122,6 +122,13 @@ message TradeCancellationAuthorized {
   // Optional message presence; required iff DISPUTED. See DisputeResolution
   // for rejection rules and atomic barrier clearing with the seller return.
   DisputeResolution dispute_resolution = 8;
+  // v0.23.0 (A130): late-payment window version pinned at the first
+  // cancellation observation. 0 means no approved version (the deployment's
+  // AIPAY_RECONCILIATION_LATE_PAYMENT_WINDOW applied) and is not encoded, so
+  // earlier payloads are byte-identical. The window value and the version's
+  // request_digest are bound by evidence_sha256. Receivers that reject unknown
+  // fields must upgrade before reconciliation emits a non-zero value.
+  uint64 late_payment_window_version = 9;
 }
 
 // Verified upstream original-route refund outcome. Receivers reject

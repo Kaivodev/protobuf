@@ -51,6 +51,12 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 IAM 已有 Telegram/EPay 等签发实现；具体登录来源、密钥托管与撤销能力以其实际交付为准，不因协议存在推断平台管理路径已接通。EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 
+## v0.23.0 payment instruction lifetime, late-payment window and USD rate policy (A130, unreleased)
+
+- Payment channel approvals can set the buyer instruction lifetime for new dispatches. An absent value preserves earlier approval and web-command bytes and uses the deployment lifetime. The deployment ceiling also caps expiry supplied by a plugin or gateway.
+- Reconciliation pins the late-payment window at the first cancellation observation and includes its version in the signed authorization. Version zero preserves the original payload bytes. Receivers that reject unknown fields must upgrade before reconciliation emits a nonzero version. Backend can submit, approve, read and list window versions.
+- Ledger exposes the current USD rate deviation policy, its effective threshold and any pending request. Two distinct approvers other than the requester must approve a change. The deployment ceiling limits the effective threshold and applies before the first version is approved.
+
 ## v0.22.0 platform forced close (A145, unreleased)
 
 - A platform operator can request a forced close for an unpaid order whose upstream has no close API. Payment records the initiating operator as `requested_by` and binds the trade, escrow reservation and control version, reason, order status, upstream order ID, `never_sent` and `eligible_at` in `OrderForcedCloseMaterial`. Two other platform users must sign the `forced_close` operation with WebAuthn. All three must be distinct natural persons. Payment rechecks the material under the order lock at each approval.

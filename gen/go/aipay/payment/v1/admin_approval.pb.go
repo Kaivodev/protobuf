@@ -119,8 +119,17 @@ type ChannelAccountConfiguration struct {
 	// Canonical encoding appends u8(1) || B(value) after field 16 when present.
 	// Absence adds no bytes.
 	CredentialsSha256 []byte `protobuf:"bytes,17,opt,name=credentials_sha256,json=credentialsSha256,proto3,oneof" json:"credentials_sha256,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// v0.23.0 (A130): lifetime of the buyer payment instruction for new
+	// dispatches on this channel, in whole seconds, 1..floor(the payment
+	// deployment's AIPAY_PLUGIN_INSTRUCTION_TTL). Absence uses that deployment
+	// value. Payment rejects a larger value at submission and second approval.
+	// At dispatch, payment clamps the lifetime to the deployment ceiling and
+	// caps any plugin- or gateway-provided instruction expiry to that lifetime.
+	// Canonical approval and web-command encodings append u8(1) || u32(value)
+	// after field 17 when present. Absence adds no bytes.
+	PaymentInstructionTtlSeconds *uint32 `protobuf:"varint,18,opt,name=payment_instruction_ttl_seconds,json=paymentInstructionTtlSeconds,proto3,oneof" json:"payment_instruction_ttl_seconds,omitempty"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *ChannelAccountConfiguration) Reset() {
@@ -270,6 +279,13 @@ func (x *ChannelAccountConfiguration) GetCredentialsSha256() []byte {
 		return x.CredentialsSha256
 	}
 	return nil
+}
+
+func (x *ChannelAccountConfiguration) GetPaymentInstructionTtlSeconds() uint32 {
+	if x != nil && x.PaymentInstructionTtlSeconds != nil {
+		return *x.PaymentInstructionTtlSeconds
+	}
+	return 0
 }
 
 type ChannelAccountChange struct {
@@ -1959,7 +1975,7 @@ var File_aipay_payment_v1_admin_approval_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_admin_approval_proto_rawDesc = "" +
 	"\n" +
-	"%aipay/payment/v1/admin_approval.proto\x12\x10aipay.payment.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/common/v1/money.proto\x1a\x1baipay/common/v1/trade.proto\x1a\x1baipay/ledger/v1/trade.proto\x1a$aipay/payment/v1/order_service.proto\x1a%aipay/payment/v1/pricing_events.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd0\x05\n" +
+	"%aipay/payment/v1/admin_approval.proto\x12\x10aipay.payment.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/common/v1/money.proto\x1a\x1baipay/common/v1/trade.proto\x1a\x1baipay/ledger/v1/trade.proto\x1a$aipay/payment/v1/order_service.proto\x1a%aipay/payment/v1/pricing_events.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc0\x06\n" +
 	"\x1bChannelAccountConfiguration\x12,\n" +
 	"\x12channel_account_id\x18\x01 \x01(\tR\x10channelAccountId\x12!\n" +
 	"\fchannel_code\x18\x02 \x01(\tR\vchannelCode\x12\x12\n" +
@@ -1979,10 +1995,12 @@ const file_aipay_payment_v1_admin_approval_proto_rawDesc = "" +
 	"configJson\x12\x1d\n" +
 	"\aenabled\x18\x0f \x01(\bH\x00R\aenabled\x88\x01\x01\x122\n" +
 	"\x15callback_source_cidrs\x18\x10 \x03(\tR\x13callbackSourceCidrs\x122\n" +
-	"\x12credentials_sha256\x18\x11 \x01(\fH\x01R\x11credentialsSha256\x88\x01\x01B\n" +
+	"\x12credentials_sha256\x18\x11 \x01(\fH\x01R\x11credentialsSha256\x88\x01\x01\x12J\n" +
+	"\x1fpayment_instruction_ttl_seconds\x18\x12 \x01(\rH\x02R\x1cpaymentInstructionTtlSeconds\x88\x01\x01B\n" +
 	"\n" +
 	"\b_enabledB\x15\n" +
-	"\x13_credentials_sha256\"\xa5\x01\n" +
+	"\x13_credentials_sha256B\"\n" +
+	" _payment_instruction_ttl_seconds\"\xa5\x01\n" +
 	"\x14ChannelAccountChange\x12S\n" +
 	"\rconfiguration\x18\x01 \x01(\v2-.aipay.payment.v1.ChannelAccountConfigurationR\rconfiguration\x128\n" +
 	"\x18expected_control_version\x18\x02 \x01(\x04R\x16expectedControlVersion\"\xb5\x01\n" +

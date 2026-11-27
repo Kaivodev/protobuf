@@ -575,6 +575,427 @@ func (x *ApproveCarryoverResponse) GetApprovals() uint32 {
 	return 0
 }
 
+type UsdRatePolicyVersion struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Version uint64                 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
+	// Largest accepted deviation between the two USD rate sources, in ppm.
+	ThresholdPpm      uint32                 `protobuf:"varint,2,opt,name=threshold_ppm,json=thresholdPpm,proto3" json:"threshold_ppm,omitempty"`
+	ApprovalRequestId string                 `protobuf:"bytes,3,opt,name=approval_request_id,json=approvalRequestId,proto3" json:"approval_request_id,omitempty"`
+	ApprovedAt        *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=approved_at,json=approvedAt,proto3" json:"approved_at,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *UsdRatePolicyVersion) Reset() {
+	*x = UsdRatePolicyVersion{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UsdRatePolicyVersion) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UsdRatePolicyVersion) ProtoMessage() {}
+
+func (x *UsdRatePolicyVersion) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UsdRatePolicyVersion.ProtoReflect.Descriptor instead.
+func (*UsdRatePolicyVersion) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *UsdRatePolicyVersion) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *UsdRatePolicyVersion) GetThresholdPpm() uint32 {
+	if x != nil {
+		return x.ThresholdPpm
+	}
+	return 0
+}
+
+func (x *UsdRatePolicyVersion) GetApprovalRequestId() string {
+	if x != nil {
+		return x.ApprovalRequestId
+	}
+	return ""
+}
+
+func (x *UsdRatePolicyVersion) GetApprovedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ApprovedAt
+	}
+	return nil
+}
+
+type RequestUsdRatePolicyRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	// 0 only when no version exists, otherwise the current version.
+	ExpectedVersion uint64 `protobuf:"varint,2,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
+	// 1..AIPAY_LEDGER_USD_DEVIATION_PPM of the ledger deployment (the ceiling).
+	ThresholdPpm uint32 `protobuf:"varint,3,opt,name=threshold_ppm,json=thresholdPpm,proto3" json:"threshold_ppm,omitempty"`
+	// Required, 1-1000 characters.
+	Reason        string `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestUsdRatePolicyRequest) Reset() {
+	*x = RequestUsdRatePolicyRequest{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestUsdRatePolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestUsdRatePolicyRequest) ProtoMessage() {}
+
+func (x *RequestUsdRatePolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestUsdRatePolicyRequest.ProtoReflect.Descriptor instead.
+func (*RequestUsdRatePolicyRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *RequestUsdRatePolicyRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *RequestUsdRatePolicyRequest) GetExpectedVersion() uint64 {
+	if x != nil {
+		return x.ExpectedVersion
+	}
+	return 0
+}
+
+func (x *RequestUsdRatePolicyRequest) GetThresholdPpm() uint32 {
+	if x != nil {
+		return x.ThresholdPpm
+	}
+	return 0
+}
+
+func (x *RequestUsdRatePolicyRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type RequestUsdRatePolicyResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ApprovalRequest *v1.ApprovalRequest    `protobuf:"bytes,1,opt,name=approval_request,json=approvalRequest,proto3" json:"approval_request,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *RequestUsdRatePolicyResponse) Reset() {
+	*x = RequestUsdRatePolicyResponse{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestUsdRatePolicyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestUsdRatePolicyResponse) ProtoMessage() {}
+
+func (x *RequestUsdRatePolicyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestUsdRatePolicyResponse.ProtoReflect.Descriptor instead.
+func (*RequestUsdRatePolicyResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RequestUsdRatePolicyResponse) GetApprovalRequest() *v1.ApprovalRequest {
+	if x != nil {
+		return x.ApprovalRequest
+	}
+	return nil
+}
+
+type ApproveUsdRatePolicyRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey    string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	ApprovalRequestId string                 `protobuf:"bytes,2,opt,name=approval_request_id,json=approvalRequestId,proto3" json:"approval_request_id,omitempty"`
+	Assertion         *v1.WebAuthnAssertion  `protobuf:"bytes,3,opt,name=assertion,proto3" json:"assertion,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ApproveUsdRatePolicyRequest) Reset() {
+	*x = ApproveUsdRatePolicyRequest{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApproveUsdRatePolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApproveUsdRatePolicyRequest) ProtoMessage() {}
+
+func (x *ApproveUsdRatePolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApproveUsdRatePolicyRequest.ProtoReflect.Descriptor instead.
+func (*ApproveUsdRatePolicyRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ApproveUsdRatePolicyRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *ApproveUsdRatePolicyRequest) GetApprovalRequestId() string {
+	if x != nil {
+		return x.ApprovalRequestId
+	}
+	return ""
+}
+
+func (x *ApproveUsdRatePolicyRequest) GetAssertion() *v1.WebAuthnAssertion {
+	if x != nil {
+		return x.Assertion
+	}
+	return nil
+}
+
+type ApproveUsdRatePolicyResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ApprovalRequest *v1.ApprovalRequest    `protobuf:"bytes,1,opt,name=approval_request,json=approvalRequest,proto3" json:"approval_request,omitempty"`
+	Approvals       uint32                 `protobuf:"varint,2,opt,name=approvals,proto3" json:"approvals,omitempty"`
+	// Present once the second approval created the version.
+	Version       *UsdRatePolicyVersion `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApproveUsdRatePolicyResponse) Reset() {
+	*x = ApproveUsdRatePolicyResponse{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApproveUsdRatePolicyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApproveUsdRatePolicyResponse) ProtoMessage() {}
+
+func (x *ApproveUsdRatePolicyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApproveUsdRatePolicyResponse.ProtoReflect.Descriptor instead.
+func (*ApproveUsdRatePolicyResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ApproveUsdRatePolicyResponse) GetApprovalRequest() *v1.ApprovalRequest {
+	if x != nil {
+		return x.ApprovalRequest
+	}
+	return nil
+}
+
+func (x *ApproveUsdRatePolicyResponse) GetApprovals() uint32 {
+	if x != nil {
+		return x.Approvals
+	}
+	return 0
+}
+
+func (x *ApproveUsdRatePolicyResponse) GetVersion() *UsdRatePolicyVersion {
+	if x != nil {
+		return x.Version
+	}
+	return nil
+}
+
+type GetUsdRatePolicyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUsdRatePolicyRequest) Reset() {
+	*x = GetUsdRatePolicyRequest{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUsdRatePolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUsdRatePolicyRequest) ProtoMessage() {}
+
+func (x *GetUsdRatePolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUsdRatePolicyRequest.ProtoReflect.Descriptor instead.
+func (*GetUsdRatePolicyRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{14}
+}
+
+type GetUsdRatePolicyResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Absent when no version exists. The deployment ceiling then applies.
+	Current *UsdRatePolicyVersion `protobuf:"bytes,1,opt,name=current,proto3" json:"current,omitempty"`
+	// AIPAY_LEDGER_USD_DEVIATION_PPM of this deployment.
+	CeilingPpm uint32 `protobuf:"varint,2,opt,name=ceiling_ppm,json=ceilingPpm,proto3" json:"ceiling_ppm,omitempty"`
+	// min(current.threshold_ppm, ceiling_ppm), or ceiling_ppm when absent.
+	EffectivePpm uint32 `protobuf:"varint,3,opt,name=effective_ppm,json=effectivePpm,proto3" json:"effective_ppm,omitempty"`
+	// Pending usd_rate_policy request with its request_bytes, for approvers.
+	Pending       *v1.ApprovalRequest    `protobuf:"bytes,4,opt,name=pending,proto3" json:"pending,omitempty"`
+	AsOf          *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUsdRatePolicyResponse) Reset() {
+	*x = GetUsdRatePolicyResponse{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUsdRatePolicyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUsdRatePolicyResponse) ProtoMessage() {}
+
+func (x *GetUsdRatePolicyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUsdRatePolicyResponse.ProtoReflect.Descriptor instead.
+func (*GetUsdRatePolicyResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetUsdRatePolicyResponse) GetCurrent() *UsdRatePolicyVersion {
+	if x != nil {
+		return x.Current
+	}
+	return nil
+}
+
+func (x *GetUsdRatePolicyResponse) GetCeilingPpm() uint32 {
+	if x != nil {
+		return x.CeilingPpm
+	}
+	return 0
+}
+
+func (x *GetUsdRatePolicyResponse) GetEffectivePpm() uint32 {
+	if x != nil {
+		return x.EffectivePpm
+	}
+	return 0
+}
+
+func (x *GetUsdRatePolicyResponse) GetPending() *v1.ApprovalRequest {
+	if x != nil {
+		return x.Pending
+	}
+	return nil
+}
+
+func (x *GetUsdRatePolicyResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
+	}
+	return nil
+}
+
 var File_aipay_ledger_v1_control_service_proto protoreflect.FileDescriptor
 
 const file_aipay_ledger_v1_control_service_proto_rawDesc = "" +
@@ -614,7 +1035,36 @@ const file_aipay_ledger_v1_control_service_proto_rawDesc = "" +
 	"\tassertion\x18\x03 \x01(\v2$.aipay.approval.v1.WebAuthnAssertionR\tassertion\"\x87\x01\n" +
 	"\x18ApproveCarryoverResponse\x12M\n" +
 	"\x10approval_request\x18\x01 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\x0fapprovalRequest\x12\x1c\n" +
-	"\tapprovals\x18\x02 \x01(\rR\tapprovals2\xf9\x04\n" +
+	"\tapprovals\x18\x02 \x01(\rR\tapprovals\"\xc2\x01\n" +
+	"\x14UsdRatePolicyVersion\x12\x18\n" +
+	"\aversion\x18\x01 \x01(\x04R\aversion\x12#\n" +
+	"\rthreshold_ppm\x18\x02 \x01(\rR\fthresholdPpm\x12.\n" +
+	"\x13approval_request_id\x18\x03 \x01(\tR\x11approvalRequestId\x12;\n" +
+	"\vapproved_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"approvedAt\"\xae\x01\n" +
+	"\x1bRequestUsdRatePolicyRequest\x12'\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12)\n" +
+	"\x10expected_version\x18\x02 \x01(\x04R\x0fexpectedVersion\x12#\n" +
+	"\rthreshold_ppm\x18\x03 \x01(\rR\fthresholdPpm\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\"m\n" +
+	"\x1cRequestUsdRatePolicyResponse\x12M\n" +
+	"\x10approval_request\x18\x01 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\x0fapprovalRequest\"\xba\x01\n" +
+	"\x1bApproveUsdRatePolicyRequest\x12'\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12.\n" +
+	"\x13approval_request_id\x18\x02 \x01(\tR\x11approvalRequestId\x12B\n" +
+	"\tassertion\x18\x03 \x01(\v2$.aipay.approval.v1.WebAuthnAssertionR\tassertion\"\xcc\x01\n" +
+	"\x1cApproveUsdRatePolicyResponse\x12M\n" +
+	"\x10approval_request\x18\x01 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\x0fapprovalRequest\x12\x1c\n" +
+	"\tapprovals\x18\x02 \x01(\rR\tapprovals\x12?\n" +
+	"\aversion\x18\x03 \x01(\v2%.aipay.ledger.v1.UsdRatePolicyVersionR\aversion\"\x19\n" +
+	"\x17GetUsdRatePolicyRequest\"\x90\x02\n" +
+	"\x18GetUsdRatePolicyResponse\x12?\n" +
+	"\acurrent\x18\x01 \x01(\v2%.aipay.ledger.v1.UsdRatePolicyVersionR\acurrent\x12\x1f\n" +
+	"\vceiling_ppm\x18\x02 \x01(\rR\n" +
+	"ceilingPpm\x12#\n" +
+	"\reffective_ppm\x18\x03 \x01(\rR\feffectivePpm\x12<\n" +
+	"\apending\x18\x04 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\apending\x12/\n" +
+	"\x05as_of\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf2\xd8\b\n" +
 	"\x14LedgerControlService\x12\x9b\x01\n" +
 	"\x13RequestReadOnlyExit\x12+.aipay.ledger.v1.RequestReadOnlyExitRequest\x1a,.aipay.ledger.v1.RequestReadOnlyExitResponse\")\xc2\xf3\x18%\n" +
 	"#\n" +
@@ -627,7 +1077,16 @@ const file_aipay_ledger_v1_control_service_proto_rawDesc = "" +
 	"\abackend\x10\x02\x1a\x16ledger.control.request\x12\x92\x01\n" +
 	"\x10ApproveCarryover\x12(.aipay.ledger.v1.ApproveCarryoverRequest\x1a).aipay.ledger.v1.ApproveCarryoverResponse\")\xc2\xf3\x18%\n" +
 	"#\n" +
-	"\abackend\x10\x02\x1a\x16ledger.control.approveB>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
+	"\abackend\x10\x02\x1a\x16ledger.control.approve\x12\xa1\x01\n" +
+	"\x14RequestUsdRatePolicy\x12,.aipay.ledger.v1.RequestUsdRatePolicyRequest\x1a-.aipay.ledger.v1.RequestUsdRatePolicyResponse\",\xc2\xf3\x18(\n" +
+	"&\n" +
+	"\abackend\x10\x02\x1a\x19ledger.rate_policy.submit\x12\xa2\x01\n" +
+	"\x14ApproveUsdRatePolicy\x12,.aipay.ledger.v1.ApproveUsdRatePolicyRequest\x1a-.aipay.ledger.v1.ApproveUsdRatePolicyResponse\"-\xc2\xf3\x18)\n" +
+	"'\n" +
+	"\abackend\x10\x02\x1a\x1aledger.rate_policy.approve\x12\x93\x01\n" +
+	"\x10GetUsdRatePolicy\x12(.aipay.ledger.v1.GetUsdRatePolicyRequest\x1a).aipay.ledger.v1.GetUsdRatePolicyResponse\"*\xc2\xf3\x18&\n" +
+	"$\n" +
+	"\abackend\x10\x02\x1a\x17ledger.rate_policy.readB>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
 
 var (
 	file_aipay_ledger_v1_control_service_proto_rawDescOnce sync.Once
@@ -641,43 +1100,64 @@ func file_aipay_ledger_v1_control_service_proto_rawDescGZIP() []byte {
 	return file_aipay_ledger_v1_control_service_proto_rawDescData
 }
 
-var file_aipay_ledger_v1_control_service_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_aipay_ledger_v1_control_service_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_aipay_ledger_v1_control_service_proto_goTypes = []any{
-	(*ReadOnlyExitSnapshot)(nil),        // 0: aipay.ledger.v1.ReadOnlyExitSnapshot
-	(*RequestReadOnlyExitRequest)(nil),  // 1: aipay.ledger.v1.RequestReadOnlyExitRequest
-	(*RequestReadOnlyExitResponse)(nil), // 2: aipay.ledger.v1.RequestReadOnlyExitResponse
-	(*ApproveReadOnlyExitRequest)(nil),  // 3: aipay.ledger.v1.ApproveReadOnlyExitRequest
-	(*ApproveReadOnlyExitResponse)(nil), // 4: aipay.ledger.v1.ApproveReadOnlyExitResponse
-	(*RecordCarryoverRequest)(nil),      // 5: aipay.ledger.v1.RecordCarryoverRequest
-	(*RecordCarryoverResponse)(nil),     // 6: aipay.ledger.v1.RecordCarryoverResponse
-	(*ApproveCarryoverRequest)(nil),     // 7: aipay.ledger.v1.ApproveCarryoverRequest
-	(*ApproveCarryoverResponse)(nil),    // 8: aipay.ledger.v1.ApproveCarryoverResponse
-	(*timestamppb.Timestamp)(nil),       // 9: google.protobuf.Timestamp
-	(*v1.ApprovalRequest)(nil),          // 10: aipay.approval.v1.ApprovalRequest
-	(*v1.WebAuthnAssertion)(nil),        // 11: aipay.approval.v1.WebAuthnAssertion
+	(*ReadOnlyExitSnapshot)(nil),         // 0: aipay.ledger.v1.ReadOnlyExitSnapshot
+	(*RequestReadOnlyExitRequest)(nil),   // 1: aipay.ledger.v1.RequestReadOnlyExitRequest
+	(*RequestReadOnlyExitResponse)(nil),  // 2: aipay.ledger.v1.RequestReadOnlyExitResponse
+	(*ApproveReadOnlyExitRequest)(nil),   // 3: aipay.ledger.v1.ApproveReadOnlyExitRequest
+	(*ApproveReadOnlyExitResponse)(nil),  // 4: aipay.ledger.v1.ApproveReadOnlyExitResponse
+	(*RecordCarryoverRequest)(nil),       // 5: aipay.ledger.v1.RecordCarryoverRequest
+	(*RecordCarryoverResponse)(nil),      // 6: aipay.ledger.v1.RecordCarryoverResponse
+	(*ApproveCarryoverRequest)(nil),      // 7: aipay.ledger.v1.ApproveCarryoverRequest
+	(*ApproveCarryoverResponse)(nil),     // 8: aipay.ledger.v1.ApproveCarryoverResponse
+	(*UsdRatePolicyVersion)(nil),         // 9: aipay.ledger.v1.UsdRatePolicyVersion
+	(*RequestUsdRatePolicyRequest)(nil),  // 10: aipay.ledger.v1.RequestUsdRatePolicyRequest
+	(*RequestUsdRatePolicyResponse)(nil), // 11: aipay.ledger.v1.RequestUsdRatePolicyResponse
+	(*ApproveUsdRatePolicyRequest)(nil),  // 12: aipay.ledger.v1.ApproveUsdRatePolicyRequest
+	(*ApproveUsdRatePolicyResponse)(nil), // 13: aipay.ledger.v1.ApproveUsdRatePolicyResponse
+	(*GetUsdRatePolicyRequest)(nil),      // 14: aipay.ledger.v1.GetUsdRatePolicyRequest
+	(*GetUsdRatePolicyResponse)(nil),     // 15: aipay.ledger.v1.GetUsdRatePolicyResponse
+	(*timestamppb.Timestamp)(nil),        // 16: google.protobuf.Timestamp
+	(*v1.ApprovalRequest)(nil),           // 17: aipay.approval.v1.ApprovalRequest
+	(*v1.WebAuthnAssertion)(nil),         // 18: aipay.approval.v1.WebAuthnAssertion
 }
 var file_aipay_ledger_v1_control_service_proto_depIdxs = []int32{
-	9,  // 0: aipay.ledger.v1.ReadOnlyExitSnapshot.read_only_since:type_name -> google.protobuf.Timestamp
-	10, // 1: aipay.ledger.v1.RequestReadOnlyExitResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	16, // 0: aipay.ledger.v1.ReadOnlyExitSnapshot.read_only_since:type_name -> google.protobuf.Timestamp
+	17, // 1: aipay.ledger.v1.RequestReadOnlyExitResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
 	0,  // 2: aipay.ledger.v1.RequestReadOnlyExitResponse.snapshot:type_name -> aipay.ledger.v1.ReadOnlyExitSnapshot
-	11, // 3: aipay.ledger.v1.ApproveReadOnlyExitRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
-	10, // 4: aipay.ledger.v1.ApproveReadOnlyExitResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	10, // 5: aipay.ledger.v1.RecordCarryoverResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	11, // 6: aipay.ledger.v1.ApproveCarryoverRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
-	10, // 7: aipay.ledger.v1.ApproveCarryoverResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	1,  // 8: aipay.ledger.v1.LedgerControlService.RequestReadOnlyExit:input_type -> aipay.ledger.v1.RequestReadOnlyExitRequest
-	3,  // 9: aipay.ledger.v1.LedgerControlService.ApproveReadOnlyExit:input_type -> aipay.ledger.v1.ApproveReadOnlyExitRequest
-	5,  // 10: aipay.ledger.v1.LedgerControlService.RecordCarryover:input_type -> aipay.ledger.v1.RecordCarryoverRequest
-	7,  // 11: aipay.ledger.v1.LedgerControlService.ApproveCarryover:input_type -> aipay.ledger.v1.ApproveCarryoverRequest
-	2,  // 12: aipay.ledger.v1.LedgerControlService.RequestReadOnlyExit:output_type -> aipay.ledger.v1.RequestReadOnlyExitResponse
-	4,  // 13: aipay.ledger.v1.LedgerControlService.ApproveReadOnlyExit:output_type -> aipay.ledger.v1.ApproveReadOnlyExitResponse
-	6,  // 14: aipay.ledger.v1.LedgerControlService.RecordCarryover:output_type -> aipay.ledger.v1.RecordCarryoverResponse
-	8,  // 15: aipay.ledger.v1.LedgerControlService.ApproveCarryover:output_type -> aipay.ledger.v1.ApproveCarryoverResponse
-	12, // [12:16] is the sub-list for method output_type
-	8,  // [8:12] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	18, // 3: aipay.ledger.v1.ApproveReadOnlyExitRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
+	17, // 4: aipay.ledger.v1.ApproveReadOnlyExitResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	17, // 5: aipay.ledger.v1.RecordCarryoverResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	18, // 6: aipay.ledger.v1.ApproveCarryoverRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
+	17, // 7: aipay.ledger.v1.ApproveCarryoverResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	16, // 8: aipay.ledger.v1.UsdRatePolicyVersion.approved_at:type_name -> google.protobuf.Timestamp
+	17, // 9: aipay.ledger.v1.RequestUsdRatePolicyResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	18, // 10: aipay.ledger.v1.ApproveUsdRatePolicyRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
+	17, // 11: aipay.ledger.v1.ApproveUsdRatePolicyResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	9,  // 12: aipay.ledger.v1.ApproveUsdRatePolicyResponse.version:type_name -> aipay.ledger.v1.UsdRatePolicyVersion
+	9,  // 13: aipay.ledger.v1.GetUsdRatePolicyResponse.current:type_name -> aipay.ledger.v1.UsdRatePolicyVersion
+	17, // 14: aipay.ledger.v1.GetUsdRatePolicyResponse.pending:type_name -> aipay.approval.v1.ApprovalRequest
+	16, // 15: aipay.ledger.v1.GetUsdRatePolicyResponse.as_of:type_name -> google.protobuf.Timestamp
+	1,  // 16: aipay.ledger.v1.LedgerControlService.RequestReadOnlyExit:input_type -> aipay.ledger.v1.RequestReadOnlyExitRequest
+	3,  // 17: aipay.ledger.v1.LedgerControlService.ApproveReadOnlyExit:input_type -> aipay.ledger.v1.ApproveReadOnlyExitRequest
+	5,  // 18: aipay.ledger.v1.LedgerControlService.RecordCarryover:input_type -> aipay.ledger.v1.RecordCarryoverRequest
+	7,  // 19: aipay.ledger.v1.LedgerControlService.ApproveCarryover:input_type -> aipay.ledger.v1.ApproveCarryoverRequest
+	10, // 20: aipay.ledger.v1.LedgerControlService.RequestUsdRatePolicy:input_type -> aipay.ledger.v1.RequestUsdRatePolicyRequest
+	12, // 21: aipay.ledger.v1.LedgerControlService.ApproveUsdRatePolicy:input_type -> aipay.ledger.v1.ApproveUsdRatePolicyRequest
+	14, // 22: aipay.ledger.v1.LedgerControlService.GetUsdRatePolicy:input_type -> aipay.ledger.v1.GetUsdRatePolicyRequest
+	2,  // 23: aipay.ledger.v1.LedgerControlService.RequestReadOnlyExit:output_type -> aipay.ledger.v1.RequestReadOnlyExitResponse
+	4,  // 24: aipay.ledger.v1.LedgerControlService.ApproveReadOnlyExit:output_type -> aipay.ledger.v1.ApproveReadOnlyExitResponse
+	6,  // 25: aipay.ledger.v1.LedgerControlService.RecordCarryover:output_type -> aipay.ledger.v1.RecordCarryoverResponse
+	8,  // 26: aipay.ledger.v1.LedgerControlService.ApproveCarryover:output_type -> aipay.ledger.v1.ApproveCarryoverResponse
+	11, // 27: aipay.ledger.v1.LedgerControlService.RequestUsdRatePolicy:output_type -> aipay.ledger.v1.RequestUsdRatePolicyResponse
+	13, // 28: aipay.ledger.v1.LedgerControlService.ApproveUsdRatePolicy:output_type -> aipay.ledger.v1.ApproveUsdRatePolicyResponse
+	15, // 29: aipay.ledger.v1.LedgerControlService.GetUsdRatePolicy:output_type -> aipay.ledger.v1.GetUsdRatePolicyResponse
+	23, // [23:30] is the sub-list for method output_type
+	16, // [16:23] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_aipay_ledger_v1_control_service_proto_init() }
@@ -691,7 +1171,7 @@ func file_aipay_ledger_v1_control_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_ledger_v1_control_service_proto_rawDesc), len(file_aipay_ledger_v1_control_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

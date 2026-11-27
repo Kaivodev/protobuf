@@ -113,6 +113,7 @@ func TestV080MethodAuthorization(t *testing.T) {
 			methodCount := len(group.methods)
 			if group.service == "ReconciliationAdminService" {
 				methodCount += 7 // Coverage policies are pinned by TestV0200CoveragePolicies.
+				methodCount += 4 // Late-payment window policies are pinned by TestV0230Policies.
 			}
 			if group.file.Services().Len() != 1 || service == nil || service.Methods().Len() != methodCount {
 				t.Fatal("unreviewed RPC surface")

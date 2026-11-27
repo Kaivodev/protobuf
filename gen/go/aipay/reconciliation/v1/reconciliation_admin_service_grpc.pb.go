@@ -41,6 +41,10 @@ const (
 	ReconciliationAdminService_ListCoverageAttestations_FullMethodName     = "/aipay.reconciliation.v1.ReconciliationAdminService/ListCoverageAttestations"
 	ReconciliationAdminService_GetCoverageStatus_FullMethodName            = "/aipay.reconciliation.v1.ReconciliationAdminService/GetCoverageStatus"
 	ReconciliationAdminService_ListCoverageAddresses_FullMethodName        = "/aipay.reconciliation.v1.ReconciliationAdminService/ListCoverageAddresses"
+	ReconciliationAdminService_SubmitLatePaymentWindow_FullMethodName      = "/aipay.reconciliation.v1.ReconciliationAdminService/SubmitLatePaymentWindow"
+	ReconciliationAdminService_ApproveLatePaymentWindow_FullMethodName     = "/aipay.reconciliation.v1.ReconciliationAdminService/ApproveLatePaymentWindow"
+	ReconciliationAdminService_GetLatePaymentWindow_FullMethodName         = "/aipay.reconciliation.v1.ReconciliationAdminService/GetLatePaymentWindow"
+	ReconciliationAdminService_ListLatePaymentWindows_FullMethodName       = "/aipay.reconciliation.v1.ReconciliationAdminService/ListLatePaymentWindows"
 )
 
 // ReconciliationAdminServiceClient is the client API for ReconciliationAdminService service.
@@ -112,6 +116,10 @@ type ReconciliationAdminServiceClient interface {
 	ListCoverageAttestations(ctx context.Context, in *ListCoverageAttestationsRequest, opts ...grpc.CallOption) (*ListCoverageAttestationsResponse, error)
 	GetCoverageStatus(ctx context.Context, in *GetCoverageStatusRequest, opts ...grpc.CallOption) (*GetCoverageStatusResponse, error)
 	ListCoverageAddresses(ctx context.Context, in *ListCoverageAddressesRequest, opts ...grpc.CallOption) (*ListCoverageAddressesResponse, error)
+	SubmitLatePaymentWindow(ctx context.Context, in *SubmitLatePaymentWindowRequest, opts ...grpc.CallOption) (*SubmitLatePaymentWindowResponse, error)
+	ApproveLatePaymentWindow(ctx context.Context, in *ApproveLatePaymentWindowRequest, opts ...grpc.CallOption) (*ApproveLatePaymentWindowResponse, error)
+	GetLatePaymentWindow(ctx context.Context, in *GetLatePaymentWindowRequest, opts ...grpc.CallOption) (*GetLatePaymentWindowResponse, error)
+	ListLatePaymentWindows(ctx context.Context, in *ListLatePaymentWindowsRequest, opts ...grpc.CallOption) (*ListLatePaymentWindowsResponse, error)
 }
 
 type reconciliationAdminServiceClient struct {
@@ -342,6 +350,46 @@ func (c *reconciliationAdminServiceClient) ListCoverageAddresses(ctx context.Con
 	return out, nil
 }
 
+func (c *reconciliationAdminServiceClient) SubmitLatePaymentWindow(ctx context.Context, in *SubmitLatePaymentWindowRequest, opts ...grpc.CallOption) (*SubmitLatePaymentWindowResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitLatePaymentWindowResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_SubmitLatePaymentWindow_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reconciliationAdminServiceClient) ApproveLatePaymentWindow(ctx context.Context, in *ApproveLatePaymentWindowRequest, opts ...grpc.CallOption) (*ApproveLatePaymentWindowResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApproveLatePaymentWindowResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_ApproveLatePaymentWindow_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reconciliationAdminServiceClient) GetLatePaymentWindow(ctx context.Context, in *GetLatePaymentWindowRequest, opts ...grpc.CallOption) (*GetLatePaymentWindowResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLatePaymentWindowResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_GetLatePaymentWindow_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reconciliationAdminServiceClient) ListLatePaymentWindows(ctx context.Context, in *ListLatePaymentWindowsRequest, opts ...grpc.CallOption) (*ListLatePaymentWindowsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListLatePaymentWindowsResponse)
+	err := c.cc.Invoke(ctx, ReconciliationAdminService_ListLatePaymentWindows_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReconciliationAdminServiceServer is the server API for ReconciliationAdminService service.
 // All implementations must embed UnimplementedReconciliationAdminServiceServer
 // for forward compatibility.
@@ -411,6 +459,10 @@ type ReconciliationAdminServiceServer interface {
 	ListCoverageAttestations(context.Context, *ListCoverageAttestationsRequest) (*ListCoverageAttestationsResponse, error)
 	GetCoverageStatus(context.Context, *GetCoverageStatusRequest) (*GetCoverageStatusResponse, error)
 	ListCoverageAddresses(context.Context, *ListCoverageAddressesRequest) (*ListCoverageAddressesResponse, error)
+	SubmitLatePaymentWindow(context.Context, *SubmitLatePaymentWindowRequest) (*SubmitLatePaymentWindowResponse, error)
+	ApproveLatePaymentWindow(context.Context, *ApproveLatePaymentWindowRequest) (*ApproveLatePaymentWindowResponse, error)
+	GetLatePaymentWindow(context.Context, *GetLatePaymentWindowRequest) (*GetLatePaymentWindowResponse, error)
+	ListLatePaymentWindows(context.Context, *ListLatePaymentWindowsRequest) (*ListLatePaymentWindowsResponse, error)
 	mustEmbedUnimplementedReconciliationAdminServiceServer()
 }
 
@@ -486,6 +538,18 @@ func (UnimplementedReconciliationAdminServiceServer) GetCoverageStatus(context.C
 }
 func (UnimplementedReconciliationAdminServiceServer) ListCoverageAddresses(context.Context, *ListCoverageAddressesRequest) (*ListCoverageAddressesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCoverageAddresses not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) SubmitLatePaymentWindow(context.Context, *SubmitLatePaymentWindowRequest) (*SubmitLatePaymentWindowResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitLatePaymentWindow not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) ApproveLatePaymentWindow(context.Context, *ApproveLatePaymentWindowRequest) (*ApproveLatePaymentWindowResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ApproveLatePaymentWindow not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) GetLatePaymentWindow(context.Context, *GetLatePaymentWindowRequest) (*GetLatePaymentWindowResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLatePaymentWindow not implemented")
+}
+func (UnimplementedReconciliationAdminServiceServer) ListLatePaymentWindows(context.Context, *ListLatePaymentWindowsRequest) (*ListLatePaymentWindowsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListLatePaymentWindows not implemented")
 }
 func (UnimplementedReconciliationAdminServiceServer) mustEmbedUnimplementedReconciliationAdminServiceServer() {
 }
@@ -905,6 +969,78 @@ func _ReconciliationAdminService_ListCoverageAddresses_Handler(srv interface{}, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReconciliationAdminService_SubmitLatePaymentWindow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitLatePaymentWindowRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).SubmitLatePaymentWindow(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_SubmitLatePaymentWindow_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).SubmitLatePaymentWindow(ctx, req.(*SubmitLatePaymentWindowRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReconciliationAdminService_ApproveLatePaymentWindow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveLatePaymentWindowRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).ApproveLatePaymentWindow(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_ApproveLatePaymentWindow_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).ApproveLatePaymentWindow(ctx, req.(*ApproveLatePaymentWindowRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReconciliationAdminService_GetLatePaymentWindow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLatePaymentWindowRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).GetLatePaymentWindow(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_GetLatePaymentWindow_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).GetLatePaymentWindow(ctx, req.(*GetLatePaymentWindowRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReconciliationAdminService_ListLatePaymentWindows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListLatePaymentWindowsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconciliationAdminServiceServer).ListLatePaymentWindows(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconciliationAdminService_ListLatePaymentWindows_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconciliationAdminServiceServer).ListLatePaymentWindows(ctx, req.(*ListLatePaymentWindowsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReconciliationAdminService_ServiceDesc is the grpc.ServiceDesc for ReconciliationAdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -999,6 +1135,22 @@ var ReconciliationAdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListCoverageAddresses",
 			Handler:    _ReconciliationAdminService_ListCoverageAddresses_Handler,
+		},
+		{
+			MethodName: "SubmitLatePaymentWindow",
+			Handler:    _ReconciliationAdminService_SubmitLatePaymentWindow_Handler,
+		},
+		{
+			MethodName: "ApproveLatePaymentWindow",
+			Handler:    _ReconciliationAdminService_ApproveLatePaymentWindow_Handler,
+		},
+		{
+			MethodName: "GetLatePaymentWindow",
+			Handler:    _ReconciliationAdminService_GetLatePaymentWindow_Handler,
+		},
+		{
+			MethodName: "ListLatePaymentWindows",
+			Handler:    _ReconciliationAdminService_ListLatePaymentWindows_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

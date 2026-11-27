@@ -433,8 +433,15 @@ type TradeCancellationAuthorized struct {
 	// Optional message presence; required iff DISPUTED. See DisputeResolution
 	// for rejection rules and atomic barrier clearing with the seller return.
 	DisputeResolution *DisputeResolution `protobuf:"bytes,8,opt,name=dispute_resolution,json=disputeResolution,proto3" json:"dispute_resolution,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// v0.23.0 (A130): late-payment window version pinned at the first
+	// cancellation observation. 0 means no approved version (the deployment's
+	// AIPAY_RECONCILIATION_LATE_PAYMENT_WINDOW applied) and is not encoded, so
+	// earlier payloads are byte-identical. The window value and the version's
+	// request_digest are bound by evidence_sha256. Receivers that reject unknown
+	// fields must upgrade before reconciliation emits a non-zero value.
+	LatePaymentWindowVersion uint64 `protobuf:"varint,9,opt,name=late_payment_window_version,json=latePaymentWindowVersion,proto3" json:"late_payment_window_version,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *TradeCancellationAuthorized) Reset() {
@@ -521,6 +528,13 @@ func (x *TradeCancellationAuthorized) GetDisputeResolution() *DisputeResolution 
 		return x.DisputeResolution
 	}
 	return nil
+}
+
+func (x *TradeCancellationAuthorized) GetLatePaymentWindowVersion() uint64 {
+	if x != nil {
+		return x.LatePaymentWindowVersion
+	}
+	return 0
 }
 
 // TradeRefundAuthorized, schema version 1 on reconciliation.matches.
@@ -706,7 +720,7 @@ const file_aipay_reconciliation_v1_trade_events_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12'\n" +
 	"\x0fevidence_sha256\x18\b \x01(\fR\x0eevidenceSha256\x12Y\n" +
-	"\x12dispute_resolution\x18\t \x01(\v2*.aipay.reconciliation.v1.DisputeResolutionR\x11disputeResolution\"\xd9\x03\n" +
+	"\x12dispute_resolution\x18\t \x01(\v2*.aipay.reconciliation.v1.DisputeResolutionR\x11disputeResolution\"\x98\x04\n" +
 	"\x1bTradeCancellationAuthorized\x12)\n" +
 	"\x10authorization_id\x18\x01 \x01(\tR\x0fauthorizationId\x124\n" +
 	"\x05trade\x18\x02 \x01(\v2\x1e.aipay.common.v1.TradeSnapshotR\x05trade\x122\n" +
@@ -716,7 +730,8 @@ const file_aipay_reconciliation_v1_trade_events_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12'\n" +
 	"\x0fevidence_sha256\x18\a \x01(\fR\x0eevidenceSha256\x12Y\n" +
-	"\x12dispute_resolution\x18\b \x01(\v2*.aipay.reconciliation.v1.DisputeResolutionR\x11disputeResolution\"\xb4\x05\n" +
+	"\x12dispute_resolution\x18\b \x01(\v2*.aipay.reconciliation.v1.DisputeResolutionR\x11disputeResolution\x12=\n" +
+	"\x1blate_payment_window_version\x18\t \x01(\x04R\x18latePaymentWindowVersion\"\xb4\x05\n" +
 	"\x15TradeRefundAuthorized\x12)\n" +
 	"\x10authorization_id\x18\x01 \x01(\tR\x0fauthorizationId\x124\n" +
 	"\x05trade\x18\x02 \x01(\v2\x1e.aipay.common.v1.TradeSnapshotR\x05trade\x122\n" +

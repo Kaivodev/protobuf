@@ -57,6 +57,15 @@ message ChannelAccountConfiguration {
   // Canonical encoding appends u8(1) || B(value) after field 16 when present.
   // Absence adds no bytes.
   optional bytes credentials_sha256 = 17;
+  // v0.23.0 (A130): lifetime of the buyer payment instruction for new
+  // dispatches on this channel, in whole seconds, 1..floor(the payment
+  // deployment's AIPAY_PLUGIN_INSTRUCTION_TTL). Absence uses that deployment
+  // value. Payment rejects a larger value at submission and second approval.
+  // At dispatch, payment clamps the lifetime to the deployment ceiling and
+  // caps any plugin- or gateway-provided instruction expiry to that lifetime.
+  // Canonical approval and web-command encodings append u8(1) || u32(value)
+  // after field 17 when present. Absence adds no bytes.
+  optional uint32 payment_instruction_ttl_seconds = 18;
 }
 
 message ChannelAccountChange {

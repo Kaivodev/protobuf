@@ -78,10 +78,27 @@ message PluginEnableChange {
   optional uint64 expected_plugin_control_version = 7;
 }
 
+// v0.23.0 (A130): minimum spacing between the two upstream observations for
+// cancellation verification. expected_current_version is the current approved
+// version, or 0 when none exists. version = expected_current_version + 1.
+// window_seconds is in whole seconds, 600..3600 in production and 1..3600 in
+// development/test. Without an approved version, reconciliation uses
+// AIPAY_RECONCILIATION_LATE_PAYMENT_WINDOW. Reconciliation rejects out-of-range
+// values at submission and second approval, which also rechecks expected_current_version.
+// reason is 1-1000 characters. At most one late_payment_window request may be
+// pending globally. requested_by cannot approve. A new version applies only to
+// cancellation reviews whose first observation occurs after approval.
+message LatePaymentWindowMaterial {
+  uint64 version = 1;
+  uint64 expected_current_version = 2;
+  uint32 window_seconds = 3;
+  string reason = 4;
+}
+
 // Domain-owned material; never use aipay.payment.v1 approval material. Headers
 // equal ApprovalRequest. request_bytes = str("aipay.reconciliation.admin.v1")
 // || canonical(material), NOT protobuf serialization. Canonical field-order
-// encoding follows docs contracts.md: headers 1-5, u32 operation tag (6-9), recursive
+// encoding follows docs contracts.md: headers 1-5, u32 operation tag (6-10), recursive
 // operation content, JSON normalized, fixtures sorted; unknown fields rejected.
 // request_digest = SHA-256("AIPAY-APPROVAL-V1" || request_bytes), with a raw
 // 17-byte ASCII prefix. The WebAuthn challenge equals request_digest.
@@ -107,6 +124,7 @@ message ReconciliationApprovalMaterial {
     PluginVersionMaterial plugin_version = 7;
     PluginEnableChange plugin_enable = 8;
     CoverageAttestationMaterial coverage_attestation = 9;
+    LatePaymentWindowMaterial late_payment_window = 10;
   }
 }
 

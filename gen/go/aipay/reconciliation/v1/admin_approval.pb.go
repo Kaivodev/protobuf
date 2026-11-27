@@ -406,10 +406,88 @@ func (x *PluginEnableChange) GetExpectedPluginControlVersion() uint64 {
 	return 0
 }
 
+// v0.23.0 (A130): minimum spacing between the two upstream observations for
+// cancellation verification. expected_current_version is the current approved
+// version, or 0 when none exists. version = expected_current_version + 1.
+// window_seconds is in whole seconds, 600..3600 in production and 1..3600 in
+// development/test. Without an approved version, reconciliation uses
+// AIPAY_RECONCILIATION_LATE_PAYMENT_WINDOW. Reconciliation rejects out-of-range
+// values at submission and second approval, which also rechecks expected_current_version.
+// reason is 1-1000 characters. At most one late_payment_window request may be
+// pending globally. requested_by cannot approve. A new version applies only to
+// cancellation reviews whose first observation occurs after approval.
+type LatePaymentWindowMaterial struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	Version                uint64                 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
+	ExpectedCurrentVersion uint64                 `protobuf:"varint,2,opt,name=expected_current_version,json=expectedCurrentVersion,proto3" json:"expected_current_version,omitempty"`
+	WindowSeconds          uint32                 `protobuf:"varint,3,opt,name=window_seconds,json=windowSeconds,proto3" json:"window_seconds,omitempty"`
+	Reason                 string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *LatePaymentWindowMaterial) Reset() {
+	*x = LatePaymentWindowMaterial{}
+	mi := &file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LatePaymentWindowMaterial) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LatePaymentWindowMaterial) ProtoMessage() {}
+
+func (x *LatePaymentWindowMaterial) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LatePaymentWindowMaterial.ProtoReflect.Descriptor instead.
+func (*LatePaymentWindowMaterial) Descriptor() ([]byte, []int) {
+	return file_aipay_reconciliation_v1_admin_approval_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *LatePaymentWindowMaterial) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *LatePaymentWindowMaterial) GetExpectedCurrentVersion() uint64 {
+	if x != nil {
+		return x.ExpectedCurrentVersion
+	}
+	return 0
+}
+
+func (x *LatePaymentWindowMaterial) GetWindowSeconds() uint32 {
+	if x != nil {
+		return x.WindowSeconds
+	}
+	return 0
+}
+
+func (x *LatePaymentWindowMaterial) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
 // Domain-owned material; never use aipay.payment.v1 approval material. Headers
 // equal ApprovalRequest. request_bytes = str("aipay.reconciliation.admin.v1")
 // || canonical(material), NOT protobuf serialization. Canonical field-order
-// encoding follows docs contracts.md: headers 1-5, u32 operation tag (6-9), recursive
+// encoding follows docs contracts.md: headers 1-5, u32 operation tag (6-10), recursive
 // operation content, JSON normalized, fixtures sorted; unknown fields rejected.
 // request_digest = SHA-256("AIPAY-APPROVAL-V1" || request_bytes), with a raw
 // 17-byte ASCII prefix. The WebAuthn challenge equals request_digest.
@@ -438,6 +516,7 @@ type ReconciliationApprovalMaterial struct {
 	//	*ReconciliationApprovalMaterial_PluginVersion
 	//	*ReconciliationApprovalMaterial_PluginEnable
 	//	*ReconciliationApprovalMaterial_CoverageAttestation
+	//	*ReconciliationApprovalMaterial_LatePaymentWindow
 	Operation     isReconciliationApprovalMaterial_Operation `protobuf_oneof:"operation"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -445,7 +524,7 @@ type ReconciliationApprovalMaterial struct {
 
 func (x *ReconciliationApprovalMaterial) Reset() {
 	*x = ReconciliationApprovalMaterial{}
-	mi := &file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[5]
+	mi := &file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -457,7 +536,7 @@ func (x *ReconciliationApprovalMaterial) String() string {
 func (*ReconciliationApprovalMaterial) ProtoMessage() {}
 
 func (x *ReconciliationApprovalMaterial) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[5]
+	mi := &file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -470,7 +549,7 @@ func (x *ReconciliationApprovalMaterial) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReconciliationApprovalMaterial.ProtoReflect.Descriptor instead.
 func (*ReconciliationApprovalMaterial) Descriptor() ([]byte, []int) {
-	return file_aipay_reconciliation_v1_admin_approval_proto_rawDescGZIP(), []int{5}
+	return file_aipay_reconciliation_v1_admin_approval_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ReconciliationApprovalMaterial) GetApprovalRequestId() string {
@@ -551,6 +630,15 @@ func (x *ReconciliationApprovalMaterial) GetCoverageAttestation() *CoverageAttes
 	return nil
 }
 
+func (x *ReconciliationApprovalMaterial) GetLatePaymentWindow() *LatePaymentWindowMaterial {
+	if x != nil {
+		if x, ok := x.Operation.(*ReconciliationApprovalMaterial_LatePaymentWindow); ok {
+			return x.LatePaymentWindow
+		}
+	}
+	return nil
+}
+
 type isReconciliationApprovalMaterial_Operation interface {
 	isReconciliationApprovalMaterial_Operation()
 }
@@ -571,6 +659,10 @@ type ReconciliationApprovalMaterial_CoverageAttestation struct {
 	CoverageAttestation *CoverageAttestationMaterial `protobuf:"bytes,9,opt,name=coverage_attestation,json=coverageAttestation,proto3,oneof"`
 }
 
+type ReconciliationApprovalMaterial_LatePaymentWindow struct {
+	LatePaymentWindow *LatePaymentWindowMaterial `protobuf:"bytes,10,opt,name=late_payment_window,json=latePaymentWindow,proto3,oneof"`
+}
+
 func (*ReconciliationApprovalMaterial_VerificationAccount) isReconciliationApprovalMaterial_Operation() {
 }
 
@@ -579,6 +671,9 @@ func (*ReconciliationApprovalMaterial_PluginVersion) isReconciliationApprovalMat
 func (*ReconciliationApprovalMaterial_PluginEnable) isReconciliationApprovalMaterial_Operation() {}
 
 func (*ReconciliationApprovalMaterial_CoverageAttestation) isReconciliationApprovalMaterial_Operation() {
+}
+
+func (*ReconciliationApprovalMaterial_LatePaymentWindow) isReconciliationApprovalMaterial_Operation() {
 }
 
 type ReconciliationApproval struct {
@@ -595,7 +690,7 @@ type ReconciliationApproval struct {
 
 func (x *ReconciliationApproval) Reset() {
 	*x = ReconciliationApproval{}
-	mi := &file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[6]
+	mi := &file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -607,7 +702,7 @@ func (x *ReconciliationApproval) String() string {
 func (*ReconciliationApproval) ProtoMessage() {}
 
 func (x *ReconciliationApproval) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[6]
+	mi := &file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -620,7 +715,7 @@ func (x *ReconciliationApproval) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReconciliationApproval.ProtoReflect.Descriptor instead.
 func (*ReconciliationApproval) Descriptor() ([]byte, []int) {
-	return file_aipay_reconciliation_v1_admin_approval_proto_rawDescGZIP(), []int{6}
+	return file_aipay_reconciliation_v1_admin_approval_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ReconciliationApproval) GetApprovalRequest() *v1.ApprovalRequest {
@@ -685,7 +780,12 @@ const file_aipay_reconciliation_v1_admin_approval_proto_rawDesc = "" +
 	"\x1fpublication_approval_request_id\x18\x05 \x01(\tR\x1cpublicationApprovalRequestId\x12<\n" +
 	"\x1apublication_request_digest\x18\x06 \x01(\fR\x18publicationRequestDigest\x12J\n" +
 	"\x1fexpected_plugin_control_version\x18\a \x01(\x04H\x00R\x1cexpectedPluginControlVersion\x88\x01\x01B\"\n" +
-	" _expected_plugin_control_version\"\x8f\x05\n" +
+	" _expected_plugin_control_version\"\xae\x01\n" +
+	"\x19LatePaymentWindowMaterial\x12\x18\n" +
+	"\aversion\x18\x01 \x01(\x04R\aversion\x128\n" +
+	"\x18expected_current_version\x18\x02 \x01(\x04R\x16expectedCurrentVersion\x12%\n" +
+	"\x0ewindow_seconds\x18\x03 \x01(\rR\rwindowSeconds\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\"\xf5\x05\n" +
 	"\x1eReconciliationApprovalMaterial\x12.\n" +
 	"\x13approval_request_id\x18\x01 \x01(\tR\x11approvalRequestId\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12!\n" +
@@ -696,7 +796,9 @@ const file_aipay_reconciliation_v1_admin_approval_proto_rawDesc = "" +
 	"\x14verification_account\x18\x06 \x01(\v22.aipay.reconciliation.v1.VerificationAccountChangeH\x00R\x13verificationAccount\x12W\n" +
 	"\x0eplugin_version\x18\a \x01(\v2..aipay.reconciliation.v1.PluginVersionMaterialH\x00R\rpluginVersion\x12R\n" +
 	"\rplugin_enable\x18\b \x01(\v2+.aipay.reconciliation.v1.PluginEnableChangeH\x00R\fpluginEnable\x12i\n" +
-	"\x14coverage_attestation\x18\t \x01(\v24.aipay.reconciliation.v1.CoverageAttestationMaterialH\x00R\x13coverageAttestationB\v\n" +
+	"\x14coverage_attestation\x18\t \x01(\v24.aipay.reconciliation.v1.CoverageAttestationMaterialH\x00R\x13coverageAttestation\x12d\n" +
+	"\x13late_payment_window\x18\n" +
+	" \x01(\v22.aipay.reconciliation.v1.LatePaymentWindowMaterialH\x00R\x11latePaymentWindowB\v\n" +
 	"\toperation\"\xb4\x02\n" +
 	"\x16ReconciliationApproval\x12M\n" +
 	"\x10approval_request\x18\x01 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\x0fapprovalRequest\x12S\n" +
@@ -717,37 +819,39 @@ func file_aipay_reconciliation_v1_admin_approval_proto_rawDescGZIP() []byte {
 	return file_aipay_reconciliation_v1_admin_approval_proto_rawDescData
 }
 
-var file_aipay_reconciliation_v1_admin_approval_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_aipay_reconciliation_v1_admin_approval_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_aipay_reconciliation_v1_admin_approval_proto_goTypes = []any{
 	(*PluginFixture)(nil),                    // 0: aipay.reconciliation.v1.PluginFixture
 	(*PluginVersionMaterial)(nil),            // 1: aipay.reconciliation.v1.PluginVersionMaterial
 	(*VerificationAccountConfiguration)(nil), // 2: aipay.reconciliation.v1.VerificationAccountConfiguration
 	(*VerificationAccountChange)(nil),        // 3: aipay.reconciliation.v1.VerificationAccountChange
 	(*PluginEnableChange)(nil),               // 4: aipay.reconciliation.v1.PluginEnableChange
-	(*ReconciliationApprovalMaterial)(nil),   // 5: aipay.reconciliation.v1.ReconciliationApprovalMaterial
-	(*ReconciliationApproval)(nil),           // 6: aipay.reconciliation.v1.ReconciliationApproval
-	(*timestamppb.Timestamp)(nil),            // 7: google.protobuf.Timestamp
-	(*CoverageAttestationMaterial)(nil),      // 8: aipay.reconciliation.v1.CoverageAttestationMaterial
-	(*v1.ApprovalRequest)(nil),               // 9: aipay.approval.v1.ApprovalRequest
-	(*v1.Approval)(nil),                      // 10: aipay.approval.v1.Approval
+	(*LatePaymentWindowMaterial)(nil),        // 5: aipay.reconciliation.v1.LatePaymentWindowMaterial
+	(*ReconciliationApprovalMaterial)(nil),   // 6: aipay.reconciliation.v1.ReconciliationApprovalMaterial
+	(*ReconciliationApproval)(nil),           // 7: aipay.reconciliation.v1.ReconciliationApproval
+	(*timestamppb.Timestamp)(nil),            // 8: google.protobuf.Timestamp
+	(*CoverageAttestationMaterial)(nil),      // 9: aipay.reconciliation.v1.CoverageAttestationMaterial
+	(*v1.ApprovalRequest)(nil),               // 10: aipay.approval.v1.ApprovalRequest
+	(*v1.Approval)(nil),                      // 11: aipay.approval.v1.Approval
 }
 var file_aipay_reconciliation_v1_admin_approval_proto_depIdxs = []int32{
 	2,  // 0: aipay.reconciliation.v1.VerificationAccountChange.configuration:type_name -> aipay.reconciliation.v1.VerificationAccountConfiguration
-	7,  // 1: aipay.reconciliation.v1.ReconciliationApprovalMaterial.requested_at:type_name -> google.protobuf.Timestamp
-	7,  // 2: aipay.reconciliation.v1.ReconciliationApprovalMaterial.expires_at:type_name -> google.protobuf.Timestamp
+	8,  // 1: aipay.reconciliation.v1.ReconciliationApprovalMaterial.requested_at:type_name -> google.protobuf.Timestamp
+	8,  // 2: aipay.reconciliation.v1.ReconciliationApprovalMaterial.expires_at:type_name -> google.protobuf.Timestamp
 	3,  // 3: aipay.reconciliation.v1.ReconciliationApprovalMaterial.verification_account:type_name -> aipay.reconciliation.v1.VerificationAccountChange
 	1,  // 4: aipay.reconciliation.v1.ReconciliationApprovalMaterial.plugin_version:type_name -> aipay.reconciliation.v1.PluginVersionMaterial
 	4,  // 5: aipay.reconciliation.v1.ReconciliationApprovalMaterial.plugin_enable:type_name -> aipay.reconciliation.v1.PluginEnableChange
-	8,  // 6: aipay.reconciliation.v1.ReconciliationApprovalMaterial.coverage_attestation:type_name -> aipay.reconciliation.v1.CoverageAttestationMaterial
-	9,  // 7: aipay.reconciliation.v1.ReconciliationApproval.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	5,  // 8: aipay.reconciliation.v1.ReconciliationApproval.material:type_name -> aipay.reconciliation.v1.ReconciliationApprovalMaterial
-	10, // 9: aipay.reconciliation.v1.ReconciliationApproval.approvals:type_name -> aipay.approval.v1.Approval
-	7,  // 10: aipay.reconciliation.v1.ReconciliationApproval.approved_at:type_name -> google.protobuf.Timestamp
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	9,  // 6: aipay.reconciliation.v1.ReconciliationApprovalMaterial.coverage_attestation:type_name -> aipay.reconciliation.v1.CoverageAttestationMaterial
+	5,  // 7: aipay.reconciliation.v1.ReconciliationApprovalMaterial.late_payment_window:type_name -> aipay.reconciliation.v1.LatePaymentWindowMaterial
+	10, // 8: aipay.reconciliation.v1.ReconciliationApproval.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	6,  // 9: aipay.reconciliation.v1.ReconciliationApproval.material:type_name -> aipay.reconciliation.v1.ReconciliationApprovalMaterial
+	11, // 10: aipay.reconciliation.v1.ReconciliationApproval.approvals:type_name -> aipay.approval.v1.Approval
+	8,  // 11: aipay.reconciliation.v1.ReconciliationApproval.approved_at:type_name -> google.protobuf.Timestamp
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_aipay_reconciliation_v1_admin_approval_proto_init() }
@@ -758,11 +862,12 @@ func file_aipay_reconciliation_v1_admin_approval_proto_init() {
 	file_aipay_reconciliation_v1_coverage_attestation_proto_init()
 	file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[2].OneofWrappers = []any{}
 	file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[4].OneofWrappers = []any{}
-	file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[5].OneofWrappers = []any{
+	file_aipay_reconciliation_v1_admin_approval_proto_msgTypes[6].OneofWrappers = []any{
 		(*ReconciliationApprovalMaterial_VerificationAccount)(nil),
 		(*ReconciliationApprovalMaterial_PluginVersion)(nil),
 		(*ReconciliationApprovalMaterial_PluginEnable)(nil),
 		(*ReconciliationApprovalMaterial_CoverageAttestation)(nil),
+		(*ReconciliationApprovalMaterial_LatePaymentWindow)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -770,7 +875,7 @@ func file_aipay_reconciliation_v1_admin_approval_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_reconciliation_v1_admin_approval_proto_rawDesc), len(file_aipay_reconciliation_v1_admin_approval_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

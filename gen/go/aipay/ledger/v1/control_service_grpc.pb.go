@@ -19,10 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LedgerControlService_RequestReadOnlyExit_FullMethodName = "/aipay.ledger.v1.LedgerControlService/RequestReadOnlyExit"
-	LedgerControlService_ApproveReadOnlyExit_FullMethodName = "/aipay.ledger.v1.LedgerControlService/ApproveReadOnlyExit"
-	LedgerControlService_RecordCarryover_FullMethodName     = "/aipay.ledger.v1.LedgerControlService/RecordCarryover"
-	LedgerControlService_ApproveCarryover_FullMethodName    = "/aipay.ledger.v1.LedgerControlService/ApproveCarryover"
+	LedgerControlService_RequestReadOnlyExit_FullMethodName  = "/aipay.ledger.v1.LedgerControlService/RequestReadOnlyExit"
+	LedgerControlService_ApproveReadOnlyExit_FullMethodName  = "/aipay.ledger.v1.LedgerControlService/ApproveReadOnlyExit"
+	LedgerControlService_RecordCarryover_FullMethodName      = "/aipay.ledger.v1.LedgerControlService/RecordCarryover"
+	LedgerControlService_ApproveCarryover_FullMethodName     = "/aipay.ledger.v1.LedgerControlService/ApproveCarryover"
+	LedgerControlService_RequestUsdRatePolicy_FullMethodName = "/aipay.ledger.v1.LedgerControlService/RequestUsdRatePolicy"
+	LedgerControlService_ApproveUsdRatePolicy_FullMethodName = "/aipay.ledger.v1.LedgerControlService/ApproveUsdRatePolicy"
+	LedgerControlService_GetUsdRatePolicy_FullMethodName     = "/aipay.ledger.v1.LedgerControlService/GetUsdRatePolicy"
 )
 
 // LedgerControlServiceClient is the client API for LedgerControlService service.
@@ -36,7 +39,7 @@ const (
 // valid WebAuthn signature from ledger's independent approver key registry,
 // bound to the current verified user. The requester cannot approve.
 //
-// Every method persists its command request ID and content atomically with its
+// Every write persists its command request ID and content atomically with its
 // result. Identical retries return the first result; changed content under the
 // same key is AlreadyExists. Approval content includes the approval_request_id
 // and the complete raw WebAuthn assertion, excluding renewable IAM metadata.
@@ -60,13 +63,25 @@ const (
 //	  str "aipay.ledger.carryover.v1" || bytes16 approval_request_id ||
 //	  str requested_by || i64 requested_at || i64 expires_at ||
 //	  str period_id || str account_code || i64 units || str reason
+//	usd_rate_policy:
+//	  str "aipay.ledger.usd_rate_policy.v1" || bytes16 approval_request_id ||
+//	  str requested_by || i64 requested_at || i64 expires_at ||
+//	  u64 version || u64 expected_version || u32 threshold_ppm ||
+//	  u32 ceiling_ppm || str reason
 //
+// For usd_rate_policy, version = expected_version + 1 and ceiling_ppm is the
+// deployment ceiling at request time. Two distinct people other than the requester
+// must approve. The second approval rechecks expected_version and verifies that
+// threshold_ppm <= the current ceiling.
 // As in approval/v1, challenge is SHA-256("AIPAY-APPROVAL-V1" || request_bytes).
 type LedgerControlServiceClient interface {
 	RequestReadOnlyExit(ctx context.Context, in *RequestReadOnlyExitRequest, opts ...grpc.CallOption) (*RequestReadOnlyExitResponse, error)
 	ApproveReadOnlyExit(ctx context.Context, in *ApproveReadOnlyExitRequest, opts ...grpc.CallOption) (*ApproveReadOnlyExitResponse, error)
 	RecordCarryover(ctx context.Context, in *RecordCarryoverRequest, opts ...grpc.CallOption) (*RecordCarryoverResponse, error)
 	ApproveCarryover(ctx context.Context, in *ApproveCarryoverRequest, opts ...grpc.CallOption) (*ApproveCarryoverResponse, error)
+	RequestUsdRatePolicy(ctx context.Context, in *RequestUsdRatePolicyRequest, opts ...grpc.CallOption) (*RequestUsdRatePolicyResponse, error)
+	ApproveUsdRatePolicy(ctx context.Context, in *ApproveUsdRatePolicyRequest, opts ...grpc.CallOption) (*ApproveUsdRatePolicyResponse, error)
+	GetUsdRatePolicy(ctx context.Context, in *GetUsdRatePolicyRequest, opts ...grpc.CallOption) (*GetUsdRatePolicyResponse, error)
 }
 
 type ledgerControlServiceClient struct {
@@ -117,6 +132,36 @@ func (c *ledgerControlServiceClient) ApproveCarryover(ctx context.Context, in *A
 	return out, nil
 }
 
+func (c *ledgerControlServiceClient) RequestUsdRatePolicy(ctx context.Context, in *RequestUsdRatePolicyRequest, opts ...grpc.CallOption) (*RequestUsdRatePolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RequestUsdRatePolicyResponse)
+	err := c.cc.Invoke(ctx, LedgerControlService_RequestUsdRatePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ledgerControlServiceClient) ApproveUsdRatePolicy(ctx context.Context, in *ApproveUsdRatePolicyRequest, opts ...grpc.CallOption) (*ApproveUsdRatePolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApproveUsdRatePolicyResponse)
+	err := c.cc.Invoke(ctx, LedgerControlService_ApproveUsdRatePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ledgerControlServiceClient) GetUsdRatePolicy(ctx context.Context, in *GetUsdRatePolicyRequest, opts ...grpc.CallOption) (*GetUsdRatePolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUsdRatePolicyResponse)
+	err := c.cc.Invoke(ctx, LedgerControlService_GetUsdRatePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LedgerControlServiceServer is the server API for LedgerControlService service.
 // All implementations must embed UnimplementedLedgerControlServiceServer
 // for forward compatibility.
@@ -128,7 +173,7 @@ func (c *ledgerControlServiceClient) ApproveCarryover(ctx context.Context, in *A
 // valid WebAuthn signature from ledger's independent approver key registry,
 // bound to the current verified user. The requester cannot approve.
 //
-// Every method persists its command request ID and content atomically with its
+// Every write persists its command request ID and content atomically with its
 // result. Identical retries return the first result; changed content under the
 // same key is AlreadyExists. Approval content includes the approval_request_id
 // and the complete raw WebAuthn assertion, excluding renewable IAM metadata.
@@ -152,13 +197,25 @@ func (c *ledgerControlServiceClient) ApproveCarryover(ctx context.Context, in *A
 //	  str "aipay.ledger.carryover.v1" || bytes16 approval_request_id ||
 //	  str requested_by || i64 requested_at || i64 expires_at ||
 //	  str period_id || str account_code || i64 units || str reason
+//	usd_rate_policy:
+//	  str "aipay.ledger.usd_rate_policy.v1" || bytes16 approval_request_id ||
+//	  str requested_by || i64 requested_at || i64 expires_at ||
+//	  u64 version || u64 expected_version || u32 threshold_ppm ||
+//	  u32 ceiling_ppm || str reason
 //
+// For usd_rate_policy, version = expected_version + 1 and ceiling_ppm is the
+// deployment ceiling at request time. Two distinct people other than the requester
+// must approve. The second approval rechecks expected_version and verifies that
+// threshold_ppm <= the current ceiling.
 // As in approval/v1, challenge is SHA-256("AIPAY-APPROVAL-V1" || request_bytes).
 type LedgerControlServiceServer interface {
 	RequestReadOnlyExit(context.Context, *RequestReadOnlyExitRequest) (*RequestReadOnlyExitResponse, error)
 	ApproveReadOnlyExit(context.Context, *ApproveReadOnlyExitRequest) (*ApproveReadOnlyExitResponse, error)
 	RecordCarryover(context.Context, *RecordCarryoverRequest) (*RecordCarryoverResponse, error)
 	ApproveCarryover(context.Context, *ApproveCarryoverRequest) (*ApproveCarryoverResponse, error)
+	RequestUsdRatePolicy(context.Context, *RequestUsdRatePolicyRequest) (*RequestUsdRatePolicyResponse, error)
+	ApproveUsdRatePolicy(context.Context, *ApproveUsdRatePolicyRequest) (*ApproveUsdRatePolicyResponse, error)
+	GetUsdRatePolicy(context.Context, *GetUsdRatePolicyRequest) (*GetUsdRatePolicyResponse, error)
 	mustEmbedUnimplementedLedgerControlServiceServer()
 }
 
@@ -180,6 +237,15 @@ func (UnimplementedLedgerControlServiceServer) RecordCarryover(context.Context, 
 }
 func (UnimplementedLedgerControlServiceServer) ApproveCarryover(context.Context, *ApproveCarryoverRequest) (*ApproveCarryoverResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ApproveCarryover not implemented")
+}
+func (UnimplementedLedgerControlServiceServer) RequestUsdRatePolicy(context.Context, *RequestUsdRatePolicyRequest) (*RequestUsdRatePolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestUsdRatePolicy not implemented")
+}
+func (UnimplementedLedgerControlServiceServer) ApproveUsdRatePolicy(context.Context, *ApproveUsdRatePolicyRequest) (*ApproveUsdRatePolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ApproveUsdRatePolicy not implemented")
+}
+func (UnimplementedLedgerControlServiceServer) GetUsdRatePolicy(context.Context, *GetUsdRatePolicyRequest) (*GetUsdRatePolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUsdRatePolicy not implemented")
 }
 func (UnimplementedLedgerControlServiceServer) mustEmbedUnimplementedLedgerControlServiceServer() {}
 func (UnimplementedLedgerControlServiceServer) testEmbeddedByValue()                              {}
@@ -274,6 +340,60 @@ func _LedgerControlService_ApproveCarryover_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LedgerControlService_RequestUsdRatePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestUsdRatePolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LedgerControlServiceServer).RequestUsdRatePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LedgerControlService_RequestUsdRatePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LedgerControlServiceServer).RequestUsdRatePolicy(ctx, req.(*RequestUsdRatePolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LedgerControlService_ApproveUsdRatePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveUsdRatePolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LedgerControlServiceServer).ApproveUsdRatePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LedgerControlService_ApproveUsdRatePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LedgerControlServiceServer).ApproveUsdRatePolicy(ctx, req.(*ApproveUsdRatePolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LedgerControlService_GetUsdRatePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUsdRatePolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LedgerControlServiceServer).GetUsdRatePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LedgerControlService_GetUsdRatePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LedgerControlServiceServer).GetUsdRatePolicy(ctx, req.(*GetUsdRatePolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LedgerControlService_ServiceDesc is the grpc.ServiceDesc for LedgerControlService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -296,6 +416,18 @@ var LedgerControlService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ApproveCarryover",
 			Handler:    _LedgerControlService_ApproveCarryover_Handler,
+		},
+		{
+			MethodName: "RequestUsdRatePolicy",
+			Handler:    _LedgerControlService_RequestUsdRatePolicy_Handler,
+		},
+		{
+			MethodName: "ApproveUsdRatePolicy",
+			Handler:    _LedgerControlService_ApproveUsdRatePolicy_Handler,
+		},
+		{
+			MethodName: "GetUsdRatePolicy",
+			Handler:    _LedgerControlService_GetUsdRatePolicy_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

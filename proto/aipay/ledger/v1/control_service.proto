@@ -80,6 +80,55 @@ message ApproveCarryoverResponse {
   uint32 approvals = 2;
 }
 
+message UsdRatePolicyVersion {
+  uint64 version = 1;
+  // Largest accepted deviation between the two USD rate sources, in ppm.
+  uint32 threshold_ppm = 2;
+  string approval_request_id = 3;
+  google.protobuf.Timestamp approved_at = 4;
+}
+
+message RequestUsdRatePolicyRequest {
+  string idempotency_key = 1;
+  // 0 only when no version exists, otherwise the current version.
+  uint64 expected_version = 2;
+  // 1..AIPAY_LEDGER_USD_DEVIATION_PPM of the ledger deployment (the ceiling).
+  uint32 threshold_ppm = 3;
+  // Required, 1-1000 characters.
+  string reason = 4;
+}
+
+message RequestUsdRatePolicyResponse {
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+}
+
+message ApproveUsdRatePolicyRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveUsdRatePolicyResponse {
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+  uint32 approvals = 2;
+  // Present once the second approval created the version.
+  UsdRatePolicyVersion version = 3;
+}
+
+message GetUsdRatePolicyRequest {}
+
+message GetUsdRatePolicyResponse {
+  // Absent when no version exists. The deployment ceiling then applies.
+  UsdRatePolicyVersion current = 1;
+  // AIPAY_LEDGER_USD_DEVIATION_PPM of this deployment.
+  uint32 ceiling_ppm = 2;
+  // min(current.threshold_ppm, ceiling_ppm), or ceiling_ppm when absent.
+  uint32 effective_ppm = 3;
+  // Pending usd_rate_policy request with its request_bytes, for approvers.
+  aipay.approval.v1.ApprovalRequest pending = 4;
+  google.protobuf.Timestamp as_of = 5;
+}
+
 // Administrative control, only through the backend management listener. All
 // methods require a verified IAM assertion and platform acting scope; ledger
 // itself checks that scope. Identity is taken from verified assertions, never
@@ -87,7 +136,7 @@ message ApproveCarryoverResponse {
 // valid WebAuthn signature from ledger's independent approver key registry,
 // bound to the current verified user. The requester cannot approve.
 //
-// Every method persists its command request ID and content atomically with its
+// Every write persists its command request ID and content atomically with its
 // result. Identical retries return the first result; changed content under the
 // same key is AlreadyExists. Approval content includes the approval_request_id
 // and the complete raw WebAuthn assertion, excluding renewable IAM metadata.
@@ -110,6 +159,15 @@ message ApproveCarryoverResponse {
 //     str "aipay.ledger.carryover.v1" || bytes16 approval_request_id ||
 //     str requested_by || i64 requested_at || i64 expires_at ||
 //     str period_id || str account_code || i64 units || str reason
+//   usd_rate_policy:
+//     str "aipay.ledger.usd_rate_policy.v1" || bytes16 approval_request_id ||
+//     str requested_by || i64 requested_at || i64 expires_at ||
+//     u64 version || u64 expected_version || u32 threshold_ppm ||
+//     u32 ceiling_ppm || str reason
+// For usd_rate_policy, version = expected_version + 1 and ceiling_ppm is the
+// deployment ceiling at request time. Two distinct people other than the requester
+// must approve. The second approval rechecks expected_version and verifies that
+// threshold_ppm <= the current ceiling.
 // As in approval/v1, challenge is SHA-256("AIPAY-APPROVAL-V1" || request_bytes).
 service LedgerControlService {
   rpc RequestReadOnlyExit(RequestReadOnlyExitRequest) returns (RequestReadOnlyExitResponse) {
@@ -145,6 +203,33 @@ service LedgerControlService {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_REQUIRED
         permissions: "ledger.control.approve"
+      }
+    };
+  }
+  rpc RequestUsdRatePolicy(RequestUsdRatePolicyRequest) returns (RequestUsdRatePolicyResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.rate_policy.submit"
+      }
+    };
+  }
+  rpc ApproveUsdRatePolicy(ApproveUsdRatePolicyRequest) returns (ApproveUsdRatePolicyResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.rate_policy.approve"
+      }
+    };
+  }
+  rpc GetUsdRatePolicy(GetUsdRatePolicyRequest) returns (GetUsdRatePolicyResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.rate_policy.read"
       }
     };
   }

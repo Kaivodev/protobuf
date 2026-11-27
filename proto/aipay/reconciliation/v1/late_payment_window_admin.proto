@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package aipay.reconciliation.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/common/v1/query.proto";
+import "aipay/reconciliation/v1/admin_approval.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1";
+
+enum LatePaymentWindowSource {
+  LATE_PAYMENT_WINDOW_SOURCE_UNSPECIFIED = 0;
+  // No approved version. The deployment's AIPAY_RECONCILIATION_LATE_PAYMENT_WINDOW applies.
+  LATE_PAYMENT_WINDOW_SOURCE_ENVIRONMENT = 1;
+  LATE_PAYMENT_WINDOW_SOURCE_VERSION = 2;
+}
+
+message LatePaymentWindowVersion {
+  uint64 version = 1;
+  uint32 window_seconds = 2;
+  string approval_request_id = 3;
+  // request_digest of the approval that created this version.
+  bytes request_digest = 4;
+  google.protobuf.Timestamp approved_at = 5;
+}
+
+// Each write is idempotent per method, verified user and key. Identical content
+// returns the original result. Reusing a key with different content is AlreadyExists.
+message SubmitLatePaymentWindowRequest {
+  string idempotency_key = 1;
+  // 0 only when no version exists, otherwise the current approved version.
+  uint64 expected_current_version = 2;
+  uint32 window_seconds = 3;
+  // Required, 1-1000 characters.
+  string reason = 4;
+}
+
+message SubmitLatePaymentWindowResponse {
+  ReconciliationApproval approval = 1;
+}
+
+message ApproveLatePaymentWindowRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  // Raw WebAuthn assertion with the approval request_digest as its challenge.
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveLatePaymentWindowResponse {
+  ReconciliationApproval approval = 1;
+  // Present once the second approval created the version.
+  LatePaymentWindowVersion version = 2;
+}
+
+message GetLatePaymentWindowRequest {}
+
+message GetLatePaymentWindowResponse {
+  LatePaymentWindowSource source = 1;
+  // Window applied to cancellation reviews whose first observation starts now.
+  uint32 window_seconds = 2;
+  // Absent when source is ENVIRONMENT.
+  LatePaymentWindowVersion current = 3;
+  // Code bounds for this deployment's environment.
+  uint32 floor_seconds = 4;
+  uint32 cap_seconds = 5;
+  // The pending late_payment_window approval, if any.
+  ReconciliationApproval pending = 6;
+  google.protobuf.Timestamp as_of = 7;
+}
+
+// Descending version order. Each page uses the same as_of and the cursor rules
+// of ListCoverageAttestations.
+message ListLatePaymentWindowsRequest {
+  // Required 1-100. Reject out-of-range values.
+  uint32 limit = 1 [(aipay.common.v1.max_items) = 100];
+  string page_token = 2;
+}
+
+message ListLatePaymentWindowsResponse {
+  repeated LatePaymentWindowVersion versions = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}

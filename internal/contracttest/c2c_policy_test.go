@@ -45,10 +45,13 @@ func TestC2CMethodAuthorization(t *testing.T) {
 		{
 			ledgerv1.File_aipay_ledger_v1_control_service_proto.Services().ByName("LedgerControlService"),
 			map[string]expected{
-				"RequestReadOnlyExit": {[]string{"backend"}, userRequired, "ledger.control.request"},
-				"RecordCarryover":     {[]string{"backend"}, userRequired, "ledger.control.request"},
-				"ApproveReadOnlyExit": {[]string{"backend"}, userRequired, "ledger.control.approve"},
-				"ApproveCarryover":    {[]string{"backend"}, userRequired, "ledger.control.approve"},
+				"RequestReadOnlyExit":  {[]string{"backend"}, userRequired, "ledger.control.request"},
+				"RecordCarryover":      {[]string{"backend"}, userRequired, "ledger.control.request"},
+				"ApproveReadOnlyExit":  {[]string{"backend"}, userRequired, "ledger.control.approve"},
+				"ApproveCarryover":     {[]string{"backend"}, userRequired, "ledger.control.approve"},
+				"RequestUsdRatePolicy": {[]string{"backend"}, userRequired, "ledger.rate_policy.submit"},
+				"ApproveUsdRatePolicy": {[]string{"backend"}, userRequired, "ledger.rate_policy.approve"},
+				"GetUsdRatePolicy":     {[]string{"backend"}, userRequired, "ledger.rate_policy.read"},
 			},
 		},
 		{

@@ -7,6 +7,7 @@ import "aipay/authz/v1/policy.proto";
 import "aipay/common/v1/query.proto";
 import "aipay/reconciliation/v1/admin_approval.proto";
 import "aipay/reconciliation/v1/coverage_admin.proto";
+import "aipay/reconciliation/v1/late_payment_window_admin.proto";
 import "aipay/reconciliation/v1/plugin_control.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -453,6 +454,44 @@ service ReconciliationAdminService {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_REQUIRED
         permissions: "reconciliation.coverage.read"
+      }
+    };
+  }
+  rpc SubmitLatePaymentWindow(SubmitLatePaymentWindowRequest) returns (SubmitLatePaymentWindowResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "reconciliation.late_window.submit"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ApproveLatePaymentWindow(ApproveLatePaymentWindowRequest) returns (ApproveLatePaymentWindowResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "reconciliation.late_window.approve"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc GetLatePaymentWindow(GetLatePaymentWindowRequest) returns (GetLatePaymentWindowResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.late_window.read"
+      }
+    };
+  }
+  rpc ListLatePaymentWindows(ListLatePaymentWindowsRequest) returns (ListLatePaymentWindowsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "reconciliation.late_window.read"
       }
     };
   }

@@ -1778,7 +1778,7 @@ var File_aipay_reconciliation_v1_reconciliation_admin_service_proto protoreflect
 
 const file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDesc = "" +
 	"\n" +
-	":aipay/reconciliation/v1/reconciliation_admin_service.proto\x12\x17aipay.reconciliation.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/query.proto\x1a,aipay/reconciliation/v1/admin_approval.proto\x1a,aipay/reconciliation/v1/coverage_admin.proto\x1a,aipay/reconciliation/v1/plugin_control.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb1\x02\n" +
+	":aipay/reconciliation/v1/reconciliation_admin_service.proto\x12\x17aipay.reconciliation.v1\x1a aipay/approval/v1/approval.proto\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/query.proto\x1a,aipay/reconciliation/v1/admin_approval.proto\x1a,aipay/reconciliation/v1/coverage_admin.proto\x1a7aipay/reconciliation/v1/late_payment_window_admin.proto\x1a,aipay/reconciliation/v1/plugin_control.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb1\x02\n" +
 	"\x13VerificationAccount\x12_\n" +
 	"\rconfiguration\x18\x01 \x01(\v29.aipay.reconciliation.v1.VerificationAccountConfigurationR\rconfiguration\x12'\n" +
 	"\x0fcontrol_version\x18\x02 \x01(\x04R\x0econtrolVersion\x12\x1d\n" +
@@ -1900,7 +1900,7 @@ const file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDesc = 
 	"\x15ListApprovalsResponse\x12@\n" +
 	"\tapprovals\x18\x01 \x03(\v2\".aipay.approval.v1.ApprovalRequestR\tapprovals\x12&\n" +
 	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12/\n" +
-	"\x05as_of\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf2\xec\x1f\n" +
+	"\x05as_of\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf2\xfa%\n" +
 	"\x1aReconciliationAdminService\x12\x9c\x01\n" +
 	"\fUploadPlugin\x12,.aipay.reconciliation.v1.UploadPluginRequest\x1a-.aipay.reconciliation.v1.UploadPluginResponse\"/\xc2\xf3\x18+\n" +
 	")\n" +
@@ -1967,7 +1967,19 @@ const file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDesc = 
 	"\abackend\x10\x02\x1a\x1creconciliation.coverage.read\x12\xb7\x01\n" +
 	"\x15ListCoverageAddresses\x125.aipay.reconciliation.v1.ListCoverageAddressesRequest\x1a6.aipay.reconciliation.v1.ListCoverageAddressesResponse\"/\xc2\xf3\x18+\n" +
 	")\n" +
-	"\abackend\x10\x02\x1a\x1creconciliation.coverage.readBNZLgithub.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1b\x06proto3"
+	"\abackend\x10\x02\x1a\x1creconciliation.coverage.read\x12\xc5\x01\n" +
+	"\x17SubmitLatePaymentWindow\x127.aipay.reconciliation.v1.SubmitLatePaymentWindowRequest\x1a8.aipay.reconciliation.v1.SubmitLatePaymentWindowResponse\"7\xc2\xf3\x183\n" +
+	"1\n" +
+	"\abackend\x10\x03\x1a!reconciliation.late_window.submit \xd8\x04\x12\xc9\x01\n" +
+	"\x18ApproveLatePaymentWindow\x128.aipay.reconciliation.v1.ApproveLatePaymentWindowRequest\x1a9.aipay.reconciliation.v1.ApproveLatePaymentWindowResponse\"8\xc2\xf3\x184\n" +
+	"2\n" +
+	"\abackend\x10\x03\x1a\"reconciliation.late_window.approve \xd8\x04\x12\xb7\x01\n" +
+	"\x14GetLatePaymentWindow\x124.aipay.reconciliation.v1.GetLatePaymentWindowRequest\x1a5.aipay.reconciliation.v1.GetLatePaymentWindowResponse\"2\xc2\xf3\x18.\n" +
+	",\n" +
+	"\abackend\x10\x02\x1a\x1freconciliation.late_window.read\x12\xbd\x01\n" +
+	"\x16ListLatePaymentWindows\x126.aipay.reconciliation.v1.ListLatePaymentWindowsRequest\x1a7.aipay.reconciliation.v1.ListLatePaymentWindowsResponse\"2\xc2\xf3\x18.\n" +
+	",\n" +
+	"\abackend\x10\x02\x1a\x1freconciliation.late_window.readBNZLgithub.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1;reconciliationv1b\x06proto3"
 
 var (
 	file_aipay_reconciliation_v1_reconciliation_admin_service_proto_rawDescOnce sync.Once
@@ -2029,14 +2041,22 @@ var file_aipay_reconciliation_v1_reconciliation_admin_service_proto_goTypes = []
 	(*ListCoverageAttestationsRequest)(nil),      // 43: aipay.reconciliation.v1.ListCoverageAttestationsRequest
 	(*GetCoverageStatusRequest)(nil),             // 44: aipay.reconciliation.v1.GetCoverageStatusRequest
 	(*ListCoverageAddressesRequest)(nil),         // 45: aipay.reconciliation.v1.ListCoverageAddressesRequest
-	(*EmergencyDisablePluginResponse)(nil),       // 46: aipay.reconciliation.v1.EmergencyDisablePluginResponse
-	(*SubmitCoverageAttestationResponse)(nil),    // 47: aipay.reconciliation.v1.SubmitCoverageAttestationResponse
-	(*ApproveCoverageAttestationResponse)(nil),   // 48: aipay.reconciliation.v1.ApproveCoverageAttestationResponse
-	(*RevokeCoverageAttestationResponse)(nil),    // 49: aipay.reconciliation.v1.RevokeCoverageAttestationResponse
-	(*GetCoverageAttestationResponse)(nil),       // 50: aipay.reconciliation.v1.GetCoverageAttestationResponse
-	(*ListCoverageAttestationsResponse)(nil),     // 51: aipay.reconciliation.v1.ListCoverageAttestationsResponse
-	(*GetCoverageStatusResponse)(nil),            // 52: aipay.reconciliation.v1.GetCoverageStatusResponse
-	(*ListCoverageAddressesResponse)(nil),        // 53: aipay.reconciliation.v1.ListCoverageAddressesResponse
+	(*SubmitLatePaymentWindowRequest)(nil),       // 46: aipay.reconciliation.v1.SubmitLatePaymentWindowRequest
+	(*ApproveLatePaymentWindowRequest)(nil),      // 47: aipay.reconciliation.v1.ApproveLatePaymentWindowRequest
+	(*GetLatePaymentWindowRequest)(nil),          // 48: aipay.reconciliation.v1.GetLatePaymentWindowRequest
+	(*ListLatePaymentWindowsRequest)(nil),        // 49: aipay.reconciliation.v1.ListLatePaymentWindowsRequest
+	(*EmergencyDisablePluginResponse)(nil),       // 50: aipay.reconciliation.v1.EmergencyDisablePluginResponse
+	(*SubmitCoverageAttestationResponse)(nil),    // 51: aipay.reconciliation.v1.SubmitCoverageAttestationResponse
+	(*ApproveCoverageAttestationResponse)(nil),   // 52: aipay.reconciliation.v1.ApproveCoverageAttestationResponse
+	(*RevokeCoverageAttestationResponse)(nil),    // 53: aipay.reconciliation.v1.RevokeCoverageAttestationResponse
+	(*GetCoverageAttestationResponse)(nil),       // 54: aipay.reconciliation.v1.GetCoverageAttestationResponse
+	(*ListCoverageAttestationsResponse)(nil),     // 55: aipay.reconciliation.v1.ListCoverageAttestationsResponse
+	(*GetCoverageStatusResponse)(nil),            // 56: aipay.reconciliation.v1.GetCoverageStatusResponse
+	(*ListCoverageAddressesResponse)(nil),        // 57: aipay.reconciliation.v1.ListCoverageAddressesResponse
+	(*SubmitLatePaymentWindowResponse)(nil),      // 58: aipay.reconciliation.v1.SubmitLatePaymentWindowResponse
+	(*ApproveLatePaymentWindowResponse)(nil),     // 59: aipay.reconciliation.v1.ApproveLatePaymentWindowResponse
+	(*GetLatePaymentWindowResponse)(nil),         // 60: aipay.reconciliation.v1.GetLatePaymentWindowResponse
+	(*ListLatePaymentWindowsResponse)(nil),       // 61: aipay.reconciliation.v1.ListLatePaymentWindowsResponse
 }
 var file_aipay_reconciliation_v1_reconciliation_admin_service_proto_depIdxs = []int32{
 	30, // 0: aipay.reconciliation.v1.VerificationAccount.configuration:type_name -> aipay.reconciliation.v1.VerificationAccountConfiguration
@@ -2091,30 +2111,38 @@ var file_aipay_reconciliation_v1_reconciliation_admin_service_proto_depIdxs = []
 	43, // 49: aipay.reconciliation.v1.ReconciliationAdminService.ListCoverageAttestations:input_type -> aipay.reconciliation.v1.ListCoverageAttestationsRequest
 	44, // 50: aipay.reconciliation.v1.ReconciliationAdminService.GetCoverageStatus:input_type -> aipay.reconciliation.v1.GetCoverageStatusRequest
 	45, // 51: aipay.reconciliation.v1.ReconciliationAdminService.ListCoverageAddresses:input_type -> aipay.reconciliation.v1.ListCoverageAddressesRequest
-	3,  // 52: aipay.reconciliation.v1.ReconciliationAdminService.UploadPlugin:output_type -> aipay.reconciliation.v1.UploadPluginResponse
-	5,  // 53: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePlugin:output_type -> aipay.reconciliation.v1.ApprovePluginResponse
-	7,  // 54: aipay.reconciliation.v1.ReconciliationAdminService.StoreVerificationCredentials:output_type -> aipay.reconciliation.v1.StoreVerificationCredentialsResponse
-	9,  // 55: aipay.reconciliation.v1.ReconciliationAdminService.SubmitVerificationAccount:output_type -> aipay.reconciliation.v1.SubmitVerificationAccountResponse
-	11, // 56: aipay.reconciliation.v1.ReconciliationAdminService.ApproveVerificationAccount:output_type -> aipay.reconciliation.v1.ApproveVerificationAccountResponse
-	13, // 57: aipay.reconciliation.v1.ReconciliationAdminService.RequestPluginEnable:output_type -> aipay.reconciliation.v1.RequestPluginEnableResponse
-	15, // 58: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePluginEnable:output_type -> aipay.reconciliation.v1.ApprovePluginEnableResponse
-	17, // 59: aipay.reconciliation.v1.ReconciliationAdminService.DisableVerificationAccount:output_type -> aipay.reconciliation.v1.DisableVerificationAccountResponse
-	19, // 60: aipay.reconciliation.v1.ReconciliationAdminService.ListVerificationAccounts:output_type -> aipay.reconciliation.v1.ListVerificationAccountsResponse
-	21, // 61: aipay.reconciliation.v1.ReconciliationAdminService.GetVerificationAccount:output_type -> aipay.reconciliation.v1.GetVerificationAccountResponse
-	23, // 62: aipay.reconciliation.v1.ReconciliationAdminService.ListPlugins:output_type -> aipay.reconciliation.v1.ListPluginsResponse
-	25, // 63: aipay.reconciliation.v1.ReconciliationAdminService.GetPlugin:output_type -> aipay.reconciliation.v1.GetPluginResponse
-	27, // 64: aipay.reconciliation.v1.ReconciliationAdminService.GetApproval:output_type -> aipay.reconciliation.v1.GetApprovalResponse
-	29, // 65: aipay.reconciliation.v1.ReconciliationAdminService.ListApprovals:output_type -> aipay.reconciliation.v1.ListApprovalsResponse
-	46, // 66: aipay.reconciliation.v1.ReconciliationAdminService.EmergencyDisablePlugin:output_type -> aipay.reconciliation.v1.EmergencyDisablePluginResponse
-	47, // 67: aipay.reconciliation.v1.ReconciliationAdminService.SubmitCoverageAttestation:output_type -> aipay.reconciliation.v1.SubmitCoverageAttestationResponse
-	48, // 68: aipay.reconciliation.v1.ReconciliationAdminService.ApproveCoverageAttestation:output_type -> aipay.reconciliation.v1.ApproveCoverageAttestationResponse
-	49, // 69: aipay.reconciliation.v1.ReconciliationAdminService.RevokeCoverageAttestation:output_type -> aipay.reconciliation.v1.RevokeCoverageAttestationResponse
-	50, // 70: aipay.reconciliation.v1.ReconciliationAdminService.GetCoverageAttestation:output_type -> aipay.reconciliation.v1.GetCoverageAttestationResponse
-	51, // 71: aipay.reconciliation.v1.ReconciliationAdminService.ListCoverageAttestations:output_type -> aipay.reconciliation.v1.ListCoverageAttestationsResponse
-	52, // 72: aipay.reconciliation.v1.ReconciliationAdminService.GetCoverageStatus:output_type -> aipay.reconciliation.v1.GetCoverageStatusResponse
-	53, // 73: aipay.reconciliation.v1.ReconciliationAdminService.ListCoverageAddresses:output_type -> aipay.reconciliation.v1.ListCoverageAddressesResponse
-	52, // [52:74] is the sub-list for method output_type
-	30, // [30:52] is the sub-list for method input_type
+	46, // 52: aipay.reconciliation.v1.ReconciliationAdminService.SubmitLatePaymentWindow:input_type -> aipay.reconciliation.v1.SubmitLatePaymentWindowRequest
+	47, // 53: aipay.reconciliation.v1.ReconciliationAdminService.ApproveLatePaymentWindow:input_type -> aipay.reconciliation.v1.ApproveLatePaymentWindowRequest
+	48, // 54: aipay.reconciliation.v1.ReconciliationAdminService.GetLatePaymentWindow:input_type -> aipay.reconciliation.v1.GetLatePaymentWindowRequest
+	49, // 55: aipay.reconciliation.v1.ReconciliationAdminService.ListLatePaymentWindows:input_type -> aipay.reconciliation.v1.ListLatePaymentWindowsRequest
+	3,  // 56: aipay.reconciliation.v1.ReconciliationAdminService.UploadPlugin:output_type -> aipay.reconciliation.v1.UploadPluginResponse
+	5,  // 57: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePlugin:output_type -> aipay.reconciliation.v1.ApprovePluginResponse
+	7,  // 58: aipay.reconciliation.v1.ReconciliationAdminService.StoreVerificationCredentials:output_type -> aipay.reconciliation.v1.StoreVerificationCredentialsResponse
+	9,  // 59: aipay.reconciliation.v1.ReconciliationAdminService.SubmitVerificationAccount:output_type -> aipay.reconciliation.v1.SubmitVerificationAccountResponse
+	11, // 60: aipay.reconciliation.v1.ReconciliationAdminService.ApproveVerificationAccount:output_type -> aipay.reconciliation.v1.ApproveVerificationAccountResponse
+	13, // 61: aipay.reconciliation.v1.ReconciliationAdminService.RequestPluginEnable:output_type -> aipay.reconciliation.v1.RequestPluginEnableResponse
+	15, // 62: aipay.reconciliation.v1.ReconciliationAdminService.ApprovePluginEnable:output_type -> aipay.reconciliation.v1.ApprovePluginEnableResponse
+	17, // 63: aipay.reconciliation.v1.ReconciliationAdminService.DisableVerificationAccount:output_type -> aipay.reconciliation.v1.DisableVerificationAccountResponse
+	19, // 64: aipay.reconciliation.v1.ReconciliationAdminService.ListVerificationAccounts:output_type -> aipay.reconciliation.v1.ListVerificationAccountsResponse
+	21, // 65: aipay.reconciliation.v1.ReconciliationAdminService.GetVerificationAccount:output_type -> aipay.reconciliation.v1.GetVerificationAccountResponse
+	23, // 66: aipay.reconciliation.v1.ReconciliationAdminService.ListPlugins:output_type -> aipay.reconciliation.v1.ListPluginsResponse
+	25, // 67: aipay.reconciliation.v1.ReconciliationAdminService.GetPlugin:output_type -> aipay.reconciliation.v1.GetPluginResponse
+	27, // 68: aipay.reconciliation.v1.ReconciliationAdminService.GetApproval:output_type -> aipay.reconciliation.v1.GetApprovalResponse
+	29, // 69: aipay.reconciliation.v1.ReconciliationAdminService.ListApprovals:output_type -> aipay.reconciliation.v1.ListApprovalsResponse
+	50, // 70: aipay.reconciliation.v1.ReconciliationAdminService.EmergencyDisablePlugin:output_type -> aipay.reconciliation.v1.EmergencyDisablePluginResponse
+	51, // 71: aipay.reconciliation.v1.ReconciliationAdminService.SubmitCoverageAttestation:output_type -> aipay.reconciliation.v1.SubmitCoverageAttestationResponse
+	52, // 72: aipay.reconciliation.v1.ReconciliationAdminService.ApproveCoverageAttestation:output_type -> aipay.reconciliation.v1.ApproveCoverageAttestationResponse
+	53, // 73: aipay.reconciliation.v1.ReconciliationAdminService.RevokeCoverageAttestation:output_type -> aipay.reconciliation.v1.RevokeCoverageAttestationResponse
+	54, // 74: aipay.reconciliation.v1.ReconciliationAdminService.GetCoverageAttestation:output_type -> aipay.reconciliation.v1.GetCoverageAttestationResponse
+	55, // 75: aipay.reconciliation.v1.ReconciliationAdminService.ListCoverageAttestations:output_type -> aipay.reconciliation.v1.ListCoverageAttestationsResponse
+	56, // 76: aipay.reconciliation.v1.ReconciliationAdminService.GetCoverageStatus:output_type -> aipay.reconciliation.v1.GetCoverageStatusResponse
+	57, // 77: aipay.reconciliation.v1.ReconciliationAdminService.ListCoverageAddresses:output_type -> aipay.reconciliation.v1.ListCoverageAddressesResponse
+	58, // 78: aipay.reconciliation.v1.ReconciliationAdminService.SubmitLatePaymentWindow:output_type -> aipay.reconciliation.v1.SubmitLatePaymentWindowResponse
+	59, // 79: aipay.reconciliation.v1.ReconciliationAdminService.ApproveLatePaymentWindow:output_type -> aipay.reconciliation.v1.ApproveLatePaymentWindowResponse
+	60, // 80: aipay.reconciliation.v1.ReconciliationAdminService.GetLatePaymentWindow:output_type -> aipay.reconciliation.v1.GetLatePaymentWindowResponse
+	61, // 81: aipay.reconciliation.v1.ReconciliationAdminService.ListLatePaymentWindows:output_type -> aipay.reconciliation.v1.ListLatePaymentWindowsResponse
+	56, // [56:82] is the sub-list for method output_type
+	30, // [30:56] is the sub-list for method input_type
 	30, // [30:30] is the sub-list for extension type_name
 	30, // [30:30] is the sub-list for extension extendee
 	0,  // [0:30] is the sub-list for field type_name
@@ -2127,6 +2155,7 @@ func file_aipay_reconciliation_v1_reconciliation_admin_service_proto_init() {
 	}
 	file_aipay_reconciliation_v1_admin_approval_proto_init()
 	file_aipay_reconciliation_v1_coverage_admin_proto_init()
+	file_aipay_reconciliation_v1_late_payment_window_admin_proto_init()
 	file_aipay_reconciliation_v1_plugin_control_proto_init()
 	file_aipay_reconciliation_v1_reconciliation_admin_service_proto_msgTypes[0].OneofWrappers = []any{}
 	file_aipay_reconciliation_v1_reconciliation_admin_service_proto_msgTypes[1].OneofWrappers = []any{}
