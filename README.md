@@ -22,7 +22,8 @@ proto/aipay/
   ledger/v1/trade.proto            担保状态、退款分支与预留凭证
   ledger/v1/reservation_service.proto  ReservationService：担保冻结、屏障与退款预留
   ledger/v1/trade_events.proto     ledger.trades 的四类账本事实
-  ledger/v1/control_service.proto  LedgerControlService：只读退出与结转说明审批
+  ledger/v1/control_service.proto  LedgerControlService approvals for read-only exit, carryover and USD rate policy
+                                   GetReadOnlyStatus and GetPeriodCarryovers for exit requests and period-end suspense balances
   settlement/v1/settlement.proto   结算契约占位
   reconciliation/v1/reconciliation.proto  对账契约占位
   reconciliation/v1/trade_events.proto  预存核实、释放/取消/退款授权
@@ -50,6 +51,12 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 `testvectors` 包以 JSON 发布分录规范编码 V1，余额摘要、科目余额表摘要、RFC 6962 Merkle 根与检查点签名，签名事件，以及 WebAuthn 审批断言的测试向量（输入、规范字节、期望哈希、公钥与签名，以及必须被拒绝的篡改样例）。包内只有数据，没有编码器或校验器：settlement 与 reconciliation 按规范自行实现分录哈希校验器（决策 A16），再用这些向量测试。向量中的密钥只为生成向量临时创建，私钥已丢弃。
 
 IAM 已有 Telegram/EPay 等签发实现；具体登录来源、密钥托管与撤销能力以其实际交付为准，不因协议存在推断平台管理路径已接通。EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
+
+## v0.24.0 ledger control permissions and reads (unreleased)
+
+- Read-only exit and carryover now have separate read, submit and approve permissions under `ledger.read_only_exit.*` and `ledger.carryover.*`. These replace the shared `ledger.control.request` and `ledger.control.approve` keys. IAM never registered either key, and the four write RPCs had no callers. Existing wire formats and signed `request_bytes` stay the same.
+- `GetReadOnlyStatus` returns the ledger mode and up to 20 pending, unexpired exit requests from the current read-only episode, newest first. Approvers can inspect the request bytes, digest, snapshot and recorded approvals before signing.
+- `GetPeriodCarryovers` returns nonzero suspense balances and the latest 200 carryover requests across all statuses for the requested period. Balances are to date while the period is running. Each balance identifies the executed carryover that satisfies the period-close suspense check, if one exists.
 
 ## v0.23.0 payment instruction lifetime, late-payment window and USD rate policy (A130, unreleased)
 

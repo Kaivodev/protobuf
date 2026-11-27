@@ -26,6 +26,8 @@ const (
 	LedgerControlService_RequestUsdRatePolicy_FullMethodName = "/aipay.ledger.v1.LedgerControlService/RequestUsdRatePolicy"
 	LedgerControlService_ApproveUsdRatePolicy_FullMethodName = "/aipay.ledger.v1.LedgerControlService/ApproveUsdRatePolicy"
 	LedgerControlService_GetUsdRatePolicy_FullMethodName     = "/aipay.ledger.v1.LedgerControlService/GetUsdRatePolicy"
+	LedgerControlService_GetReadOnlyStatus_FullMethodName    = "/aipay.ledger.v1.LedgerControlService/GetReadOnlyStatus"
+	LedgerControlService_GetPeriodCarryovers_FullMethodName  = "/aipay.ledger.v1.LedgerControlService/GetPeriodCarryovers"
 )
 
 // LedgerControlServiceClient is the client API for LedgerControlService service.
@@ -50,6 +52,12 @@ const (
 // an older episode's approval can never clear a later read-only state.
 // Carryover approval only records the note; closing still requires exact
 // equality of the noted amount and the account's actual period-end balance.
+//
+// GetReadOnlyStatus and GetPeriodCarryovers are read-only. Neither runs the
+// exit self-check, cuts checkpoints or anchors them. GetReadOnlyStatus lists
+// only requests from the current read-only episode in pending. GetPeriodCarryovers
+// uses the same balance calculation as the period-close suspense check and sets
+// carryover_approval_request_id exactly when that check would accept the balance.
 //
 // request_bytes (str/bytes have u32 big-endian lengths, integers big-endian,
 // UUID bytes16 raw; signed times are Unix nanoseconds, microsecond precision):
@@ -82,6 +90,8 @@ type LedgerControlServiceClient interface {
 	RequestUsdRatePolicy(ctx context.Context, in *RequestUsdRatePolicyRequest, opts ...grpc.CallOption) (*RequestUsdRatePolicyResponse, error)
 	ApproveUsdRatePolicy(ctx context.Context, in *ApproveUsdRatePolicyRequest, opts ...grpc.CallOption) (*ApproveUsdRatePolicyResponse, error)
 	GetUsdRatePolicy(ctx context.Context, in *GetUsdRatePolicyRequest, opts ...grpc.CallOption) (*GetUsdRatePolicyResponse, error)
+	GetReadOnlyStatus(ctx context.Context, in *GetReadOnlyStatusRequest, opts ...grpc.CallOption) (*GetReadOnlyStatusResponse, error)
+	GetPeriodCarryovers(ctx context.Context, in *GetPeriodCarryoversRequest, opts ...grpc.CallOption) (*GetPeriodCarryoversResponse, error)
 }
 
 type ledgerControlServiceClient struct {
@@ -162,6 +172,26 @@ func (c *ledgerControlServiceClient) GetUsdRatePolicy(ctx context.Context, in *G
 	return out, nil
 }
 
+func (c *ledgerControlServiceClient) GetReadOnlyStatus(ctx context.Context, in *GetReadOnlyStatusRequest, opts ...grpc.CallOption) (*GetReadOnlyStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetReadOnlyStatusResponse)
+	err := c.cc.Invoke(ctx, LedgerControlService_GetReadOnlyStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ledgerControlServiceClient) GetPeriodCarryovers(ctx context.Context, in *GetPeriodCarryoversRequest, opts ...grpc.CallOption) (*GetPeriodCarryoversResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPeriodCarryoversResponse)
+	err := c.cc.Invoke(ctx, LedgerControlService_GetPeriodCarryovers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LedgerControlServiceServer is the server API for LedgerControlService service.
 // All implementations must embed UnimplementedLedgerControlServiceServer
 // for forward compatibility.
@@ -184,6 +214,12 @@ func (c *ledgerControlServiceClient) GetUsdRatePolicy(ctx context.Context, in *G
 // an older episode's approval can never clear a later read-only state.
 // Carryover approval only records the note; closing still requires exact
 // equality of the noted amount and the account's actual period-end balance.
+//
+// GetReadOnlyStatus and GetPeriodCarryovers are read-only. Neither runs the
+// exit self-check, cuts checkpoints or anchors them. GetReadOnlyStatus lists
+// only requests from the current read-only episode in pending. GetPeriodCarryovers
+// uses the same balance calculation as the period-close suspense check and sets
+// carryover_approval_request_id exactly when that check would accept the balance.
 //
 // request_bytes (str/bytes have u32 big-endian lengths, integers big-endian,
 // UUID bytes16 raw; signed times are Unix nanoseconds, microsecond precision):
@@ -216,6 +252,8 @@ type LedgerControlServiceServer interface {
 	RequestUsdRatePolicy(context.Context, *RequestUsdRatePolicyRequest) (*RequestUsdRatePolicyResponse, error)
 	ApproveUsdRatePolicy(context.Context, *ApproveUsdRatePolicyRequest) (*ApproveUsdRatePolicyResponse, error)
 	GetUsdRatePolicy(context.Context, *GetUsdRatePolicyRequest) (*GetUsdRatePolicyResponse, error)
+	GetReadOnlyStatus(context.Context, *GetReadOnlyStatusRequest) (*GetReadOnlyStatusResponse, error)
+	GetPeriodCarryovers(context.Context, *GetPeriodCarryoversRequest) (*GetPeriodCarryoversResponse, error)
 	mustEmbedUnimplementedLedgerControlServiceServer()
 }
 
@@ -246,6 +284,12 @@ func (UnimplementedLedgerControlServiceServer) ApproveUsdRatePolicy(context.Cont
 }
 func (UnimplementedLedgerControlServiceServer) GetUsdRatePolicy(context.Context, *GetUsdRatePolicyRequest) (*GetUsdRatePolicyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUsdRatePolicy not implemented")
+}
+func (UnimplementedLedgerControlServiceServer) GetReadOnlyStatus(context.Context, *GetReadOnlyStatusRequest) (*GetReadOnlyStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetReadOnlyStatus not implemented")
+}
+func (UnimplementedLedgerControlServiceServer) GetPeriodCarryovers(context.Context, *GetPeriodCarryoversRequest) (*GetPeriodCarryoversResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPeriodCarryovers not implemented")
 }
 func (UnimplementedLedgerControlServiceServer) mustEmbedUnimplementedLedgerControlServiceServer() {}
 func (UnimplementedLedgerControlServiceServer) testEmbeddedByValue()                              {}
@@ -394,6 +438,42 @@ func _LedgerControlService_GetUsdRatePolicy_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LedgerControlService_GetReadOnlyStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReadOnlyStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LedgerControlServiceServer).GetReadOnlyStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LedgerControlService_GetReadOnlyStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LedgerControlServiceServer).GetReadOnlyStatus(ctx, req.(*GetReadOnlyStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LedgerControlService_GetPeriodCarryovers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPeriodCarryoversRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LedgerControlServiceServer).GetPeriodCarryovers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LedgerControlService_GetPeriodCarryovers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LedgerControlServiceServer).GetPeriodCarryovers(ctx, req.(*GetPeriodCarryoversRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LedgerControlService_ServiceDesc is the grpc.ServiceDesc for LedgerControlService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -428,6 +508,14 @@ var LedgerControlService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUsdRatePolicy",
 			Handler:    _LedgerControlService_GetUsdRatePolicy_Handler,
+		},
+		{
+			MethodName: "GetReadOnlyStatus",
+			Handler:    _LedgerControlService_GetReadOnlyStatus_Handler,
+		},
+		{
+			MethodName: "GetPeriodCarryovers",
+			Handler:    _LedgerControlService_GetPeriodCarryovers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

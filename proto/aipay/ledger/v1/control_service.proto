@@ -129,6 +129,89 @@ message GetUsdRatePolicyResponse {
   google.protobuf.Timestamp as_of = 5;
 }
 
+enum LedgerServiceMode {
+  LEDGER_SERVICE_MODE_UNSPECIFIED = 0;
+  LEDGER_SERVICE_MODE_NORMAL = 1;
+  LEDGER_SERVICE_MODE_READ_ONLY = 2;
+}
+
+message PendingReadOnlyExit {
+  // Pending, unexpired request from the current read-only episode. Includes
+  // request_bytes and request_digest for approvers.
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+  ReadOnlyExitSnapshot snapshot = 2;
+  // Approvals recorded so far, with assertions omitted.
+  repeated aipay.approval.v1.Approval approvals = 3;
+}
+
+message GetReadOnlyStatusRequest {}
+
+message GetReadOnlyStatusResponse {
+  LedgerServiceMode mode = 1;
+  // First recorded reason for the current read-only episode. Empty in normal mode.
+  string read_only_reason = 2;
+  // Time the ledger entered read-only mode or last exited to normal mode.
+  google.protobuf.Timestamp mode_since = 3;
+  // Service state version that binds an exit request to its read-only episode.
+  uint64 state_version = 4;
+  // ID of the executed approval request when in normal mode after an approved exit.
+  string last_exit_request_id = 5;
+  // Up to 20 pending exit requests from the current episode, newest first.
+  // Always empty in normal mode.
+  repeated PendingReadOnlyExit pending = 6;
+  google.protobuf.Timestamp as_of = 7;
+}
+
+enum PeriodStatus {
+  PERIOD_STATUS_UNSPECIFIED = 0;
+  // Includes periods that have no stored row yet.
+  PERIOD_STATUS_OPEN = 1;
+  PERIOD_STATUS_CLOSING = 2;
+  PERIOD_STATUS_CLOSED = 3;
+}
+
+message SuspenseBalance {
+  string account_code = 1;
+  // unmatched_receipts, upstream_diff or rounding.
+  string account_type = 2;
+  // Signed debit-positive minor units through period end, or to date while the
+  // period is running. Uses the same calculation as the period-close suspense check.
+  int64 units = 3;
+  // ID of the executed carryover whose amount equals units. Empty if none matches.
+  string carryover_approval_request_id = 4;
+}
+
+message PeriodCarryover {
+  aipay.approval.v1.ApprovalRequest approval_request = 1;
+  string account_code = 2;
+  // Signed debit-positive minor units recorded in the note.
+  int64 units = 3;
+  string reason = 4;
+  // Approvals recorded so far, with assertions omitted.
+  repeated aipay.approval.v1.Approval approvals = 5;
+}
+
+message GetPeriodCarryoversRequest {
+  // Accounting period, YYYY-MM in UTC+8.
+  string period_id = 1;
+}
+
+message GetPeriodCarryoversResponse {
+  string period_id = 1;
+  PeriodStatus status = 2;
+  google.protobuf.Timestamp starts_at = 3;
+  google.protobuf.Timestamp ends_at = 4;
+  // False while the period is running. Balances are then to date and may change.
+  bool ended = 5;
+  // Nonzero suspense balances only.
+  repeated SuspenseBalance balances = 6;
+  // Up to 200 carryover requests for the period across all statuses, newest first.
+  repeated PeriodCarryover requests = 7;
+  // True when the period has more than 200 requests.
+  bool truncated = 8;
+  google.protobuf.Timestamp as_of = 9;
+}
+
 // Administrative control, only through the backend management listener. All
 // methods require a verified IAM assertion and platform acting scope; ledger
 // itself checks that scope. Identity is taken from verified assertions, never
@@ -147,6 +230,12 @@ message GetUsdRatePolicyResponse {
 // an older episode's approval can never clear a later read-only state.
 // Carryover approval only records the note; closing still requires exact
 // equality of the noted amount and the account's actual period-end balance.
+//
+// GetReadOnlyStatus and GetPeriodCarryovers are read-only. Neither runs the
+// exit self-check, cuts checkpoints or anchors them. GetReadOnlyStatus lists
+// only requests from the current read-only episode in pending. GetPeriodCarryovers
+// uses the same balance calculation as the period-close suspense check and sets
+// carryover_approval_request_id exactly when that check would accept the balance.
 //
 // request_bytes (str/bytes have u32 big-endian lengths, integers big-endian,
 // UUID bytes16 raw; signed times are Unix nanoseconds, microsecond precision):
@@ -175,7 +264,7 @@ service LedgerControlService {
       rules: {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_REQUIRED
-        permissions: "ledger.control.request"
+        permissions: "ledger.read_only_exit.submit"
       }
     };
   }
@@ -184,7 +273,7 @@ service LedgerControlService {
       rules: {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_REQUIRED
-        permissions: "ledger.control.approve"
+        permissions: "ledger.read_only_exit.approve"
       }
     };
   }
@@ -193,7 +282,7 @@ service LedgerControlService {
       rules: {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_REQUIRED
-        permissions: "ledger.control.request"
+        permissions: "ledger.carryover.submit"
       }
     };
   }
@@ -202,7 +291,7 @@ service LedgerControlService {
       rules: {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_REQUIRED
-        permissions: "ledger.control.approve"
+        permissions: "ledger.carryover.approve"
       }
     };
   }
@@ -230,6 +319,24 @@ service LedgerControlService {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_REQUIRED
         permissions: "ledger.rate_policy.read"
+      }
+    };
+  }
+  rpc GetReadOnlyStatus(GetReadOnlyStatusRequest) returns (GetReadOnlyStatusResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.read_only_exit.read"
+      }
+    };
+  }
+  rpc GetPeriodCarryovers(GetPeriodCarryoversRequest) returns (GetPeriodCarryoversResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "ledger.carryover.read"
       }
     };
   }

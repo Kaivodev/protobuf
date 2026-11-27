@@ -24,6 +24,108 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type LedgerServiceMode int32
+
+const (
+	LedgerServiceMode_LEDGER_SERVICE_MODE_UNSPECIFIED LedgerServiceMode = 0
+	LedgerServiceMode_LEDGER_SERVICE_MODE_NORMAL      LedgerServiceMode = 1
+	LedgerServiceMode_LEDGER_SERVICE_MODE_READ_ONLY   LedgerServiceMode = 2
+)
+
+// Enum value maps for LedgerServiceMode.
+var (
+	LedgerServiceMode_name = map[int32]string{
+		0: "LEDGER_SERVICE_MODE_UNSPECIFIED",
+		1: "LEDGER_SERVICE_MODE_NORMAL",
+		2: "LEDGER_SERVICE_MODE_READ_ONLY",
+	}
+	LedgerServiceMode_value = map[string]int32{
+		"LEDGER_SERVICE_MODE_UNSPECIFIED": 0,
+		"LEDGER_SERVICE_MODE_NORMAL":      1,
+		"LEDGER_SERVICE_MODE_READ_ONLY":   2,
+	}
+)
+
+func (x LedgerServiceMode) Enum() *LedgerServiceMode {
+	p := new(LedgerServiceMode)
+	*p = x
+	return p
+}
+
+func (x LedgerServiceMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (LedgerServiceMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_ledger_v1_control_service_proto_enumTypes[0].Descriptor()
+}
+
+func (LedgerServiceMode) Type() protoreflect.EnumType {
+	return &file_aipay_ledger_v1_control_service_proto_enumTypes[0]
+}
+
+func (x LedgerServiceMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use LedgerServiceMode.Descriptor instead.
+func (LedgerServiceMode) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{0}
+}
+
+type PeriodStatus int32
+
+const (
+	PeriodStatus_PERIOD_STATUS_UNSPECIFIED PeriodStatus = 0
+	// Includes periods that have no stored row yet.
+	PeriodStatus_PERIOD_STATUS_OPEN    PeriodStatus = 1
+	PeriodStatus_PERIOD_STATUS_CLOSING PeriodStatus = 2
+	PeriodStatus_PERIOD_STATUS_CLOSED  PeriodStatus = 3
+)
+
+// Enum value maps for PeriodStatus.
+var (
+	PeriodStatus_name = map[int32]string{
+		0: "PERIOD_STATUS_UNSPECIFIED",
+		1: "PERIOD_STATUS_OPEN",
+		2: "PERIOD_STATUS_CLOSING",
+		3: "PERIOD_STATUS_CLOSED",
+	}
+	PeriodStatus_value = map[string]int32{
+		"PERIOD_STATUS_UNSPECIFIED": 0,
+		"PERIOD_STATUS_OPEN":        1,
+		"PERIOD_STATUS_CLOSING":     2,
+		"PERIOD_STATUS_CLOSED":      3,
+	}
+)
+
+func (x PeriodStatus) Enum() *PeriodStatus {
+	p := new(PeriodStatus)
+	*p = x
+	return p
+}
+
+func (x PeriodStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PeriodStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_ledger_v1_control_service_proto_enumTypes[1].Descriptor()
+}
+
+func (PeriodStatus) Type() protoreflect.EnumType {
+	return &file_aipay_ledger_v1_control_service_proto_enumTypes[1]
+}
+
+func (x PeriodStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PeriodStatus.Descriptor instead.
+func (PeriodStatus) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{1}
+}
+
 // Server-derived state bound by a read-only exit approval. Clients cannot
 // supply a replacement state. Times are UTC with microsecond precision.
 type ReadOnlyExitSnapshot struct {
@@ -996,6 +1098,510 @@ func (x *GetUsdRatePolicyResponse) GetAsOf() *timestamppb.Timestamp {
 	return nil
 }
 
+type PendingReadOnlyExit struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Pending, unexpired request from the current read-only episode. Includes
+	// request_bytes and request_digest for approvers.
+	ApprovalRequest *v1.ApprovalRequest   `protobuf:"bytes,1,opt,name=approval_request,json=approvalRequest,proto3" json:"approval_request,omitempty"`
+	Snapshot        *ReadOnlyExitSnapshot `protobuf:"bytes,2,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
+	// Approvals recorded so far, with assertions omitted.
+	Approvals     []*v1.Approval `protobuf:"bytes,3,rep,name=approvals,proto3" json:"approvals,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PendingReadOnlyExit) Reset() {
+	*x = PendingReadOnlyExit{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PendingReadOnlyExit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PendingReadOnlyExit) ProtoMessage() {}
+
+func (x *PendingReadOnlyExit) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PendingReadOnlyExit.ProtoReflect.Descriptor instead.
+func (*PendingReadOnlyExit) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *PendingReadOnlyExit) GetApprovalRequest() *v1.ApprovalRequest {
+	if x != nil {
+		return x.ApprovalRequest
+	}
+	return nil
+}
+
+func (x *PendingReadOnlyExit) GetSnapshot() *ReadOnlyExitSnapshot {
+	if x != nil {
+		return x.Snapshot
+	}
+	return nil
+}
+
+func (x *PendingReadOnlyExit) GetApprovals() []*v1.Approval {
+	if x != nil {
+		return x.Approvals
+	}
+	return nil
+}
+
+type GetReadOnlyStatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetReadOnlyStatusRequest) Reset() {
+	*x = GetReadOnlyStatusRequest{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetReadOnlyStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetReadOnlyStatusRequest) ProtoMessage() {}
+
+func (x *GetReadOnlyStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetReadOnlyStatusRequest.ProtoReflect.Descriptor instead.
+func (*GetReadOnlyStatusRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{17}
+}
+
+type GetReadOnlyStatusResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Mode  LedgerServiceMode      `protobuf:"varint,1,opt,name=mode,proto3,enum=aipay.ledger.v1.LedgerServiceMode" json:"mode,omitempty"`
+	// First recorded reason for the current read-only episode. Empty in normal mode.
+	ReadOnlyReason string `protobuf:"bytes,2,opt,name=read_only_reason,json=readOnlyReason,proto3" json:"read_only_reason,omitempty"`
+	// Time the ledger entered read-only mode or last exited to normal mode.
+	ModeSince *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=mode_since,json=modeSince,proto3" json:"mode_since,omitempty"`
+	// Service state version that binds an exit request to its read-only episode.
+	StateVersion uint64 `protobuf:"varint,4,opt,name=state_version,json=stateVersion,proto3" json:"state_version,omitempty"`
+	// ID of the executed approval request when in normal mode after an approved exit.
+	LastExitRequestId string `protobuf:"bytes,5,opt,name=last_exit_request_id,json=lastExitRequestId,proto3" json:"last_exit_request_id,omitempty"`
+	// Up to 20 pending exit requests from the current episode, newest first.
+	// Always empty in normal mode.
+	Pending       []*PendingReadOnlyExit `protobuf:"bytes,6,rep,name=pending,proto3" json:"pending,omitempty"`
+	AsOf          *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetReadOnlyStatusResponse) Reset() {
+	*x = GetReadOnlyStatusResponse{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetReadOnlyStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetReadOnlyStatusResponse) ProtoMessage() {}
+
+func (x *GetReadOnlyStatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetReadOnlyStatusResponse.ProtoReflect.Descriptor instead.
+func (*GetReadOnlyStatusResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetReadOnlyStatusResponse) GetMode() LedgerServiceMode {
+	if x != nil {
+		return x.Mode
+	}
+	return LedgerServiceMode_LEDGER_SERVICE_MODE_UNSPECIFIED
+}
+
+func (x *GetReadOnlyStatusResponse) GetReadOnlyReason() string {
+	if x != nil {
+		return x.ReadOnlyReason
+	}
+	return ""
+}
+
+func (x *GetReadOnlyStatusResponse) GetModeSince() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ModeSince
+	}
+	return nil
+}
+
+func (x *GetReadOnlyStatusResponse) GetStateVersion() uint64 {
+	if x != nil {
+		return x.StateVersion
+	}
+	return 0
+}
+
+func (x *GetReadOnlyStatusResponse) GetLastExitRequestId() string {
+	if x != nil {
+		return x.LastExitRequestId
+	}
+	return ""
+}
+
+func (x *GetReadOnlyStatusResponse) GetPending() []*PendingReadOnlyExit {
+	if x != nil {
+		return x.Pending
+	}
+	return nil
+}
+
+func (x *GetReadOnlyStatusResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
+	}
+	return nil
+}
+
+type SuspenseBalance struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	AccountCode string                 `protobuf:"bytes,1,opt,name=account_code,json=accountCode,proto3" json:"account_code,omitempty"`
+	// unmatched_receipts, upstream_diff or rounding.
+	AccountType string `protobuf:"bytes,2,opt,name=account_type,json=accountType,proto3" json:"account_type,omitempty"`
+	// Signed debit-positive minor units through period end, or to date while the
+	// period is running. Uses the same calculation as the period-close suspense check.
+	Units int64 `protobuf:"varint,3,opt,name=units,proto3" json:"units,omitempty"`
+	// ID of the executed carryover whose amount equals units. Empty if none matches.
+	CarryoverApprovalRequestId string `protobuf:"bytes,4,opt,name=carryover_approval_request_id,json=carryoverApprovalRequestId,proto3" json:"carryover_approval_request_id,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *SuspenseBalance) Reset() {
+	*x = SuspenseBalance{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SuspenseBalance) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuspenseBalance) ProtoMessage() {}
+
+func (x *SuspenseBalance) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SuspenseBalance.ProtoReflect.Descriptor instead.
+func (*SuspenseBalance) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *SuspenseBalance) GetAccountCode() string {
+	if x != nil {
+		return x.AccountCode
+	}
+	return ""
+}
+
+func (x *SuspenseBalance) GetAccountType() string {
+	if x != nil {
+		return x.AccountType
+	}
+	return ""
+}
+
+func (x *SuspenseBalance) GetUnits() int64 {
+	if x != nil {
+		return x.Units
+	}
+	return 0
+}
+
+func (x *SuspenseBalance) GetCarryoverApprovalRequestId() string {
+	if x != nil {
+		return x.CarryoverApprovalRequestId
+	}
+	return ""
+}
+
+type PeriodCarryover struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ApprovalRequest *v1.ApprovalRequest    `protobuf:"bytes,1,opt,name=approval_request,json=approvalRequest,proto3" json:"approval_request,omitempty"`
+	AccountCode     string                 `protobuf:"bytes,2,opt,name=account_code,json=accountCode,proto3" json:"account_code,omitempty"`
+	// Signed debit-positive minor units recorded in the note.
+	Units  int64  `protobuf:"varint,3,opt,name=units,proto3" json:"units,omitempty"`
+	Reason string `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	// Approvals recorded so far, with assertions omitted.
+	Approvals     []*v1.Approval `protobuf:"bytes,5,rep,name=approvals,proto3" json:"approvals,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PeriodCarryover) Reset() {
+	*x = PeriodCarryover{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PeriodCarryover) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PeriodCarryover) ProtoMessage() {}
+
+func (x *PeriodCarryover) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PeriodCarryover.ProtoReflect.Descriptor instead.
+func (*PeriodCarryover) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *PeriodCarryover) GetApprovalRequest() *v1.ApprovalRequest {
+	if x != nil {
+		return x.ApprovalRequest
+	}
+	return nil
+}
+
+func (x *PeriodCarryover) GetAccountCode() string {
+	if x != nil {
+		return x.AccountCode
+	}
+	return ""
+}
+
+func (x *PeriodCarryover) GetUnits() int64 {
+	if x != nil {
+		return x.Units
+	}
+	return 0
+}
+
+func (x *PeriodCarryover) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *PeriodCarryover) GetApprovals() []*v1.Approval {
+	if x != nil {
+		return x.Approvals
+	}
+	return nil
+}
+
+type GetPeriodCarryoversRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Accounting period, YYYY-MM in UTC+8.
+	PeriodId      string `protobuf:"bytes,1,opt,name=period_id,json=periodId,proto3" json:"period_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPeriodCarryoversRequest) Reset() {
+	*x = GetPeriodCarryoversRequest{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPeriodCarryoversRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPeriodCarryoversRequest) ProtoMessage() {}
+
+func (x *GetPeriodCarryoversRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPeriodCarryoversRequest.ProtoReflect.Descriptor instead.
+func (*GetPeriodCarryoversRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GetPeriodCarryoversRequest) GetPeriodId() string {
+	if x != nil {
+		return x.PeriodId
+	}
+	return ""
+}
+
+type GetPeriodCarryoversResponse struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PeriodId string                 `protobuf:"bytes,1,opt,name=period_id,json=periodId,proto3" json:"period_id,omitempty"`
+	Status   PeriodStatus           `protobuf:"varint,2,opt,name=status,proto3,enum=aipay.ledger.v1.PeriodStatus" json:"status,omitempty"`
+	StartsAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=starts_at,json=startsAt,proto3" json:"starts_at,omitempty"`
+	EndsAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=ends_at,json=endsAt,proto3" json:"ends_at,omitempty"`
+	// False while the period is running. Balances are then to date and may change.
+	Ended bool `protobuf:"varint,5,opt,name=ended,proto3" json:"ended,omitempty"`
+	// Nonzero suspense balances only.
+	Balances []*SuspenseBalance `protobuf:"bytes,6,rep,name=balances,proto3" json:"balances,omitempty"`
+	// Up to 200 carryover requests for the period across all statuses, newest first.
+	Requests []*PeriodCarryover `protobuf:"bytes,7,rep,name=requests,proto3" json:"requests,omitempty"`
+	// True when the period has more than 200 requests.
+	Truncated     bool                   `protobuf:"varint,8,opt,name=truncated,proto3" json:"truncated,omitempty"`
+	AsOf          *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=as_of,json=asOf,proto3" json:"as_of,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPeriodCarryoversResponse) Reset() {
+	*x = GetPeriodCarryoversResponse{}
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPeriodCarryoversResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPeriodCarryoversResponse) ProtoMessage() {}
+
+func (x *GetPeriodCarryoversResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_control_service_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPeriodCarryoversResponse.ProtoReflect.Descriptor instead.
+func (*GetPeriodCarryoversResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_control_service_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetPeriodCarryoversResponse) GetPeriodId() string {
+	if x != nil {
+		return x.PeriodId
+	}
+	return ""
+}
+
+func (x *GetPeriodCarryoversResponse) GetStatus() PeriodStatus {
+	if x != nil {
+		return x.Status
+	}
+	return PeriodStatus_PERIOD_STATUS_UNSPECIFIED
+}
+
+func (x *GetPeriodCarryoversResponse) GetStartsAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartsAt
+	}
+	return nil
+}
+
+func (x *GetPeriodCarryoversResponse) GetEndsAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.EndsAt
+	}
+	return nil
+}
+
+func (x *GetPeriodCarryoversResponse) GetEnded() bool {
+	if x != nil {
+		return x.Ended
+	}
+	return false
+}
+
+func (x *GetPeriodCarryoversResponse) GetBalances() []*SuspenseBalance {
+	if x != nil {
+		return x.Balances
+	}
+	return nil
+}
+
+func (x *GetPeriodCarryoversResponse) GetRequests() []*PeriodCarryover {
+	if x != nil {
+		return x.Requests
+	}
+	return nil
+}
+
+func (x *GetPeriodCarryoversResponse) GetTruncated() bool {
+	if x != nil {
+		return x.Truncated
+	}
+	return false
+}
+
+func (x *GetPeriodCarryoversResponse) GetAsOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AsOf
+	}
+	return nil
+}
+
 var File_aipay_ledger_v1_control_service_proto protoreflect.FileDescriptor
 
 const file_aipay_ledger_v1_control_service_proto_rawDesc = "" +
@@ -1064,20 +1670,66 @@ const file_aipay_ledger_v1_control_service_proto_rawDesc = "" +
 	"ceilingPpm\x12#\n" +
 	"\reffective_ppm\x18\x03 \x01(\rR\feffectivePpm\x12<\n" +
 	"\apending\x18\x04 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\apending\x12/\n" +
-	"\x05as_of\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf2\xd8\b\n" +
-	"\x14LedgerControlService\x12\x9b\x01\n" +
-	"\x13RequestReadOnlyExit\x12+.aipay.ledger.v1.RequestReadOnlyExitRequest\x1a,.aipay.ledger.v1.RequestReadOnlyExitResponse\")\xc2\xf3\x18%\n" +
-	"#\n" +
-	"\abackend\x10\x02\x1a\x16ledger.control.request\x12\x9b\x01\n" +
-	"\x13ApproveReadOnlyExit\x12+.aipay.ledger.v1.ApproveReadOnlyExitRequest\x1a,.aipay.ledger.v1.ApproveReadOnlyExitResponse\")\xc2\xf3\x18%\n" +
-	"#\n" +
-	"\abackend\x10\x02\x1a\x16ledger.control.approve\x12\x8f\x01\n" +
-	"\x0fRecordCarryover\x12'.aipay.ledger.v1.RecordCarryoverRequest\x1a(.aipay.ledger.v1.RecordCarryoverResponse\")\xc2\xf3\x18%\n" +
-	"#\n" +
-	"\abackend\x10\x02\x1a\x16ledger.control.request\x12\x92\x01\n" +
-	"\x10ApproveCarryover\x12(.aipay.ledger.v1.ApproveCarryoverRequest\x1a).aipay.ledger.v1.ApproveCarryoverResponse\")\xc2\xf3\x18%\n" +
-	"#\n" +
-	"\abackend\x10\x02\x1a\x16ledger.control.approve\x12\xa1\x01\n" +
+	"\x05as_of\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf\"\xe2\x01\n" +
+	"\x13PendingReadOnlyExit\x12M\n" +
+	"\x10approval_request\x18\x01 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\x0fapprovalRequest\x12A\n" +
+	"\bsnapshot\x18\x02 \x01(\v2%.aipay.ledger.v1.ReadOnlyExitSnapshotR\bsnapshot\x129\n" +
+	"\tapprovals\x18\x03 \x03(\v2\x1b.aipay.approval.v1.ApprovalR\tapprovals\"\x1a\n" +
+	"\x18GetReadOnlyStatusRequest\"\xff\x02\n" +
+	"\x19GetReadOnlyStatusResponse\x126\n" +
+	"\x04mode\x18\x01 \x01(\x0e2\".aipay.ledger.v1.LedgerServiceModeR\x04mode\x12(\n" +
+	"\x10read_only_reason\x18\x02 \x01(\tR\x0ereadOnlyReason\x129\n" +
+	"\n" +
+	"mode_since\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tmodeSince\x12#\n" +
+	"\rstate_version\x18\x04 \x01(\x04R\fstateVersion\x12/\n" +
+	"\x14last_exit_request_id\x18\x05 \x01(\tR\x11lastExitRequestId\x12>\n" +
+	"\apending\x18\x06 \x03(\v2$.aipay.ledger.v1.PendingReadOnlyExitR\apending\x12/\n" +
+	"\x05as_of\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf\"\xb0\x01\n" +
+	"\x0fSuspenseBalance\x12!\n" +
+	"\faccount_code\x18\x01 \x01(\tR\vaccountCode\x12!\n" +
+	"\faccount_type\x18\x02 \x01(\tR\vaccountType\x12\x14\n" +
+	"\x05units\x18\x03 \x01(\x03R\x05units\x12A\n" +
+	"\x1dcarryover_approval_request_id\x18\x04 \x01(\tR\x1acarryoverApprovalRequestId\"\xec\x01\n" +
+	"\x0fPeriodCarryover\x12M\n" +
+	"\x10approval_request\x18\x01 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\x0fapprovalRequest\x12!\n" +
+	"\faccount_code\x18\x02 \x01(\tR\vaccountCode\x12\x14\n" +
+	"\x05units\x18\x03 \x01(\x03R\x05units\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\x129\n" +
+	"\tapprovals\x18\x05 \x03(\v2\x1b.aipay.approval.v1.ApprovalR\tapprovals\"9\n" +
+	"\x1aGetPeriodCarryoversRequest\x12\x1b\n" +
+	"\tperiod_id\x18\x01 \x01(\tR\bperiodId\"\xc0\x03\n" +
+	"\x1bGetPeriodCarryoversResponse\x12\x1b\n" +
+	"\tperiod_id\x18\x01 \x01(\tR\bperiodId\x125\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x1d.aipay.ledger.v1.PeriodStatusR\x06status\x127\n" +
+	"\tstarts_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bstartsAt\x123\n" +
+	"\aends_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x06endsAt\x12\x14\n" +
+	"\x05ended\x18\x05 \x01(\bR\x05ended\x12<\n" +
+	"\bbalances\x18\x06 \x03(\v2 .aipay.ledger.v1.SuspenseBalanceR\bbalances\x12<\n" +
+	"\brequests\x18\a \x03(\v2 .aipay.ledger.v1.PeriodCarryoverR\brequests\x12\x1c\n" +
+	"\ttruncated\x18\b \x01(\bR\ttruncated\x12/\n" +
+	"\x05as_of\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x04asOf*{\n" +
+	"\x11LedgerServiceMode\x12#\n" +
+	"\x1fLEDGER_SERVICE_MODE_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aLEDGER_SERVICE_MODE_NORMAL\x10\x01\x12!\n" +
+	"\x1dLEDGER_SERVICE_MODE_READ_ONLY\x10\x02*z\n" +
+	"\fPeriodStatus\x12\x1d\n" +
+	"\x19PERIOD_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12PERIOD_STATUS_OPEN\x10\x01\x12\x19\n" +
+	"\x15PERIOD_STATUS_CLOSING\x10\x02\x12\x18\n" +
+	"\x14PERIOD_STATUS_CLOSED\x10\x032\xa1\v\n" +
+	"\x14LedgerControlService\x12\xa1\x01\n" +
+	"\x13RequestReadOnlyExit\x12+.aipay.ledger.v1.RequestReadOnlyExitRequest\x1a,.aipay.ledger.v1.RequestReadOnlyExitResponse\"/\xc2\xf3\x18+\n" +
+	")\n" +
+	"\abackend\x10\x02\x1a\x1cledger.read_only_exit.submit\x12\xa2\x01\n" +
+	"\x13ApproveReadOnlyExit\x12+.aipay.ledger.v1.ApproveReadOnlyExitRequest\x1a,.aipay.ledger.v1.ApproveReadOnlyExitResponse\"0\xc2\xf3\x18,\n" +
+	"*\n" +
+	"\abackend\x10\x02\x1a\x1dledger.read_only_exit.approve\x12\x90\x01\n" +
+	"\x0fRecordCarryover\x12'.aipay.ledger.v1.RecordCarryoverRequest\x1a(.aipay.ledger.v1.RecordCarryoverResponse\"*\xc2\xf3\x18&\n" +
+	"$\n" +
+	"\abackend\x10\x02\x1a\x17ledger.carryover.submit\x12\x94\x01\n" +
+	"\x10ApproveCarryover\x12(.aipay.ledger.v1.ApproveCarryoverRequest\x1a).aipay.ledger.v1.ApproveCarryoverResponse\"+\xc2\xf3\x18'\n" +
+	"%\n" +
+	"\abackend\x10\x02\x1a\x18ledger.carryover.approve\x12\xa1\x01\n" +
 	"\x14RequestUsdRatePolicy\x12,.aipay.ledger.v1.RequestUsdRatePolicyRequest\x1a-.aipay.ledger.v1.RequestUsdRatePolicyResponse\",\xc2\xf3\x18(\n" +
 	"&\n" +
 	"\abackend\x10\x02\x1a\x19ledger.rate_policy.submit\x12\xa2\x01\n" +
@@ -1086,7 +1738,13 @@ const file_aipay_ledger_v1_control_service_proto_rawDesc = "" +
 	"\abackend\x10\x02\x1a\x1aledger.rate_policy.approve\x12\x93\x01\n" +
 	"\x10GetUsdRatePolicy\x12(.aipay.ledger.v1.GetUsdRatePolicyRequest\x1a).aipay.ledger.v1.GetUsdRatePolicyResponse\"*\xc2\xf3\x18&\n" +
 	"$\n" +
-	"\abackend\x10\x02\x1a\x17ledger.rate_policy.readB>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
+	"\abackend\x10\x02\x1a\x17ledger.rate_policy.read\x12\x99\x01\n" +
+	"\x11GetReadOnlyStatus\x12).aipay.ledger.v1.GetReadOnlyStatusRequest\x1a*.aipay.ledger.v1.GetReadOnlyStatusResponse\"-\xc2\xf3\x18)\n" +
+	"'\n" +
+	"\abackend\x10\x02\x1a\x1aledger.read_only_exit.read\x12\x9a\x01\n" +
+	"\x13GetPeriodCarryovers\x12+.aipay.ledger.v1.GetPeriodCarryoversRequest\x1a,.aipay.ledger.v1.GetPeriodCarryoversResponse\"(\xc2\xf3\x18$\n" +
+	"\"\n" +
+	"\abackend\x10\x02\x1a\x15ledger.carryover.readB>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
 
 var (
 	file_aipay_ledger_v1_control_service_proto_rawDescOnce sync.Once
@@ -1100,64 +1758,94 @@ func file_aipay_ledger_v1_control_service_proto_rawDescGZIP() []byte {
 	return file_aipay_ledger_v1_control_service_proto_rawDescData
 }
 
-var file_aipay_ledger_v1_control_service_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_aipay_ledger_v1_control_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_aipay_ledger_v1_control_service_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_aipay_ledger_v1_control_service_proto_goTypes = []any{
-	(*ReadOnlyExitSnapshot)(nil),         // 0: aipay.ledger.v1.ReadOnlyExitSnapshot
-	(*RequestReadOnlyExitRequest)(nil),   // 1: aipay.ledger.v1.RequestReadOnlyExitRequest
-	(*RequestReadOnlyExitResponse)(nil),  // 2: aipay.ledger.v1.RequestReadOnlyExitResponse
-	(*ApproveReadOnlyExitRequest)(nil),   // 3: aipay.ledger.v1.ApproveReadOnlyExitRequest
-	(*ApproveReadOnlyExitResponse)(nil),  // 4: aipay.ledger.v1.ApproveReadOnlyExitResponse
-	(*RecordCarryoverRequest)(nil),       // 5: aipay.ledger.v1.RecordCarryoverRequest
-	(*RecordCarryoverResponse)(nil),      // 6: aipay.ledger.v1.RecordCarryoverResponse
-	(*ApproveCarryoverRequest)(nil),      // 7: aipay.ledger.v1.ApproveCarryoverRequest
-	(*ApproveCarryoverResponse)(nil),     // 8: aipay.ledger.v1.ApproveCarryoverResponse
-	(*UsdRatePolicyVersion)(nil),         // 9: aipay.ledger.v1.UsdRatePolicyVersion
-	(*RequestUsdRatePolicyRequest)(nil),  // 10: aipay.ledger.v1.RequestUsdRatePolicyRequest
-	(*RequestUsdRatePolicyResponse)(nil), // 11: aipay.ledger.v1.RequestUsdRatePolicyResponse
-	(*ApproveUsdRatePolicyRequest)(nil),  // 12: aipay.ledger.v1.ApproveUsdRatePolicyRequest
-	(*ApproveUsdRatePolicyResponse)(nil), // 13: aipay.ledger.v1.ApproveUsdRatePolicyResponse
-	(*GetUsdRatePolicyRequest)(nil),      // 14: aipay.ledger.v1.GetUsdRatePolicyRequest
-	(*GetUsdRatePolicyResponse)(nil),     // 15: aipay.ledger.v1.GetUsdRatePolicyResponse
-	(*timestamppb.Timestamp)(nil),        // 16: google.protobuf.Timestamp
-	(*v1.ApprovalRequest)(nil),           // 17: aipay.approval.v1.ApprovalRequest
-	(*v1.WebAuthnAssertion)(nil),         // 18: aipay.approval.v1.WebAuthnAssertion
+	(LedgerServiceMode)(0),               // 0: aipay.ledger.v1.LedgerServiceMode
+	(PeriodStatus)(0),                    // 1: aipay.ledger.v1.PeriodStatus
+	(*ReadOnlyExitSnapshot)(nil),         // 2: aipay.ledger.v1.ReadOnlyExitSnapshot
+	(*RequestReadOnlyExitRequest)(nil),   // 3: aipay.ledger.v1.RequestReadOnlyExitRequest
+	(*RequestReadOnlyExitResponse)(nil),  // 4: aipay.ledger.v1.RequestReadOnlyExitResponse
+	(*ApproveReadOnlyExitRequest)(nil),   // 5: aipay.ledger.v1.ApproveReadOnlyExitRequest
+	(*ApproveReadOnlyExitResponse)(nil),  // 6: aipay.ledger.v1.ApproveReadOnlyExitResponse
+	(*RecordCarryoverRequest)(nil),       // 7: aipay.ledger.v1.RecordCarryoverRequest
+	(*RecordCarryoverResponse)(nil),      // 8: aipay.ledger.v1.RecordCarryoverResponse
+	(*ApproveCarryoverRequest)(nil),      // 9: aipay.ledger.v1.ApproveCarryoverRequest
+	(*ApproveCarryoverResponse)(nil),     // 10: aipay.ledger.v1.ApproveCarryoverResponse
+	(*UsdRatePolicyVersion)(nil),         // 11: aipay.ledger.v1.UsdRatePolicyVersion
+	(*RequestUsdRatePolicyRequest)(nil),  // 12: aipay.ledger.v1.RequestUsdRatePolicyRequest
+	(*RequestUsdRatePolicyResponse)(nil), // 13: aipay.ledger.v1.RequestUsdRatePolicyResponse
+	(*ApproveUsdRatePolicyRequest)(nil),  // 14: aipay.ledger.v1.ApproveUsdRatePolicyRequest
+	(*ApproveUsdRatePolicyResponse)(nil), // 15: aipay.ledger.v1.ApproveUsdRatePolicyResponse
+	(*GetUsdRatePolicyRequest)(nil),      // 16: aipay.ledger.v1.GetUsdRatePolicyRequest
+	(*GetUsdRatePolicyResponse)(nil),     // 17: aipay.ledger.v1.GetUsdRatePolicyResponse
+	(*PendingReadOnlyExit)(nil),          // 18: aipay.ledger.v1.PendingReadOnlyExit
+	(*GetReadOnlyStatusRequest)(nil),     // 19: aipay.ledger.v1.GetReadOnlyStatusRequest
+	(*GetReadOnlyStatusResponse)(nil),    // 20: aipay.ledger.v1.GetReadOnlyStatusResponse
+	(*SuspenseBalance)(nil),              // 21: aipay.ledger.v1.SuspenseBalance
+	(*PeriodCarryover)(nil),              // 22: aipay.ledger.v1.PeriodCarryover
+	(*GetPeriodCarryoversRequest)(nil),   // 23: aipay.ledger.v1.GetPeriodCarryoversRequest
+	(*GetPeriodCarryoversResponse)(nil),  // 24: aipay.ledger.v1.GetPeriodCarryoversResponse
+	(*timestamppb.Timestamp)(nil),        // 25: google.protobuf.Timestamp
+	(*v1.ApprovalRequest)(nil),           // 26: aipay.approval.v1.ApprovalRequest
+	(*v1.WebAuthnAssertion)(nil),         // 27: aipay.approval.v1.WebAuthnAssertion
+	(*v1.Approval)(nil),                  // 28: aipay.approval.v1.Approval
 }
 var file_aipay_ledger_v1_control_service_proto_depIdxs = []int32{
-	16, // 0: aipay.ledger.v1.ReadOnlyExitSnapshot.read_only_since:type_name -> google.protobuf.Timestamp
-	17, // 1: aipay.ledger.v1.RequestReadOnlyExitResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	0,  // 2: aipay.ledger.v1.RequestReadOnlyExitResponse.snapshot:type_name -> aipay.ledger.v1.ReadOnlyExitSnapshot
-	18, // 3: aipay.ledger.v1.ApproveReadOnlyExitRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
-	17, // 4: aipay.ledger.v1.ApproveReadOnlyExitResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	17, // 5: aipay.ledger.v1.RecordCarryoverResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	18, // 6: aipay.ledger.v1.ApproveCarryoverRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
-	17, // 7: aipay.ledger.v1.ApproveCarryoverResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	16, // 8: aipay.ledger.v1.UsdRatePolicyVersion.approved_at:type_name -> google.protobuf.Timestamp
-	17, // 9: aipay.ledger.v1.RequestUsdRatePolicyResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	18, // 10: aipay.ledger.v1.ApproveUsdRatePolicyRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
-	17, // 11: aipay.ledger.v1.ApproveUsdRatePolicyResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	9,  // 12: aipay.ledger.v1.ApproveUsdRatePolicyResponse.version:type_name -> aipay.ledger.v1.UsdRatePolicyVersion
-	9,  // 13: aipay.ledger.v1.GetUsdRatePolicyResponse.current:type_name -> aipay.ledger.v1.UsdRatePolicyVersion
-	17, // 14: aipay.ledger.v1.GetUsdRatePolicyResponse.pending:type_name -> aipay.approval.v1.ApprovalRequest
-	16, // 15: aipay.ledger.v1.GetUsdRatePolicyResponse.as_of:type_name -> google.protobuf.Timestamp
-	1,  // 16: aipay.ledger.v1.LedgerControlService.RequestReadOnlyExit:input_type -> aipay.ledger.v1.RequestReadOnlyExitRequest
-	3,  // 17: aipay.ledger.v1.LedgerControlService.ApproveReadOnlyExit:input_type -> aipay.ledger.v1.ApproveReadOnlyExitRequest
-	5,  // 18: aipay.ledger.v1.LedgerControlService.RecordCarryover:input_type -> aipay.ledger.v1.RecordCarryoverRequest
-	7,  // 19: aipay.ledger.v1.LedgerControlService.ApproveCarryover:input_type -> aipay.ledger.v1.ApproveCarryoverRequest
-	10, // 20: aipay.ledger.v1.LedgerControlService.RequestUsdRatePolicy:input_type -> aipay.ledger.v1.RequestUsdRatePolicyRequest
-	12, // 21: aipay.ledger.v1.LedgerControlService.ApproveUsdRatePolicy:input_type -> aipay.ledger.v1.ApproveUsdRatePolicyRequest
-	14, // 22: aipay.ledger.v1.LedgerControlService.GetUsdRatePolicy:input_type -> aipay.ledger.v1.GetUsdRatePolicyRequest
-	2,  // 23: aipay.ledger.v1.LedgerControlService.RequestReadOnlyExit:output_type -> aipay.ledger.v1.RequestReadOnlyExitResponse
-	4,  // 24: aipay.ledger.v1.LedgerControlService.ApproveReadOnlyExit:output_type -> aipay.ledger.v1.ApproveReadOnlyExitResponse
-	6,  // 25: aipay.ledger.v1.LedgerControlService.RecordCarryover:output_type -> aipay.ledger.v1.RecordCarryoverResponse
-	8,  // 26: aipay.ledger.v1.LedgerControlService.ApproveCarryover:output_type -> aipay.ledger.v1.ApproveCarryoverResponse
-	11, // 27: aipay.ledger.v1.LedgerControlService.RequestUsdRatePolicy:output_type -> aipay.ledger.v1.RequestUsdRatePolicyResponse
-	13, // 28: aipay.ledger.v1.LedgerControlService.ApproveUsdRatePolicy:output_type -> aipay.ledger.v1.ApproveUsdRatePolicyResponse
-	15, // 29: aipay.ledger.v1.LedgerControlService.GetUsdRatePolicy:output_type -> aipay.ledger.v1.GetUsdRatePolicyResponse
-	23, // [23:30] is the sub-list for method output_type
-	16, // [16:23] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	25, // 0: aipay.ledger.v1.ReadOnlyExitSnapshot.read_only_since:type_name -> google.protobuf.Timestamp
+	26, // 1: aipay.ledger.v1.RequestReadOnlyExitResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	2,  // 2: aipay.ledger.v1.RequestReadOnlyExitResponse.snapshot:type_name -> aipay.ledger.v1.ReadOnlyExitSnapshot
+	27, // 3: aipay.ledger.v1.ApproveReadOnlyExitRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
+	26, // 4: aipay.ledger.v1.ApproveReadOnlyExitResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	26, // 5: aipay.ledger.v1.RecordCarryoverResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	27, // 6: aipay.ledger.v1.ApproveCarryoverRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
+	26, // 7: aipay.ledger.v1.ApproveCarryoverResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	25, // 8: aipay.ledger.v1.UsdRatePolicyVersion.approved_at:type_name -> google.protobuf.Timestamp
+	26, // 9: aipay.ledger.v1.RequestUsdRatePolicyResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	27, // 10: aipay.ledger.v1.ApproveUsdRatePolicyRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
+	26, // 11: aipay.ledger.v1.ApproveUsdRatePolicyResponse.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	11, // 12: aipay.ledger.v1.ApproveUsdRatePolicyResponse.version:type_name -> aipay.ledger.v1.UsdRatePolicyVersion
+	11, // 13: aipay.ledger.v1.GetUsdRatePolicyResponse.current:type_name -> aipay.ledger.v1.UsdRatePolicyVersion
+	26, // 14: aipay.ledger.v1.GetUsdRatePolicyResponse.pending:type_name -> aipay.approval.v1.ApprovalRequest
+	25, // 15: aipay.ledger.v1.GetUsdRatePolicyResponse.as_of:type_name -> google.protobuf.Timestamp
+	26, // 16: aipay.ledger.v1.PendingReadOnlyExit.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	2,  // 17: aipay.ledger.v1.PendingReadOnlyExit.snapshot:type_name -> aipay.ledger.v1.ReadOnlyExitSnapshot
+	28, // 18: aipay.ledger.v1.PendingReadOnlyExit.approvals:type_name -> aipay.approval.v1.Approval
+	0,  // 19: aipay.ledger.v1.GetReadOnlyStatusResponse.mode:type_name -> aipay.ledger.v1.LedgerServiceMode
+	25, // 20: aipay.ledger.v1.GetReadOnlyStatusResponse.mode_since:type_name -> google.protobuf.Timestamp
+	18, // 21: aipay.ledger.v1.GetReadOnlyStatusResponse.pending:type_name -> aipay.ledger.v1.PendingReadOnlyExit
+	25, // 22: aipay.ledger.v1.GetReadOnlyStatusResponse.as_of:type_name -> google.protobuf.Timestamp
+	26, // 23: aipay.ledger.v1.PeriodCarryover.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	28, // 24: aipay.ledger.v1.PeriodCarryover.approvals:type_name -> aipay.approval.v1.Approval
+	1,  // 25: aipay.ledger.v1.GetPeriodCarryoversResponse.status:type_name -> aipay.ledger.v1.PeriodStatus
+	25, // 26: aipay.ledger.v1.GetPeriodCarryoversResponse.starts_at:type_name -> google.protobuf.Timestamp
+	25, // 27: aipay.ledger.v1.GetPeriodCarryoversResponse.ends_at:type_name -> google.protobuf.Timestamp
+	21, // 28: aipay.ledger.v1.GetPeriodCarryoversResponse.balances:type_name -> aipay.ledger.v1.SuspenseBalance
+	22, // 29: aipay.ledger.v1.GetPeriodCarryoversResponse.requests:type_name -> aipay.ledger.v1.PeriodCarryover
+	25, // 30: aipay.ledger.v1.GetPeriodCarryoversResponse.as_of:type_name -> google.protobuf.Timestamp
+	3,  // 31: aipay.ledger.v1.LedgerControlService.RequestReadOnlyExit:input_type -> aipay.ledger.v1.RequestReadOnlyExitRequest
+	5,  // 32: aipay.ledger.v1.LedgerControlService.ApproveReadOnlyExit:input_type -> aipay.ledger.v1.ApproveReadOnlyExitRequest
+	7,  // 33: aipay.ledger.v1.LedgerControlService.RecordCarryover:input_type -> aipay.ledger.v1.RecordCarryoverRequest
+	9,  // 34: aipay.ledger.v1.LedgerControlService.ApproveCarryover:input_type -> aipay.ledger.v1.ApproveCarryoverRequest
+	12, // 35: aipay.ledger.v1.LedgerControlService.RequestUsdRatePolicy:input_type -> aipay.ledger.v1.RequestUsdRatePolicyRequest
+	14, // 36: aipay.ledger.v1.LedgerControlService.ApproveUsdRatePolicy:input_type -> aipay.ledger.v1.ApproveUsdRatePolicyRequest
+	16, // 37: aipay.ledger.v1.LedgerControlService.GetUsdRatePolicy:input_type -> aipay.ledger.v1.GetUsdRatePolicyRequest
+	19, // 38: aipay.ledger.v1.LedgerControlService.GetReadOnlyStatus:input_type -> aipay.ledger.v1.GetReadOnlyStatusRequest
+	23, // 39: aipay.ledger.v1.LedgerControlService.GetPeriodCarryovers:input_type -> aipay.ledger.v1.GetPeriodCarryoversRequest
+	4,  // 40: aipay.ledger.v1.LedgerControlService.RequestReadOnlyExit:output_type -> aipay.ledger.v1.RequestReadOnlyExitResponse
+	6,  // 41: aipay.ledger.v1.LedgerControlService.ApproveReadOnlyExit:output_type -> aipay.ledger.v1.ApproveReadOnlyExitResponse
+	8,  // 42: aipay.ledger.v1.LedgerControlService.RecordCarryover:output_type -> aipay.ledger.v1.RecordCarryoverResponse
+	10, // 43: aipay.ledger.v1.LedgerControlService.ApproveCarryover:output_type -> aipay.ledger.v1.ApproveCarryoverResponse
+	13, // 44: aipay.ledger.v1.LedgerControlService.RequestUsdRatePolicy:output_type -> aipay.ledger.v1.RequestUsdRatePolicyResponse
+	15, // 45: aipay.ledger.v1.LedgerControlService.ApproveUsdRatePolicy:output_type -> aipay.ledger.v1.ApproveUsdRatePolicyResponse
+	17, // 46: aipay.ledger.v1.LedgerControlService.GetUsdRatePolicy:output_type -> aipay.ledger.v1.GetUsdRatePolicyResponse
+	20, // 47: aipay.ledger.v1.LedgerControlService.GetReadOnlyStatus:output_type -> aipay.ledger.v1.GetReadOnlyStatusResponse
+	24, // 48: aipay.ledger.v1.LedgerControlService.GetPeriodCarryovers:output_type -> aipay.ledger.v1.GetPeriodCarryoversResponse
+	40, // [40:49] is the sub-list for method output_type
+	31, // [31:40] is the sub-list for method input_type
+	31, // [31:31] is the sub-list for extension type_name
+	31, // [31:31] is the sub-list for extension extendee
+	0,  // [0:31] is the sub-list for field type_name
 }
 
 func init() { file_aipay_ledger_v1_control_service_proto_init() }
@@ -1170,13 +1858,14 @@ func file_aipay_ledger_v1_control_service_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_ledger_v1_control_service_proto_rawDesc), len(file_aipay_ledger_v1_control_service_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   16,
+			NumEnums:      2,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_aipay_ledger_v1_control_service_proto_goTypes,
 		DependencyIndexes: file_aipay_ledger_v1_control_service_proto_depIdxs,
+		EnumInfos:         file_aipay_ledger_v1_control_service_proto_enumTypes,
 		MessageInfos:      file_aipay_ledger_v1_control_service_proto_msgTypes,
 	}.Build()
 	File_aipay_ledger_v1_control_service_proto = out.File
