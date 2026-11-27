@@ -66,10 +66,38 @@ message GetDisputeRulingRequest {
 }
 
 message GetDisputeRulingResponse {
-  // Exact original request bytes, typed material, digest, status and every
-  // original WebAuthn approval; no public keys or trusted identity mapping.
+  // Reconciliation alone receives the original request bytes, typed material,
+  // digest, status and complete original assertions for independent verification.
+  // Public keys and trusted identity mappings stay with reconciliation.
   PaymentApproval approval = 1;
   DisputeEvidence evidence = 2;
+}
+
+enum DisputeRulingReviewDisposition {
+  DISPUTE_RULING_REVIEW_DISPOSITION_UNSPECIFIED = 0;
+  DISPUTE_RULING_REVIEW_DISPOSITION_DENIED = 1;
+  DISPUTE_RULING_REVIEW_DISPOSITION_QUARANTINED = 2;
+}
+
+// All IDs must match the ruling material.
+message ReportDisputeRulingReviewRequest {
+  string ruling_id = 1;
+  string dispute_id = 2;
+  string order_id = 3;
+  string escrow_reservation_id = 4;
+  // The ruling material's expected_control_version.
+  uint64 control_version = 5;
+  // UNSPECIFIED returns INVALID_ARGUMENT.
+  DisputeRulingReviewDisposition disposition = 6;
+  // Reconciliation's lower-case reason code, 1-64 characters from [a-z_].
+  string reason = 7;
+  // UTC at microsecond precision.
+  google.protobuf.Timestamp reviewed_at = 8;
+}
+
+message ReportDisputeRulingReviewResponse {
+  // True only when this call records the review. An identical retry returns false.
+  bool recorded = 1;
 }
 
 // Management commands require backend's independent management listener, USER
@@ -145,6 +173,25 @@ service DisputeService {
     };
   }
   rpc GetDisputeRuling(GetDisputeRulingRequest) returns (GetDisputeRulingResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "reconciliation"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Reconciliation reports a terminal denial or quarantine of a DisputeRulingApproved
+  // review for a pre-release ruling to release funds or return them to the seller.
+  // Before reporting, it must confirm under its issuance lock that no authorization
+  // exists for (order_id, control_version) at report time and record a fence so no
+  // path can issue an authorization carrying this ruling at that version.
+  // Payment records the review once. An identical retry returns recorded=false.
+  // Different content for the same ruling returns FAILED_PRECONDITION with ErrorInfo
+  // reason DISPUTE_RULING_REVIEW_CONFLICT. Unknown rulings return NOT_FOUND.
+  // Refund, post-release and completed rulings return FAILED_PRECONDITION.
+  // The ruling may lapse immediately under A146, and payment may verify a fenced
+  // dispute payment observation. The report never moves funds or grants authorization.
+  rpc ReportDisputeRulingReview(ReportDisputeRulingReviewRequest) returns (ReportDisputeRulingReviewResponse) {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: "reconciliation"

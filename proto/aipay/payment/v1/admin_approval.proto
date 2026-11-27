@@ -311,15 +311,15 @@ message PaymentApprovalMaterial {
   }
 }
 
-// Complete original evidence, no public keys. request_digest is
-// SHA-256("AIPAY-APPROVAL-V1" || request_bytes); request_bytes must exactly match
-// str("aipay.payment.admin.v1") || canonical(material). For dispute_ruling this
-// same request_digest is
-// reconciliation DisputeResolution.ruling_sha256, and id is ruling_id.
+// Payment stores the original signed evidence without public keys. The stored
+// request_bytes equal str("aipay.payment.admin.v1") || canonical(material).
+// request_digest is SHA-256("AIPAY-APPROVAL-V1" || request_bytes). For a dispute
+// ruling, this digest is DisputeResolution.ruling_sha256 and id is ruling_id.
 message PaymentApproval {
   aipay.approval.v1.ApprovalRequest approval_request = 1;
   PaymentApprovalMaterial material = 2;
-  // Original append-only assertions; each approver is counted at most once.
+  // Each approver counts once. Only reconciliation's verification reads return
+  // complete assertions. Platform views and responses retain only assertion.credential_id.
   repeated aipay.approval.v1.Approval approvals = 3;
   // Absent until two approvals; equals second approval's verified_at.
   google.protobuf.Timestamp approved_at = 4;

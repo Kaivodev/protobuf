@@ -131,7 +131,8 @@ message ReconciliationApprovalMaterial {
 message ReconciliationApproval {
   aipay.approval.v1.ApprovalRequest approval_request = 1;
   ReconciliationApprovalMaterial material = 2;
-  // Original records in verified_at/approver_id order, no public keys.
+  // Records in verified_at/approver_id order, without public keys.
+  // Platform responses retain only credential_id in each assertion.
   repeated aipay.approval.v1.Approval approvals = 3;
   // Absent until two valid approvals; equals second verified_at.
   google.protobuf.Timestamp approved_at = 4;

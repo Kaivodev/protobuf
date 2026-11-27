@@ -11,7 +11,7 @@ import (
 )
 
 // Pin the entire management surface and its trust boundary: backend needs a
-// user proof, while only reconciliation can retrieve independent ruling proof.
+// user proof, while only reconciliation can retrieve ruling proof or report its review.
 func TestPaymentAdminMethodAuthorization(t *testing.T) {
 	type expected struct {
 		caller     string
@@ -48,10 +48,11 @@ func TestPaymentAdminMethodAuthorization(t *testing.T) {
 	}{
 		{paymentv1.File_aipay_payment_v1_channel_admin_service_proto, "ChannelAdminService", methods},
 		{paymentv1.File_aipay_payment_v1_dispute_service_proto, "DisputeService", map[protoreflect.Name]expected{
-			"RegisterDispute":      {"backend", required, "payment.dispute.register"},
-			"SubmitDisputeRuling":  {"backend", required, "payment.dispute.submit"},
-			"ApproveDisputeRuling": {"backend", required, "payment.dispute.approve"},
-			"GetDisputeRuling":     {"reconciliation", authzv1.AssertionRequirement_ASSERTION_REQUIREMENT_NOT_REQUIRED, ""},
+			"RegisterDispute":           {"backend", required, "payment.dispute.register"},
+			"SubmitDisputeRuling":       {"backend", required, "payment.dispute.submit"},
+			"ApproveDisputeRuling":      {"backend", required, "payment.dispute.approve"},
+			"GetDisputeRuling":          {"reconciliation", authzv1.AssertionRequirement_ASSERTION_REQUIREMENT_NOT_REQUIRED, ""},
+			"ReportDisputeRulingReview": {"reconciliation", authzv1.AssertionRequirement_ASSERTION_REQUIREMENT_NOT_REQUIRED, ""},
 		}},
 	} {
 		t.Run(string(group.name), func(t *testing.T) {

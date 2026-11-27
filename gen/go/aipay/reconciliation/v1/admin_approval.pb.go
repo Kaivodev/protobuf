@@ -680,7 +680,8 @@ type ReconciliationApproval struct {
 	state           protoimpl.MessageState          `protogen:"open.v1"`
 	ApprovalRequest *v1.ApprovalRequest             `protobuf:"bytes,1,opt,name=approval_request,json=approvalRequest,proto3" json:"approval_request,omitempty"`
 	Material        *ReconciliationApprovalMaterial `protobuf:"bytes,2,opt,name=material,proto3" json:"material,omitempty"`
-	// Original records in verified_at/approver_id order, no public keys.
+	// Records in verified_at/approver_id order, without public keys.
+	// Platform responses retain only credential_id in each assertion.
 	Approvals []*v1.Approval `protobuf:"bytes,3,rep,name=approvals,proto3" json:"approvals,omitempty"`
 	// Absent until two valid approvals; equals second verified_at.
 	ApprovedAt    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=approved_at,json=approvedAt,proto3" json:"approved_at,omitempty"`

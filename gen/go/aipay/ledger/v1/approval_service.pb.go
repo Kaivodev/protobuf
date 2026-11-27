@@ -590,7 +590,8 @@ type LedgerApproval struct {
 	state           protoimpl.MessageState  `protogen:"open.v1"`
 	ApprovalRequest *v1.ApprovalRequest     `protobuf:"bytes,1,opt,name=approval_request,json=approvalRequest,proto3" json:"approval_request,omitempty"`
 	Material        *LedgerApprovalMaterial `protobuf:"bytes,2,opt,name=material,proto3" json:"material,omitempty"`
-	// In verified_at order. Only LedgerApprovalService.GetApproval includes assertions.
+	// In verified_at order. GetApproval and Approve* responses keep only
+	// credential_id in each assertion; the other reads omit assertions.
 	Approvals []*v1.Approval `protobuf:"bytes,3,rep,name=approvals,proto3" json:"approvals,omitempty"`
 	// Set once the required approvals were reached, equal to the last verified_at.
 	ApprovedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=approved_at,json=approvedAt,proto3" json:"approved_at,omitempty"`

@@ -82,8 +82,8 @@ enum LatePaymentStatus {
   LATE_PAYMENT_STATUS_CLOSED_UNREFUNDED = 4;
 }
 
-// An active query confirmed full payment after cancellation of the original
-// order. Seller evidence and dual review close the case entirely in payment.
+// An active query confirmed full payment on an order that ledger cancelled.
+// Seller evidence and dual review close the case entirely in payment.
 message LatePayment {
   string late_payment_id = 1;
   aipay.common.v1.TradeSnapshot trade = 2;
@@ -99,6 +99,9 @@ message LatePayment {
   // A145: present when the order was cancelled after a platform forced
   // close; the ID of that approved forced_close request.
   optional string forced_close_approval_request_id = 12;
+  // A147: present when ledger cancelled the order under a dispute return ruling
+  // after payment observed the buyer's payment during that dispute.
+  optional string dispute_id = 13;
 }
 
 enum SellerRefundDuplicateKind {
@@ -130,6 +133,7 @@ message GetSellerRefundReviewRequest {
   SellerRefundSubject subject = 1;
 }
 
+// Platform review. Each approval assertion contains only credential_id.
 message GetSellerRefundReviewResponse {
   SellerRefundReview review = 1;
 }
@@ -199,8 +203,8 @@ message GetSellerRefundReviewForVerificationRequest {
 }
 
 message GetSellerRefundReviewForVerificationResponse {
-  // The exact approval that produced the terminal fact, including original
-  // request bytes, digest, typed material and both original WebAuthn records.
+  // Reconciliation alone receives the approval that produced the terminal fact,
+  // including original request bytes, digest, typed material and both complete assertions.
   PaymentApproval approval = 1;
   // Present unless a failure was approved without seller evidence. Only metadata
   // is returned. Omit status_reason from this verification response.

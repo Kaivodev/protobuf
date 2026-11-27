@@ -132,6 +132,116 @@ func (DisputeCaseStatus) EnumDescriptor() ([]byte, []int) {
 	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{1}
 }
 
+type DisputePaymentState int32
+
+const (
+	DisputePaymentState_DISPUTE_PAYMENT_STATE_UNSPECIFIED DisputePaymentState = 0
+	// Payment observed the buyer's payment. Verification awaits the return-ruling fence.
+	DisputePaymentState_DISPUTE_PAYMENT_STATE_FENCED DisputePaymentState = 1
+	// Payment verified the buyer's payment during the dispute.
+	DisputePaymentState_DISPUTE_PAYMENT_STATE_VERIFIED DisputePaymentState = 2
+	// Ledger cancelled first. Payment registered an A139 late payment.
+	DisputePaymentState_DISPUTE_PAYMENT_STATE_LATE_PAYMENT DisputePaymentState = 3
+)
+
+// Enum value maps for DisputePaymentState.
+var (
+	DisputePaymentState_name = map[int32]string{
+		0: "DISPUTE_PAYMENT_STATE_UNSPECIFIED",
+		1: "DISPUTE_PAYMENT_STATE_FENCED",
+		2: "DISPUTE_PAYMENT_STATE_VERIFIED",
+		3: "DISPUTE_PAYMENT_STATE_LATE_PAYMENT",
+	}
+	DisputePaymentState_value = map[string]int32{
+		"DISPUTE_PAYMENT_STATE_UNSPECIFIED":  0,
+		"DISPUTE_PAYMENT_STATE_FENCED":       1,
+		"DISPUTE_PAYMENT_STATE_VERIFIED":     2,
+		"DISPUTE_PAYMENT_STATE_LATE_PAYMENT": 3,
+	}
+)
+
+func (x DisputePaymentState) Enum() *DisputePaymentState {
+	p := new(DisputePaymentState)
+	*p = x
+	return p
+}
+
+func (x DisputePaymentState) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DisputePaymentState) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_portal_views_proto_enumTypes[2].Descriptor()
+}
+
+func (DisputePaymentState) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_portal_views_proto_enumTypes[2]
+}
+
+func (x DisputePaymentState) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DisputePaymentState.Descriptor instead.
+func (DisputePaymentState) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{2}
+}
+
+type DisputePaymentResolution int32
+
+const (
+	DisputePaymentResolution_DISPUTE_PAYMENT_RESOLUTION_UNSPECIFIED           DisputePaymentResolution = 0
+	DisputePaymentResolution_DISPUTE_PAYMENT_RESOLUTION_NO_RULING             DisputePaymentResolution = 1
+	DisputePaymentResolution_DISPUTE_PAYMENT_RESOLUTION_RECONCILIATION_DENIED DisputePaymentResolution = 2
+	DisputePaymentResolution_DISPUTE_PAYMENT_RESOLUTION_RULING_EXPIRED        DisputePaymentResolution = 3
+	DisputePaymentResolution_DISPUTE_PAYMENT_RESOLUTION_LEDGER_CANCELLED      DisputePaymentResolution = 4
+)
+
+// Enum value maps for DisputePaymentResolution.
+var (
+	DisputePaymentResolution_name = map[int32]string{
+		0: "DISPUTE_PAYMENT_RESOLUTION_UNSPECIFIED",
+		1: "DISPUTE_PAYMENT_RESOLUTION_NO_RULING",
+		2: "DISPUTE_PAYMENT_RESOLUTION_RECONCILIATION_DENIED",
+		3: "DISPUTE_PAYMENT_RESOLUTION_RULING_EXPIRED",
+		4: "DISPUTE_PAYMENT_RESOLUTION_LEDGER_CANCELLED",
+	}
+	DisputePaymentResolution_value = map[string]int32{
+		"DISPUTE_PAYMENT_RESOLUTION_UNSPECIFIED":           0,
+		"DISPUTE_PAYMENT_RESOLUTION_NO_RULING":             1,
+		"DISPUTE_PAYMENT_RESOLUTION_RECONCILIATION_DENIED": 2,
+		"DISPUTE_PAYMENT_RESOLUTION_RULING_EXPIRED":        3,
+		"DISPUTE_PAYMENT_RESOLUTION_LEDGER_CANCELLED":      4,
+	}
+)
+
+func (x DisputePaymentResolution) Enum() *DisputePaymentResolution {
+	p := new(DisputePaymentResolution)
+	*p = x
+	return p
+}
+
+func (x DisputePaymentResolution) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DisputePaymentResolution) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_portal_views_proto_enumTypes[3].Descriptor()
+}
+
+func (DisputePaymentResolution) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_portal_views_proto_enumTypes[3]
+}
+
+func (x DisputePaymentResolution) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DisputePaymentResolution.Descriptor instead.
+func (DisputePaymentResolution) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{3}
+}
+
 type ChannelAccountView struct {
 	state             protoimpl.MessageState       `protogen:"open.v1"`
 	Configuration     *ChannelAccountConfiguration `protobuf:"bytes,1,opt,name=configuration,proto3" json:"configuration,omitempty"`
@@ -715,6 +825,171 @@ func (x *PluginVersionView) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+type DisputePaymentObservation struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	State               DisputePaymentState    `protobuf:"varint,1,opt,name=state,proto3,enum=aipay.payment.v1.DisputePaymentState" json:"state,omitempty"`
+	UpstreamOrderId     string                 `protobuf:"bytes,2,opt,name=upstream_order_id,json=upstreamOrderId,proto3" json:"upstream_order_id,omitempty"`
+	QueryEvidenceSha256 []byte                 `protobuf:"bytes,3,opt,name=query_evidence_sha256,json=queryEvidenceSha256,proto3" json:"query_evidence_sha256,omitempty"`
+	ObservedAt          *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=observed_at,json=observedAt,proto3" json:"observed_at,omitempty"`
+	// Absent while FENCED.
+	ResolvedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=resolved_at,json=resolvedAt,proto3" json:"resolved_at,omitempty"`
+	// Unset (UNSPECIFIED) while FENCED.
+	Resolution DisputePaymentResolution `protobuf:"varint,6,opt,name=resolution,proto3,enum=aipay.payment.v1.DisputePaymentResolution" json:"resolution,omitempty"`
+	// Set only for LATE_PAYMENT.
+	LatePaymentId string `protobuf:"bytes,7,opt,name=late_payment_id,json=latePaymentId,proto3" json:"late_payment_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DisputePaymentObservation) Reset() {
+	*x = DisputePaymentObservation{}
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DisputePaymentObservation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DisputePaymentObservation) ProtoMessage() {}
+
+func (x *DisputePaymentObservation) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DisputePaymentObservation.ProtoReflect.Descriptor instead.
+func (*DisputePaymentObservation) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *DisputePaymentObservation) GetState() DisputePaymentState {
+	if x != nil {
+		return x.State
+	}
+	return DisputePaymentState_DISPUTE_PAYMENT_STATE_UNSPECIFIED
+}
+
+func (x *DisputePaymentObservation) GetUpstreamOrderId() string {
+	if x != nil {
+		return x.UpstreamOrderId
+	}
+	return ""
+}
+
+func (x *DisputePaymentObservation) GetQueryEvidenceSha256() []byte {
+	if x != nil {
+		return x.QueryEvidenceSha256
+	}
+	return nil
+}
+
+func (x *DisputePaymentObservation) GetObservedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ObservedAt
+	}
+	return nil
+}
+
+func (x *DisputePaymentObservation) GetResolvedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ResolvedAt
+	}
+	return nil
+}
+
+func (x *DisputePaymentObservation) GetResolution() DisputePaymentResolution {
+	if x != nil {
+		return x.Resolution
+	}
+	return DisputePaymentResolution_DISPUTE_PAYMENT_RESOLUTION_UNSPECIFIED
+}
+
+func (x *DisputePaymentObservation) GetLatePaymentId() string {
+	if x != nil {
+		return x.LatePaymentId
+	}
+	return ""
+}
+
+type DisputeRulingReview struct {
+	state       protoimpl.MessageState         `protogen:"open.v1"`
+	Disposition DisputeRulingReviewDisposition `protobuf:"varint,1,opt,name=disposition,proto3,enum=aipay.payment.v1.DisputeRulingReviewDisposition" json:"disposition,omitempty"`
+	Reason      string                         `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	// When reconciliation reviewed the ruling.
+	ReviewedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=reviewed_at,json=reviewedAt,proto3" json:"reviewed_at,omitempty"`
+	// When payment first recorded the review.
+	RecordedAt    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=recorded_at,json=recordedAt,proto3" json:"recorded_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DisputeRulingReview) Reset() {
+	*x = DisputeRulingReview{}
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DisputeRulingReview) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DisputeRulingReview) ProtoMessage() {}
+
+func (x *DisputeRulingReview) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DisputeRulingReview.ProtoReflect.Descriptor instead.
+func (*DisputeRulingReview) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DisputeRulingReview) GetDisposition() DisputeRulingReviewDisposition {
+	if x != nil {
+		return x.Disposition
+	}
+	return DisputeRulingReviewDisposition_DISPUTE_RULING_REVIEW_DISPOSITION_UNSPECIFIED
+}
+
+func (x *DisputeRulingReview) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *DisputeRulingReview) GetReviewedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ReviewedAt
+	}
+	return nil
+}
+
+func (x *DisputeRulingReview) GetRecordedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RecordedAt
+	}
+	return nil
+}
+
 type PlatformDisputeView struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	Dispute              *RegisteredDispute     `protobuf:"bytes,1,opt,name=dispute,proto3" json:"dispute,omitempty"`
@@ -724,13 +999,17 @@ type PlatformDisputeView struct {
 	Ruling               *PaymentApproval       `protobuf:"bytes,5,opt,name=ruling,proto3" json:"ruling,omitempty"`
 	InvestigationSummary string                 `protobuf:"bytes,6,opt,name=investigation_summary,json=investigationSummary,proto3" json:"investigation_summary,omitempty"`
 	UpdatedAt            *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Absent until payment observes the buyer's payment during this dispute.
+	PaymentObservation *DisputePaymentObservation `protobuf:"bytes,8,opt,name=payment_observation,json=paymentObservation,proto3" json:"payment_observation,omitempty"`
+	// Reconciliation's review of ruling. Absent until payment records it.
+	RulingReview  *DisputeRulingReview `protobuf:"bytes,9,opt,name=ruling_review,json=rulingReview,proto3" json:"ruling_review,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PlatformDisputeView) Reset() {
 	*x = PlatformDisputeView{}
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[6]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -742,7 +1021,7 @@ func (x *PlatformDisputeView) String() string {
 func (*PlatformDisputeView) ProtoMessage() {}
 
 func (x *PlatformDisputeView) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[6]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -755,7 +1034,7 @@ func (x *PlatformDisputeView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlatformDisputeView.ProtoReflect.Descriptor instead.
 func (*PlatformDisputeView) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{6}
+	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *PlatformDisputeView) GetDispute() *RegisteredDispute {
@@ -807,6 +1086,20 @@ func (x *PlatformDisputeView) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *PlatformDisputeView) GetPaymentObservation() *DisputePaymentObservation {
+	if x != nil {
+		return x.PaymentObservation
+	}
+	return nil
+}
+
+func (x *PlatformDisputeView) GetRulingReview() *DisputeRulingReview {
+	if x != nil {
+		return x.RulingReview
+	}
+	return nil
+}
+
 // Dedicated seller projections. No nested full order/refund/trade, merchant
 // notification configuration, recipient refund reservation, raw counterparty
 // evidence, credentials or platform approval/assertion records are permitted.
@@ -837,7 +1130,7 @@ type SellerChannelView struct {
 
 func (x *SellerChannelView) Reset() {
 	*x = SellerChannelView{}
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[7]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -849,7 +1142,7 @@ func (x *SellerChannelView) String() string {
 func (*SellerChannelView) ProtoMessage() {}
 
 func (x *SellerChannelView) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[7]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -862,7 +1155,7 @@ func (x *SellerChannelView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SellerChannelView.ProtoReflect.Descriptor instead.
 func (*SellerChannelView) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{7}
+	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SellerChannelView) GetChannelAccountId() string {
@@ -1004,7 +1297,7 @@ type SellerOrderView struct {
 
 func (x *SellerOrderView) Reset() {
 	*x = SellerOrderView{}
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[8]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1016,7 +1309,7 @@ func (x *SellerOrderView) String() string {
 func (*SellerOrderView) ProtoMessage() {}
 
 func (x *SellerOrderView) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[8]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1029,7 +1322,7 @@ func (x *SellerOrderView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SellerOrderView.ProtoReflect.Descriptor instead.
 func (*SellerOrderView) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{8}
+	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SellerOrderView) GetOrderId() string {
@@ -1191,7 +1484,7 @@ type SellerRefundView struct {
 
 func (x *SellerRefundView) Reset() {
 	*x = SellerRefundView{}
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[9]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1203,7 +1496,7 @@ func (x *SellerRefundView) String() string {
 func (*SellerRefundView) ProtoMessage() {}
 
 func (x *SellerRefundView) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[9]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1216,7 +1509,7 @@ func (x *SellerRefundView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SellerRefundView.ProtoReflect.Descriptor instead.
 func (*SellerRefundView) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{9}
+	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SellerRefundView) GetRefundId() string {
@@ -1359,7 +1652,7 @@ type SellerLatePaymentView struct {
 
 func (x *SellerLatePaymentView) Reset() {
 	*x = SellerLatePaymentView{}
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[10]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1371,7 +1664,7 @@ func (x *SellerLatePaymentView) String() string {
 func (*SellerLatePaymentView) ProtoMessage() {}
 
 func (x *SellerLatePaymentView) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[10]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1384,7 +1677,7 @@ func (x *SellerLatePaymentView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SellerLatePaymentView.ProtoReflect.Descriptor instead.
 func (*SellerLatePaymentView) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{10}
+	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SellerLatePaymentView) GetLatePaymentId() string {
@@ -1487,13 +1780,15 @@ type SellerDisputeView struct {
 	RulingOutcome        *DisputeRulingOutcome  `protobuf:"varint,12,opt,name=ruling_outcome,json=rulingOutcome,proto3,enum=aipay.payment.v1.DisputeRulingOutcome,oneof" json:"ruling_outcome,omitempty"`
 	RegisteredAt         *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=registered_at,json=registeredAt,proto3" json:"registered_at,omitempty"`
 	UpdatedAt            *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Absent without an observation. The upstream ID and evidence digest are platform-only.
+	PaymentState  *DisputePaymentState `protobuf:"varint,15,opt,name=payment_state,json=paymentState,proto3,enum=aipay.payment.v1.DisputePaymentState,oneof" json:"payment_state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SellerDisputeView) Reset() {
 	*x = SellerDisputeView{}
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[11]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1505,7 +1800,7 @@ func (x *SellerDisputeView) String() string {
 func (*SellerDisputeView) ProtoMessage() {}
 
 func (x *SellerDisputeView) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[11]
+	mi := &file_aipay_payment_v1_portal_views_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1518,7 +1813,7 @@ func (x *SellerDisputeView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SellerDisputeView.ProtoReflect.Descriptor instead.
 func (*SellerDisputeView) Descriptor() ([]byte, []int) {
-	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{11}
+	return file_aipay_payment_v1_portal_views_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SellerDisputeView) GetDisputeId() string {
@@ -1619,6 +1914,13 @@ func (x *SellerDisputeView) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *SellerDisputeView) GetPaymentState() DisputePaymentState {
+	if x != nil && x.PaymentState != nil {
+		return *x.PaymentState
+	}
+	return DisputePaymentState_DISPUTE_PAYMENT_STATE_UNSPECIFIED
+}
+
 var File_aipay_payment_v1_portal_views_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_portal_views_proto_rawDesc = "" +
@@ -1692,6 +1994,25 @@ const file_aipay_payment_v1_portal_views_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtB\x15\n" +
 	"\x13_emergency_disabled\"\xa6\x03\n" +
+	"\x19DisputePaymentObservation\x12;\n" +
+	"\x05state\x18\x01 \x01(\x0e2%.aipay.payment.v1.DisputePaymentStateR\x05state\x12*\n" +
+	"\x11upstream_order_id\x18\x02 \x01(\tR\x0fupstreamOrderId\x122\n" +
+	"\x15query_evidence_sha256\x18\x03 \x01(\fR\x13queryEvidenceSha256\x12;\n" +
+	"\vobserved_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"observedAt\x12;\n" +
+	"\vresolved_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"resolvedAt\x12J\n" +
+	"\n" +
+	"resolution\x18\x06 \x01(\x0e2*.aipay.payment.v1.DisputePaymentResolutionR\n" +
+	"resolution\x12&\n" +
+	"\x0flate_payment_id\x18\a \x01(\tR\rlatePaymentId\"\xfb\x01\n" +
+	"\x13DisputeRulingReview\x12R\n" +
+	"\vdisposition\x18\x01 \x01(\x0e20.aipay.payment.v1.DisputeRulingReviewDispositionR\vdisposition\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12;\n" +
+	"\vreviewed_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"reviewedAt\x12;\n" +
+	"\vrecorded_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"recordedAt\"\xd0\x04\n" +
 	"\x13PlatformDisputeView\x12=\n" +
 	"\adispute\x18\x01 \x01(\v2#.aipay.payment.v1.RegisteredDisputeR\adispute\x12;\n" +
 	"\x06status\x18\x02 \x01(\x0e2#.aipay.payment.v1.DisputeCaseStatusR\x06status\x12=\n" +
@@ -1700,7 +2021,9 @@ const file_aipay_payment_v1_portal_views_proto_rawDesc = "" +
 	"\x06ruling\x18\x05 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\x06ruling\x123\n" +
 	"\x15investigation_summary\x18\x06 \x01(\tR\x14investigationSummary\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x8e\x06\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\\\n" +
+	"\x13payment_observation\x18\b \x01(\v2+.aipay.payment.v1.DisputePaymentObservationR\x12paymentObservation\x12J\n" +
+	"\rruling_review\x18\t \x01(\v2%.aipay.payment.v1.DisputeRulingReviewR\frulingReview\"\x8e\x06\n" +
 	"\x11SellerChannelView\x12,\n" +
 	"\x12channel_account_id\x18\x01 \x01(\tR\x10channelAccountId\x12*\n" +
 	"\x11seller_account_id\x18\x02 \x01(\tR\x0fsellerAccountId\x12!\n" +
@@ -1793,7 +2116,7 @@ const file_aipay_payment_v1_portal_views_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xc5\x05\n" +
+	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xa8\x06\n" +
 	"\x11SellerDisputeView\x12\x1d\n" +
 	"\n" +
 	"dispute_id\x18\x01 \x01(\tR\tdisputeId\x12\x19\n" +
@@ -1811,8 +2134,10 @@ const file_aipay_payment_v1_portal_views_proto_rawDesc = "" +
 	"\x0eruling_outcome\x18\f \x01(\x0e2&.aipay.payment.v1.DisputeRulingOutcomeH\x00R\rrulingOutcome\x88\x01\x01\x12?\n" +
 	"\rregistered_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\fregisteredAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAtB\x11\n" +
-	"\x0f_ruling_outcome*z\n" +
+	"updated_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12O\n" +
+	"\rpayment_state\x18\x0f \x01(\x0e2%.aipay.payment.v1.DisputePaymentStateH\x01R\fpaymentState\x88\x01\x01B\x11\n" +
+	"\x0f_ruling_outcomeB\x10\n" +
+	"\x0e_payment_state*z\n" +
 	"\x12ConfigurationStage\x12#\n" +
 	"\x1fCONFIGURATION_STAGE_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19CONFIGURATION_STAGE_DRAFT\x10\x01\x12 \n" +
@@ -1822,7 +2147,18 @@ const file_aipay_payment_v1_portal_views_proto_rawDesc = "" +
 	"\x1eDISPUTE_CASE_STATUS_REGISTERED\x10\x01\x12&\n" +
 	"\"DISPUTE_CASE_STATUS_RULING_PENDING\x10\x02\x12'\n" +
 	"#DISPUTE_CASE_STATUS_RULING_APPROVED\x10\x03\x12 \n" +
-	"\x1cDISPUTE_CASE_STATUS_RESOLVED\x10\x04B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"\x1cDISPUTE_CASE_STATUS_RESOLVED\x10\x04*\xaa\x01\n" +
+	"\x13DisputePaymentState\x12%\n" +
+	"!DISPUTE_PAYMENT_STATE_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cDISPUTE_PAYMENT_STATE_FENCED\x10\x01\x12\"\n" +
+	"\x1eDISPUTE_PAYMENT_STATE_VERIFIED\x10\x02\x12&\n" +
+	"\"DISPUTE_PAYMENT_STATE_LATE_PAYMENT\x10\x03*\x86\x02\n" +
+	"\x18DisputePaymentResolution\x12*\n" +
+	"&DISPUTE_PAYMENT_RESOLUTION_UNSPECIFIED\x10\x00\x12(\n" +
+	"$DISPUTE_PAYMENT_RESOLUTION_NO_RULING\x10\x01\x124\n" +
+	"0DISPUTE_PAYMENT_RESOLUTION_RECONCILIATION_DENIED\x10\x02\x12-\n" +
+	")DISPUTE_PAYMENT_RESOLUTION_RULING_EXPIRED\x10\x03\x12/\n" +
+	"+DISPUTE_PAYMENT_RESOLUTION_LEDGER_CANCELLED\x10\x04B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_aipay_payment_v1_portal_views_proto_rawDescOnce sync.Once
@@ -1836,110 +2172,125 @@ func file_aipay_payment_v1_portal_views_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_portal_views_proto_rawDescData
 }
 
-var file_aipay_payment_v1_portal_views_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_aipay_payment_v1_portal_views_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_aipay_payment_v1_portal_views_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_aipay_payment_v1_portal_views_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_aipay_payment_v1_portal_views_proto_goTypes = []any{
 	(ConfigurationStage)(0),             // 0: aipay.payment.v1.ConfigurationStage
 	(DisputeCaseStatus)(0),              // 1: aipay.payment.v1.DisputeCaseStatus
-	(*ChannelAccountView)(nil),          // 2: aipay.payment.v1.ChannelAccountView
-	(*PaymentMethodView)(nil),           // 3: aipay.payment.v1.PaymentMethodView
-	(*RiskPolicyView)(nil),              // 4: aipay.payment.v1.RiskPolicyView
-	(*PricingDraftView)(nil),            // 5: aipay.payment.v1.PricingDraftView
-	(*PricingVersionView)(nil),          // 6: aipay.payment.v1.PricingVersionView
-	(*PluginVersionView)(nil),           // 7: aipay.payment.v1.PluginVersionView
-	(*PlatformDisputeView)(nil),         // 8: aipay.payment.v1.PlatformDisputeView
-	(*SellerChannelView)(nil),           // 9: aipay.payment.v1.SellerChannelView
-	(*SellerOrderView)(nil),             // 10: aipay.payment.v1.SellerOrderView
-	(*SellerRefundView)(nil),            // 11: aipay.payment.v1.SellerRefundView
-	(*SellerLatePaymentView)(nil),       // 12: aipay.payment.v1.SellerLatePaymentView
-	(*SellerDisputeView)(nil),           // 13: aipay.payment.v1.SellerDisputeView
-	(*ChannelAccountConfiguration)(nil), // 14: aipay.payment.v1.ChannelAccountConfiguration
-	(*timestamppb.Timestamp)(nil),       // 15: google.protobuf.Timestamp
-	(*PaymentMethodChange)(nil),         // 16: aipay.payment.v1.PaymentMethodChange
-	(*RiskPolicyChange)(nil),            // 17: aipay.payment.v1.RiskPolicyChange
-	(*PricingDraft)(nil),                // 18: aipay.payment.v1.PricingDraft
-	(*PricingVersionChange)(nil),        // 19: aipay.payment.v1.PricingVersionChange
-	(v1.ApprovalStatus)(0),              // 20: aipay.approval.v1.ApprovalStatus
-	(*RegisteredDispute)(nil),           // 21: aipay.payment.v1.RegisteredDispute
-	(*DisputeEvidence)(nil),             // 22: aipay.payment.v1.DisputeEvidence
-	(*PaymentApproval)(nil),             // 23: aipay.payment.v1.PaymentApproval
-	(*v11.Money)(nil),                   // 24: aipay.common.v1.Money
-	(OrderStatus)(0),                    // 25: aipay.payment.v1.OrderStatus
-	(UpstreamPaymentStatus)(0),          // 26: aipay.payment.v1.UpstreamPaymentStatus
-	(v12.TradeReservationStatus)(0),     // 27: aipay.ledger.v1.TradeReservationStatus
-	(OrderRiskStatus)(0),                // 28: aipay.payment.v1.OrderRiskStatus
-	(RefundStatus)(0),                   // 29: aipay.payment.v1.RefundStatus
-	(RefundOrigin)(0),                   // 30: aipay.payment.v1.RefundOrigin
-	(*SellerRefundEvidence)(nil),        // 31: aipay.payment.v1.SellerRefundEvidence
-	(LatePaymentStatus)(0),              // 32: aipay.payment.v1.LatePaymentStatus
-	(DisputeRulingOutcome)(0),           // 33: aipay.payment.v1.DisputeRulingOutcome
+	(DisputePaymentState)(0),            // 2: aipay.payment.v1.DisputePaymentState
+	(DisputePaymentResolution)(0),       // 3: aipay.payment.v1.DisputePaymentResolution
+	(*ChannelAccountView)(nil),          // 4: aipay.payment.v1.ChannelAccountView
+	(*PaymentMethodView)(nil),           // 5: aipay.payment.v1.PaymentMethodView
+	(*RiskPolicyView)(nil),              // 6: aipay.payment.v1.RiskPolicyView
+	(*PricingDraftView)(nil),            // 7: aipay.payment.v1.PricingDraftView
+	(*PricingVersionView)(nil),          // 8: aipay.payment.v1.PricingVersionView
+	(*PluginVersionView)(nil),           // 9: aipay.payment.v1.PluginVersionView
+	(*DisputePaymentObservation)(nil),   // 10: aipay.payment.v1.DisputePaymentObservation
+	(*DisputeRulingReview)(nil),         // 11: aipay.payment.v1.DisputeRulingReview
+	(*PlatformDisputeView)(nil),         // 12: aipay.payment.v1.PlatformDisputeView
+	(*SellerChannelView)(nil),           // 13: aipay.payment.v1.SellerChannelView
+	(*SellerOrderView)(nil),             // 14: aipay.payment.v1.SellerOrderView
+	(*SellerRefundView)(nil),            // 15: aipay.payment.v1.SellerRefundView
+	(*SellerLatePaymentView)(nil),       // 16: aipay.payment.v1.SellerLatePaymentView
+	(*SellerDisputeView)(nil),           // 17: aipay.payment.v1.SellerDisputeView
+	(*ChannelAccountConfiguration)(nil), // 18: aipay.payment.v1.ChannelAccountConfiguration
+	(*timestamppb.Timestamp)(nil),       // 19: google.protobuf.Timestamp
+	(*PaymentMethodChange)(nil),         // 20: aipay.payment.v1.PaymentMethodChange
+	(*RiskPolicyChange)(nil),            // 21: aipay.payment.v1.RiskPolicyChange
+	(*PricingDraft)(nil),                // 22: aipay.payment.v1.PricingDraft
+	(*PricingVersionChange)(nil),        // 23: aipay.payment.v1.PricingVersionChange
+	(v1.ApprovalStatus)(0),              // 24: aipay.approval.v1.ApprovalStatus
+	(DisputeRulingReviewDisposition)(0), // 25: aipay.payment.v1.DisputeRulingReviewDisposition
+	(*RegisteredDispute)(nil),           // 26: aipay.payment.v1.RegisteredDispute
+	(*DisputeEvidence)(nil),             // 27: aipay.payment.v1.DisputeEvidence
+	(*PaymentApproval)(nil),             // 28: aipay.payment.v1.PaymentApproval
+	(*v11.Money)(nil),                   // 29: aipay.common.v1.Money
+	(OrderStatus)(0),                    // 30: aipay.payment.v1.OrderStatus
+	(UpstreamPaymentStatus)(0),          // 31: aipay.payment.v1.UpstreamPaymentStatus
+	(v12.TradeReservationStatus)(0),     // 32: aipay.ledger.v1.TradeReservationStatus
+	(OrderRiskStatus)(0),                // 33: aipay.payment.v1.OrderRiskStatus
+	(RefundStatus)(0),                   // 34: aipay.payment.v1.RefundStatus
+	(RefundOrigin)(0),                   // 35: aipay.payment.v1.RefundOrigin
+	(*SellerRefundEvidence)(nil),        // 36: aipay.payment.v1.SellerRefundEvidence
+	(LatePaymentStatus)(0),              // 37: aipay.payment.v1.LatePaymentStatus
+	(DisputeRulingOutcome)(0),           // 38: aipay.payment.v1.DisputeRulingOutcome
 }
 var file_aipay_payment_v1_portal_views_proto_depIdxs = []int32{
-	14, // 0: aipay.payment.v1.ChannelAccountView.configuration:type_name -> aipay.payment.v1.ChannelAccountConfiguration
-	15, // 1: aipay.payment.v1.ChannelAccountView.disabled_at:type_name -> google.protobuf.Timestamp
-	15, // 2: aipay.payment.v1.ChannelAccountView.created_at:type_name -> google.protobuf.Timestamp
-	15, // 3: aipay.payment.v1.ChannelAccountView.updated_at:type_name -> google.protobuf.Timestamp
-	15, // 4: aipay.payment.v1.ChannelAccountView.seller_online_changed_at:type_name -> google.protobuf.Timestamp
-	16, // 5: aipay.payment.v1.PaymentMethodView.change:type_name -> aipay.payment.v1.PaymentMethodChange
+	18, // 0: aipay.payment.v1.ChannelAccountView.configuration:type_name -> aipay.payment.v1.ChannelAccountConfiguration
+	19, // 1: aipay.payment.v1.ChannelAccountView.disabled_at:type_name -> google.protobuf.Timestamp
+	19, // 2: aipay.payment.v1.ChannelAccountView.created_at:type_name -> google.protobuf.Timestamp
+	19, // 3: aipay.payment.v1.ChannelAccountView.updated_at:type_name -> google.protobuf.Timestamp
+	19, // 4: aipay.payment.v1.ChannelAccountView.seller_online_changed_at:type_name -> google.protobuf.Timestamp
+	20, // 5: aipay.payment.v1.PaymentMethodView.change:type_name -> aipay.payment.v1.PaymentMethodChange
 	0,  // 6: aipay.payment.v1.PaymentMethodView.stage:type_name -> aipay.payment.v1.ConfigurationStage
-	15, // 7: aipay.payment.v1.PaymentMethodView.created_at:type_name -> google.protobuf.Timestamp
-	15, // 8: aipay.payment.v1.PaymentMethodView.effective_at:type_name -> google.protobuf.Timestamp
-	17, // 9: aipay.payment.v1.RiskPolicyView.change:type_name -> aipay.payment.v1.RiskPolicyChange
+	19, // 7: aipay.payment.v1.PaymentMethodView.created_at:type_name -> google.protobuf.Timestamp
+	19, // 8: aipay.payment.v1.PaymentMethodView.effective_at:type_name -> google.protobuf.Timestamp
+	21, // 9: aipay.payment.v1.RiskPolicyView.change:type_name -> aipay.payment.v1.RiskPolicyChange
 	0,  // 10: aipay.payment.v1.RiskPolicyView.stage:type_name -> aipay.payment.v1.ConfigurationStage
-	15, // 11: aipay.payment.v1.RiskPolicyView.created_at:type_name -> google.protobuf.Timestamp
-	15, // 12: aipay.payment.v1.RiskPolicyView.effective_at:type_name -> google.protobuf.Timestamp
-	18, // 13: aipay.payment.v1.PricingDraftView.draft:type_name -> aipay.payment.v1.PricingDraft
-	15, // 14: aipay.payment.v1.PricingDraftView.created_at:type_name -> google.protobuf.Timestamp
-	15, // 15: aipay.payment.v1.PricingDraftView.updated_at:type_name -> google.protobuf.Timestamp
-	19, // 16: aipay.payment.v1.PricingVersionView.change:type_name -> aipay.payment.v1.PricingVersionChange
-	15, // 17: aipay.payment.v1.PricingVersionView.approved_at:type_name -> google.protobuf.Timestamp
-	15, // 18: aipay.payment.v1.PricingVersionView.effective_at:type_name -> google.protobuf.Timestamp
-	15, // 19: aipay.payment.v1.PricingVersionView.created_at:type_name -> google.protobuf.Timestamp
-	20, // 20: aipay.payment.v1.PluginVersionView.publication_status:type_name -> aipay.approval.v1.ApprovalStatus
-	15, // 21: aipay.payment.v1.PluginVersionView.disabled_at:type_name -> google.protobuf.Timestamp
-	15, // 22: aipay.payment.v1.PluginVersionView.created_at:type_name -> google.protobuf.Timestamp
-	21, // 23: aipay.payment.v1.PlatformDisputeView.dispute:type_name -> aipay.payment.v1.RegisteredDispute
-	1,  // 24: aipay.payment.v1.PlatformDisputeView.status:type_name -> aipay.payment.v1.DisputeCaseStatus
-	22, // 25: aipay.payment.v1.PlatformDisputeView.evidence:type_name -> aipay.payment.v1.DisputeEvidence
-	23, // 26: aipay.payment.v1.PlatformDisputeView.ruling:type_name -> aipay.payment.v1.PaymentApproval
-	15, // 27: aipay.payment.v1.PlatformDisputeView.updated_at:type_name -> google.protobuf.Timestamp
-	15, // 28: aipay.payment.v1.SellerChannelView.seller_online_changed_at:type_name -> google.protobuf.Timestamp
-	24, // 29: aipay.payment.v1.SellerOrderView.fiat_amount:type_name -> aipay.common.v1.Money
-	24, // 30: aipay.payment.v1.SellerOrderView.escrow_usdt:type_name -> aipay.common.v1.Money
-	25, // 31: aipay.payment.v1.SellerOrderView.status:type_name -> aipay.payment.v1.OrderStatus
-	26, // 32: aipay.payment.v1.SellerOrderView.upstream_payment_status:type_name -> aipay.payment.v1.UpstreamPaymentStatus
-	27, // 33: aipay.payment.v1.SellerOrderView.escrow_status:type_name -> aipay.ledger.v1.TradeReservationStatus
-	28, // 34: aipay.payment.v1.SellerOrderView.risk_status:type_name -> aipay.payment.v1.OrderRiskStatus
-	15, // 35: aipay.payment.v1.SellerOrderView.paid_verified_at:type_name -> google.protobuf.Timestamp
-	15, // 36: aipay.payment.v1.SellerOrderView.risk_release_at:type_name -> google.protobuf.Timestamp
-	15, // 37: aipay.payment.v1.SellerOrderView.effective_risk_release_at:type_name -> google.protobuf.Timestamp
-	15, // 38: aipay.payment.v1.SellerOrderView.created_at:type_name -> google.protobuf.Timestamp
-	15, // 39: aipay.payment.v1.SellerOrderView.updated_at:type_name -> google.protobuf.Timestamp
-	29, // 40: aipay.payment.v1.SellerRefundView.status:type_name -> aipay.payment.v1.RefundStatus
-	24, // 41: aipay.payment.v1.SellerRefundView.fiat_amount:type_name -> aipay.common.v1.Money
-	15, // 42: aipay.payment.v1.SellerRefundView.created_at:type_name -> google.protobuf.Timestamp
-	15, // 43: aipay.payment.v1.SellerRefundView.updated_at:type_name -> google.protobuf.Timestamp
-	15, // 44: aipay.payment.v1.SellerRefundView.verified_at:type_name -> google.protobuf.Timestamp
-	30, // 45: aipay.payment.v1.SellerRefundView.origin:type_name -> aipay.payment.v1.RefundOrigin
-	15, // 46: aipay.payment.v1.SellerRefundView.seller_due_at:type_name -> google.protobuf.Timestamp
-	15, // 47: aipay.payment.v1.SellerRefundView.objection_deadline:type_name -> google.protobuf.Timestamp
-	31, // 48: aipay.payment.v1.SellerRefundView.evidence:type_name -> aipay.payment.v1.SellerRefundEvidence
-	24, // 49: aipay.payment.v1.SellerLatePaymentView.fiat_amount:type_name -> aipay.common.v1.Money
-	32, // 50: aipay.payment.v1.SellerLatePaymentView.status:type_name -> aipay.payment.v1.LatePaymentStatus
-	15, // 51: aipay.payment.v1.SellerLatePaymentView.seller_due_at:type_name -> google.protobuf.Timestamp
-	15, // 52: aipay.payment.v1.SellerLatePaymentView.detected_at:type_name -> google.protobuf.Timestamp
-	31, // 53: aipay.payment.v1.SellerLatePaymentView.evidence:type_name -> aipay.payment.v1.SellerRefundEvidence
-	15, // 54: aipay.payment.v1.SellerLatePaymentView.created_at:type_name -> google.protobuf.Timestamp
-	15, // 55: aipay.payment.v1.SellerLatePaymentView.updated_at:type_name -> google.protobuf.Timestamp
-	1,  // 56: aipay.payment.v1.SellerDisputeView.status:type_name -> aipay.payment.v1.DisputeCaseStatus
-	33, // 57: aipay.payment.v1.SellerDisputeView.ruling_outcome:type_name -> aipay.payment.v1.DisputeRulingOutcome
-	15, // 58: aipay.payment.v1.SellerDisputeView.registered_at:type_name -> google.protobuf.Timestamp
-	15, // 59: aipay.payment.v1.SellerDisputeView.updated_at:type_name -> google.protobuf.Timestamp
-	60, // [60:60] is the sub-list for method output_type
-	60, // [60:60] is the sub-list for method input_type
-	60, // [60:60] is the sub-list for extension type_name
-	60, // [60:60] is the sub-list for extension extendee
-	0,  // [0:60] is the sub-list for field type_name
+	19, // 11: aipay.payment.v1.RiskPolicyView.created_at:type_name -> google.protobuf.Timestamp
+	19, // 12: aipay.payment.v1.RiskPolicyView.effective_at:type_name -> google.protobuf.Timestamp
+	22, // 13: aipay.payment.v1.PricingDraftView.draft:type_name -> aipay.payment.v1.PricingDraft
+	19, // 14: aipay.payment.v1.PricingDraftView.created_at:type_name -> google.protobuf.Timestamp
+	19, // 15: aipay.payment.v1.PricingDraftView.updated_at:type_name -> google.protobuf.Timestamp
+	23, // 16: aipay.payment.v1.PricingVersionView.change:type_name -> aipay.payment.v1.PricingVersionChange
+	19, // 17: aipay.payment.v1.PricingVersionView.approved_at:type_name -> google.protobuf.Timestamp
+	19, // 18: aipay.payment.v1.PricingVersionView.effective_at:type_name -> google.protobuf.Timestamp
+	19, // 19: aipay.payment.v1.PricingVersionView.created_at:type_name -> google.protobuf.Timestamp
+	24, // 20: aipay.payment.v1.PluginVersionView.publication_status:type_name -> aipay.approval.v1.ApprovalStatus
+	19, // 21: aipay.payment.v1.PluginVersionView.disabled_at:type_name -> google.protobuf.Timestamp
+	19, // 22: aipay.payment.v1.PluginVersionView.created_at:type_name -> google.protobuf.Timestamp
+	2,  // 23: aipay.payment.v1.DisputePaymentObservation.state:type_name -> aipay.payment.v1.DisputePaymentState
+	19, // 24: aipay.payment.v1.DisputePaymentObservation.observed_at:type_name -> google.protobuf.Timestamp
+	19, // 25: aipay.payment.v1.DisputePaymentObservation.resolved_at:type_name -> google.protobuf.Timestamp
+	3,  // 26: aipay.payment.v1.DisputePaymentObservation.resolution:type_name -> aipay.payment.v1.DisputePaymentResolution
+	25, // 27: aipay.payment.v1.DisputeRulingReview.disposition:type_name -> aipay.payment.v1.DisputeRulingReviewDisposition
+	19, // 28: aipay.payment.v1.DisputeRulingReview.reviewed_at:type_name -> google.protobuf.Timestamp
+	19, // 29: aipay.payment.v1.DisputeRulingReview.recorded_at:type_name -> google.protobuf.Timestamp
+	26, // 30: aipay.payment.v1.PlatformDisputeView.dispute:type_name -> aipay.payment.v1.RegisteredDispute
+	1,  // 31: aipay.payment.v1.PlatformDisputeView.status:type_name -> aipay.payment.v1.DisputeCaseStatus
+	27, // 32: aipay.payment.v1.PlatformDisputeView.evidence:type_name -> aipay.payment.v1.DisputeEvidence
+	28, // 33: aipay.payment.v1.PlatformDisputeView.ruling:type_name -> aipay.payment.v1.PaymentApproval
+	19, // 34: aipay.payment.v1.PlatformDisputeView.updated_at:type_name -> google.protobuf.Timestamp
+	10, // 35: aipay.payment.v1.PlatformDisputeView.payment_observation:type_name -> aipay.payment.v1.DisputePaymentObservation
+	11, // 36: aipay.payment.v1.PlatformDisputeView.ruling_review:type_name -> aipay.payment.v1.DisputeRulingReview
+	19, // 37: aipay.payment.v1.SellerChannelView.seller_online_changed_at:type_name -> google.protobuf.Timestamp
+	29, // 38: aipay.payment.v1.SellerOrderView.fiat_amount:type_name -> aipay.common.v1.Money
+	29, // 39: aipay.payment.v1.SellerOrderView.escrow_usdt:type_name -> aipay.common.v1.Money
+	30, // 40: aipay.payment.v1.SellerOrderView.status:type_name -> aipay.payment.v1.OrderStatus
+	31, // 41: aipay.payment.v1.SellerOrderView.upstream_payment_status:type_name -> aipay.payment.v1.UpstreamPaymentStatus
+	32, // 42: aipay.payment.v1.SellerOrderView.escrow_status:type_name -> aipay.ledger.v1.TradeReservationStatus
+	33, // 43: aipay.payment.v1.SellerOrderView.risk_status:type_name -> aipay.payment.v1.OrderRiskStatus
+	19, // 44: aipay.payment.v1.SellerOrderView.paid_verified_at:type_name -> google.protobuf.Timestamp
+	19, // 45: aipay.payment.v1.SellerOrderView.risk_release_at:type_name -> google.protobuf.Timestamp
+	19, // 46: aipay.payment.v1.SellerOrderView.effective_risk_release_at:type_name -> google.protobuf.Timestamp
+	19, // 47: aipay.payment.v1.SellerOrderView.created_at:type_name -> google.protobuf.Timestamp
+	19, // 48: aipay.payment.v1.SellerOrderView.updated_at:type_name -> google.protobuf.Timestamp
+	34, // 49: aipay.payment.v1.SellerRefundView.status:type_name -> aipay.payment.v1.RefundStatus
+	29, // 50: aipay.payment.v1.SellerRefundView.fiat_amount:type_name -> aipay.common.v1.Money
+	19, // 51: aipay.payment.v1.SellerRefundView.created_at:type_name -> google.protobuf.Timestamp
+	19, // 52: aipay.payment.v1.SellerRefundView.updated_at:type_name -> google.protobuf.Timestamp
+	19, // 53: aipay.payment.v1.SellerRefundView.verified_at:type_name -> google.protobuf.Timestamp
+	35, // 54: aipay.payment.v1.SellerRefundView.origin:type_name -> aipay.payment.v1.RefundOrigin
+	19, // 55: aipay.payment.v1.SellerRefundView.seller_due_at:type_name -> google.protobuf.Timestamp
+	19, // 56: aipay.payment.v1.SellerRefundView.objection_deadline:type_name -> google.protobuf.Timestamp
+	36, // 57: aipay.payment.v1.SellerRefundView.evidence:type_name -> aipay.payment.v1.SellerRefundEvidence
+	29, // 58: aipay.payment.v1.SellerLatePaymentView.fiat_amount:type_name -> aipay.common.v1.Money
+	37, // 59: aipay.payment.v1.SellerLatePaymentView.status:type_name -> aipay.payment.v1.LatePaymentStatus
+	19, // 60: aipay.payment.v1.SellerLatePaymentView.seller_due_at:type_name -> google.protobuf.Timestamp
+	19, // 61: aipay.payment.v1.SellerLatePaymentView.detected_at:type_name -> google.protobuf.Timestamp
+	36, // 62: aipay.payment.v1.SellerLatePaymentView.evidence:type_name -> aipay.payment.v1.SellerRefundEvidence
+	19, // 63: aipay.payment.v1.SellerLatePaymentView.created_at:type_name -> google.protobuf.Timestamp
+	19, // 64: aipay.payment.v1.SellerLatePaymentView.updated_at:type_name -> google.protobuf.Timestamp
+	1,  // 65: aipay.payment.v1.SellerDisputeView.status:type_name -> aipay.payment.v1.DisputeCaseStatus
+	38, // 66: aipay.payment.v1.SellerDisputeView.ruling_outcome:type_name -> aipay.payment.v1.DisputeRulingOutcome
+	19, // 67: aipay.payment.v1.SellerDisputeView.registered_at:type_name -> google.protobuf.Timestamp
+	19, // 68: aipay.payment.v1.SellerDisputeView.updated_at:type_name -> google.protobuf.Timestamp
+	2,  // 69: aipay.payment.v1.SellerDisputeView.payment_state:type_name -> aipay.payment.v1.DisputePaymentState
+	70, // [70:70] is the sub-list for method output_type
+	70, // [70:70] is the sub-list for method input_type
+	70, // [70:70] is the sub-list for extension type_name
+	70, // [70:70] is the sub-list for extension extendee
+	0,  // [0:70] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_portal_views_proto_init() }
@@ -1954,17 +2305,17 @@ func file_aipay_payment_v1_portal_views_proto_init() {
 	file_aipay_payment_v1_seller_refund_proto_init()
 	file_aipay_payment_v1_portal_views_proto_msgTypes[0].OneofWrappers = []any{}
 	file_aipay_payment_v1_portal_views_proto_msgTypes[5].OneofWrappers = []any{}
-	file_aipay_payment_v1_portal_views_proto_msgTypes[7].OneofWrappers = []any{}
-	file_aipay_payment_v1_portal_views_proto_msgTypes[8].OneofWrappers = []any{}
 	file_aipay_payment_v1_portal_views_proto_msgTypes[9].OneofWrappers = []any{}
+	file_aipay_payment_v1_portal_views_proto_msgTypes[10].OneofWrappers = []any{}
 	file_aipay_payment_v1_portal_views_proto_msgTypes[11].OneofWrappers = []any{}
+	file_aipay_payment_v1_portal_views_proto_msgTypes[13].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_portal_views_proto_rawDesc), len(file_aipay_payment_v1_portal_views_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   12,
+			NumEnums:      4,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

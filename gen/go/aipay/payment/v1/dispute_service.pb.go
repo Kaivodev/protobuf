@@ -25,6 +25,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type DisputeRulingReviewDisposition int32
+
+const (
+	DisputeRulingReviewDisposition_DISPUTE_RULING_REVIEW_DISPOSITION_UNSPECIFIED DisputeRulingReviewDisposition = 0
+	DisputeRulingReviewDisposition_DISPUTE_RULING_REVIEW_DISPOSITION_DENIED      DisputeRulingReviewDisposition = 1
+	DisputeRulingReviewDisposition_DISPUTE_RULING_REVIEW_DISPOSITION_QUARANTINED DisputeRulingReviewDisposition = 2
+)
+
+// Enum value maps for DisputeRulingReviewDisposition.
+var (
+	DisputeRulingReviewDisposition_name = map[int32]string{
+		0: "DISPUTE_RULING_REVIEW_DISPOSITION_UNSPECIFIED",
+		1: "DISPUTE_RULING_REVIEW_DISPOSITION_DENIED",
+		2: "DISPUTE_RULING_REVIEW_DISPOSITION_QUARANTINED",
+	}
+	DisputeRulingReviewDisposition_value = map[string]int32{
+		"DISPUTE_RULING_REVIEW_DISPOSITION_UNSPECIFIED": 0,
+		"DISPUTE_RULING_REVIEW_DISPOSITION_DENIED":      1,
+		"DISPUTE_RULING_REVIEW_DISPOSITION_QUARANTINED": 2,
+	}
+)
+
+func (x DisputeRulingReviewDisposition) Enum() *DisputeRulingReviewDisposition {
+	p := new(DisputeRulingReviewDisposition)
+	*p = x
+	return p
+}
+
+func (x DisputeRulingReviewDisposition) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DisputeRulingReviewDisposition) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_dispute_service_proto_enumTypes[0].Descriptor()
+}
+
+func (DisputeRulingReviewDisposition) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_dispute_service_proto_enumTypes[0]
+}
+
+func (x DisputeRulingReviewDisposition) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DisputeRulingReviewDisposition.Descriptor instead.
+func (DisputeRulingReviewDisposition) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_dispute_service_proto_rawDescGZIP(), []int{0}
+}
+
 // Fact recorded only after ledger confirms the matching dispute barrier.
 // Amounts/owners are original; a post-release hold controls only H actually
 // recovered into the original recipient's risk account, never the old seller
@@ -528,8 +577,9 @@ func (x *GetDisputeRulingRequest) GetRulingId() string {
 
 type GetDisputeRulingResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Exact original request bytes, typed material, digest, status and every
-	// original WebAuthn approval; no public keys or trusted identity mapping.
+	// Reconciliation alone receives the original request bytes, typed material,
+	// digest, status and complete original assertions for independent verification.
+	// Public keys and trusted identity mappings stay with reconciliation.
 	Approval      *PaymentApproval `protobuf:"bytes,1,opt,name=approval,proto3" json:"approval,omitempty"`
 	Evidence      *DisputeEvidence `protobuf:"bytes,2,opt,name=evidence,proto3" json:"evidence,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -580,6 +630,156 @@ func (x *GetDisputeRulingResponse) GetEvidence() *DisputeEvidence {
 	return nil
 }
 
+// All IDs must match the ruling material.
+type ReportDisputeRulingReviewRequest struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	RulingId            string                 `protobuf:"bytes,1,opt,name=ruling_id,json=rulingId,proto3" json:"ruling_id,omitempty"`
+	DisputeId           string                 `protobuf:"bytes,2,opt,name=dispute_id,json=disputeId,proto3" json:"dispute_id,omitempty"`
+	OrderId             string                 `protobuf:"bytes,3,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	EscrowReservationId string                 `protobuf:"bytes,4,opt,name=escrow_reservation_id,json=escrowReservationId,proto3" json:"escrow_reservation_id,omitempty"`
+	// The ruling material's expected_control_version.
+	ControlVersion uint64 `protobuf:"varint,5,opt,name=control_version,json=controlVersion,proto3" json:"control_version,omitempty"`
+	// UNSPECIFIED returns INVALID_ARGUMENT.
+	Disposition DisputeRulingReviewDisposition `protobuf:"varint,6,opt,name=disposition,proto3,enum=aipay.payment.v1.DisputeRulingReviewDisposition" json:"disposition,omitempty"`
+	// Reconciliation's lower-case reason code, 1-64 characters from [a-z_].
+	Reason string `protobuf:"bytes,7,opt,name=reason,proto3" json:"reason,omitempty"`
+	// UTC at microsecond precision.
+	ReviewedAt    *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=reviewed_at,json=reviewedAt,proto3" json:"reviewed_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportDisputeRulingReviewRequest) Reset() {
+	*x = ReportDisputeRulingReviewRequest{}
+	mi := &file_aipay_payment_v1_dispute_service_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportDisputeRulingReviewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportDisputeRulingReviewRequest) ProtoMessage() {}
+
+func (x *ReportDisputeRulingReviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_dispute_service_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportDisputeRulingReviewRequest.ProtoReflect.Descriptor instead.
+func (*ReportDisputeRulingReviewRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_dispute_service_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ReportDisputeRulingReviewRequest) GetRulingId() string {
+	if x != nil {
+		return x.RulingId
+	}
+	return ""
+}
+
+func (x *ReportDisputeRulingReviewRequest) GetDisputeId() string {
+	if x != nil {
+		return x.DisputeId
+	}
+	return ""
+}
+
+func (x *ReportDisputeRulingReviewRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *ReportDisputeRulingReviewRequest) GetEscrowReservationId() string {
+	if x != nil {
+		return x.EscrowReservationId
+	}
+	return ""
+}
+
+func (x *ReportDisputeRulingReviewRequest) GetControlVersion() uint64 {
+	if x != nil {
+		return x.ControlVersion
+	}
+	return 0
+}
+
+func (x *ReportDisputeRulingReviewRequest) GetDisposition() DisputeRulingReviewDisposition {
+	if x != nil {
+		return x.Disposition
+	}
+	return DisputeRulingReviewDisposition_DISPUTE_RULING_REVIEW_DISPOSITION_UNSPECIFIED
+}
+
+func (x *ReportDisputeRulingReviewRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *ReportDisputeRulingReviewRequest) GetReviewedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ReviewedAt
+	}
+	return nil
+}
+
+type ReportDisputeRulingReviewResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// True only when this call records the review. An identical retry returns false.
+	Recorded      bool `protobuf:"varint,1,opt,name=recorded,proto3" json:"recorded,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportDisputeRulingReviewResponse) Reset() {
+	*x = ReportDisputeRulingReviewResponse{}
+	mi := &file_aipay_payment_v1_dispute_service_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportDisputeRulingReviewResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportDisputeRulingReviewResponse) ProtoMessage() {}
+
+func (x *ReportDisputeRulingReviewResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_dispute_service_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportDisputeRulingReviewResponse.ProtoReflect.Descriptor instead.
+func (*ReportDisputeRulingReviewResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_dispute_service_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ReportDisputeRulingReviewResponse) GetRecorded() bool {
+	if x != nil {
+		return x.Recorded
+	}
+	return false
+}
+
 var File_aipay_payment_v1_dispute_service_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_dispute_service_proto_rawDesc = "" +
@@ -623,7 +823,24 @@ const file_aipay_payment_v1_dispute_service_proto_rawDesc = "" +
 	"\truling_id\x18\x01 \x01(\tR\brulingId\"\x98\x01\n" +
 	"\x18GetDisputeRulingResponse\x12=\n" +
 	"\bapproval\x18\x01 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\bapproval\x12=\n" +
-	"\bevidence\x18\x02 \x01(\v2!.aipay.payment.v1.DisputeEvidenceR\bevidence2\xf0\x04\n" +
+	"\bevidence\x18\x02 \x01(\v2!.aipay.payment.v1.DisputeEvidenceR\bevidence\"\xff\x02\n" +
+	" ReportDisputeRulingReviewRequest\x12\x1b\n" +
+	"\truling_id\x18\x01 \x01(\tR\brulingId\x12\x1d\n" +
+	"\n" +
+	"dispute_id\x18\x02 \x01(\tR\tdisputeId\x12\x19\n" +
+	"\border_id\x18\x03 \x01(\tR\aorderId\x122\n" +
+	"\x15escrow_reservation_id\x18\x04 \x01(\tR\x13escrowReservationId\x12'\n" +
+	"\x0fcontrol_version\x18\x05 \x01(\x04R\x0econtrolVersion\x12R\n" +
+	"\vdisposition\x18\x06 \x01(\x0e20.aipay.payment.v1.DisputeRulingReviewDispositionR\vdisposition\x12\x16\n" +
+	"\x06reason\x18\a \x01(\tR\x06reason\x12;\n" +
+	"\vreviewed_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"reviewedAt\"?\n" +
+	"!ReportDisputeRulingReviewResponse\x12\x1a\n" +
+	"\brecorded\x18\x01 \x01(\bR\brecorded*\xb4\x01\n" +
+	"\x1eDisputeRulingReviewDisposition\x121\n" +
+	"-DISPUTE_RULING_REVIEW_DISPOSITION_UNSPECIFIED\x10\x00\x12,\n" +
+	"(DISPUTE_RULING_REVIEW_DISPOSITION_DENIED\x10\x01\x121\n" +
+	"-DISPUTE_RULING_REVIEW_DISPOSITION_QUARANTINED\x10\x022\x91\x06\n" +
 	"\x0eDisputeService\x12\x93\x01\n" +
 	"\x0fRegisterDispute\x12(.aipay.payment.v1.RegisterDisputeRequest\x1a).aipay.payment.v1.RegisterDisputeResponse\"+\xc2\xf3\x18'\n" +
 	"%\n" +
@@ -635,6 +852,9 @@ const file_aipay_payment_v1_dispute_service_proto_rawDesc = "" +
 	"$\n" +
 	"\abackend\x10\x02\x1a\x17payment.dispute.approve\x12\x83\x01\n" +
 	"\x10GetDisputeRuling\x12).aipay.payment.v1.GetDisputeRulingRequest\x1a*.aipay.payment.v1.GetDisputeRulingResponse\"\x18\xc2\xf3\x18\x14\n" +
+	"\x12\n" +
+	"\x0ereconciliation\x10\x01\x12\x9e\x01\n" +
+	"\x19ReportDisputeRulingReview\x122.aipay.payment.v1.ReportDisputeRulingReviewRequest\x1a3.aipay.payment.v1.ReportDisputeRulingReviewResponse\"\x18\xc2\xf3\x18\x14\n" +
 	"\x12\n" +
 	"\x0ereconciliation\x10\x01B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
@@ -650,48 +870,56 @@ func file_aipay_payment_v1_dispute_service_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_dispute_service_proto_rawDescData
 }
 
-var file_aipay_payment_v1_dispute_service_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_aipay_payment_v1_dispute_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_aipay_payment_v1_dispute_service_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_aipay_payment_v1_dispute_service_proto_goTypes = []any{
-	(*RegisteredDispute)(nil),            // 0: aipay.payment.v1.RegisteredDispute
-	(*RegisterDisputeRequest)(nil),       // 1: aipay.payment.v1.RegisterDisputeRequest
-	(*RegisterDisputeResponse)(nil),      // 2: aipay.payment.v1.RegisterDisputeResponse
-	(*SubmitDisputeRulingRequest)(nil),   // 3: aipay.payment.v1.SubmitDisputeRulingRequest
-	(*SubmitDisputeRulingResponse)(nil),  // 4: aipay.payment.v1.SubmitDisputeRulingResponse
-	(*ApproveDisputeRulingRequest)(nil),  // 5: aipay.payment.v1.ApproveDisputeRulingRequest
-	(*ApproveDisputeRulingResponse)(nil), // 6: aipay.payment.v1.ApproveDisputeRulingResponse
-	(*GetDisputeRulingRequest)(nil),      // 7: aipay.payment.v1.GetDisputeRulingRequest
-	(*GetDisputeRulingResponse)(nil),     // 8: aipay.payment.v1.GetDisputeRulingResponse
-	(*v1.TradeSnapshot)(nil),             // 9: aipay.common.v1.TradeSnapshot
-	(*timestamppb.Timestamp)(nil),        // 10: google.protobuf.Timestamp
-	(*DisputeEvidence)(nil),              // 11: aipay.payment.v1.DisputeEvidence
-	(DisputeRulingOutcome)(0),            // 12: aipay.payment.v1.DisputeRulingOutcome
-	(*PaymentApproval)(nil),              // 13: aipay.payment.v1.PaymentApproval
-	(*v11.WebAuthnAssertion)(nil),        // 14: aipay.approval.v1.WebAuthnAssertion
+	(DisputeRulingReviewDisposition)(0),       // 0: aipay.payment.v1.DisputeRulingReviewDisposition
+	(*RegisteredDispute)(nil),                 // 1: aipay.payment.v1.RegisteredDispute
+	(*RegisterDisputeRequest)(nil),            // 2: aipay.payment.v1.RegisterDisputeRequest
+	(*RegisterDisputeResponse)(nil),           // 3: aipay.payment.v1.RegisterDisputeResponse
+	(*SubmitDisputeRulingRequest)(nil),        // 4: aipay.payment.v1.SubmitDisputeRulingRequest
+	(*SubmitDisputeRulingResponse)(nil),       // 5: aipay.payment.v1.SubmitDisputeRulingResponse
+	(*ApproveDisputeRulingRequest)(nil),       // 6: aipay.payment.v1.ApproveDisputeRulingRequest
+	(*ApproveDisputeRulingResponse)(nil),      // 7: aipay.payment.v1.ApproveDisputeRulingResponse
+	(*GetDisputeRulingRequest)(nil),           // 8: aipay.payment.v1.GetDisputeRulingRequest
+	(*GetDisputeRulingResponse)(nil),          // 9: aipay.payment.v1.GetDisputeRulingResponse
+	(*ReportDisputeRulingReviewRequest)(nil),  // 10: aipay.payment.v1.ReportDisputeRulingReviewRequest
+	(*ReportDisputeRulingReviewResponse)(nil), // 11: aipay.payment.v1.ReportDisputeRulingReviewResponse
+	(*v1.TradeSnapshot)(nil),                  // 12: aipay.common.v1.TradeSnapshot
+	(*timestamppb.Timestamp)(nil),             // 13: google.protobuf.Timestamp
+	(*DisputeEvidence)(nil),                   // 14: aipay.payment.v1.DisputeEvidence
+	(DisputeRulingOutcome)(0),                 // 15: aipay.payment.v1.DisputeRulingOutcome
+	(*PaymentApproval)(nil),                   // 16: aipay.payment.v1.PaymentApproval
+	(*v11.WebAuthnAssertion)(nil),             // 17: aipay.approval.v1.WebAuthnAssertion
 }
 var file_aipay_payment_v1_dispute_service_proto_depIdxs = []int32{
-	9,  // 0: aipay.payment.v1.RegisteredDispute.trade:type_name -> aipay.common.v1.TradeSnapshot
-	10, // 1: aipay.payment.v1.RegisteredDispute.registered_at:type_name -> google.protobuf.Timestamp
-	11, // 2: aipay.payment.v1.RegisterDisputeRequest.evidence:type_name -> aipay.payment.v1.DisputeEvidence
-	0,  // 3: aipay.payment.v1.RegisterDisputeResponse.dispute:type_name -> aipay.payment.v1.RegisteredDispute
-	12, // 4: aipay.payment.v1.SubmitDisputeRulingRequest.outcome:type_name -> aipay.payment.v1.DisputeRulingOutcome
-	13, // 5: aipay.payment.v1.SubmitDisputeRulingResponse.approval:type_name -> aipay.payment.v1.PaymentApproval
-	14, // 6: aipay.payment.v1.ApproveDisputeRulingRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
-	13, // 7: aipay.payment.v1.ApproveDisputeRulingResponse.approval:type_name -> aipay.payment.v1.PaymentApproval
-	13, // 8: aipay.payment.v1.GetDisputeRulingResponse.approval:type_name -> aipay.payment.v1.PaymentApproval
-	11, // 9: aipay.payment.v1.GetDisputeRulingResponse.evidence:type_name -> aipay.payment.v1.DisputeEvidence
-	1,  // 10: aipay.payment.v1.DisputeService.RegisterDispute:input_type -> aipay.payment.v1.RegisterDisputeRequest
-	3,  // 11: aipay.payment.v1.DisputeService.SubmitDisputeRuling:input_type -> aipay.payment.v1.SubmitDisputeRulingRequest
-	5,  // 12: aipay.payment.v1.DisputeService.ApproveDisputeRuling:input_type -> aipay.payment.v1.ApproveDisputeRulingRequest
-	7,  // 13: aipay.payment.v1.DisputeService.GetDisputeRuling:input_type -> aipay.payment.v1.GetDisputeRulingRequest
-	2,  // 14: aipay.payment.v1.DisputeService.RegisterDispute:output_type -> aipay.payment.v1.RegisterDisputeResponse
-	4,  // 15: aipay.payment.v1.DisputeService.SubmitDisputeRuling:output_type -> aipay.payment.v1.SubmitDisputeRulingResponse
-	6,  // 16: aipay.payment.v1.DisputeService.ApproveDisputeRuling:output_type -> aipay.payment.v1.ApproveDisputeRulingResponse
-	8,  // 17: aipay.payment.v1.DisputeService.GetDisputeRuling:output_type -> aipay.payment.v1.GetDisputeRulingResponse
-	14, // [14:18] is the sub-list for method output_type
-	10, // [10:14] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	12, // 0: aipay.payment.v1.RegisteredDispute.trade:type_name -> aipay.common.v1.TradeSnapshot
+	13, // 1: aipay.payment.v1.RegisteredDispute.registered_at:type_name -> google.protobuf.Timestamp
+	14, // 2: aipay.payment.v1.RegisterDisputeRequest.evidence:type_name -> aipay.payment.v1.DisputeEvidence
+	1,  // 3: aipay.payment.v1.RegisterDisputeResponse.dispute:type_name -> aipay.payment.v1.RegisteredDispute
+	15, // 4: aipay.payment.v1.SubmitDisputeRulingRequest.outcome:type_name -> aipay.payment.v1.DisputeRulingOutcome
+	16, // 5: aipay.payment.v1.SubmitDisputeRulingResponse.approval:type_name -> aipay.payment.v1.PaymentApproval
+	17, // 6: aipay.payment.v1.ApproveDisputeRulingRequest.assertion:type_name -> aipay.approval.v1.WebAuthnAssertion
+	16, // 7: aipay.payment.v1.ApproveDisputeRulingResponse.approval:type_name -> aipay.payment.v1.PaymentApproval
+	16, // 8: aipay.payment.v1.GetDisputeRulingResponse.approval:type_name -> aipay.payment.v1.PaymentApproval
+	14, // 9: aipay.payment.v1.GetDisputeRulingResponse.evidence:type_name -> aipay.payment.v1.DisputeEvidence
+	0,  // 10: aipay.payment.v1.ReportDisputeRulingReviewRequest.disposition:type_name -> aipay.payment.v1.DisputeRulingReviewDisposition
+	13, // 11: aipay.payment.v1.ReportDisputeRulingReviewRequest.reviewed_at:type_name -> google.protobuf.Timestamp
+	2,  // 12: aipay.payment.v1.DisputeService.RegisterDispute:input_type -> aipay.payment.v1.RegisterDisputeRequest
+	4,  // 13: aipay.payment.v1.DisputeService.SubmitDisputeRuling:input_type -> aipay.payment.v1.SubmitDisputeRulingRequest
+	6,  // 14: aipay.payment.v1.DisputeService.ApproveDisputeRuling:input_type -> aipay.payment.v1.ApproveDisputeRulingRequest
+	8,  // 15: aipay.payment.v1.DisputeService.GetDisputeRuling:input_type -> aipay.payment.v1.GetDisputeRulingRequest
+	10, // 16: aipay.payment.v1.DisputeService.ReportDisputeRulingReview:input_type -> aipay.payment.v1.ReportDisputeRulingReviewRequest
+	3,  // 17: aipay.payment.v1.DisputeService.RegisterDispute:output_type -> aipay.payment.v1.RegisterDisputeResponse
+	5,  // 18: aipay.payment.v1.DisputeService.SubmitDisputeRuling:output_type -> aipay.payment.v1.SubmitDisputeRulingResponse
+	7,  // 19: aipay.payment.v1.DisputeService.ApproveDisputeRuling:output_type -> aipay.payment.v1.ApproveDisputeRulingResponse
+	9,  // 20: aipay.payment.v1.DisputeService.GetDisputeRuling:output_type -> aipay.payment.v1.GetDisputeRulingResponse
+	11, // 21: aipay.payment.v1.DisputeService.ReportDisputeRulingReview:output_type -> aipay.payment.v1.ReportDisputeRulingReviewResponse
+	17, // [17:22] is the sub-list for method output_type
+	12, // [12:17] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_dispute_service_proto_init() }
@@ -705,13 +933,14 @@ func file_aipay_payment_v1_dispute_service_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_dispute_service_proto_rawDesc), len(file_aipay_payment_v1_dispute_service_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   9,
+			NumEnums:      1,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_aipay_payment_v1_dispute_service_proto_goTypes,
 		DependencyIndexes: file_aipay_payment_v1_dispute_service_proto_depIdxs,
+		EnumInfos:         file_aipay_payment_v1_dispute_service_proto_enumTypes,
 		MessageInfos:      file_aipay_payment_v1_dispute_service_proto_msgTypes,
 	}.Build()
 	File_aipay_payment_v1_dispute_service_proto = out.File

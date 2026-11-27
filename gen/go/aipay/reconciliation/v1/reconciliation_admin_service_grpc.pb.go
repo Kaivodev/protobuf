@@ -77,12 +77,13 @@ const (
 // Verification plugins require query_payment and may also declare query_refund.
 // Credentials are separately issued, read-only and encrypted within this domain.
 // Responses exclude secrets.
-// List limit 1-500, opaque filter/scope-bound cursors. Full original approval
-// materials/bytes/assertions are returned for independent review, including pending
-// states, within the 16 MiB whole message bound. See contracts.md for encoding.
-// v0.9.0 ListApprovals: consistent as_of snapshot, descending requested_at/ID,
-// opaque method/user/scope/filter/limit-bound cursor, limit 1-100. Recheck access
-// every page; GetApproval retains full original records in any actual state.
+// Lists use a 1-500 limit and opaque filter/scope-bound cursors. GetApproval
+// returns original material and request bytes in any state within the 16 MiB
+// message limit. Each approval assertion in GetApproval, GetPlugin publication
+// records and Approve* responses contains only credential_id.
+// ListApprovals returns headers only, ordered by descending requested_at/ID
+// at a consistent as_of snapshot. Its opaque cursor binds method, user, scope,
+// filter and limit (1-100). Recheck access on every page.
 // EmergencyDisablePlugin: one platform approver with MFA_RECENT plus independent
 // domain WebAuthn. Atomically disable plugin and all bound verification accounts;
 // stop ALL verification and reject related authorizations, including in-flight
@@ -420,12 +421,13 @@ func (c *reconciliationAdminServiceClient) ListLatePaymentWindows(ctx context.Co
 // Verification plugins require query_payment and may also declare query_refund.
 // Credentials are separately issued, read-only and encrypted within this domain.
 // Responses exclude secrets.
-// List limit 1-500, opaque filter/scope-bound cursors. Full original approval
-// materials/bytes/assertions are returned for independent review, including pending
-// states, within the 16 MiB whole message bound. See contracts.md for encoding.
-// v0.9.0 ListApprovals: consistent as_of snapshot, descending requested_at/ID,
-// opaque method/user/scope/filter/limit-bound cursor, limit 1-100. Recheck access
-// every page; GetApproval retains full original records in any actual state.
+// Lists use a 1-500 limit and opaque filter/scope-bound cursors. GetApproval
+// returns original material and request bytes in any state within the 16 MiB
+// message limit. Each approval assertion in GetApproval, GetPlugin publication
+// records and Approve* responses contains only credential_id.
+// ListApprovals returns headers only, ordered by descending requested_at/ID
+// at a consistent as_of snapshot. Its opaque cursor binds method, user, scope,
+// filter and limit (1-100). Recheck access on every page.
 // EmergencyDisablePlugin: one platform approver with MFA_RECENT plus independent
 // domain WebAuthn. Atomically disable plugin and all bound verification accounts;
 // stop ALL verification and reject related authorizations, including in-flight

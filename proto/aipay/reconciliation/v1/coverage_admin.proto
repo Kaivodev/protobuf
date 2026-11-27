@@ -67,7 +67,8 @@ message CoverageEvidence {
 }
 
 message CoverageAttestation {
-  // Original approval request, material, approvals and approved_at.
+  // Original request and material, approval records with credential_id only in
+  // each assertion, and approved_at.
   ReconciliationApproval approval = 1;
   CoverageAttestationStatus status = 2;
   // Present only for REVOKED.

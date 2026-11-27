@@ -31,6 +31,24 @@ enum DisputeCaseStatus {
   DISPUTE_CASE_STATUS_RESOLVED = 4;
 }
 
+enum DisputePaymentState {
+  DISPUTE_PAYMENT_STATE_UNSPECIFIED = 0;
+  // Payment observed the buyer's payment. Verification awaits the return-ruling fence.
+  DISPUTE_PAYMENT_STATE_FENCED = 1;
+  // Payment verified the buyer's payment during the dispute.
+  DISPUTE_PAYMENT_STATE_VERIFIED = 2;
+  // Ledger cancelled first. Payment registered an A139 late payment.
+  DISPUTE_PAYMENT_STATE_LATE_PAYMENT = 3;
+}
+
+enum DisputePaymentResolution {
+  DISPUTE_PAYMENT_RESOLUTION_UNSPECIFIED = 0;
+  DISPUTE_PAYMENT_RESOLUTION_NO_RULING = 1;
+  DISPUTE_PAYMENT_RESOLUTION_RECONCILIATION_DENIED = 2;
+  DISPUTE_PAYMENT_RESOLUTION_RULING_EXPIRED = 3;
+  DISPUTE_PAYMENT_RESOLUTION_LEDGER_CANCELLED = 4;
+}
+
 message ChannelAccountView {
   ChannelAccountConfiguration configuration = 1;
   uint64 control_version = 2;
@@ -101,6 +119,28 @@ message PluginVersionView {
   google.protobuf.Timestamp created_at = 11;
 }
 
+message DisputePaymentObservation {
+  DisputePaymentState state = 1;
+  string upstream_order_id = 2;
+  bytes query_evidence_sha256 = 3;
+  google.protobuf.Timestamp observed_at = 4;
+  // Absent while FENCED.
+  google.protobuf.Timestamp resolved_at = 5;
+  // Unset (UNSPECIFIED) while FENCED.
+  DisputePaymentResolution resolution = 6;
+  // Set only for LATE_PAYMENT.
+  string late_payment_id = 7;
+}
+
+message DisputeRulingReview {
+  DisputeRulingReviewDisposition disposition = 1;
+  string reason = 2;
+  // When reconciliation reviewed the ruling.
+  google.protobuf.Timestamp reviewed_at = 3;
+  // When payment first recorded the review.
+  google.protobuf.Timestamp recorded_at = 4;
+}
+
 message PlatformDisputeView {
   RegisteredDispute dispute = 1;
   DisputeCaseStatus status = 2;
@@ -109,6 +149,10 @@ message PlatformDisputeView {
   PaymentApproval ruling = 5;
   string investigation_summary = 6;
   google.protobuf.Timestamp updated_at = 7;
+  // Absent until payment observes the buyer's payment during this dispute.
+  DisputePaymentObservation payment_observation = 8;
+  // Reconciliation's review of ruling. Absent until payment records it.
+  DisputeRulingReview ruling_review = 9;
 }
 
 // Dedicated seller projections. No nested full order/refund/trade, merchant
@@ -210,4 +254,6 @@ message SellerDisputeView {
   optional DisputeRulingOutcome ruling_outcome = 12;
   google.protobuf.Timestamp registered_at = 13;
   google.protobuf.Timestamp updated_at = 14;
+  // Absent without an observation. The upstream ID and evidence digest are platform-only.
+  optional DisputePaymentState payment_state = 15;
 }

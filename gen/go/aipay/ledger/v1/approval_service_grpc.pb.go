@@ -217,17 +217,17 @@ const (
 // Ledger approvals for the backend approval inbox. Both reads are available in
 // read-only mode and perform no self-check or anchoring.
 //
-// ListApprovals returns unexpired PENDING requests in descending (requested_at, id)
-// order. An empty kind includes all four kinds. A nonempty filter must be
-// adjustment, read_only_exit, carryover or usd_rate_policy, otherwise the ledger
+// ListApprovals returns only unexpired PENDING request headers in descending
+// (requested_at, id) order. An empty kind includes all four kinds. A nonempty filter
+// must be adjustment, read_only_exit, carryover or usd_rate_policy, otherwise the ledger
 // returns InvalidArgument. Carryover requires one approver and the other kinds
 // require two. As in GetReadOnlyStatus, exit requests from earlier episodes are excluded.
 // Every page returns the first page's as_of. Requests approved or expired between
 // pages disappear from later pages.
 //
-// GetApproval returns any state with the full structured material, approvals,
-// approved_at and executed_at, and the review for adjustments. Each recorded
-// assertion is returned in full, with the registry's credential_id and an empty user_handle.
+// GetApproval returns any state with the structured material, approvals,
+// approved_at and executed_at, and the review for adjustments. Each assertion
+// contains only credential_id, as in Approve* responses.
 // Before responding, the ledger re-encodes request_bytes from the stored material
 // and returns Internal on any difference.
 type LedgerApprovalServiceClient interface {
@@ -270,17 +270,17 @@ func (c *ledgerApprovalServiceClient) GetApproval(ctx context.Context, in *GetAp
 // Ledger approvals for the backend approval inbox. Both reads are available in
 // read-only mode and perform no self-check or anchoring.
 //
-// ListApprovals returns unexpired PENDING requests in descending (requested_at, id)
-// order. An empty kind includes all four kinds. A nonempty filter must be
-// adjustment, read_only_exit, carryover or usd_rate_policy, otherwise the ledger
+// ListApprovals returns only unexpired PENDING request headers in descending
+// (requested_at, id) order. An empty kind includes all four kinds. A nonempty filter
+// must be adjustment, read_only_exit, carryover or usd_rate_policy, otherwise the ledger
 // returns InvalidArgument. Carryover requires one approver and the other kinds
 // require two. As in GetReadOnlyStatus, exit requests from earlier episodes are excluded.
 // Every page returns the first page's as_of. Requests approved or expired between
 // pages disappear from later pages.
 //
-// GetApproval returns any state with the full structured material, approvals,
-// approved_at and executed_at, and the review for adjustments. Each recorded
-// assertion is returned in full, with the registry's credential_id and an empty user_handle.
+// GetApproval returns any state with the structured material, approvals,
+// approved_at and executed_at, and the review for adjustments. Each assertion
+// contains only credential_id, as in Approve* responses.
 // Before responding, the ledger re-encodes request_bytes from the stored material
 // and returns Internal on any difference.
 type LedgerApprovalServiceServer interface {

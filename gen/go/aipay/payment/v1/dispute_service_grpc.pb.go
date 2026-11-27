@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	DisputeService_RegisterDispute_FullMethodName      = "/aipay.payment.v1.DisputeService/RegisterDispute"
-	DisputeService_SubmitDisputeRuling_FullMethodName  = "/aipay.payment.v1.DisputeService/SubmitDisputeRuling"
-	DisputeService_ApproveDisputeRuling_FullMethodName = "/aipay.payment.v1.DisputeService/ApproveDisputeRuling"
-	DisputeService_GetDisputeRuling_FullMethodName     = "/aipay.payment.v1.DisputeService/GetDisputeRuling"
+	DisputeService_RegisterDispute_FullMethodName           = "/aipay.payment.v1.DisputeService/RegisterDispute"
+	DisputeService_SubmitDisputeRuling_FullMethodName       = "/aipay.payment.v1.DisputeService/SubmitDisputeRuling"
+	DisputeService_ApproveDisputeRuling_FullMethodName      = "/aipay.payment.v1.DisputeService/ApproveDisputeRuling"
+	DisputeService_GetDisputeRuling_FullMethodName          = "/aipay.payment.v1.DisputeService/GetDisputeRuling"
+	DisputeService_ReportDisputeRulingReview_FullMethodName = "/aipay.payment.v1.DisputeService/ReportDisputeRulingReview"
 )
 
 // DisputeServiceClient is the client API for DisputeService service.
@@ -78,6 +79,18 @@ type DisputeServiceClient interface {
 	SubmitDisputeRuling(ctx context.Context, in *SubmitDisputeRulingRequest, opts ...grpc.CallOption) (*SubmitDisputeRulingResponse, error)
 	ApproveDisputeRuling(ctx context.Context, in *ApproveDisputeRulingRequest, opts ...grpc.CallOption) (*ApproveDisputeRulingResponse, error)
 	GetDisputeRuling(ctx context.Context, in *GetDisputeRulingRequest, opts ...grpc.CallOption) (*GetDisputeRulingResponse, error)
+	// Reconciliation reports a terminal denial or quarantine of a DisputeRulingApproved
+	// review for a pre-release ruling to release funds or return them to the seller.
+	// Before reporting, it must confirm under its issuance lock that no authorization
+	// exists for (order_id, control_version) at report time and record a fence so no
+	// path can issue an authorization carrying this ruling at that version.
+	// Payment records the review once. An identical retry returns recorded=false.
+	// Different content for the same ruling returns FAILED_PRECONDITION with ErrorInfo
+	// reason DISPUTE_RULING_REVIEW_CONFLICT. Unknown rulings return NOT_FOUND.
+	// Refund, post-release and completed rulings return FAILED_PRECONDITION.
+	// The ruling may lapse immediately under A146, and payment may verify a fenced
+	// dispute payment observation. The report never moves funds or grants authorization.
+	ReportDisputeRulingReview(ctx context.Context, in *ReportDisputeRulingReviewRequest, opts ...grpc.CallOption) (*ReportDisputeRulingReviewResponse, error)
 }
 
 type disputeServiceClient struct {
@@ -122,6 +135,16 @@ func (c *disputeServiceClient) GetDisputeRuling(ctx context.Context, in *GetDisp
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetDisputeRulingResponse)
 	err := c.cc.Invoke(ctx, DisputeService_GetDisputeRuling_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *disputeServiceClient) ReportDisputeRulingReview(ctx context.Context, in *ReportDisputeRulingReviewRequest, opts ...grpc.CallOption) (*ReportDisputeRulingReviewResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportDisputeRulingReviewResponse)
+	err := c.cc.Invoke(ctx, DisputeService_ReportDisputeRulingReview_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -181,6 +204,18 @@ type DisputeServiceServer interface {
 	SubmitDisputeRuling(context.Context, *SubmitDisputeRulingRequest) (*SubmitDisputeRulingResponse, error)
 	ApproveDisputeRuling(context.Context, *ApproveDisputeRulingRequest) (*ApproveDisputeRulingResponse, error)
 	GetDisputeRuling(context.Context, *GetDisputeRulingRequest) (*GetDisputeRulingResponse, error)
+	// Reconciliation reports a terminal denial or quarantine of a DisputeRulingApproved
+	// review for a pre-release ruling to release funds or return them to the seller.
+	// Before reporting, it must confirm under its issuance lock that no authorization
+	// exists for (order_id, control_version) at report time and record a fence so no
+	// path can issue an authorization carrying this ruling at that version.
+	// Payment records the review once. An identical retry returns recorded=false.
+	// Different content for the same ruling returns FAILED_PRECONDITION with ErrorInfo
+	// reason DISPUTE_RULING_REVIEW_CONFLICT. Unknown rulings return NOT_FOUND.
+	// Refund, post-release and completed rulings return FAILED_PRECONDITION.
+	// The ruling may lapse immediately under A146, and payment may verify a fenced
+	// dispute payment observation. The report never moves funds or grants authorization.
+	ReportDisputeRulingReview(context.Context, *ReportDisputeRulingReviewRequest) (*ReportDisputeRulingReviewResponse, error)
 	mustEmbedUnimplementedDisputeServiceServer()
 }
 
@@ -202,6 +237,9 @@ func (UnimplementedDisputeServiceServer) ApproveDisputeRuling(context.Context, *
 }
 func (UnimplementedDisputeServiceServer) GetDisputeRuling(context.Context, *GetDisputeRulingRequest) (*GetDisputeRulingResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDisputeRuling not implemented")
+}
+func (UnimplementedDisputeServiceServer) ReportDisputeRulingReview(context.Context, *ReportDisputeRulingReviewRequest) (*ReportDisputeRulingReviewResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportDisputeRulingReview not implemented")
 }
 func (UnimplementedDisputeServiceServer) mustEmbedUnimplementedDisputeServiceServer() {}
 func (UnimplementedDisputeServiceServer) testEmbeddedByValue()                        {}
@@ -296,6 +334,24 @@ func _DisputeService_GetDisputeRuling_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DisputeService_ReportDisputeRulingReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportDisputeRulingReviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DisputeServiceServer).ReportDisputeRulingReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DisputeService_ReportDisputeRulingReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DisputeServiceServer).ReportDisputeRulingReview(ctx, req.(*ReportDisputeRulingReviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DisputeService_ServiceDesc is the grpc.ServiceDesc for DisputeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -318,6 +374,10 @@ var DisputeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDisputeRuling",
 			Handler:    _DisputeService_GetDisputeRuling_Handler,
+		},
+		{
+			MethodName: "ReportDisputeRulingReview",
+			Handler:    _DisputeService_ReportDisputeRulingReview_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

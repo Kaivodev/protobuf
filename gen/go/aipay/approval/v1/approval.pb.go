@@ -208,8 +208,8 @@ func (x *ApprovalRequest) GetStatus() ApprovalStatus {
 	return ApprovalStatus_APPROVAL_STATUS_UNSPECIFIED
 }
 
-// A WebAuthn assertion (AuthenticatorAssertionResponse) passed through from
-// the browser unchanged. The executor checks the ES256 signature over
+// On submission, the browser's WebAuthn assertion (AuthenticatorAssertionResponse)
+// is passed through unchanged. The executor checks the ES256 signature over
 // authenticator_data || SHA-256(client_data_json) with the registered key,
 // type "webauthn.get", the operation's challenge (request_digest for an approval),
 // the expected origin and RP ID hash, the user-present and user-verified flags, and a signature
@@ -296,6 +296,13 @@ func (x *WebAuthnAssertion) GetUserHandle() []byte {
 
 // A verified approval, recorded append-only by the executor. Each approver
 // approves a request at most once.
+//
+// Owners store complete original assertions. Only reconciliation can read them
+// through GetDisputeRuling and GetSellerRefundReviewForVerification. In every
+// platform-facing read or response, including Approve* responses, the assertion is
+// either omitted or carries only credential_id; authenticator_data,
+// client_data_json, signature and user_handle are never returned there. Approver identity, sign_count, verified_at and
+// request_digest are unchanged. ListApprovals returns headers only.
 type Approval struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	RequestId string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`

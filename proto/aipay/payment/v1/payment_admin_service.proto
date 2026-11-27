@@ -399,8 +399,10 @@ message RequeueArchivedWorkResponse {
 // requested_at/ID. Cursors bind method/user/scope/filter/limit/as_of and the
 // first consistent snapshot; access is rechecked on every page. as_of is UTC
 // microseconds, also on Get. Unknown resources return NotFound.
-// ListApprovals returns only unexpired PENDING headers, optionally by kind;
-// GetApproval returns original full material/assertions in any actual state.
+// ListApprovals returns only unexpired PENDING headers, optionally by kind.
+// GetApproval returns any state and may redact owner-sensitive material such as
+// channel configuration. Across platform reads (including dispute and plugin
+// views) and Approve* responses, each assertion contains only credential_id.
 // No cross-owner alias permission is accepted. None of these reads enable a
 // configuration or change funds. DRAFT method/risk views come from existing
 // pending approval proposals; approved versions preserve their original CAS.

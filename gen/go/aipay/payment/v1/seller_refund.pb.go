@@ -532,8 +532,8 @@ func (x *SellerRefundEvidenceUpload) GetData() []byte {
 	return nil
 }
 
-// An active query confirmed full payment after cancellation of the original
-// order. Seller evidence and dual review close the case entirely in payment.
+// An active query confirmed full payment on an order that ledger cancelled.
+// Seller evidence and dual review close the case entirely in payment.
 type LatePayment struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	LatePaymentId       string                 `protobuf:"bytes,1,opt,name=late_payment_id,json=latePaymentId,proto3" json:"late_payment_id,omitempty"`
@@ -550,8 +550,11 @@ type LatePayment struct {
 	// A145: present when the order was cancelled after a platform forced
 	// close; the ID of that approved forced_close request.
 	ForcedCloseApprovalRequestId *string `protobuf:"bytes,12,opt,name=forced_close_approval_request_id,json=forcedCloseApprovalRequestId,proto3,oneof" json:"forced_close_approval_request_id,omitempty"`
-	unknownFields                protoimpl.UnknownFields
-	sizeCache                    protoimpl.SizeCache
+	// A147: present when ledger cancelled the order under a dispute return ruling
+	// after payment observed the buyer's payment during that dispute.
+	DisputeId     *string `protobuf:"bytes,13,opt,name=dispute_id,json=disputeId,proto3,oneof" json:"dispute_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LatePayment) Reset() {
@@ -664,6 +667,13 @@ func (x *LatePayment) GetUpdatedAt() *timestamppb.Timestamp {
 func (x *LatePayment) GetForcedCloseApprovalRequestId() string {
 	if x != nil && x.ForcedCloseApprovalRequestId != nil {
 		return *x.ForcedCloseApprovalRequestId
+	}
+	return ""
+}
+
+func (x *LatePayment) GetDisputeId() string {
+	if x != nil && x.DisputeId != nil {
+		return *x.DisputeId
 	}
 	return ""
 }
@@ -881,6 +891,7 @@ func (x *GetSellerRefundReviewRequest) GetSubject() *SellerRefundSubject {
 	return nil
 }
 
+// Platform review. Each approval assertion contains only credential_id.
 type GetSellerRefundReviewResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Review        *SellerRefundReview    `protobuf:"bytes,1,opt,name=review,proto3" json:"review,omitempty"`
@@ -1590,8 +1601,8 @@ func (x *GetSellerRefundReviewForVerificationRequest) GetRefundId() string {
 
 type GetSellerRefundReviewForVerificationResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The exact approval that produced the terminal fact, including original
-	// request bytes, digest, typed material and both original WebAuthn records.
+	// Reconciliation alone receives the approval that produced the terminal fact,
+	// including original request bytes, digest, typed material and both complete assertions.
 	Approval *PaymentApproval `protobuf:"bytes,1,opt,name=approval,proto3" json:"approval,omitempty"`
 	// Present unless a failure was approved without seller evidence. Only metadata
 	// is returned. Omit status_reason from this verification response.
@@ -1680,7 +1691,7 @@ const file_aipay_payment_v1_seller_refund_proto_rawDesc = "" +
 	"\x11status_changed_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x0fstatusChangedAt\"S\n" +
 	"\x1aSellerRefundEvidenceUpload\x12!\n" +
 	"\fcontent_type\x18\x01 \x01(\tR\vcontentType\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"\xda\x05\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"\x8d\x06\n" +
 	"\vLatePayment\x12&\n" +
 	"\x0flate_payment_id\x18\x01 \x01(\tR\rlatePaymentId\x124\n" +
 	"\x05trade\x18\x02 \x01(\v2\x1e.aipay.common.v1.TradeSnapshotR\x05trade\x122\n" +
@@ -1698,8 +1709,11 @@ const file_aipay_payment_v1_seller_refund_proto_rawDesc = "" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12K\n" +
-	" forced_close_approval_request_id\x18\f \x01(\tH\x00R\x1cforcedCloseApprovalRequestId\x88\x01\x01B#\n" +
-	"!_forced_close_approval_request_id\"\x95\x01\n" +
+	" forced_close_approval_request_id\x18\f \x01(\tH\x00R\x1cforcedCloseApprovalRequestId\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"dispute_id\x18\r \x01(\tH\x01R\tdisputeId\x88\x01\x01B#\n" +
+	"!_forced_close_approval_request_idB\r\n" +
+	"\v_dispute_id\"\x95\x01\n" +
 	"\x15SellerRefundDuplicate\x12?\n" +
 	"\x04kind\x18\x01 \x01(\x0e2+.aipay.payment.v1.SellerRefundDuplicateKindR\x04kind\x12;\n" +
 	"\x05other\x18\x02 \x01(\v2%.aipay.payment.v1.SellerRefundSubjectR\x05other\"\xb6\x03\n" +

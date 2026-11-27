@@ -53,12 +53,19 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 IAM 已有 Telegram/EPay 等签发实现；具体登录来源、密钥托管与撤销能力以其实际交付为准，不因协议存在推断平台管理路径已接通。EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 
+## v0.26.0 dispute payments and approval assertion reads (A147, A148, unreleased)
+
+- Reconciliation calls `DisputeService.ReportDisputeRulingReview` after it denies or quarantines a pre-release ruling to release funds or return them to the seller. Under its issuance lock, it checks that no authorization exists for the order and control version and records a fence against issuing one carrying this ruling at that version. Payment can then let the ruling lapse immediately. The report never moves funds or grants authorization.
+- `PlatformDisputeView.payment_observation` tracks a buyer payment observed during the dispute. Payment writes `paid_verified_at` and emits `OrderPaid` only once a return-to-seller cancellation can no longer execute. If ledger cancels first, `LatePayment.dispute_id` links the A139 late payment to the dispute. `PlatformDisputeView.ruling_review` shows the recorded review of the displayed ruling. Sellers see only `SellerDisputeView.payment_state` for the observation.
+- Owners store complete original WebAuthn assertions. Only reconciliation receives them through payment's `GetDisputeRuling` and `GetSellerRefundReviewForVerification`. In every platform-facing approval record, including `Approve*` responses, the assertion contains only `credential_id`. Approver identity, sign count, verification time and request digest stay unchanged. `ListApprovals` returns headers only.
+- Deploy payment before reconciliation starts reporting reviews. Reconciliation treats `UNIMPLEMENTED` as retryable. Deploy backend after payment to consume the new view fields.
+
 ## v0.25.0 ledger adjustment reads and unified ledger approvals (unreleased)
 
 - `SubmitAdjustment` accepts one to five PDF, PNG or JPEG files. The ledger recomputes the evidence manifest digest from each file's name, content type, size and SHA-256 in submission order. Approvers sign that digest through the existing request encoding. Each line encodes debit as ASCII `'D'` (0x44) and credit as ASCII `'C'` (0x43). `testvectors.LedgerAdjustmentV1()` provides the files, manifest digests, request bytes and approval digests.
 - Submission validates each line. The final approval opens eligible platform accounts and posts the entry in one transaction, in the period and business day open at posting. A posting failure leaves the request pending and rolls back the final approval.
 - With `ledger.adjustment.read`, backend can call `ListAdjustments` across statuses, inspect line accounts and journal entries with `GetAdjustment`, and download a numbered file with `GetAdjustmentEvidenceFile`. The reads work in read-only mode and honor the target funds account in the verified proof.
-- With `ledger.approval.read`, backend can call `LedgerApprovalService.ListApprovals` for pending adjustment, read-only exit, carryover and USD rate policy requests. `GetApproval` returns any state and includes the structured material and complete recorded assertions.
+- With `ledger.approval.read`, backend can call `LedgerApprovalService.ListApprovals` for pending adjustment, read-only exit, carryover and USD rate policy requests. In v0.25.0, `GetApproval` returned any state with the structured material and complete recorded assertions.
 - Deploy ledger before backend submits evidence files. An older ledger ignores request field 6. Callers can detect this from the missing `evidence_files` echo in the submission response.
 
 ## v0.24.0 ledger control permissions and reads (unreleased)

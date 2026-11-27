@@ -390,7 +390,8 @@ func (x *CoverageEvidence) GetText() string {
 
 type CoverageAttestation struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Original approval request, material, approvals and approved_at.
+	// Original request and material, approval records with credential_id only in
+	// each assertion, and approved_at.
 	Approval *ReconciliationApproval   `protobuf:"bytes,1,opt,name=approval,proto3" json:"approval,omitempty"`
 	Status   CoverageAttestationStatus `protobuf:"varint,2,opt,name=status,proto3,enum=aipay.reconciliation.v1.CoverageAttestationStatus" json:"status,omitempty"`
 	// Present only for REVOKED.

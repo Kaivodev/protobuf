@@ -1896,16 +1896,16 @@ func (*PaymentApprovalMaterial_SellerRefundFailure) isPaymentApprovalMaterial_Op
 
 func (*PaymentApprovalMaterial_ForcedClose) isPaymentApprovalMaterial_Operation() {}
 
-// Complete original evidence, no public keys. request_digest is
-// SHA-256("AIPAY-APPROVAL-V1" || request_bytes); request_bytes must exactly match
-// str("aipay.payment.admin.v1") || canonical(material). For dispute_ruling this
-// same request_digest is
-// reconciliation DisputeResolution.ruling_sha256, and id is ruling_id.
+// Payment stores the original signed evidence without public keys. The stored
+// request_bytes equal str("aipay.payment.admin.v1") || canonical(material).
+// request_digest is SHA-256("AIPAY-APPROVAL-V1" || request_bytes). For a dispute
+// ruling, this digest is DisputeResolution.ruling_sha256 and id is ruling_id.
 type PaymentApproval struct {
 	state           protoimpl.MessageState   `protogen:"open.v1"`
 	ApprovalRequest *v12.ApprovalRequest     `protobuf:"bytes,1,opt,name=approval_request,json=approvalRequest,proto3" json:"approval_request,omitempty"`
 	Material        *PaymentApprovalMaterial `protobuf:"bytes,2,opt,name=material,proto3" json:"material,omitempty"`
-	// Original append-only assertions; each approver is counted at most once.
+	// Each approver counts once. Only reconciliation's verification reads return
+	// complete assertions. Platform views and responses retain only assertion.credential_id.
 	Approvals []*v12.Approval `protobuf:"bytes,3,rep,name=approvals,proto3" json:"approvals,omitempty"`
 	// Absent until two approvals; equals second approval's verified_at.
 	ApprovedAt    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=approved_at,json=approvedAt,proto3" json:"approved_at,omitempty"`
