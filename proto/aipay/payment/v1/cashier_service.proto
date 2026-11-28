@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/authz/v1/policy.proto";
+import "aipay/payment/v1/order_service.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// Receivers reject UNSPECIFIED (0) and unknown values. Payment evaluates in
+// this priority: PAID, FAILED, CLOSED, EXPIRED, READY, PREPARING.
+enum CashierState {
+  CASHIER_STATE_UNSPECIFIED = 0;
+  CASHIER_STATE_PREPARING = 1; // RESERVING, UNKNOWN, or awaiting an instruction.
+  CASHIER_STATE_READY = 2; // Same conditions as rendering a valid payment instruction.
+  CASHIER_STATE_PAID = 3; // paid_verified_at present, regardless of later states.
+  CASHIER_STATE_EXPIRED = 4; // Instruction shown and expired, close intent recorded, or upstream CLOSED before cancellation.
+  CASHIER_STATE_CLOSED = 5; // Order CANCELLED without verified payment.
+  CASHIER_STATE_FAILED = 6; // Order REJECTED or upstream FAILED.
+}
+
+message CashierReturn {
+  // The order snapshot's return_url, only while the application's current
+  // approved, enabled access revision still has the same return_origin.
+  string return_url = 1;
+  // The order's signed merchant notification body (form-encoded TRADE_SUCCESS
+  // parameters with sign and sign_type), appended by backend as the query.
+  string signed_query = 2;
+}
+
+message GetCashierRequest {
+  bytes cashier_token = 1; // Exactly 32 bytes; payment looks up its SHA-256.
+}
+
+message GetCashierResponse {
+  // Internal correlation for backend observations; never exposed to buyers.
+  string order_id = 1;
+  string application_id = 2;
+  CashierState state = 3;
+  // Instruction expiry for READY, last shown expiry for EXPIRED; else absent.
+  google.protobuf.Timestamp expires_at = 4;
+  // Original CNY fiat amount in minor units, positive.
+  int64 fiat_amount = 5;
+  string payment_method = 6;
+  // READY only.
+  PaymentInstruction instruction = 7;
+  // PAID only, and only when the snapshot has return_url, the merchant
+  // notification is signed and the current return_origin still matches.
+  CashierReturn merchant_return = 8;
+  // PAID while the return target may still become available: the merchant
+  // notification is not yet signed or current access was transiently unreadable.
+  bool return_pending = 9;
+}
+
+// backend's service identity only, no user assertion. Unknown, expired or
+// revoked tokens are NotFound with an identical shape. Read-only: never
+// changes order, escrow or notification state. Never log the token.
+service CashierService {
+  rpc GetCashier(GetCashierRequest) returns (GetCashierResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+}

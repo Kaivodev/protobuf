@@ -164,6 +164,14 @@ message CreateOrderRequest {
   optional string client_ip = 11;
   // Upstream protocol device type, up to 32 bytes of lowercase ASCII letters, digits or underscores.
   optional string device = 12;
+  // Exactly 32 bytes when present: SHA-256 of a backend-generated 32-byte random
+  // cashier token. Backend sends it for page entries and for JSON entries only
+  // when the JSON cashier switch is enabled. Payment registers it in the order
+  // creation transaction or on the original order for an identical idempotent retry.
+  // Like client_ip and device, it is excluded from the request digest and
+  // idempotency comparison. Each token is valid for 24 hours. Registering a 21st
+  // live token for an order revokes the oldest. Never log the token or its digest.
+  optional bytes cashier_token_sha256 = 13;
 }
 
 message CreateOrderResponse {

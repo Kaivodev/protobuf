@@ -16,6 +16,7 @@ proto/aipay/
   collection/v1/collection_service.proto  CollectionService：受限归集创建、查询、取消
   upstream/v1/upstream_service.proto  上游网关业务与管理方法
   payment/v1/payment.proto         支付订单契约占位
+  payment/v1/cashier_service.proto  Token-based EPay cashier lookup
   payment/v1/risk_extension.proto  Exceptional risk extension requests, eligibility and platform approvals
   payment/v1/amount_mismatch.proto Amount mismatch cases and phase 1 recovery approvals
   ledger/v1/ledger.proto           分录交易、分录行与 CheckpointSigned 检查点
@@ -54,6 +55,12 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 `testvectors` 包以 JSON 发布分录规范编码 V1，余额摘要、科目余额表摘要、RFC 6962 Merkle 根与检查点签名，签名事件，以及 WebAuthn 审批断言的测试向量（输入、规范字节、期望哈希、公钥与签名，以及必须被拒绝的篡改样例）。包内只有数据，没有编码器或校验器：settlement 与 reconciliation 按规范自行实现分录哈希校验器（决策 A16），再用这些向量测试。向量中的密钥只为生成向量临时创建，私钥已丢弃。
 
 IAM 已有 Telegram/EPay 等签发实现；具体登录来源、密钥托管与撤销能力以其实际交付为准，不因协议存在推断平台管理路径已接通。EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
+
+## v0.29.0 EPay cashier (A153, unreleased)
+
+- Backend sends the cashier token’s SHA-256 on `CreateOrder` for page entries and, with the JSON cashier switch enabled, for JSON entries. Payment excludes the hash from idempotency checks and registers it on the original order for an identical retry. Tokens expire after 24 hours, and registering more than 20 live tokens per order revokes the oldest.
+- Only backend calls the read-only `CashierService.GetCashier`, using its service identity and the raw token. Buyers see the cashier state, applicable expiry, original CNY amount and payment method. Only `READY` includes a payment instruction.
+- After verified payment, backend can append the signed merchant notification to the snapshot’s return URL as its query. Payment supplies this target only while the application’s current approved, enabled revision still has the same return origin.
 
 ## v0.28.0 exceptional risk extensions and amount mismatch recovery, phase 1 (A150, A151, unreleased)
 

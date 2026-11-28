@@ -7,6 +7,7 @@ import (
 	authzv1 "github.com/Kaivodev/protobuf/gen/go/aipay/authz/v1"
 	eventsv1 "github.com/Kaivodev/protobuf/gen/go/aipay/events/v1"
 	ledgerv1 "github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1"
+	paymentv1 "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1"
 	reconciliationv1 "github.com/Kaivodev/protobuf/gen/go/aipay/reconciliation/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -27,6 +28,12 @@ func TestC2CMethodAuthorization(t *testing.T) {
 		service protoreflect.ServiceDescriptor
 		methods map[string]expected
 	}{
+		{
+			paymentv1.File_aipay_payment_v1_cashier_service_proto.Services().ByName("CashierService"),
+			map[string]expected{
+				"GetCashier": {[]string{"backend"}, serviceOnly, ""},
+			},
+		},
 		{
 			ledgerv1.File_aipay_ledger_v1_reservation_service_proto.Services().ByName("ReservationService"),
 			map[string]expected{
@@ -97,6 +104,13 @@ func TestC2CMethodAuthorization(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestCreateOrderCashierTokenHash(t *testing.T) {
+	field := requireField(t, &paymentv1.CreateOrderRequest{}, "cashier_token_sha256", 13, protoreflect.BytesKind, "")
+	if !field.HasOptionalKeyword() || !field.HasPresence() {
+		t.Fatal("cashier_token_sha256 must have explicit presence")
 	}
 }
 

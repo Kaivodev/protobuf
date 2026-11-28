@@ -855,9 +855,17 @@ type CreateOrderRequest struct {
 	// Canonical buyer IP in dotted-decimal IPv4 or RFC 5952 IPv6 form, without a port or zone.
 	ClientIp *string `protobuf:"bytes,11,opt,name=client_ip,json=clientIp,proto3,oneof" json:"client_ip,omitempty"`
 	// Upstream protocol device type, up to 32 bytes of lowercase ASCII letters, digits or underscores.
-	Device        *string `protobuf:"bytes,12,opt,name=device,proto3,oneof" json:"device,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Device *string `protobuf:"bytes,12,opt,name=device,proto3,oneof" json:"device,omitempty"`
+	// Exactly 32 bytes when present: SHA-256 of a backend-generated 32-byte random
+	// cashier token. Backend sends it for page entries and for JSON entries only
+	// when the JSON cashier switch is enabled. Payment registers it in the order
+	// creation transaction or on the original order for an identical idempotent retry.
+	// Like client_ip and device, it is excluded from the request digest and
+	// idempotency comparison. Each token is valid for 24 hours. Registering a 21st
+	// live token for an order revokes the oldest. Never log the token or its digest.
+	CashierTokenSha256 []byte `protobuf:"bytes,13,opt,name=cashier_token_sha256,json=cashierTokenSha256,proto3,oneof" json:"cashier_token_sha256,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreateOrderRequest) Reset() {
@@ -972,6 +980,13 @@ func (x *CreateOrderRequest) GetDevice() string {
 		return *x.Device
 	}
 	return ""
+}
+
+func (x *CreateOrderRequest) GetCashierTokenSha256() []byte {
+	if x != nil {
+		return x.CashierTokenSha256
+	}
+	return nil
 }
 
 type CreateOrderResponse struct {
@@ -1430,7 +1445,7 @@ const file_aipay_payment_v1_order_service_proto_rawDesc = "" +
 	"\fout_trade_no\x18\x04 \x01(\tH\x00R\n" +
 	"outTradeNoB\n" +
 	"\n" +
-	"\bselector\"\x98\x04\n" +
+	"\bselector\"\xe8\x04\n" +
 	"\x12CreateOrderRequest\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\tR\taccountId\x12\x1f\n" +
@@ -1448,10 +1463,12 @@ const file_aipay_payment_v1_order_service_proto_rawDesc = "" +
 	"\fnotification\x18\n" +
 	" \x01(\v2+.aipay.payment.v1.OrderNotificationSnapshotR\fnotification\x12 \n" +
 	"\tclient_ip\x18\v \x01(\tH\x00R\bclientIp\x88\x01\x01\x12\x1b\n" +
-	"\x06device\x18\f \x01(\tH\x01R\x06device\x88\x01\x01B\f\n" +
+	"\x06device\x18\f \x01(\tH\x01R\x06device\x88\x01\x01\x125\n" +
+	"\x14cashier_token_sha256\x18\r \x01(\fH\x02R\x12cashierTokenSha256\x88\x01\x01B\f\n" +
 	"\n" +
 	"_client_ipB\t\n" +
-	"\a_device\"D\n" +
+	"\a_deviceB\x17\n" +
+	"\x15_cashier_token_sha256\"D\n" +
 	"\x13CreateOrderResponse\x12-\n" +
 	"\x05order\x18\x01 \x01(\v2\x17.aipay.payment.v1.OrderR\x05order\"N\n" +
 	"\x0fGetOrderRequest\x12;\n" +
