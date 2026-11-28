@@ -12,7 +12,7 @@ option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymen
 // receiver backend. event_type is the message name and schema_version is 1.
 // These account bot notifications are never payment or funds evidence.
 // Funds services must not subscribe. Backend verifies the envelope and chain,
-// deduplicates by event_id, and records deliveries per (event_id, chat_id).
+// deduplicates by event_id, and records deliveries per (event_id, bot, chat_id).
 // Backend routes MerchantPaymentReceived, MerchantFundsAvailable,
 // PaymentAccessReviewed, MerchantRefundNotice and MerchantRiskExtensionNotice
 // to the merchant bot, and every Seller* event to the upstream bot. Seller
