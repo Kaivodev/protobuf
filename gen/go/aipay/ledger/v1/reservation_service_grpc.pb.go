@@ -29,6 +29,8 @@ const (
 	ReservationService_GetTradeFreezeDetails_FullMethodName       = "/aipay.ledger.v1.ReservationService/GetTradeFreezeDetails"
 	ReservationService_ReserveWithdrawal_FullMethodName           = "/aipay.ledger.v1.ReservationService/ReserveWithdrawal"
 	ReservationService_GetWithdrawalReservation_FullMethodName    = "/aipay.ledger.v1.ReservationService/GetWithdrawalReservation"
+	ReservationService_HoldTradeForRiskExtension_FullMethodName   = "/aipay.ledger.v1.ReservationService/HoldTradeForRiskExtension"
+	ReservationService_ResolveTradeRiskExtension_FullMethodName   = "/aipay.ledger.v1.ReservationService/ResolveTradeRiskExtension"
 )
 
 // ReservationServiceClient is the client API for ReservationService service.
@@ -52,6 +54,11 @@ const (
 // RPC. ReserveWithdrawal is settlement-only and idempotent by withdrawal ID.
 // Command digests use the field-order encoding in docs contracts.md, not proto
 // serialization.
+// For HoldTradeForRiskExtension and ResolveTradeRiskExtension, ledger uses
+// AIPAY-LEDGER-COMMAND-V1 with idempotency_key as the outer key. Encode the
+// inner fields in field-number order, skipping that key. Encode Timestamp
+// as i64 Unix microseconds and reject sub-microsecond precision. Encode an
+// optional scalar as u8 0 for absent or u8 1 followed by the value for present.
 //
 // A119 HoldReleasedTradeForDispute requires original escrow RELEASED, no other
 // active dispute/refund occupation and positive matching CAS. Reserve H=min(N,
@@ -83,6 +90,19 @@ type ReservationServiceClient interface {
 	GetTradeFreezeDetails(ctx context.Context, in *GetTradeFreezeDetailsRequest, opts ...grpc.CallOption) (*GetTradeFreezeDetailsResponse, error)
 	ReserveWithdrawal(ctx context.Context, in *ReserveWithdrawalRequest, opts ...grpc.CallOption) (*ReserveWithdrawalResponse, error)
 	GetWithdrawalReservation(ctx context.Context, in *GetWithdrawalReservationRequest, opts ...grpc.CallOption) (*GetWithdrawalReservationResponse, error)
+	// Require matching CAS and a RESERVED, unreleased escrow with recorded
+	// payment, no dispute or refund hold, and no unexpired extension hold.
+	// Ledger time < pending_until <= ledger time + 25 hours. On success record
+	// HELD and increment control_version without a journal entry.
+	HoldTradeForRiskExtension(ctx context.Context, in *HoldTradeForRiskExtensionRequest, opts ...grpc.CallOption) (*HoldTradeForRiskExtensionResponse, error)
+	// Require matching CAS and extension_id. APPLY requires RESERVED, recorded
+	// payment, unreleased funds, fewer than five prior applied extensions and
+	// a later deadline within the locked duration plus the bounded policy cap.
+	// WITHDRAW accepts RESERVED, DISPUTED or REFUND_PENDING. For other states
+	// it returns FAILED_PRECONDITION with reason RISK_EXTENSION_MOOT without
+	// changing the escrow. Each success clears the hold, records APPLIED or
+	// WITHDRAWN, and increments control_version without a journal entry.
+	ResolveTradeRiskExtension(ctx context.Context, in *ResolveTradeRiskExtensionRequest, opts ...grpc.CallOption) (*ResolveTradeRiskExtensionResponse, error)
 }
 
 type reservationServiceClient struct {
@@ -193,6 +213,26 @@ func (c *reservationServiceClient) GetWithdrawalReservation(ctx context.Context,
 	return out, nil
 }
 
+func (c *reservationServiceClient) HoldTradeForRiskExtension(ctx context.Context, in *HoldTradeForRiskExtensionRequest, opts ...grpc.CallOption) (*HoldTradeForRiskExtensionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HoldTradeForRiskExtensionResponse)
+	err := c.cc.Invoke(ctx, ReservationService_HoldTradeForRiskExtension_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *reservationServiceClient) ResolveTradeRiskExtension(ctx context.Context, in *ResolveTradeRiskExtensionRequest, opts ...grpc.CallOption) (*ResolveTradeRiskExtensionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResolveTradeRiskExtensionResponse)
+	err := c.cc.Invoke(ctx, ReservationService_ResolveTradeRiskExtension_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReservationServiceServer is the server API for ReservationService service.
 // All implementations must embed UnimplementedReservationServiceServer
 // for forward compatibility.
@@ -214,6 +254,11 @@ func (c *reservationServiceClient) GetWithdrawalReservation(ctx context.Context,
 // RPC. ReserveWithdrawal is settlement-only and idempotent by withdrawal ID.
 // Command digests use the field-order encoding in docs contracts.md, not proto
 // serialization.
+// For HoldTradeForRiskExtension and ResolveTradeRiskExtension, ledger uses
+// AIPAY-LEDGER-COMMAND-V1 with idempotency_key as the outer key. Encode the
+// inner fields in field-number order, skipping that key. Encode Timestamp
+// as i64 Unix microseconds and reject sub-microsecond precision. Encode an
+// optional scalar as u8 0 for absent or u8 1 followed by the value for present.
 //
 // A119 HoldReleasedTradeForDispute requires original escrow RELEASED, no other
 // active dispute/refund occupation and positive matching CAS. Reserve H=min(N,
@@ -245,6 +290,19 @@ type ReservationServiceServer interface {
 	GetTradeFreezeDetails(context.Context, *GetTradeFreezeDetailsRequest) (*GetTradeFreezeDetailsResponse, error)
 	ReserveWithdrawal(context.Context, *ReserveWithdrawalRequest) (*ReserveWithdrawalResponse, error)
 	GetWithdrawalReservation(context.Context, *GetWithdrawalReservationRequest) (*GetWithdrawalReservationResponse, error)
+	// Require matching CAS and a RESERVED, unreleased escrow with recorded
+	// payment, no dispute or refund hold, and no unexpired extension hold.
+	// Ledger time < pending_until <= ledger time + 25 hours. On success record
+	// HELD and increment control_version without a journal entry.
+	HoldTradeForRiskExtension(context.Context, *HoldTradeForRiskExtensionRequest) (*HoldTradeForRiskExtensionResponse, error)
+	// Require matching CAS and extension_id. APPLY requires RESERVED, recorded
+	// payment, unreleased funds, fewer than five prior applied extensions and
+	// a later deadline within the locked duration plus the bounded policy cap.
+	// WITHDRAW accepts RESERVED, DISPUTED or REFUND_PENDING. For other states
+	// it returns FAILED_PRECONDITION with reason RISK_EXTENSION_MOOT without
+	// changing the escrow. Each success clears the hold, records APPLIED or
+	// WITHDRAWN, and increments control_version without a journal entry.
+	ResolveTradeRiskExtension(context.Context, *ResolveTradeRiskExtensionRequest) (*ResolveTradeRiskExtensionResponse, error)
 	mustEmbedUnimplementedReservationServiceServer()
 }
 
@@ -284,6 +342,12 @@ func (UnimplementedReservationServiceServer) ReserveWithdrawal(context.Context, 
 }
 func (UnimplementedReservationServiceServer) GetWithdrawalReservation(context.Context, *GetWithdrawalReservationRequest) (*GetWithdrawalReservationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetWithdrawalReservation not implemented")
+}
+func (UnimplementedReservationServiceServer) HoldTradeForRiskExtension(context.Context, *HoldTradeForRiskExtensionRequest) (*HoldTradeForRiskExtensionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method HoldTradeForRiskExtension not implemented")
+}
+func (UnimplementedReservationServiceServer) ResolveTradeRiskExtension(context.Context, *ResolveTradeRiskExtensionRequest) (*ResolveTradeRiskExtensionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResolveTradeRiskExtension not implemented")
 }
 func (UnimplementedReservationServiceServer) mustEmbedUnimplementedReservationServiceServer() {}
 func (UnimplementedReservationServiceServer) testEmbeddedByValue()                            {}
@@ -486,6 +550,42 @@ func _ReservationService_GetWithdrawalReservation_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReservationService_HoldTradeForRiskExtension_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HoldTradeForRiskExtensionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReservationServiceServer).HoldTradeForRiskExtension(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReservationService_HoldTradeForRiskExtension_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReservationServiceServer).HoldTradeForRiskExtension(ctx, req.(*HoldTradeForRiskExtensionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ReservationService_ResolveTradeRiskExtension_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResolveTradeRiskExtensionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReservationServiceServer).ResolveTradeRiskExtension(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReservationService_ResolveTradeRiskExtension_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReservationServiceServer).ResolveTradeRiskExtension(ctx, req.(*ResolveTradeRiskExtensionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReservationService_ServiceDesc is the grpc.ServiceDesc for ReservationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -532,6 +632,14 @@ var ReservationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetWithdrawalReservation",
 			Handler:    _ReservationService_GetWithdrawalReservation_Handler,
+		},
+		{
+			MethodName: "HoldTradeForRiskExtension",
+			Handler:    _ReservationService_HoldTradeForRiskExtension_Handler,
+		},
+		{
+			MethodName: "ResolveTradeRiskExtension",
+			Handler:    _ReservationService_ResolveTradeRiskExtension_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

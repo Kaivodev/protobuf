@@ -100,10 +100,11 @@ func (RefundStatus) EnumDescriptor() ([]byte, []int) {
 type RefundOrigin int32
 
 const (
-	RefundOrigin_REFUND_ORIGIN_UNSPECIFIED    RefundOrigin = 0
-	RefundOrigin_REFUND_ORIGIN_MERCHANT_API   RefundOrigin = 1
-	RefundOrigin_REFUND_ORIGIN_PLATFORM       RefundOrigin = 2
-	RefundOrigin_REFUND_ORIGIN_DISPUTE_RULING RefundOrigin = 3
+	RefundOrigin_REFUND_ORIGIN_UNSPECIFIED     RefundOrigin = 0
+	RefundOrigin_REFUND_ORIGIN_MERCHANT_API    RefundOrigin = 1
+	RefundOrigin_REFUND_ORIGIN_PLATFORM        RefundOrigin = 2
+	RefundOrigin_REFUND_ORIGIN_DISPUTE_RULING  RefundOrigin = 3
+	RefundOrigin_REFUND_ORIGIN_AMOUNT_MISMATCH RefundOrigin = 4
 )
 
 // Enum value maps for RefundOrigin.
@@ -113,12 +114,14 @@ var (
 		1: "REFUND_ORIGIN_MERCHANT_API",
 		2: "REFUND_ORIGIN_PLATFORM",
 		3: "REFUND_ORIGIN_DISPUTE_RULING",
+		4: "REFUND_ORIGIN_AMOUNT_MISMATCH",
 	}
 	RefundOrigin_value = map[string]int32{
-		"REFUND_ORIGIN_UNSPECIFIED":    0,
-		"REFUND_ORIGIN_MERCHANT_API":   1,
-		"REFUND_ORIGIN_PLATFORM":       2,
-		"REFUND_ORIGIN_DISPUTE_RULING": 3,
+		"REFUND_ORIGIN_UNSPECIFIED":     0,
+		"REFUND_ORIGIN_MERCHANT_API":    1,
+		"REFUND_ORIGIN_PLATFORM":        2,
+		"REFUND_ORIGIN_DISPUTE_RULING":  3,
+		"REFUND_ORIGIN_AMOUNT_MISMATCH": 4,
 	}
 )
 
@@ -162,11 +165,12 @@ type Refund struct {
 	Reservation *v11.RefundReservation `protobuf:"bytes,6,opt,name=reservation,proto3" json:"reservation,omitempty"`
 	// For manual refunds, the upstream refund number from the approved evidence.
 	UpstreamRefundId string `protobuf:"bytes,7,opt,name=upstream_refund_id,json=upstreamRefundId,proto3" json:"upstream_refund_id,omitempty"`
-	// Full original fiat amount only; partial allocation is deferred to D18.
+	// Amount the seller must refund. The full original fiat amount except for
+	// AMOUNT_MISMATCH, which uses the amount approved in the recovery.
 	FiatAmount *v1.Money `protobuf:"bytes,8,opt,name=fiat_amount,json=fiatAmount,proto3" json:"fiat_amount,omitempty"`
 	// Original initiation reason. Merchant-facing views may show the merchant's own
-	// reason for MERCHANT_API refunds. PLATFORM and DISPUTE_RULING reasons are
-	// internal and must not be shown to merchants.
+	// reason for MERCHANT_API refunds. Reasons for PLATFORM, DISPUTE_RULING
+	// and AMOUNT_MISMATCH are internal.
 	Reason    string                 `protobuf:"bytes,9,opt,name=reason,proto3" json:"reason,omitempty"`
 	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
@@ -180,8 +184,10 @@ type Refund struct {
 	ObjectionDeadline *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=objection_deadline,json=objectionDeadline,proto3" json:"objection_deadline,omitempty"`
 	// Upstream refund time from approved evidence. Present only after approval.
 	SellerRefundedAt *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=seller_refunded_at,json=sellerRefundedAt,proto3" json:"seller_refunded_at,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Set exactly for an AMOUNT_MISMATCH refund.
+	AmountMismatchRecoveryId string `protobuf:"bytes,18,opt,name=amount_mismatch_recovery_id,json=amountMismatchRecoveryId,proto3" json:"amount_mismatch_recovery_id,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *Refund) Reset() {
@@ -331,6 +337,13 @@ func (x *Refund) GetSellerRefundedAt() *timestamppb.Timestamp {
 		return x.SellerRefundedAt
 	}
 	return nil
+}
+
+func (x *Refund) GetAmountMismatchRecoveryId() string {
+	if x != nil {
+		return x.AmountMismatchRecoveryId
+	}
+	return ""
 }
 
 type RefundSelector struct {
@@ -649,7 +662,7 @@ var File_aipay_payment_v1_refund_service_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_refund_service_proto_rawDesc = "" +
 	"\n" +
-	"%aipay/payment/v1/refund_service.proto\x12\x10aipay.payment.v1\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/money.proto\x1a\x1baipay/common/v1/trade.proto\x1a\x1baipay/ledger/v1/trade.proto\x1a$aipay/payment/v1/order_service.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x99\a\n" +
+	"%aipay/payment/v1/refund_service.proto\x12\x10aipay.payment.v1\x1a\x1baipay/authz/v1/policy.proto\x1a\x1baipay/common/v1/money.proto\x1a\x1baipay/common/v1/trade.proto\x1a\x1baipay/ledger/v1/trade.proto\x1a$aipay/payment/v1/order_service.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd8\a\n" +
 	"\x06Refund\x12\x1b\n" +
 	"\trefund_id\x18\x01 \x01(\tR\brefundId\x12\"\n" +
 	"\rout_refund_no\x18\x02 \x01(\tR\voutRefundNo\x124\n" +
@@ -672,7 +685,8 @@ const file_aipay_payment_v1_refund_service_proto_rawDesc = "" +
 	"\x06origin\x18\x0e \x01(\x0e2\x1e.aipay.payment.v1.RefundOriginR\x06origin\x12>\n" +
 	"\rseller_due_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\vsellerDueAt\x12I\n" +
 	"\x12objection_deadline\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\x11objectionDeadline\x12H\n" +
-	"\x12seller_refunded_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\x10sellerRefundedAt\"\x88\x01\n" +
+	"\x12seller_refunded_at\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\x10sellerRefundedAt\x12=\n" +
+	"\x1bamount_mismatch_recovery_id\x18\x12 \x01(\tR\x18amountMismatchRecoveryId\"\x88\x01\n" +
 	"\x0eRefundSelector\x12%\n" +
 	"\x0eapplication_id\x18\x01 \x01(\tR\rapplicationId\x12\x1d\n" +
 	"\trefund_id\x18\x02 \x01(\tH\x00R\brefundId\x12$\n" +
@@ -702,12 +716,13 @@ const file_aipay_payment_v1_refund_service_proto_rawDesc = "" +
 	"\x15REFUND_STATUS_UNKNOWN\x10\x05\x12!\n" +
 	"\x1dREFUND_STATUS_AWAITING_SELLER\x10\x06\x12!\n" +
 	"\x1dREFUND_STATUS_AWAITING_REVIEW\x10\a\x12\x1c\n" +
-	"\x18REFUND_STATUS_CONFIRMING\x10\b*\x8b\x01\n" +
+	"\x18REFUND_STATUS_CONFIRMING\x10\b*\xae\x01\n" +
 	"\fRefundOrigin\x12\x1d\n" +
 	"\x19REFUND_ORIGIN_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aREFUND_ORIGIN_MERCHANT_API\x10\x01\x12\x1a\n" +
 	"\x16REFUND_ORIGIN_PLATFORM\x10\x02\x12 \n" +
-	"\x1cREFUND_ORIGIN_DISPUTE_RULING\x10\x032\x97\x02\n" +
+	"\x1cREFUND_ORIGIN_DISPUTE_RULING\x10\x03\x12!\n" +
+	"\x1dREFUND_ORIGIN_AMOUNT_MISMATCH\x10\x042\x97\x02\n" +
 	"\rRefundService\x12\x87\x01\n" +
 	"\fCreateRefund\x12%.aipay.payment.v1.CreateRefundRequest\x1a&.aipay.payment.v1.CreateRefundResponse\"(\xc2\xf3\x18$\n" +
 	"\"\n" +

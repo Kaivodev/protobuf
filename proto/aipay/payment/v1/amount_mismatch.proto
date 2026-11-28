@@ -1,0 +1,194 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/query.proto";
+import "aipay/payment/v1/admin_approval.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// A151 phase 1. An open case records a mismatch that stopped order processing.
+enum AmountMismatchCaseState {
+  AMOUNT_MISMATCH_CASE_STATE_UNSPECIFIED = 0;
+  AMOUNT_MISMATCH_CASE_STATE_OPEN = 1;
+  AMOUNT_MISMATCH_CASE_STATE_RECOVERING = 2;
+  AMOUNT_MISMATCH_CASE_STATE_RESOLVED = 3;
+}
+
+enum AmountMismatchResolution {
+  AMOUNT_MISMATCH_RESOLUTION_UNSPECIFIED = 0;
+  AMOUNT_MISMATCH_RESOLUTION_REVERIFIED_PAID = 1;
+  AMOUNT_MISMATCH_RESOLUTION_REVERIFIED_UNPAID = 2;
+  AMOUNT_MISMATCH_RESOLUTION_REFUNDED = 3;
+}
+
+enum AmountMismatchRecoveryState {
+  AMOUNT_MISMATCH_RECOVERY_STATE_UNSPECIFIED = 0;
+  AMOUNT_MISMATCH_RECOVERY_STATE_PENDING_APPROVAL = 1;
+  AMOUNT_MISMATCH_RECOVERY_STATE_EXECUTING = 2;
+  AMOUNT_MISMATCH_RECOVERY_STATE_COMPLETED = 3;
+  AMOUNT_MISMATCH_RECOVERY_STATE_FAILED = 4;
+  AMOUNT_MISMATCH_RECOVERY_STATE_SUPERSEDED = 5;
+  AMOUNT_MISMATCH_RECOVERY_STATE_EXPIRED = 6;
+}
+
+enum AmountMismatchBlocker {
+  AMOUNT_MISMATCH_BLOCKER_UNSPECIFIED = 0;
+  // Recovery requires an UNKNOWN order.
+  AMOUNT_MISMATCH_BLOCKER_ORDER_STATUS = 1;
+  // The order must be stopped after a mismatch.
+  AMOUNT_MISMATCH_BLOCKER_ORDER_STAGE = 2;
+  AMOUNT_MISMATCH_BLOCKER_ORDER_DISPUTED = 3;
+  AMOUNT_MISMATCH_BLOCKER_REFUND_ACTIVE = 4;
+  AMOUNT_MISMATCH_BLOCKER_FORCED_CLOSE_ACTIVE = 5;
+  AMOUNT_MISMATCH_BLOCKER_ESCROW_NOT_RESERVED = 6;
+  AMOUNT_MISMATCH_BLOCKER_LEDGER_VERSION_CHANGED = 7;
+  AMOUNT_MISMATCH_BLOCKER_CASE_NOT_OPEN = 8;
+  // The order has used all three re-verification attempts.
+  AMOUNT_MISMATCH_BLOCKER_REVERIFY_LIMIT_REACHED = 9;
+  AMOUNT_MISMATCH_BLOCKER_RECOVERY_PENDING = 10;
+  // The case or order changed since submission.
+  AMOUNT_MISMATCH_BLOCKER_STATE_CHANGED = 11;
+}
+
+message AmountMismatchCase {
+  string case_id = 1;
+  string order_id = 2;
+  AmountMismatchSource source = 3;
+  AmountMismatchKind kind = 4;
+  AmountMismatchCaseState state = 5;
+  google.protobuf.Timestamp opened_at = 6;
+  uint32 reverify_attempts = 7;
+  // UNSPECIFIED unless RESOLVED.
+  AmountMismatchResolution resolution = 8;
+  google.protobuf.Timestamp resolved_at = 9;
+  string upstream_order_id = 10;
+  // True when the order is DISPUTED. Recovery is then refused with ORDER_DISPUTED.
+  bool disputed = 11;
+}
+
+message AmountMismatchRecovery {
+  string recovery_id = 1;
+  string case_id = 2;
+  string order_id = 3;
+  AmountMismatchOutcome outcome = 4;
+  AmountMismatchRecoveryState state = 5;
+  string approval_request_id = 6;
+  string requested_by = 7;
+  // REFUND_OBSERVED only, in minor units of the order's fiat currency.
+  optional int64 refund_amount = 8;
+  // Set only for REFUND_OBSERVED.
+  string refund_id = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+message AmountMismatchEligibility {
+  string order_id = 1;
+  uint64 control_version = 2;
+  repeated AmountMismatchOutcome allowed_outcomes = 3;
+  // Empty exactly when allowed_outcomes is nonempty.
+  repeated AmountMismatchBlocker blockers = 4;
+  google.protobuf.Timestamp as_of = 5;
+}
+
+message GetAmountMismatchCaseRequest {
+  string order_id = 1;
+}
+
+message GetAmountMismatchCaseResponse {
+  AmountMismatchCase mismatch_case = 1;
+  AmountMismatchEligibility eligibility = 2;
+  repeated AmountMismatchRecovery recoveries = 3;
+}
+
+message ListAmountMismatchCasesRequest {
+  optional AmountMismatchCaseState state = 1;
+  string seller_account_id = 2;
+  string channel_account_id = 3;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 4 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 5;
+}
+
+message ListAmountMismatchCasesResponse {
+  repeated AmountMismatchCase cases = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message SubmitAmountMismatchRecoveryRequest {
+  string idempotency_key = 1;
+  string order_id = 2;
+  string case_id = 3;
+  string escrow_reservation_id = 4;
+  uint64 expected_control_version = 5;
+  AmountMismatchOutcome outcome = 6;
+  // REFUND_OBSERVED only. Positive minor units in the order's fiat currency.
+  optional int64 refund_amount = 7;
+  // Required, 1-1000 characters.
+  string reason = 8;
+}
+
+message SubmitAmountMismatchRecoveryResponse {
+  AmountMismatchRecovery recovery = 1;
+  PaymentApproval approval = 2;
+}
+
+message ApproveAmountMismatchRecoveryRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveAmountMismatchRecoveryResponse {
+  PaymentApproval approval = 1;
+  AmountMismatchRecovery recovery = 2;
+}
+
+// Platform management listener only. A148 limits assertions in platform reads
+// and Approve responses to credential_id. Reconciliation receives complete
+// recovery assertions with GetSellerRefundReviewForVerification.
+service AmountMismatchService {
+  rpc ListAmountMismatchCases(ListAmountMismatchCasesRequest) returns (ListAmountMismatchCasesResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.amount_mismatch.read"
+      }
+    };
+  }
+  rpc GetAmountMismatchCase(GetAmountMismatchCaseRequest) returns (GetAmountMismatchCaseResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.amount_mismatch.read"
+      }
+    };
+  }
+  rpc SubmitAmountMismatchRecovery(SubmitAmountMismatchRecoveryRequest) returns (SubmitAmountMismatchRecoveryResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "payment.amount_mismatch.submit"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ApproveAmountMismatchRecovery(ApproveAmountMismatchRecoveryRequest) returns (ApproveAmountMismatchRecoveryResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.amount_mismatch.approve"
+      }
+    };
+  }
+}

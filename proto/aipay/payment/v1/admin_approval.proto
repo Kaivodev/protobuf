@@ -227,7 +227,8 @@ message SellerRefundReviewMaterial {
   optional string out_refund_no = 7;
   string upstream_refund_no = 8;
   google.protobuf.Timestamp refunded_at = 9;
-  // Equal to the original trade quote in currency and minor units.
+  // Equal to the original fiat quote, or for an AMOUNT_MISMATCH refund,
+  // the approved recovery's refund_amount in the quote currency.
   aipay.common.v1.Money refunded_amount = 10;
   string evidence_id = 11;
   uint64 evidence_version = 12;
@@ -282,7 +283,7 @@ message OrderForcedCloseMaterial {
 // requested_at/expires_at. Canonical field-order encoding is specified in docs;
 // request_bytes has a length-prefixed "aipay.payment.admin.v1" domain followed
 // by canonical field-order material, NOT protobuf serialization. Unknown fields
-// are rejected. Encode the selected operation field number (6-16) as u32
+// are rejected. Encode the selected operation field number (6-18) as u32
 // before its expanded fields. Different encoding versions require a new domain.
 message PaymentApprovalMaterial {
   string approval_request_id = 1;
@@ -292,8 +293,9 @@ message PaymentApprovalMaterial {
   google.protobuf.Timestamp expires_at = 5;
   // Two distinct platform natural persons must approve, neither equal to
   // requested_by. For seller_refund this is the submitting seller user. For
-  // seller_refund_failure and forced_close the initiating platform user is
-  // requested_by.
+  // risk_extension this is the initiating platform or seller user. For
+  // seller_refund_failure, forced_close and amount_mismatch_recovery this
+  // is the initiating platform user.
   oneof operation {
     ChannelAccountChange channel_account = 6;
     PaymentMethodChange payment_method = 7;
@@ -306,6 +308,8 @@ message PaymentApprovalMaterial {
     SellerRefundReviewMaterial seller_refund = 14;
     SellerRefundFailureMaterial seller_refund_failure = 15;
     OrderForcedCloseMaterial forced_close = 16;
+    RiskExtensionMaterial risk_extension = 17;
+    AmountMismatchRecoveryMaterial amount_mismatch_recovery = 18;
   }
 }
 
@@ -321,4 +325,104 @@ message PaymentApproval {
   repeated aipay.approval.v1.Approval approvals = 3;
   // Absent until two approvals; equals second approval's verified_at.
   google.protobuf.Timestamp approved_at = 4;
+}
+
+enum RiskExtensionOrigin {
+  RISK_EXTENSION_ORIGIN_UNSPECIFIED = 0;
+  RISK_EXTENSION_ORIGIN_PLATFORM = 1;
+  RISK_EXTENSION_ORIGIN_SELLER = 2;
+}
+
+enum RiskExtensionReason {
+  RISK_EXTENSION_REASON_UNSPECIFIED = 0;
+  RISK_EXTENSION_REASON_SELLER_FUNDS_FROZEN = 1;
+  RISK_EXTENSION_REASON_PAYER_MISMATCH = 2;
+  RISK_EXTENSION_REASON_REVERSAL_RISK = 3;
+  RISK_EXTENSION_REASON_UPSTREAM_INVESTIGATION = 4;
+  RISK_EXTENSION_REASON_PLATFORM_REVIEW = 5;
+  // Requires a reason of at least 20 characters.
+  RISK_EXTENSION_REASON_OTHER = 6;
+}
+
+enum AmountMismatchSource {
+  AMOUNT_MISMATCH_SOURCE_UNSPECIFIED = 0;
+  AMOUNT_MISMATCH_SOURCE_QUERY = 1;
+  AMOUNT_MISMATCH_SOURCE_CREATE = 2;
+  AMOUNT_MISMATCH_SOURCE_CLOSE = 3;
+  // Backfilled by migration from audit records.
+  AMOUNT_MISMATCH_SOURCE_LEGACY = 4;
+}
+
+enum AmountMismatchKind {
+  AMOUNT_MISMATCH_KIND_UNSPECIFIED = 0;
+  // Phase 1 default when the gateway reports a mismatch without an observed amount.
+  AMOUNT_MISMATCH_KIND_UNKNOWN = 1;
+  // Payment found a conflicting upstream order ID locally.
+  AMOUNT_MISMATCH_KIND_IDENTITY = 2;
+}
+
+enum AmountMismatchOutcome {
+  AMOUNT_MISMATCH_OUTCOME_UNSPECIFIED = 0;
+  // Resume querying under the existing release and cancellation evidence rules.
+  AMOUNT_MISMATCH_OUTCOME_REVERIFY = 1;
+  // Manual refund of the approved amount through the A139 flow.
+  AMOUNT_MISMATCH_OUTCOME_REFUND_OBSERVED = 2;
+}
+
+// A150. Payment loads the order, its locked risk policy and the ledger hold.
+// The caller identifies the order and escrow, version, duration and reason.
+// Two distinct platform approvers sign, neither equal to requested_by. For
+// SELLER origin, requested_by is the seller user and approvers exclude every
+// member of the seller account.
+message RiskExtensionMaterial {
+  string extension_id = 1;
+  RiskExtensionOrigin origin = 2;
+  aipay.common.v1.TradeSnapshot trade = 3;
+  string escrow_reservation_id = 4;
+  // Ledger escrow control version after the hold was placed.
+  uint64 expected_control_version = 5;
+  // Empty only if payment never learned one.
+  string upstream_order_id = 6;
+  google.protobuf.Timestamp paid_verified_at = 7;
+  // Ledger risk_release_at when the hold was placed.
+  google.protobuf.Timestamp current_risk_release_at = 8;
+  // current_risk_release_at + extension_seconds.
+  google.protobuf.Timestamp requested_risk_release_at = 9;
+  // At least 600.
+  uint64 extension_seconds = 10;
+  // 1-based position of this extension among the order's applied ones.
+  uint32 sequence = 11;
+  // Sum of previously applied extensions, in seconds.
+  uint64 applied_extension_seconds = 12;
+  string risk_policy_version = 13;
+  // min(locked policy exceptional_extension_seconds, 2592000).
+  uint64 policy_extension_cap_seconds = 14;
+  google.protobuf.Timestamp pending_until = 15;
+  RiskExtensionReason reason_code = 16;
+  // Required, 1-1000 characters.
+  string reason = 17;
+}
+
+// A151 phase 1. Payment loads the case and recovery IDs, trade, escrow and
+// version. Two distinct platform approvers sign, neither equal to the initiator.
+message AmountMismatchRecoveryMaterial {
+  string recovery_id = 1;
+  string case_id = 2;
+  aipay.common.v1.TradeSnapshot trade = 3;
+  string escrow_reservation_id = 4;
+  uint64 expected_control_version = 5;
+  // Empty when payment never learned an upstream order ID.
+  string upstream_order_id = 6;
+  AmountMismatchSource source = 7;
+  AmountMismatchKind kind = 8;
+  google.protobuf.Timestamp detected_at = 9;
+  AmountMismatchOutcome outcome = 10;
+  // REFUND_OBSERVED only. Positive minor units in trade.quote.fiat_currency.
+  optional int64 refund_amount = 11;
+  // REFUND_OBSERVED only. Identifies the refund payment will create on approval.
+  optional string refund_id = 12;
+  // REVERIFY only. 1-based attempt number, at most 3.
+  optional uint32 reverify_attempt = 13;
+  // Required, 1-1000 characters.
+  string reason = 14;
 }

@@ -51,6 +51,9 @@ message TradeReservation {
   // The original escrow stays RELEASED; this must not imply seller escrow Q
   // has been recovered. Its dispute_id must match the field above.
   ReleasedTradeDisputeHold released_dispute_hold = 10;
+  // Present only while ledger records a hold. Applying an extension raises
+  // risk_release_at, which can only move later.
+  TradeRiskExtensionPending risk_extension_pending = 11;
 }
 
 // Ledger-owned counterpart to reconciliation's DisputeResolution; never import
@@ -139,4 +142,14 @@ message AccountRiskFreeze {
   optional bool frozen = 2;
   // All active account risk freeze IDs, unique and nonempty.
   repeated string freeze_ids = 3;
+}
+
+// A150. Payment places this time-bounded hold while an exceptional risk
+// extension awaits two approvals. Ledger reports the recorded hold until
+// APPLY or WITHDRAW, even after pending_until passes. While present, every
+// release authorization's effective_at must be at or after pending_until.
+// The hold never moves funds.
+message TradeRiskExtensionPending {
+  string extension_id = 1;
+  google.protobuf.Timestamp pending_until = 2;
 }

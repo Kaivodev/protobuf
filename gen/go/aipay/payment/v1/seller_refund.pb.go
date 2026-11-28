@@ -279,10 +279,12 @@ type SellerRefundEvidenceMaterial struct {
 	SubmittedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=submitted_at,json=submittedAt,proto3" json:"submitted_at,omitempty"`
 	// 1-64 characters from [A-Za-z0-9._:-].
 	UpstreamRefundNo string `protobuf:"bytes,6,opt,name=upstream_refund_no,json=upstreamRefundNo,proto3" json:"upstream_refund_no,omitempty"`
-	// After paid_verified_at for refunds or order creation for late payments.
+	// After order creation for late payments and AMOUNT_MISMATCH refunds,
+	// or after paid_verified_at for other refunds.
 	// At most five minutes ahead of payment's current time.
 	RefundedAt *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=refunded_at,json=refundedAt,proto3" json:"refunded_at,omitempty"`
-	// FULL_REFUND_ONLY: currency and minor units must match the original fiat quote.
+	// The original fiat quote, or the approved recovery amount in that currency
+	// for an AMOUNT_MISMATCH refund.
 	RefundedAmount *v1.Money `protobuf:"bytes,8,opt,name=refunded_amount,json=refundedAmount,proto3" json:"refunded_amount,omitempty"`
 	// Optional, 0-200 characters. Exclude from logs, notices and audit text.
 	Note *string `protobuf:"bytes,9,opt,name=note,proto3,oneof" json:"note,omitempty"`
@@ -1606,9 +1608,14 @@ type GetSellerRefundReviewForVerificationResponse struct {
 	Approval *PaymentApproval `protobuf:"bytes,1,opt,name=approval,proto3" json:"approval,omitempty"`
 	// Present unless a failure was approved without seller evidence. Only metadata
 	// is returned. Omit status_reason from this verification response.
-	Evidence      *SellerRefundEvidence `protobuf:"bytes,2,opt,name=evidence,proto3" json:"evidence,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Evidence *SellerRefundEvidence `protobuf:"bytes,2,opt,name=evidence,proto3" json:"evidence,omitempty"`
+	// Present exactly for AMOUNT_MISMATCH. Only reconciliation receives this
+	// approved amount_mismatch_recovery with both complete assertions (A148).
+	// Independently verify the approval and bind its material.refund_id, trade,
+	// escrow and refund_amount to the seller review.
+	AmountMismatchRecovery *PaymentApproval `protobuf:"bytes,3,opt,name=amount_mismatch_recovery,json=amountMismatchRecovery,proto3" json:"amount_mismatch_recovery,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *GetSellerRefundReviewForVerificationResponse) Reset() {
@@ -1651,6 +1658,13 @@ func (x *GetSellerRefundReviewForVerificationResponse) GetApproval() *PaymentApp
 func (x *GetSellerRefundReviewForVerificationResponse) GetEvidence() *SellerRefundEvidence {
 	if x != nil {
 		return x.Evidence
+	}
+	return nil
+}
+
+func (x *GetSellerRefundReviewForVerificationResponse) GetAmountMismatchRecovery() *PaymentApproval {
+	if x != nil {
+		return x.AmountMismatchRecovery
 	}
 	return nil
 }
@@ -1768,10 +1782,11 @@ const file_aipay_payment_v1_seller_refund_proto_rawDesc = "" +
 	"\"ApproveSellerRefundFailureResponse\x12=\n" +
 	"\bapproval\x18\x01 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\bapproval\"J\n" +
 	"+GetSellerRefundReviewForVerificationRequest\x12\x1b\n" +
-	"\trefund_id\x18\x01 \x01(\tR\brefundId\"\xb1\x01\n" +
+	"\trefund_id\x18\x01 \x01(\tR\brefundId\"\x8e\x02\n" +
 	",GetSellerRefundReviewForVerificationResponse\x12=\n" +
 	"\bapproval\x18\x01 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\bapproval\x12B\n" +
-	"\bevidence\x18\x02 \x01(\v2&.aipay.payment.v1.SellerRefundEvidenceR\bevidence*\xa9\x02\n" +
+	"\bevidence\x18\x02 \x01(\v2&.aipay.payment.v1.SellerRefundEvidenceR\bevidence\x12[\n" +
+	"\x18amount_mismatch_recovery\x18\x03 \x01(\v2!.aipay.payment.v1.PaymentApprovalR\x16amountMismatchRecovery*\xa9\x02\n" +
 	"\x1aSellerRefundEvidenceStatus\x12-\n" +
 	")SELLER_REFUND_EVIDENCE_STATUS_UNSPECIFIED\x10\x00\x12+\n" +
 	"'SELLER_REFUND_EVIDENCE_STATUS_SUBMITTED\x10\x01\x12*\n" +
@@ -1899,27 +1914,28 @@ var file_aipay_payment_v1_seller_refund_proto_depIdxs = []int32{
 	31, // 31: aipay.payment.v1.ApproveSellerRefundFailureResponse.approval:type_name -> aipay.payment.v1.PaymentApproval
 	31, // 32: aipay.payment.v1.GetSellerRefundReviewForVerificationResponse.approval:type_name -> aipay.payment.v1.PaymentApproval
 	5,  // 33: aipay.payment.v1.GetSellerRefundReviewForVerificationResponse.evidence:type_name -> aipay.payment.v1.SellerRefundEvidence
-	10, // 34: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundReview:input_type -> aipay.payment.v1.GetSellerRefundReviewRequest
-	12, // 35: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundEvidenceFile:input_type -> aipay.payment.v1.GetSellerRefundEvidenceFileRequest
-	14, // 36: aipay.payment.v1.SellerRefundReviewService.ApproveSellerRefund:input_type -> aipay.payment.v1.ApproveSellerRefundRequest
-	16, // 37: aipay.payment.v1.SellerRefundReviewService.RejectSellerRefundEvidence:input_type -> aipay.payment.v1.RejectSellerRefundEvidenceRequest
-	18, // 38: aipay.payment.v1.SellerRefundReviewService.RecordRefundObjection:input_type -> aipay.payment.v1.RecordRefundObjectionRequest
-	20, // 39: aipay.payment.v1.SellerRefundReviewService.SubmitSellerRefundFailure:input_type -> aipay.payment.v1.SubmitSellerRefundFailureRequest
-	22, // 40: aipay.payment.v1.SellerRefundReviewService.ApproveSellerRefundFailure:input_type -> aipay.payment.v1.ApproveSellerRefundFailureRequest
-	24, // 41: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundReviewForVerification:input_type -> aipay.payment.v1.GetSellerRefundReviewForVerificationRequest
-	11, // 42: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundReview:output_type -> aipay.payment.v1.GetSellerRefundReviewResponse
-	13, // 43: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundEvidenceFile:output_type -> aipay.payment.v1.GetSellerRefundEvidenceFileResponse
-	15, // 44: aipay.payment.v1.SellerRefundReviewService.ApproveSellerRefund:output_type -> aipay.payment.v1.ApproveSellerRefundResponse
-	17, // 45: aipay.payment.v1.SellerRefundReviewService.RejectSellerRefundEvidence:output_type -> aipay.payment.v1.RejectSellerRefundEvidenceResponse
-	19, // 46: aipay.payment.v1.SellerRefundReviewService.RecordRefundObjection:output_type -> aipay.payment.v1.RecordRefundObjectionResponse
-	21, // 47: aipay.payment.v1.SellerRefundReviewService.SubmitSellerRefundFailure:output_type -> aipay.payment.v1.SubmitSellerRefundFailureResponse
-	23, // 48: aipay.payment.v1.SellerRefundReviewService.ApproveSellerRefundFailure:output_type -> aipay.payment.v1.ApproveSellerRefundFailureResponse
-	25, // 49: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundReviewForVerification:output_type -> aipay.payment.v1.GetSellerRefundReviewForVerificationResponse
-	42, // [42:50] is the sub-list for method output_type
-	34, // [34:42] is the sub-list for method input_type
-	34, // [34:34] is the sub-list for extension type_name
-	34, // [34:34] is the sub-list for extension extendee
-	0,  // [0:34] is the sub-list for field type_name
+	31, // 34: aipay.payment.v1.GetSellerRefundReviewForVerificationResponse.amount_mismatch_recovery:type_name -> aipay.payment.v1.PaymentApproval
+	10, // 35: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundReview:input_type -> aipay.payment.v1.GetSellerRefundReviewRequest
+	12, // 36: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundEvidenceFile:input_type -> aipay.payment.v1.GetSellerRefundEvidenceFileRequest
+	14, // 37: aipay.payment.v1.SellerRefundReviewService.ApproveSellerRefund:input_type -> aipay.payment.v1.ApproveSellerRefundRequest
+	16, // 38: aipay.payment.v1.SellerRefundReviewService.RejectSellerRefundEvidence:input_type -> aipay.payment.v1.RejectSellerRefundEvidenceRequest
+	18, // 39: aipay.payment.v1.SellerRefundReviewService.RecordRefundObjection:input_type -> aipay.payment.v1.RecordRefundObjectionRequest
+	20, // 40: aipay.payment.v1.SellerRefundReviewService.SubmitSellerRefundFailure:input_type -> aipay.payment.v1.SubmitSellerRefundFailureRequest
+	22, // 41: aipay.payment.v1.SellerRefundReviewService.ApproveSellerRefundFailure:input_type -> aipay.payment.v1.ApproveSellerRefundFailureRequest
+	24, // 42: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundReviewForVerification:input_type -> aipay.payment.v1.GetSellerRefundReviewForVerificationRequest
+	11, // 43: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundReview:output_type -> aipay.payment.v1.GetSellerRefundReviewResponse
+	13, // 44: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundEvidenceFile:output_type -> aipay.payment.v1.GetSellerRefundEvidenceFileResponse
+	15, // 45: aipay.payment.v1.SellerRefundReviewService.ApproveSellerRefund:output_type -> aipay.payment.v1.ApproveSellerRefundResponse
+	17, // 46: aipay.payment.v1.SellerRefundReviewService.RejectSellerRefundEvidence:output_type -> aipay.payment.v1.RejectSellerRefundEvidenceResponse
+	19, // 47: aipay.payment.v1.SellerRefundReviewService.RecordRefundObjection:output_type -> aipay.payment.v1.RecordRefundObjectionResponse
+	21, // 48: aipay.payment.v1.SellerRefundReviewService.SubmitSellerRefundFailure:output_type -> aipay.payment.v1.SubmitSellerRefundFailureResponse
+	23, // 49: aipay.payment.v1.SellerRefundReviewService.ApproveSellerRefundFailure:output_type -> aipay.payment.v1.ApproveSellerRefundFailureResponse
+	25, // 50: aipay.payment.v1.SellerRefundReviewService.GetSellerRefundReviewForVerification:output_type -> aipay.payment.v1.GetSellerRefundReviewForVerificationResponse
+	43, // [43:51] is the sub-list for method output_type
+	35, // [35:43] is the sub-list for method input_type
+	35, // [35:35] is the sub-list for extension type_name
+	35, // [35:35] is the sub-list for extension extendee
+	0,  // [0:35] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_seller_refund_proto_init() }

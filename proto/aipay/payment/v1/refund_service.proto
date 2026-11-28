@@ -33,6 +33,7 @@ enum RefundOrigin {
   REFUND_ORIGIN_MERCHANT_API = 1;
   REFUND_ORIGIN_PLATFORM = 2;
   REFUND_ORIGIN_DISPUTE_RULING = 3;
+  REFUND_ORIGIN_AMOUNT_MISMATCH = 4;
 }
 
 message Refund {
@@ -47,11 +48,12 @@ message Refund {
   aipay.ledger.v1.RefundReservation reservation = 6;
   // For manual refunds, the upstream refund number from the approved evidence.
   string upstream_refund_id = 7;
-  // Full original fiat amount only; partial allocation is deferred to D18.
+  // Amount the seller must refund. The full original fiat amount except for
+  // AMOUNT_MISMATCH, which uses the amount approved in the recovery.
   aipay.common.v1.Money fiat_amount = 8;
   // Original initiation reason. Merchant-facing views may show the merchant's own
-  // reason for MERCHANT_API refunds. PLATFORM and DISPUTE_RULING reasons are
-  // internal and must not be shown to merchants.
+  // reason for MERCHANT_API refunds. Reasons for PLATFORM, DISPUTE_RULING
+  // and AMOUNT_MISMATCH are internal.
   string reason = 9;
   google.protobuf.Timestamp created_at = 10;
   google.protobuf.Timestamp updated_at = 11;
@@ -65,6 +67,8 @@ message Refund {
   google.protobuf.Timestamp objection_deadline = 16;
   // Upstream refund time from approved evidence. Present only after approval.
   google.protobuf.Timestamp seller_refunded_at = 17;
+  // Set exactly for an AMOUNT_MISMATCH refund.
+  string amount_mismatch_recovery_id = 18;
 }
 
 message RefundSelector {

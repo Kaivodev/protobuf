@@ -212,8 +212,11 @@ type TradeReservation struct {
 	// The original escrow stays RELEASED; this must not imply seller escrow Q
 	// has been recovered. Its dispute_id must match the field above.
 	ReleasedDisputeHold *ReleasedTradeDisputeHold `protobuf:"bytes,10,opt,name=released_dispute_hold,json=releasedDisputeHold,proto3" json:"released_dispute_hold,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Present only while ledger records a hold. Applying an extension raises
+	// risk_release_at, which can only move later.
+	RiskExtensionPending *TradeRiskExtensionPending `protobuf:"bytes,11,opt,name=risk_extension_pending,json=riskExtensionPending,proto3" json:"risk_extension_pending,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *TradeReservation) Reset() {
@@ -312,6 +315,13 @@ func (x *TradeReservation) GetDisputeId() string {
 func (x *TradeReservation) GetReleasedDisputeHold() *ReleasedTradeDisputeHold {
 	if x != nil {
 		return x.ReleasedDisputeHold
+	}
+	return nil
+}
+
+func (x *TradeReservation) GetRiskExtensionPending() *TradeRiskExtensionPending {
+	if x != nil {
+		return x.RiskExtensionPending
 	}
 	return nil
 }
@@ -784,11 +794,68 @@ func (x *AccountRiskFreeze) GetFreezeIds() []string {
 	return nil
 }
 
+// A150. Payment places this time-bounded hold while an exceptional risk
+// extension awaits two approvals. Ledger reports the recorded hold until
+// APPLY or WITHDRAW, even after pending_until passes. While present, every
+// release authorization's effective_at must be at or after pending_until.
+// The hold never moves funds.
+type TradeRiskExtensionPending struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExtensionId   string                 `protobuf:"bytes,1,opt,name=extension_id,json=extensionId,proto3" json:"extension_id,omitempty"`
+	PendingUntil  *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=pending_until,json=pendingUntil,proto3" json:"pending_until,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TradeRiskExtensionPending) Reset() {
+	*x = TradeRiskExtensionPending{}
+	mi := &file_aipay_ledger_v1_trade_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TradeRiskExtensionPending) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TradeRiskExtensionPending) ProtoMessage() {}
+
+func (x *TradeRiskExtensionPending) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_trade_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TradeRiskExtensionPending.ProtoReflect.Descriptor instead.
+func (*TradeRiskExtensionPending) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_trade_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *TradeRiskExtensionPending) GetExtensionId() string {
+	if x != nil {
+		return x.ExtensionId
+	}
+	return ""
+}
+
+func (x *TradeRiskExtensionPending) GetPendingUntil() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PendingUntil
+	}
+	return nil
+}
+
 var File_aipay_ledger_v1_trade_proto protoreflect.FileDescriptor
 
 const file_aipay_ledger_v1_trade_proto_rawDesc = "" +
 	"\n" +
-	"\x1baipay/ledger/v1/trade.proto\x12\x0faipay.ledger.v1\x1a\x1baipay/common/v1/trade.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xae\x04\n" +
+	"\x1baipay/ledger/v1/trade.proto\x12\x0faipay.ledger.v1\x1a\x1baipay/common/v1/trade.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x90\x05\n" +
 	"\x10TradeReservation\x124\n" +
 	"\x05trade\x18\x01 \x01(\v2\x1e.aipay.common.v1.TradeSnapshotR\x05trade\x122\n" +
 	"\x15escrow_reservation_id\x18\x02 \x01(\tR\x13escrowReservationId\x12'\n" +
@@ -803,7 +870,8 @@ const file_aipay_ledger_v1_trade_proto_rawDesc = "" +
 	"\n" +
 	"dispute_id\x18\t \x01(\tR\tdisputeId\x12]\n" +
 	"\x15released_dispute_hold\x18\n" +
-	" \x01(\v2).aipay.ledger.v1.ReleasedTradeDisputeHoldR\x13releasedDisputeHold\"\xb6\x01\n" +
+	" \x01(\v2).aipay.ledger.v1.ReleasedTradeDisputeHoldR\x13releasedDisputeHold\x12`\n" +
+	"\x16risk_extension_pending\x18\v \x01(\v2*.aipay.ledger.v1.TradeRiskExtensionPendingR\x14riskExtensionPending\"\xb6\x01\n" +
 	"\x16DisputeRulingReference\x12\x1d\n" +
 	"\n" +
 	"dispute_id\x18\x01 \x01(\tR\tdisputeId\x12\x1b\n" +
@@ -847,7 +915,10 @@ const file_aipay_ledger_v1_trade_proto_rawDesc = "" +
 	"\x06frozen\x18\x02 \x01(\bH\x00R\x06frozen\x88\x01\x01\x12\x1d\n" +
 	"\n" +
 	"freeze_ids\x18\x03 \x03(\tR\tfreezeIdsB\t\n" +
-	"\a_frozen*\xb3\x02\n" +
+	"\a_frozen\"\x7f\n" +
+	"\x19TradeRiskExtensionPending\x12!\n" +
+	"\fextension_id\x18\x01 \x01(\tR\vextensionId\x12?\n" +
+	"\rpending_until\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\fpendingUntil*\xb3\x02\n" +
 	"\x16TradeReservationStatus\x12(\n" +
 	"$TRADE_RESERVATION_STATUS_UNSPECIFIED\x10\x00\x12%\n" +
 	"!TRADE_RESERVATION_STATUS_RESERVED\x10\x01\x12+\n" +
@@ -878,37 +949,40 @@ func file_aipay_ledger_v1_trade_proto_rawDescGZIP() []byte {
 }
 
 var file_aipay_ledger_v1_trade_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_aipay_ledger_v1_trade_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_aipay_ledger_v1_trade_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_aipay_ledger_v1_trade_proto_goTypes = []any{
-	(TradeReservationStatus)(0),      // 0: aipay.ledger.v1.TradeReservationStatus
-	(RefundReservationBranch)(0),     // 1: aipay.ledger.v1.RefundReservationBranch
-	(ReleasedTradeDisputeOutcome)(0), // 2: aipay.ledger.v1.ReleasedTradeDisputeOutcome
-	(*TradeReservation)(nil),         // 3: aipay.ledger.v1.TradeReservation
-	(*DisputeRulingReference)(nil),   // 4: aipay.ledger.v1.DisputeRulingReference
-	(*ReleasedTradeDisputeHold)(nil), // 5: aipay.ledger.v1.ReleasedTradeDisputeHold
-	(*RefundReservation)(nil),        // 6: aipay.ledger.v1.RefundReservation
-	(*TradeRefundHold)(nil),          // 7: aipay.ledger.v1.TradeRefundHold
-	(*TradeDisputeHold)(nil),         // 8: aipay.ledger.v1.TradeDisputeHold
-	(*AccountRiskFreeze)(nil),        // 9: aipay.ledger.v1.AccountRiskFreeze
-	(*v1.TradeSnapshot)(nil),         // 10: aipay.common.v1.TradeSnapshot
-	(*timestamppb.Timestamp)(nil),    // 11: google.protobuf.Timestamp
+	(TradeReservationStatus)(0),       // 0: aipay.ledger.v1.TradeReservationStatus
+	(RefundReservationBranch)(0),      // 1: aipay.ledger.v1.RefundReservationBranch
+	(ReleasedTradeDisputeOutcome)(0),  // 2: aipay.ledger.v1.ReleasedTradeDisputeOutcome
+	(*TradeReservation)(nil),          // 3: aipay.ledger.v1.TradeReservation
+	(*DisputeRulingReference)(nil),    // 4: aipay.ledger.v1.DisputeRulingReference
+	(*ReleasedTradeDisputeHold)(nil),  // 5: aipay.ledger.v1.ReleasedTradeDisputeHold
+	(*RefundReservation)(nil),         // 6: aipay.ledger.v1.RefundReservation
+	(*TradeRefundHold)(nil),           // 7: aipay.ledger.v1.TradeRefundHold
+	(*TradeDisputeHold)(nil),          // 8: aipay.ledger.v1.TradeDisputeHold
+	(*AccountRiskFreeze)(nil),         // 9: aipay.ledger.v1.AccountRiskFreeze
+	(*TradeRiskExtensionPending)(nil), // 10: aipay.ledger.v1.TradeRiskExtensionPending
+	(*v1.TradeSnapshot)(nil),          // 11: aipay.common.v1.TradeSnapshot
+	(*timestamppb.Timestamp)(nil),     // 12: google.protobuf.Timestamp
 }
 var file_aipay_ledger_v1_trade_proto_depIdxs = []int32{
-	10, // 0: aipay.ledger.v1.TradeReservation.trade:type_name -> aipay.common.v1.TradeSnapshot
+	11, // 0: aipay.ledger.v1.TradeReservation.trade:type_name -> aipay.common.v1.TradeSnapshot
 	0,  // 1: aipay.ledger.v1.TradeReservation.status:type_name -> aipay.ledger.v1.TradeReservationStatus
-	11, // 2: aipay.ledger.v1.TradeReservation.paid_verified_at:type_name -> google.protobuf.Timestamp
-	11, // 3: aipay.ledger.v1.TradeReservation.risk_release_at:type_name -> google.protobuf.Timestamp
+	12, // 2: aipay.ledger.v1.TradeReservation.paid_verified_at:type_name -> google.protobuf.Timestamp
+	12, // 3: aipay.ledger.v1.TradeReservation.risk_release_at:type_name -> google.protobuf.Timestamp
 	5,  // 4: aipay.ledger.v1.TradeReservation.released_dispute_hold:type_name -> aipay.ledger.v1.ReleasedTradeDisputeHold
-	11, // 5: aipay.ledger.v1.DisputeRulingReference.approved_at:type_name -> google.protobuf.Timestamp
-	1,  // 6: aipay.ledger.v1.RefundReservation.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
-	4,  // 7: aipay.ledger.v1.RefundReservation.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
-	6,  // 8: aipay.ledger.v1.TradeRefundHold.reservation:type_name -> aipay.ledger.v1.RefundReservation
-	5,  // 9: aipay.ledger.v1.TradeDisputeHold.released_hold:type_name -> aipay.ledger.v1.ReleasedTradeDisputeHold
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	10, // 5: aipay.ledger.v1.TradeReservation.risk_extension_pending:type_name -> aipay.ledger.v1.TradeRiskExtensionPending
+	12, // 6: aipay.ledger.v1.DisputeRulingReference.approved_at:type_name -> google.protobuf.Timestamp
+	1,  // 7: aipay.ledger.v1.RefundReservation.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
+	4,  // 8: aipay.ledger.v1.RefundReservation.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
+	6,  // 9: aipay.ledger.v1.TradeRefundHold.reservation:type_name -> aipay.ledger.v1.RefundReservation
+	5,  // 10: aipay.ledger.v1.TradeDisputeHold.released_hold:type_name -> aipay.ledger.v1.ReleasedTradeDisputeHold
+	12, // 11: aipay.ledger.v1.TradeRiskExtensionPending.pending_until:type_name -> google.protobuf.Timestamp
+	12, // [12:12] is the sub-list for method output_type
+	12, // [12:12] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_aipay_ledger_v1_trade_proto_init() }
@@ -923,7 +997,7 @@ func file_aipay_ledger_v1_trade_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_ledger_v1_trade_proto_rawDesc), len(file_aipay_ledger_v1_trade_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

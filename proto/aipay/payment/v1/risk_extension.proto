@@ -1,0 +1,236 @@
+syntax = "proto3";
+
+package aipay.payment.v1;
+
+import "aipay/approval/v1/approval.proto";
+import "aipay/authz/v1/policy.proto";
+import "aipay/common/v1/query.proto";
+import "aipay/payment/v1/admin_approval.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1";
+
+// A150. Payment tracks each request from the initial ledger hold to resolution.
+enum RiskExtensionState {
+  // No state specified. Receivers reject this value.
+  RISK_EXTENSION_STATE_UNSPECIFIED = 0;
+  // Payment recorded the intent and is awaiting ledger's hold confirmation.
+  RISK_EXTENSION_STATE_HOLDING = 1;
+  // Ledger confirmed the hold. Two platform approvals are required.
+  RISK_EXTENSION_STATE_PENDING_APPROVAL = 2;
+  // Both approvers signed. Ledger has yet to confirm the new deadline.
+  RISK_EXTENSION_STATE_APPLYING = 3;
+  // Ledger confirmed the later risk deadline.
+  RISK_EXTENSION_STATE_APPLIED = 4;
+  // Ledger refused the initial hold.
+  RISK_EXTENSION_STATE_REFUSED = 5;
+  // A platform approver rejected the pending request.
+  RISK_EXTENSION_STATE_REJECTED = 6;
+  // The initiator withdrew the pending request.
+  RISK_EXTENSION_STATE_WITHDRAWN = 7;
+  // The approval window elapsed before both approvers signed.
+  RISK_EXTENSION_STATE_EXPIRED = 8;
+  // Another operation advanced the escrow control version during approval.
+  RISK_EXTENSION_STATE_SUPERSEDED = 9;
+  // Ledger refused to apply an approved extension.
+  RISK_EXTENSION_STATE_FAILED = 10;
+}
+
+enum RiskExtensionBlocker {
+  // No blocker specified. Receivers reject this value.
+  RISK_EXTENSION_BLOCKER_UNSPECIFIED = 0;
+  // The payment order must be RISK_HELD.
+  RISK_EXTENSION_BLOCKER_ORDER_STATUS = 1;
+  // The ledger escrow must be RESERVED and unreleased.
+  RISK_EXTENSION_BLOCKER_ESCROW_NOT_RESERVED = 2;
+  // Ledger has yet to record verified payment.
+  RISK_EXTENSION_BLOCKER_LEDGER_NOT_PAID = 3;
+  // The escrow has an active dispute.
+  RISK_EXTENSION_BLOCKER_LEDGER_DISPUTED = 4;
+  // A refund hold or reservation is active.
+  RISK_EXTENSION_BLOCKER_REFUND_ACTIVE = 5;
+  // Another extension on this order is HOLDING, PENDING_APPROVAL or APPLYING.
+  RISK_EXTENSION_BLOCKER_EXTENSION_PENDING = 6;
+  // The remaining locked policy cap cannot accommodate the extension.
+  RISK_EXTENSION_BLOCKER_CAP_EXHAUSTED = 7;
+  // The order reached its applied extension limit (default 3, configurable 1-5).
+  RISK_EXTENSION_BLOCKER_LIMIT_REACHED = 8;
+  // A seller may submit only once per order, including rejected requests.
+  RISK_EXTENSION_BLOCKER_SELLER_ALREADY_REQUESTED = 9;
+  // The seller account reached its concurrent pending request limit (default 20).
+  RISK_EXTENSION_BLOCKER_SELLER_PENDING_LIMIT = 10;
+  // The ledger escrow control version differs from the expected version.
+  RISK_EXTENSION_BLOCKER_LEDGER_VERSION_CHANGED = 11;
+}
+
+message RiskExtension {
+  string extension_id = 1;
+  string order_id = 2;
+  RiskExtensionOrigin origin = 3;
+  RiskExtensionState state = 4;
+  // Empty in seller views when origin is PLATFORM.
+  string requested_by = 5;
+  RiskExtensionReason reason_code = 6;
+  uint64 extension_seconds = 7;
+  google.protobuf.Timestamp previous_risk_release_at = 8;
+  google.protobuf.Timestamp requested_risk_release_at = 9;
+  google.protobuf.Timestamp pending_until = 10;
+  // Empty in seller views.
+  string approval_request_id = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+  // Present in terminal states.
+  google.protobuf.Timestamp resolved_at = 14;
+}
+
+message RiskExtensionEligibility {
+  string order_id = 1;
+  uint64 control_version = 2;
+  bool eligible = 3;
+  // Empty exactly when eligible.
+  repeated RiskExtensionBlocker blockers = 4;
+  google.protobuf.Timestamp paid_verified_at = 5;
+  google.protobuf.Timestamp current_risk_release_at = 6;
+  // paid_verified_at + hold_duration_seconds + policy_extension_cap_seconds.
+  google.protobuf.Timestamp latest_risk_release_at = 7;
+  uint64 remaining_extension_seconds = 8;
+  uint32 applied_count = 9;
+  uint32 max_count = 10;
+  google.protobuf.Timestamp as_of = 11;
+}
+
+message GetOrderRiskExtensionsRequest {
+  string order_id = 1;
+}
+
+message GetOrderRiskExtensionsResponse {
+  RiskExtensionEligibility eligibility = 1;
+  repeated RiskExtension extensions = 2;
+}
+
+message SubmitRiskExtensionRequest {
+  string idempotency_key = 1;
+  string order_id = 2;
+  string escrow_reservation_id = 3;
+  uint64 expected_control_version = 4;
+  // Whole seconds, at least 600, within the remaining locked policy cap.
+  uint64 extension_seconds = 5;
+  RiskExtensionReason reason_code = 6;
+  // Required, 1-1000 characters. OTHER requires at least 20.
+  string reason = 7;
+}
+
+message SubmitRiskExtensionResponse {
+  RiskExtension extension = 1;
+  PaymentApproval approval = 2;
+}
+
+message ApproveRiskExtensionRequest {
+  string idempotency_key = 1;
+  string approval_request_id = 2;
+  aipay.approval.v1.WebAuthnAssertion assertion = 3;
+}
+
+message ApproveRiskExtensionResponse {
+  PaymentApproval approval = 1;
+  RiskExtension extension = 2;
+}
+
+message RejectRiskExtensionRequest {
+  string idempotency_key = 1;
+  string extension_id = 2;
+  // Required, 1-1000 characters.
+  string reason = 3;
+}
+
+message RejectRiskExtensionResponse {
+  RiskExtension extension = 1;
+}
+
+message WithdrawRiskExtensionRequest {
+  string idempotency_key = 1;
+  string extension_id = 2;
+}
+
+message WithdrawRiskExtensionResponse {
+  RiskExtension extension = 1;
+}
+
+message ListRiskExtensionsRequest {
+  string order_id = 1;
+  string seller_account_id = 2;
+  optional RiskExtensionState state = 3;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 4 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 5;
+}
+
+message ListRiskExtensionsResponse {
+  repeated RiskExtension extensions = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+// Platform management listener only. Under A148, platform reads and Approve
+// responses retain only credential_id in each assertion. Extensions have no
+// service-to-service read of raw assertions.
+service RiskExtensionService {
+  rpc GetOrderRiskExtensions(GetOrderRiskExtensionsRequest) returns (GetOrderRiskExtensionsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.risk_extension.read"
+      }
+    };
+  }
+  rpc ListRiskExtensions(ListRiskExtensionsRequest) returns (ListRiskExtensionsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.risk_extension.read"
+      }
+    };
+  }
+  rpc SubmitRiskExtension(SubmitRiskExtensionRequest) returns (SubmitRiskExtensionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "payment.risk_extension.submit"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  rpc ApproveRiskExtension(ApproveRiskExtensionRequest) returns (ApproveRiskExtensionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.risk_extension.approve"
+      }
+    };
+  }
+  rpc RejectRiskExtension(RejectRiskExtensionRequest) returns (RejectRiskExtensionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.risk_extension.approve"
+      }
+    };
+  }
+  // Only the initiating platform user can withdraw their own pending request.
+  rpc WithdrawRiskExtension(WithdrawRiskExtensionRequest) returns (WithdrawRiskExtensionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "payment.risk_extension.submit"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+}

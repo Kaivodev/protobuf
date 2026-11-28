@@ -33,6 +33,9 @@ const (
 	SellerPortalService_GetSellerDispute_FullMethodName            = "/aipay.payment.v1.SellerPortalService/GetSellerDispute"
 	SellerPortalService_AppendSellerEvidence_FullMethodName        = "/aipay.payment.v1.SellerPortalService/AppendSellerEvidence"
 	SellerPortalService_SetSellerChannelOnline_FullMethodName      = "/aipay.payment.v1.SellerPortalService/SetSellerChannelOnline"
+	SellerPortalService_SubmitSellerRiskExtension_FullMethodName   = "/aipay.payment.v1.SellerPortalService/SubmitSellerRiskExtension"
+	SellerPortalService_ListSellerRiskExtensions_FullMethodName    = "/aipay.payment.v1.SellerPortalService/ListSellerRiskExtensions"
+	SellerPortalService_WithdrawSellerRiskExtension_FullMethodName = "/aipay.payment.v1.SellerPortalService/WithdrawSellerRiskExtension"
 )
 
 // SellerPortalServiceClient is the client API for SellerPortalService service.
@@ -88,6 +91,14 @@ type SellerPortalServiceClient interface {
 	// intent and platform enablement. In-flight queries, closes, refunds and callbacks
 	// continue across a switch. This command emits no event.
 	SetSellerChannelOnline(ctx context.Context, in *SetSellerChannelOnlineRequest, opts ...grpc.CallOption) (*SetSellerChannelOnlineResponse, error)
+	// Verify that the original seller account on the order matches the account
+	// bound by the seller proof.
+	SubmitSellerRiskExtension(ctx context.Context, in *SubmitSellerRiskExtensionRequest, opts ...grpc.CallOption) (*SubmitSellerRiskExtensionResponse, error)
+	// List only extensions for the authenticated seller account.
+	ListSellerRiskExtensions(ctx context.Context, in *ListSellerRiskExtensionsRequest, opts ...grpc.CallOption) (*ListSellerRiskExtensionsResponse, error)
+	// Only the initiating seller user can withdraw their own pending request
+	// within the authenticated seller account.
+	WithdrawSellerRiskExtension(ctx context.Context, in *WithdrawSellerRiskExtensionRequest, opts ...grpc.CallOption) (*WithdrawSellerRiskExtensionResponse, error)
 }
 
 type sellerPortalServiceClient struct {
@@ -238,6 +249,36 @@ func (c *sellerPortalServiceClient) SetSellerChannelOnline(ctx context.Context, 
 	return out, nil
 }
 
+func (c *sellerPortalServiceClient) SubmitSellerRiskExtension(ctx context.Context, in *SubmitSellerRiskExtensionRequest, opts ...grpc.CallOption) (*SubmitSellerRiskExtensionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitSellerRiskExtensionResponse)
+	err := c.cc.Invoke(ctx, SellerPortalService_SubmitSellerRiskExtension_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sellerPortalServiceClient) ListSellerRiskExtensions(ctx context.Context, in *ListSellerRiskExtensionsRequest, opts ...grpc.CallOption) (*ListSellerRiskExtensionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSellerRiskExtensionsResponse)
+	err := c.cc.Invoke(ctx, SellerPortalService_ListSellerRiskExtensions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sellerPortalServiceClient) WithdrawSellerRiskExtension(ctx context.Context, in *WithdrawSellerRiskExtensionRequest, opts ...grpc.CallOption) (*WithdrawSellerRiskExtensionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WithdrawSellerRiskExtensionResponse)
+	err := c.cc.Invoke(ctx, SellerPortalService_WithdrawSellerRiskExtension_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SellerPortalServiceServer is the server API for SellerPortalService service.
 // All implementations must embed UnimplementedSellerPortalServiceServer
 // for forward compatibility.
@@ -291,6 +332,14 @@ type SellerPortalServiceServer interface {
 	// intent and platform enablement. In-flight queries, closes, refunds and callbacks
 	// continue across a switch. This command emits no event.
 	SetSellerChannelOnline(context.Context, *SetSellerChannelOnlineRequest) (*SetSellerChannelOnlineResponse, error)
+	// Verify that the original seller account on the order matches the account
+	// bound by the seller proof.
+	SubmitSellerRiskExtension(context.Context, *SubmitSellerRiskExtensionRequest) (*SubmitSellerRiskExtensionResponse, error)
+	// List only extensions for the authenticated seller account.
+	ListSellerRiskExtensions(context.Context, *ListSellerRiskExtensionsRequest) (*ListSellerRiskExtensionsResponse, error)
+	// Only the initiating seller user can withdraw their own pending request
+	// within the authenticated seller account.
+	WithdrawSellerRiskExtension(context.Context, *WithdrawSellerRiskExtensionRequest) (*WithdrawSellerRiskExtensionResponse, error)
 	mustEmbedUnimplementedSellerPortalServiceServer()
 }
 
@@ -342,6 +391,15 @@ func (UnimplementedSellerPortalServiceServer) AppendSellerEvidence(context.Conte
 }
 func (UnimplementedSellerPortalServiceServer) SetSellerChannelOnline(context.Context, *SetSellerChannelOnlineRequest) (*SetSellerChannelOnlineResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetSellerChannelOnline not implemented")
+}
+func (UnimplementedSellerPortalServiceServer) SubmitSellerRiskExtension(context.Context, *SubmitSellerRiskExtensionRequest) (*SubmitSellerRiskExtensionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitSellerRiskExtension not implemented")
+}
+func (UnimplementedSellerPortalServiceServer) ListSellerRiskExtensions(context.Context, *ListSellerRiskExtensionsRequest) (*ListSellerRiskExtensionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSellerRiskExtensions not implemented")
+}
+func (UnimplementedSellerPortalServiceServer) WithdrawSellerRiskExtension(context.Context, *WithdrawSellerRiskExtensionRequest) (*WithdrawSellerRiskExtensionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method WithdrawSellerRiskExtension not implemented")
 }
 func (UnimplementedSellerPortalServiceServer) mustEmbedUnimplementedSellerPortalServiceServer() {}
 func (UnimplementedSellerPortalServiceServer) testEmbeddedByValue()                             {}
@@ -616,6 +674,60 @@ func _SellerPortalService_SetSellerChannelOnline_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SellerPortalService_SubmitSellerRiskExtension_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitSellerRiskExtensionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SellerPortalServiceServer).SubmitSellerRiskExtension(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SellerPortalService_SubmitSellerRiskExtension_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SellerPortalServiceServer).SubmitSellerRiskExtension(ctx, req.(*SubmitSellerRiskExtensionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SellerPortalService_ListSellerRiskExtensions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSellerRiskExtensionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SellerPortalServiceServer).ListSellerRiskExtensions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SellerPortalService_ListSellerRiskExtensions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SellerPortalServiceServer).ListSellerRiskExtensions(ctx, req.(*ListSellerRiskExtensionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SellerPortalService_WithdrawSellerRiskExtension_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WithdrawSellerRiskExtensionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SellerPortalServiceServer).WithdrawSellerRiskExtension(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SellerPortalService_WithdrawSellerRiskExtension_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SellerPortalServiceServer).WithdrawSellerRiskExtension(ctx, req.(*WithdrawSellerRiskExtensionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SellerPortalService_ServiceDesc is the grpc.ServiceDesc for SellerPortalService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -678,6 +790,18 @@ var SellerPortalService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetSellerChannelOnline",
 			Handler:    _SellerPortalService_SetSellerChannelOnline_Handler,
+		},
+		{
+			MethodName: "SubmitSellerRiskExtension",
+			Handler:    _SellerPortalService_SubmitSellerRiskExtension_Handler,
+		},
+		{
+			MethodName: "ListSellerRiskExtensions",
+			Handler:    _SellerPortalService_ListSellerRiskExtensions_Handler,
+		},
+		{
+			MethodName: "WithdrawSellerRiskExtension",
+			Handler:    _SellerPortalService_WithdrawSellerRiskExtension_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

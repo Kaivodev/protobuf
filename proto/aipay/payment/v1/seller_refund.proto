@@ -45,10 +45,12 @@ message SellerRefundEvidenceMaterial {
   google.protobuf.Timestamp submitted_at = 5;
   // 1-64 characters from [A-Za-z0-9._:-].
   string upstream_refund_no = 6;
-  // After paid_verified_at for refunds or order creation for late payments.
+  // After order creation for late payments and AMOUNT_MISMATCH refunds,
+  // or after paid_verified_at for other refunds.
   // At most five minutes ahead of payment's current time.
   google.protobuf.Timestamp refunded_at = 7;
-  // FULL_REFUND_ONLY: currency and minor units must match the original fiat quote.
+  // The original fiat quote, or the approved recovery amount in that currency
+  // for an AMOUNT_MISMATCH refund.
   aipay.common.v1.Money refunded_amount = 8;
   // Optional, 0-200 characters. Exclude from logs, notices and audit text.
   optional string note = 9;
@@ -209,6 +211,11 @@ message GetSellerRefundReviewForVerificationResponse {
   // Present unless a failure was approved without seller evidence. Only metadata
   // is returned. Omit status_reason from this verification response.
   SellerRefundEvidence evidence = 2;
+  // Present exactly for AMOUNT_MISMATCH. Only reconciliation receives this
+  // approved amount_mismatch_recovery with both complete assertions (A148).
+  // Independently verify the approval and bind its material.refund_id, trade,
+  // escrow and refund_amount to the seller review.
+  PaymentApproval amount_mismatch_recovery = 3;
 }
 
 // Management calls require backend's management listener, a platform USER

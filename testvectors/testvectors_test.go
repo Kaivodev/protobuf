@@ -344,21 +344,69 @@ func (w *writer) canonicalValue(t *testing.T, f protoreflect.FieldDescriptor, v 
 	}
 }
 
-func TestPaymentSellerRefundV1(t *testing.T) {
-	var doc struct {
-		Description string
-		Evidence    []struct {
-			Name, Encoding string
-			Material       json.RawMessage
-			Digest         string `json:"evidence_sha256"`
-		} `json:"evidence_vectors"`
-		Approvals []struct {
-			Name         string
-			Material     json.RawMessage
-			RequestBytes string `json:"request_bytes"`
-			Digest       string `json:"request_digest"`
-		} `json:"approval_vectors"`
+type paymentApprovalVector struct {
+	Name         string
+	Material     json.RawMessage
+	RequestBytes string `json:"request_bytes"`
+	Digest       string `json:"request_digest"`
+}
+
+type paymentApprovalVectors struct {
+	Description string
+	Approvals   []paymentApprovalVector `json:"approval_vectors"`
+}
+
+func (v paymentApprovalVector) verify(t *testing.T) *paymentv1.PaymentApprovalMaterial {
+	t.Helper()
+	var m paymentv1.PaymentApprovalMaterial
+	if err := protojson.Unmarshal(v.Material, &m); err != nil {
+		t.Fatal(err)
 	}
+	var w writer
+	w.str("aipay.payment.admin.v1")
+	w.canonicalMessage(t, m.ProtoReflect())
+	if !equalHex(w.b, v.RequestBytes) || !equalHex(sum([]byte("AIPAY-APPROVAL-V1"), w.b), v.Digest) {
+		t.Fatal("approval request bytes or digest differ from fixture")
+	}
+	return &m
+}
+
+type sellerRefundVectors struct {
+	paymentApprovalVectors
+	Evidence []struct {
+		Name, Encoding string
+		Material       json.RawMessage
+		Digest         string `json:"evidence_sha256"`
+	} `json:"evidence_vectors"`
+}
+
+func TestSellerRefundCanonicalCompatibilityV0280(t *testing.T) {
+	// Pin the published v0.27.0 digests as well as re-encoding its original
+	// materials, so refreshing a fixture cannot silently change the contract.
+	published := map[string]string{
+		"review-post-release":      "4382d7a7fac44d6a636245573a85c73c0bfcf77be31630ccdb5f1d11dd791d6e",
+		"review-late-payment":      "77d6395a426aa19ad7a88824f7243d03a9d2fbe85275f7de01b3fd2cfa1e4efe",
+		"failure-with-evidence":    "36a7db8a560de2fb2a71242d1e02b6538f52e5868d454135b9d109ad25f94f2f",
+		"failure-without-evidence": "4ee0a4222b0a084d1f229f3013e20b3d5081918227a75412c51f9c639dede062",
+	}
+	var doc sellerRefundVectors
+	decodeJSON(t, testvectors.PaymentSellerRefundV1(), &doc)
+	for _, v := range doc.Approvals {
+		t.Run(v.Name, func(t *testing.T) {
+			v.verify(t)
+			if want, ok := published[v.Name]; !ok || v.Digest != want {
+				t.Fatal("approval differs from the published v0.27.0 vector")
+			}
+			delete(published, v.Name)
+		})
+	}
+	if len(published) != 0 {
+		t.Fatalf("missing published vectors: %v", published)
+	}
+}
+
+func TestPaymentSellerRefundV1(t *testing.T) {
+	var doc sellerRefundVectors
 	decodeJSON(t, testvectors.PaymentSellerRefundV1(), &doc)
 	type evidenceRecord struct {
 		material *paymentv1.SellerRefundEvidenceMaterial
@@ -390,12 +438,6 @@ func TestPaymentSellerRefundV1(t *testing.T) {
 			var m paymentv1.PaymentApprovalMaterial
 			if err := protojson.Unmarshal(v.Material, &m); err != nil {
 				t.Fatal(err)
-			}
-			var w writer
-			w.str("aipay.payment.admin.v1")
-			w.canonicalMessage(t, m.ProtoReflect())
-			if !equalHex(w.b, v.RequestBytes) || !equalHex(sum([]byte("AIPAY-APPROVAL-V1"), w.b), v.Digest) {
-				t.Fatal("approval request bytes or digest differ from fixture")
 			}
 			switch m.Kind {
 			case "seller_refund":
@@ -435,32 +477,15 @@ func TestPaymentSellerRefundV1(t *testing.T) {
 }
 
 func TestPaymentForcedCloseV1(t *testing.T) {
-	var doc struct {
-		Description string
-		Approvals   []struct {
-			Name         string
-			Material     json.RawMessage
-			RequestBytes string `json:"request_bytes"`
-			Digest       string `json:"request_digest"`
-		} `json:"approval_vectors"`
-	}
+	var doc paymentApprovalVectors
 	decodeJSON(t, testvectors.PaymentForcedCloseV1(), &doc)
 	var unbound, bound, multibyteReason bool
 	for _, v := range doc.Approvals {
 		t.Run(v.Name, func(t *testing.T) {
-			var m paymentv1.PaymentApprovalMaterial
-			if err := protojson.Unmarshal(v.Material, &m); err != nil {
-				t.Fatal(err)
-			}
+			m := v.verify(t)
 			f := m.GetForcedClose()
 			if m.Kind != "forced_close" || f == nil {
 				t.Fatal("expected forced_close approval material")
-			}
-			var w writer
-			w.str("aipay.payment.admin.v1")
-			w.canonicalMessage(t, m.ProtoReflect())
-			if !equalHex(w.b, v.RequestBytes) || !equalHex(sum([]byte("AIPAY-APPROVAL-V1"), w.b), v.Digest) {
-				t.Fatal("approval request bytes or digest differ from fixture")
 			}
 			multibyteReason = multibyteReason || len(f.Reason) > utf8.RuneCountInString(f.Reason)
 			switch v.Name {
@@ -481,6 +506,66 @@ func TestPaymentForcedCloseV1(t *testing.T) {
 	}
 	if !unbound || !bound || !multibyteReason {
 		t.Fatal("expected never-sent-unbound, bound-after-ttl and a multibyte reason")
+	}
+}
+
+func TestPaymentRiskExtensionV1(t *testing.T) {
+	var doc paymentApprovalVectors
+	decodeJSON(t, testvectors.PaymentRiskExtensionV1(), &doc)
+	var platform, seller bool
+	for _, v := range doc.Approvals {
+		t.Run(v.Name, func(t *testing.T) {
+			m := v.verify(t)
+			r := m.GetRiskExtension()
+			if m.Kind != "risk_extension" || r == nil {
+				t.Fatal("expected risk_extension material")
+			}
+			duration := time.Duration(r.ExtensionSeconds) * time.Second
+			if r.ExtensionSeconds < 600 || !r.CurrentRiskReleaseAt.AsTime().Add(duration).Equal(r.RequestedRiskReleaseAt.AsTime()) ||
+				r.PolicyExtensionCapSeconds > 2592000 || r.AppliedExtensionSeconds+r.ExtensionSeconds > r.PolicyExtensionCapSeconds ||
+				r.RiskPolicyVersion != r.Trade.RiskPolicyVersion || !proto.Equal(r.PendingUntil, m.ExpiresAt) {
+				t.Fatal("extension does not bind the expected deadline and locked policy")
+			}
+			switch r.Origin {
+			case paymentv1.RiskExtensionOrigin_RISK_EXTENSION_ORIGIN_PLATFORM:
+				platform = true
+			case paymentv1.RiskExtensionOrigin_RISK_EXTENSION_ORIGIN_SELLER:
+				seller = true
+			}
+		})
+	}
+	if len(doc.Approvals) != 2 || !platform || !seller {
+		t.Fatal("expected one platform and one seller approval")
+	}
+}
+
+func TestPaymentAmountMismatchV1(t *testing.T) {
+	var doc paymentApprovalVectors
+	decodeJSON(t, testvectors.PaymentAmountMismatchV1(), &doc)
+	var reverify, refund bool
+	for _, v := range doc.Approvals {
+		t.Run(v.Name, func(t *testing.T) {
+			m := v.verify(t)
+			r := m.GetAmountMismatchRecovery()
+			if m.Kind != "amount_mismatch_recovery" || r == nil {
+				t.Fatal("expected amount_mismatch_recovery material")
+			}
+			switch r.Outcome {
+			case paymentv1.AmountMismatchOutcome_AMOUNT_MISMATCH_OUTCOME_REVERIFY:
+				if r.GetReverifyAttempt() < 1 || r.GetReverifyAttempt() > 3 || r.RefundAmount != nil || r.RefundId != nil {
+					t.Fatal("REVERIFY must bind only the attempt")
+				}
+				reverify = true
+			case paymentv1.AmountMismatchOutcome_AMOUNT_MISMATCH_OUTCOME_REFUND_OBSERVED:
+				if r.ReverifyAttempt != nil || r.GetRefundId() == "" || r.GetRefundAmount() <= 0 || r.GetRefundAmount() == r.Trade.Quote.FiatAmount {
+					t.Fatal("refund fixture must bind the refund ID and an observed amount different from the quote")
+				}
+				refund = true
+			}
+		})
+	}
+	if len(doc.Approvals) != 2 || !reverify || !refund {
+		t.Fatal("expected one REVERIFY and one REFUND_OBSERVED approval")
 	}
 }
 

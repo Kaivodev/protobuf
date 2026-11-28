@@ -9,6 +9,7 @@ import "aipay/payment/v1/admin_approval.proto";
 import "aipay/payment/v1/order_service.proto";
 import "aipay/payment/v1/portal_views.proto";
 import "aipay/payment/v1/refund_service.proto";
+import "aipay/payment/v1/risk_extension.proto";
 import "aipay/payment/v1/seller_refund.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -120,7 +121,8 @@ message SubmitSellerRefundEvidenceRequest {
   // the same channel account is rejected with UPSTREAM_REFUND_NO_REUSED.
   string upstream_refund_no = 4;
   google.protobuf.Timestamp refunded_at = 5;
-  // FULL_REFUND_ONLY: currency and minor units must equal the original fiat quote.
+  // The original fiat quote, or the approved recovery amount in that currency
+  // for an AMOUNT_MISMATCH refund.
   aipay.common.v1.Money refunded_amount = 6;
   // Optional, 0-200 characters.
   optional string note = 7;
@@ -196,6 +198,47 @@ message SetSellerChannelOnlineRequest {
 message SetSellerChannelOnlineResponse {
   // Required seller view after the change.
   SellerChannelView channel = 1;
+}
+
+message SubmitSellerRiskExtensionRequest {
+  string idempotency_key = 1;
+  string order_id = 2;
+  string escrow_reservation_id = 3;
+  uint64 expected_control_version = 4;
+  // Whole seconds, at least 600, within the remaining locked policy cap.
+  uint64 extension_seconds = 5;
+  RiskExtensionReason reason_code = 6;
+  // Required, 1-1000 characters. OTHER requires at least 20.
+  string reason = 7;
+}
+
+message SubmitSellerRiskExtensionResponse {
+  RiskExtension extension = 1;
+}
+
+message ListSellerRiskExtensionsRequest {
+  optional string order_id = 1;
+  optional RiskExtensionState state = 2;
+  // Required 1-100; reject values outside the range, never clamp.
+  uint32 limit = 3 [(aipay.common.v1.max_items) = 100];
+  // Opaque, snapshot/filter/method/subject/scope-bound cursor; empty first page.
+  string page_token = 4;
+  string channel_account_id = 5;
+}
+
+message ListSellerRiskExtensionsResponse {
+  repeated RiskExtension extensions = 1;
+  string next_page_token = 2;
+  google.protobuf.Timestamp as_of = 3;
+}
+
+message WithdrawSellerRiskExtensionRequest {
+  string idempotency_key = 1;
+  string extension_id = 2;
+}
+
+message WithdrawSellerRiskExtensionResponse {
+  RiskExtension extension = 1;
 }
 
 // backend seller listener only. USER upstream_portal/TOTP account proof with
@@ -357,6 +400,40 @@ service SellerPortalService {
         callers: "backend"
         assertion: ASSERTION_REQUIREMENT_MFA_RECENT
         permissions: "payment.channel.online"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  // Verify that the original seller account on the order matches the account
+  // bound by the seller proof.
+  rpc SubmitSellerRiskExtension(SubmitSellerRiskExtensionRequest) returns (SubmitSellerRiskExtensionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "payment.risk_extension.request"
+        recent_auth_max_age_seconds: 600
+      }
+    };
+  }
+  // List only extensions for the authenticated seller account.
+  rpc ListSellerRiskExtensions(ListSellerRiskExtensionsRequest) returns (ListSellerRiskExtensionsResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_REQUIRED
+        permissions: "payment.order.read"
+      }
+    };
+  }
+  // Only the initiating seller user can withdraw their own pending request
+  // within the authenticated seller account.
+  rpc WithdrawSellerRiskExtension(WithdrawSellerRiskExtensionRequest) returns (WithdrawSellerRiskExtensionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_MFA_RECENT
+        permissions: "payment.risk_extension.request"
         recent_auth_max_age_seconds: 600
       }
     };

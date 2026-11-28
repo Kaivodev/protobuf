@@ -84,6 +84,57 @@ func (WithdrawalReservationStatus) EnumDescriptor() ([]byte, []int) {
 	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{0}
 }
 
+type TradeRiskExtensionOutcome int32
+
+const (
+	TradeRiskExtensionOutcome_TRADE_RISK_EXTENSION_OUTCOME_UNSPECIFIED TradeRiskExtensionOutcome = 0
+	// Move risk_release_at later and clear the hold.
+	TradeRiskExtensionOutcome_TRADE_RISK_EXTENSION_OUTCOME_APPLY TradeRiskExtensionOutcome = 1
+	// Clear the hold and keep risk_release_at.
+	TradeRiskExtensionOutcome_TRADE_RISK_EXTENSION_OUTCOME_WITHDRAW TradeRiskExtensionOutcome = 2
+)
+
+// Enum value maps for TradeRiskExtensionOutcome.
+var (
+	TradeRiskExtensionOutcome_name = map[int32]string{
+		0: "TRADE_RISK_EXTENSION_OUTCOME_UNSPECIFIED",
+		1: "TRADE_RISK_EXTENSION_OUTCOME_APPLY",
+		2: "TRADE_RISK_EXTENSION_OUTCOME_WITHDRAW",
+	}
+	TradeRiskExtensionOutcome_value = map[string]int32{
+		"TRADE_RISK_EXTENSION_OUTCOME_UNSPECIFIED": 0,
+		"TRADE_RISK_EXTENSION_OUTCOME_APPLY":       1,
+		"TRADE_RISK_EXTENSION_OUTCOME_WITHDRAW":    2,
+	}
+)
+
+func (x TradeRiskExtensionOutcome) Enum() *TradeRiskExtensionOutcome {
+	p := new(TradeRiskExtensionOutcome)
+	*p = x
+	return p
+}
+
+func (x TradeRiskExtensionOutcome) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TradeRiskExtensionOutcome) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_ledger_v1_reservation_service_proto_enumTypes[1].Descriptor()
+}
+
+func (TradeRiskExtensionOutcome) Type() protoreflect.EnumType {
+	return &file_aipay_ledger_v1_reservation_service_proto_enumTypes[1]
+}
+
+func (x TradeRiskExtensionOutcome) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TradeRiskExtensionOutcome.Descriptor instead.
+func (TradeRiskExtensionOutcome) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{1}
+}
+
 type ReserveTradeRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Required original snapshot. Idempotent by trade.order_id: same order with
@@ -1594,6 +1645,294 @@ func (x *GetWithdrawalReservationResponse) GetReservation() *WithdrawalReservati
 	return nil
 }
 
+type HoldTradeForRiskExtensionRequest struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey         string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	OrderId                string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	EscrowReservationId    string                 `protobuf:"bytes,3,opt,name=escrow_reservation_id,json=escrowReservationId,proto3" json:"escrow_reservation_id,omitempty"`
+	ExpectedControlVersion uint64                 `protobuf:"varint,4,opt,name=expected_control_version,json=expectedControlVersion,proto3" json:"expected_control_version,omitempty"`
+	ExtensionId            string                 `protobuf:"bytes,5,opt,name=extension_id,json=extensionId,proto3" json:"extension_id,omitempty"`
+	// After ledger time and at most 25 hours after it.
+	PendingUntil *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=pending_until,json=pendingUntil,proto3" json:"pending_until,omitempty"`
+	// 1 to 1000 characters. Payment retains the initiating authority and audit.
+	Reason        string `protobuf:"bytes,7,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HoldTradeForRiskExtensionRequest) Reset() {
+	*x = HoldTradeForRiskExtensionRequest{}
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HoldTradeForRiskExtensionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HoldTradeForRiskExtensionRequest) ProtoMessage() {}
+
+func (x *HoldTradeForRiskExtensionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HoldTradeForRiskExtensionRequest.ProtoReflect.Descriptor instead.
+func (*HoldTradeForRiskExtensionRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *HoldTradeForRiskExtensionRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *HoldTradeForRiskExtensionRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *HoldTradeForRiskExtensionRequest) GetEscrowReservationId() string {
+	if x != nil {
+		return x.EscrowReservationId
+	}
+	return ""
+}
+
+func (x *HoldTradeForRiskExtensionRequest) GetExpectedControlVersion() uint64 {
+	if x != nil {
+		return x.ExpectedControlVersion
+	}
+	return 0
+}
+
+func (x *HoldTradeForRiskExtensionRequest) GetExtensionId() string {
+	if x != nil {
+		return x.ExtensionId
+	}
+	return ""
+}
+
+func (x *HoldTradeForRiskExtensionRequest) GetPendingUntil() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PendingUntil
+	}
+	return nil
+}
+
+func (x *HoldTradeForRiskExtensionRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type HoldTradeForRiskExtensionResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// New version, returned only after the hold has been persisted.
+	ControlVersion uint64 `protobuf:"varint,1,opt,name=control_version,json=controlVersion,proto3" json:"control_version,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *HoldTradeForRiskExtensionResponse) Reset() {
+	*x = HoldTradeForRiskExtensionResponse{}
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HoldTradeForRiskExtensionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HoldTradeForRiskExtensionResponse) ProtoMessage() {}
+
+func (x *HoldTradeForRiskExtensionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HoldTradeForRiskExtensionResponse.ProtoReflect.Descriptor instead.
+func (*HoldTradeForRiskExtensionResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *HoldTradeForRiskExtensionResponse) GetControlVersion() uint64 {
+	if x != nil {
+		return x.ControlVersion
+	}
+	return 0
+}
+
+type ResolveTradeRiskExtensionRequest struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey         string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	OrderId                string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	EscrowReservationId    string                 `protobuf:"bytes,3,opt,name=escrow_reservation_id,json=escrowReservationId,proto3" json:"escrow_reservation_id,omitempty"`
+	ExpectedControlVersion uint64                 `protobuf:"varint,4,opt,name=expected_control_version,json=expectedControlVersion,proto3" json:"expected_control_version,omitempty"`
+	// Must match the recorded extension hold.
+	ExtensionId string                    `protobuf:"bytes,5,opt,name=extension_id,json=extensionId,proto3" json:"extension_id,omitempty"`
+	Outcome     TradeRiskExtensionOutcome `protobuf:"varint,6,opt,name=outcome,proto3,enum=aipay.ledger.v1.TradeRiskExtensionOutcome" json:"outcome,omitempty"`
+	// Required for APPLY, absent for WITHDRAW. Later than the current deadline.
+	// risk_release_at - paid_verified_at <= hold_duration_seconds + policy_extension_cap_seconds.
+	RiskReleaseAt *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=risk_release_at,json=riskReleaseAt,proto3" json:"risk_release_at,omitempty"`
+	// Required for APPLY, absent for WITHDRAW. The extension cap of the order's
+	// locked risk policy, at most the ledger hard limit (30 days).
+	PolicyExtensionCapSeconds *uint64 `protobuf:"varint,8,opt,name=policy_extension_cap_seconds,json=policyExtensionCapSeconds,proto3,oneof" json:"policy_extension_cap_seconds,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
+}
+
+func (x *ResolveTradeRiskExtensionRequest) Reset() {
+	*x = ResolveTradeRiskExtensionRequest{}
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResolveTradeRiskExtensionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResolveTradeRiskExtensionRequest) ProtoMessage() {}
+
+func (x *ResolveTradeRiskExtensionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResolveTradeRiskExtensionRequest.ProtoReflect.Descriptor instead.
+func (*ResolveTradeRiskExtensionRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *ResolveTradeRiskExtensionRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *ResolveTradeRiskExtensionRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *ResolveTradeRiskExtensionRequest) GetEscrowReservationId() string {
+	if x != nil {
+		return x.EscrowReservationId
+	}
+	return ""
+}
+
+func (x *ResolveTradeRiskExtensionRequest) GetExpectedControlVersion() uint64 {
+	if x != nil {
+		return x.ExpectedControlVersion
+	}
+	return 0
+}
+
+func (x *ResolveTradeRiskExtensionRequest) GetExtensionId() string {
+	if x != nil {
+		return x.ExtensionId
+	}
+	return ""
+}
+
+func (x *ResolveTradeRiskExtensionRequest) GetOutcome() TradeRiskExtensionOutcome {
+	if x != nil {
+		return x.Outcome
+	}
+	return TradeRiskExtensionOutcome_TRADE_RISK_EXTENSION_OUTCOME_UNSPECIFIED
+}
+
+func (x *ResolveTradeRiskExtensionRequest) GetRiskReleaseAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RiskReleaseAt
+	}
+	return nil
+}
+
+func (x *ResolveTradeRiskExtensionRequest) GetPolicyExtensionCapSeconds() uint64 {
+	if x != nil && x.PolicyExtensionCapSeconds != nil {
+		return *x.PolicyExtensionCapSeconds
+	}
+	return 0
+}
+
+type ResolveTradeRiskExtensionResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ControlVersion uint64                 `protobuf:"varint,1,opt,name=control_version,json=controlVersion,proto3" json:"control_version,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ResolveTradeRiskExtensionResponse) Reset() {
+	*x = ResolveTradeRiskExtensionResponse{}
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResolveTradeRiskExtensionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResolveTradeRiskExtensionResponse) ProtoMessage() {}
+
+func (x *ResolveTradeRiskExtensionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_ledger_v1_reservation_service_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResolveTradeRiskExtensionResponse.ProtoReflect.Descriptor instead.
+func (*ResolveTradeRiskExtensionResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *ResolveTradeRiskExtensionResponse) GetControlVersion() uint64 {
+	if x != nil {
+		return x.ControlVersion
+	}
+	return 0
+}
+
 var File_aipay_ledger_v1_reservation_service_proto protoreflect.FileDescriptor
 
 const file_aipay_ledger_v1_reservation_service_proto_rawDesc = "" +
@@ -1715,13 +2054,39 @@ const file_aipay_ledger_v1_reservation_service_proto_rawDesc = "" +
 	"\n" +
 	"\bselector\"l\n" +
 	" GetWithdrawalReservationResponse\x12H\n" +
-	"\vreservation\x18\x01 \x01(\v2&.aipay.ledger.v1.WithdrawalReservationR\vreservation*\xfa\x01\n" +
+	"\vreservation\x18\x01 \x01(\v2&.aipay.ledger.v1.WithdrawalReservationR\vreservation\"\xd0\x02\n" +
+	" HoldTradeForRiskExtensionRequest\x12'\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12\x19\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x122\n" +
+	"\x15escrow_reservation_id\x18\x03 \x01(\tR\x13escrowReservationId\x128\n" +
+	"\x18expected_control_version\x18\x04 \x01(\x04R\x16expectedControlVersion\x12!\n" +
+	"\fextension_id\x18\x05 \x01(\tR\vextensionId\x12?\n" +
+	"\rpending_until\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\fpendingUntil\x12\x16\n" +
+	"\x06reason\x18\a \x01(\tR\x06reason\"L\n" +
+	"!HoldTradeForRiskExtensionResponse\x12'\n" +
+	"\x0fcontrol_version\x18\x01 \x01(\x04R\x0econtrolVersion\"\xe8\x03\n" +
+	" ResolveTradeRiskExtensionRequest\x12'\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12\x19\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x122\n" +
+	"\x15escrow_reservation_id\x18\x03 \x01(\tR\x13escrowReservationId\x128\n" +
+	"\x18expected_control_version\x18\x04 \x01(\x04R\x16expectedControlVersion\x12!\n" +
+	"\fextension_id\x18\x05 \x01(\tR\vextensionId\x12D\n" +
+	"\aoutcome\x18\x06 \x01(\x0e2*.aipay.ledger.v1.TradeRiskExtensionOutcomeR\aoutcome\x12B\n" +
+	"\x0frisk_release_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\rriskReleaseAt\x12D\n" +
+	"\x1cpolicy_extension_cap_seconds\x18\b \x01(\x04H\x00R\x19policyExtensionCapSeconds\x88\x01\x01B\x1f\n" +
+	"\x1d_policy_extension_cap_seconds\"L\n" +
+	"!ResolveTradeRiskExtensionResponse\x12'\n" +
+	"\x0fcontrol_version\x18\x01 \x01(\x04R\x0econtrolVersion*\xfa\x01\n" +
 	"\x1bWithdrawalReservationStatus\x12-\n" +
 	")WITHDRAWAL_RESERVATION_STATUS_UNSPECIFIED\x10\x00\x12*\n" +
 	"&WITHDRAWAL_RESERVATION_STATUS_RESERVED\x10\x01\x12)\n" +
 	"%WITHDRAWAL_RESERVATION_STATUS_SETTLED\x10\x02\x12*\n" +
 	"&WITHDRAWAL_RESERVATION_STATUS_RELEASED\x10\x03\x12)\n" +
-	"%WITHDRAWAL_RESERVATION_STATUS_UNKNOWN\x10\x042\x90\v\n" +
+	"%WITHDRAWAL_RESERVATION_STATUS_UNKNOWN\x10\x04*\x9c\x01\n" +
+	"\x19TradeRiskExtensionOutcome\x12,\n" +
+	"(TRADE_RISK_EXTENSION_OUTCOME_UNSPECIFIED\x10\x00\x12&\n" +
+	"\"TRADE_RISK_EXTENSION_OUTCOME_APPLY\x10\x01\x12)\n" +
+	"%TRADE_RISK_EXTENSION_OUTCOME_WITHDRAW\x10\x022\xc0\r\n" +
 	"\x12ReservationService\x12n\n" +
 	"\fReserveTrade\x12$.aipay.ledger.v1.ReserveTradeRequest\x1a%.aipay.ledger.v1.ReserveTradeResponse\"\x11\xc2\xf3\x18\r\n" +
 	"\v\n" +
@@ -1756,7 +2121,13 @@ const file_aipay_ledger_v1_reservation_service_proto_rawDesc = "" +
 	"\x1e\n" +
 	"\n" +
 	"settlement\n" +
-	"\x0ereconciliation\x10\x01B>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
+	"\x0ereconciliation\x10\x01\x12\x95\x01\n" +
+	"\x19HoldTradeForRiskExtension\x121.aipay.ledger.v1.HoldTradeForRiskExtensionRequest\x1a2.aipay.ledger.v1.HoldTradeForRiskExtensionResponse\"\x11\xc2\xf3\x18\r\n" +
+	"\v\n" +
+	"\apayment\x10\x01\x12\x95\x01\n" +
+	"\x19ResolveTradeRiskExtension\x121.aipay.ledger.v1.ResolveTradeRiskExtensionRequest\x1a2.aipay.ledger.v1.ResolveTradeRiskExtensionResponse\"\x11\xc2\xf3\x18\r\n" +
+	"\v\n" +
+	"\apayment\x10\x01B>Z<github.com/Kaivodev/protobuf/gen/go/aipay/ledger/v1;ledgerv1b\x06proto3"
 
 var (
 	file_aipay_ledger_v1_reservation_service_proto_rawDescOnce sync.Once
@@ -1770,93 +2141,105 @@ func file_aipay_ledger_v1_reservation_service_proto_rawDescGZIP() []byte {
 	return file_aipay_ledger_v1_reservation_service_proto_rawDescData
 }
 
-var file_aipay_ledger_v1_reservation_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_aipay_ledger_v1_reservation_service_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_aipay_ledger_v1_reservation_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_aipay_ledger_v1_reservation_service_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_aipay_ledger_v1_reservation_service_proto_goTypes = []any{
 	(WithdrawalReservationStatus)(0),            // 0: aipay.ledger.v1.WithdrawalReservationStatus
-	(*ReserveTradeRequest)(nil),                 // 1: aipay.ledger.v1.ReserveTradeRequest
-	(*ReserveTradeResponse)(nil),                // 2: aipay.ledger.v1.ReserveTradeResponse
-	(*GetTradeReservationRequest)(nil),          // 3: aipay.ledger.v1.GetTradeReservationRequest
-	(*GetTradeReservationResponse)(nil),         // 4: aipay.ledger.v1.GetTradeReservationResponse
-	(*HoldTradeForRefundRequest)(nil),           // 5: aipay.ledger.v1.HoldTradeForRefundRequest
-	(*HoldTradeForRefundResponse)(nil),          // 6: aipay.ledger.v1.HoldTradeForRefundResponse
-	(*HoldTradeForDisputeRequest)(nil),          // 7: aipay.ledger.v1.HoldTradeForDisputeRequest
-	(*HoldTradeForDisputeResponse)(nil),         // 8: aipay.ledger.v1.HoldTradeForDisputeResponse
-	(*ReserveRefundRequest)(nil),                // 9: aipay.ledger.v1.ReserveRefundRequest
-	(*ReserveRefundResponse)(nil),               // 10: aipay.ledger.v1.ReserveRefundResponse
-	(*HoldReleasedTradeForDisputeRequest)(nil),  // 11: aipay.ledger.v1.HoldReleasedTradeForDisputeRequest
-	(*HoldReleasedTradeForDisputeResponse)(nil), // 12: aipay.ledger.v1.HoldReleasedTradeForDisputeResponse
-	(*ResolveReleasedTradeDisputeRequest)(nil),  // 13: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest
-	(*ResolveReleasedTradeDisputeResponse)(nil), // 14: aipay.ledger.v1.ResolveReleasedTradeDisputeResponse
-	(*GetTradeFreezeDetailsRequest)(nil),        // 15: aipay.ledger.v1.GetTradeFreezeDetailsRequest
-	(*GetTradeFreezeDetailsResponse)(nil),       // 16: aipay.ledger.v1.GetTradeFreezeDetailsResponse
-	(*WithdrawalReservation)(nil),               // 17: aipay.ledger.v1.WithdrawalReservation
-	(*ReserveWithdrawalRequest)(nil),            // 18: aipay.ledger.v1.ReserveWithdrawalRequest
-	(*ReserveWithdrawalResponse)(nil),           // 19: aipay.ledger.v1.ReserveWithdrawalResponse
-	(*GetWithdrawalReservationRequest)(nil),     // 20: aipay.ledger.v1.GetWithdrawalReservationRequest
-	(*GetWithdrawalReservationResponse)(nil),    // 21: aipay.ledger.v1.GetWithdrawalReservationResponse
-	(*v1.TradeSnapshot)(nil),                    // 22: aipay.common.v1.TradeSnapshot
-	(*TradeReservation)(nil),                    // 23: aipay.ledger.v1.TradeReservation
-	(*RefundReservation)(nil),                   // 24: aipay.ledger.v1.RefundReservation
-	(RefundReservationBranch)(0),                // 25: aipay.ledger.v1.RefundReservationBranch
-	(*DisputeRulingReference)(nil),              // 26: aipay.ledger.v1.DisputeRulingReference
-	(*ReleasedTradeDisputeHold)(nil),            // 27: aipay.ledger.v1.ReleasedTradeDisputeHold
-	(ReleasedTradeDisputeOutcome)(0),            // 28: aipay.ledger.v1.ReleasedTradeDisputeOutcome
-	(TradeReservationStatus)(0),                 // 29: aipay.ledger.v1.TradeReservationStatus
-	(*TradeRefundHold)(nil),                     // 30: aipay.ledger.v1.TradeRefundHold
-	(*TradeDisputeHold)(nil),                    // 31: aipay.ledger.v1.TradeDisputeHold
-	(*AccountRiskFreeze)(nil),                   // 32: aipay.ledger.v1.AccountRiskFreeze
-	(v1.Chain)(0),                               // 33: aipay.common.v1.Chain
-	(*timestamppb.Timestamp)(nil),               // 34: google.protobuf.Timestamp
+	(TradeRiskExtensionOutcome)(0),              // 1: aipay.ledger.v1.TradeRiskExtensionOutcome
+	(*ReserveTradeRequest)(nil),                 // 2: aipay.ledger.v1.ReserveTradeRequest
+	(*ReserveTradeResponse)(nil),                // 3: aipay.ledger.v1.ReserveTradeResponse
+	(*GetTradeReservationRequest)(nil),          // 4: aipay.ledger.v1.GetTradeReservationRequest
+	(*GetTradeReservationResponse)(nil),         // 5: aipay.ledger.v1.GetTradeReservationResponse
+	(*HoldTradeForRefundRequest)(nil),           // 6: aipay.ledger.v1.HoldTradeForRefundRequest
+	(*HoldTradeForRefundResponse)(nil),          // 7: aipay.ledger.v1.HoldTradeForRefundResponse
+	(*HoldTradeForDisputeRequest)(nil),          // 8: aipay.ledger.v1.HoldTradeForDisputeRequest
+	(*HoldTradeForDisputeResponse)(nil),         // 9: aipay.ledger.v1.HoldTradeForDisputeResponse
+	(*ReserveRefundRequest)(nil),                // 10: aipay.ledger.v1.ReserveRefundRequest
+	(*ReserveRefundResponse)(nil),               // 11: aipay.ledger.v1.ReserveRefundResponse
+	(*HoldReleasedTradeForDisputeRequest)(nil),  // 12: aipay.ledger.v1.HoldReleasedTradeForDisputeRequest
+	(*HoldReleasedTradeForDisputeResponse)(nil), // 13: aipay.ledger.v1.HoldReleasedTradeForDisputeResponse
+	(*ResolveReleasedTradeDisputeRequest)(nil),  // 14: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest
+	(*ResolveReleasedTradeDisputeResponse)(nil), // 15: aipay.ledger.v1.ResolveReleasedTradeDisputeResponse
+	(*GetTradeFreezeDetailsRequest)(nil),        // 16: aipay.ledger.v1.GetTradeFreezeDetailsRequest
+	(*GetTradeFreezeDetailsResponse)(nil),       // 17: aipay.ledger.v1.GetTradeFreezeDetailsResponse
+	(*WithdrawalReservation)(nil),               // 18: aipay.ledger.v1.WithdrawalReservation
+	(*ReserveWithdrawalRequest)(nil),            // 19: aipay.ledger.v1.ReserveWithdrawalRequest
+	(*ReserveWithdrawalResponse)(nil),           // 20: aipay.ledger.v1.ReserveWithdrawalResponse
+	(*GetWithdrawalReservationRequest)(nil),     // 21: aipay.ledger.v1.GetWithdrawalReservationRequest
+	(*GetWithdrawalReservationResponse)(nil),    // 22: aipay.ledger.v1.GetWithdrawalReservationResponse
+	(*HoldTradeForRiskExtensionRequest)(nil),    // 23: aipay.ledger.v1.HoldTradeForRiskExtensionRequest
+	(*HoldTradeForRiskExtensionResponse)(nil),   // 24: aipay.ledger.v1.HoldTradeForRiskExtensionResponse
+	(*ResolveTradeRiskExtensionRequest)(nil),    // 25: aipay.ledger.v1.ResolveTradeRiskExtensionRequest
+	(*ResolveTradeRiskExtensionResponse)(nil),   // 26: aipay.ledger.v1.ResolveTradeRiskExtensionResponse
+	(*v1.TradeSnapshot)(nil),                    // 27: aipay.common.v1.TradeSnapshot
+	(*TradeReservation)(nil),                    // 28: aipay.ledger.v1.TradeReservation
+	(*RefundReservation)(nil),                   // 29: aipay.ledger.v1.RefundReservation
+	(RefundReservationBranch)(0),                // 30: aipay.ledger.v1.RefundReservationBranch
+	(*DisputeRulingReference)(nil),              // 31: aipay.ledger.v1.DisputeRulingReference
+	(*ReleasedTradeDisputeHold)(nil),            // 32: aipay.ledger.v1.ReleasedTradeDisputeHold
+	(ReleasedTradeDisputeOutcome)(0),            // 33: aipay.ledger.v1.ReleasedTradeDisputeOutcome
+	(TradeReservationStatus)(0),                 // 34: aipay.ledger.v1.TradeReservationStatus
+	(*TradeRefundHold)(nil),                     // 35: aipay.ledger.v1.TradeRefundHold
+	(*TradeDisputeHold)(nil),                    // 36: aipay.ledger.v1.TradeDisputeHold
+	(*AccountRiskFreeze)(nil),                   // 37: aipay.ledger.v1.AccountRiskFreeze
+	(v1.Chain)(0),                               // 38: aipay.common.v1.Chain
+	(*timestamppb.Timestamp)(nil),               // 39: google.protobuf.Timestamp
 }
 var file_aipay_ledger_v1_reservation_service_proto_depIdxs = []int32{
-	22, // 0: aipay.ledger.v1.ReserveTradeRequest.trade:type_name -> aipay.common.v1.TradeSnapshot
-	23, // 1: aipay.ledger.v1.GetTradeReservationResponse.reservation:type_name -> aipay.ledger.v1.TradeReservation
-	24, // 2: aipay.ledger.v1.GetTradeReservationResponse.refund_reservation:type_name -> aipay.ledger.v1.RefundReservation
-	25, // 3: aipay.ledger.v1.ReserveRefundRequest.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
-	26, // 4: aipay.ledger.v1.ReserveRefundRequest.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
-	24, // 5: aipay.ledger.v1.ReserveRefundResponse.reservation:type_name -> aipay.ledger.v1.RefundReservation
-	27, // 6: aipay.ledger.v1.HoldReleasedTradeForDisputeResponse.hold:type_name -> aipay.ledger.v1.ReleasedTradeDisputeHold
-	26, // 7: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
-	28, // 8: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest.outcome:type_name -> aipay.ledger.v1.ReleasedTradeDisputeOutcome
-	24, // 9: aipay.ledger.v1.ResolveReleasedTradeDisputeResponse.refund_reservation:type_name -> aipay.ledger.v1.RefundReservation
-	29, // 10: aipay.ledger.v1.GetTradeFreezeDetailsResponse.status:type_name -> aipay.ledger.v1.TradeReservationStatus
-	30, // 11: aipay.ledger.v1.GetTradeFreezeDetailsResponse.refund_holds:type_name -> aipay.ledger.v1.TradeRefundHold
-	31, // 12: aipay.ledger.v1.GetTradeFreezeDetailsResponse.dispute_holds:type_name -> aipay.ledger.v1.TradeDisputeHold
-	32, // 13: aipay.ledger.v1.GetTradeFreezeDetailsResponse.seller_risk_freeze:type_name -> aipay.ledger.v1.AccountRiskFreeze
-	32, // 14: aipay.ledger.v1.GetTradeFreezeDetailsResponse.recipient_risk_freeze:type_name -> aipay.ledger.v1.AccountRiskFreeze
-	33, // 15: aipay.ledger.v1.WithdrawalReservation.chain:type_name -> aipay.common.v1.Chain
+	27, // 0: aipay.ledger.v1.ReserveTradeRequest.trade:type_name -> aipay.common.v1.TradeSnapshot
+	28, // 1: aipay.ledger.v1.GetTradeReservationResponse.reservation:type_name -> aipay.ledger.v1.TradeReservation
+	29, // 2: aipay.ledger.v1.GetTradeReservationResponse.refund_reservation:type_name -> aipay.ledger.v1.RefundReservation
+	30, // 3: aipay.ledger.v1.ReserveRefundRequest.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
+	31, // 4: aipay.ledger.v1.ReserveRefundRequest.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
+	29, // 5: aipay.ledger.v1.ReserveRefundResponse.reservation:type_name -> aipay.ledger.v1.RefundReservation
+	32, // 6: aipay.ledger.v1.HoldReleasedTradeForDisputeResponse.hold:type_name -> aipay.ledger.v1.ReleasedTradeDisputeHold
+	31, // 7: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest.dispute_ruling:type_name -> aipay.ledger.v1.DisputeRulingReference
+	33, // 8: aipay.ledger.v1.ResolveReleasedTradeDisputeRequest.outcome:type_name -> aipay.ledger.v1.ReleasedTradeDisputeOutcome
+	29, // 9: aipay.ledger.v1.ResolveReleasedTradeDisputeResponse.refund_reservation:type_name -> aipay.ledger.v1.RefundReservation
+	34, // 10: aipay.ledger.v1.GetTradeFreezeDetailsResponse.status:type_name -> aipay.ledger.v1.TradeReservationStatus
+	35, // 11: aipay.ledger.v1.GetTradeFreezeDetailsResponse.refund_holds:type_name -> aipay.ledger.v1.TradeRefundHold
+	36, // 12: aipay.ledger.v1.GetTradeFreezeDetailsResponse.dispute_holds:type_name -> aipay.ledger.v1.TradeDisputeHold
+	37, // 13: aipay.ledger.v1.GetTradeFreezeDetailsResponse.seller_risk_freeze:type_name -> aipay.ledger.v1.AccountRiskFreeze
+	37, // 14: aipay.ledger.v1.GetTradeFreezeDetailsResponse.recipient_risk_freeze:type_name -> aipay.ledger.v1.AccountRiskFreeze
+	38, // 15: aipay.ledger.v1.WithdrawalReservation.chain:type_name -> aipay.common.v1.Chain
 	0,  // 16: aipay.ledger.v1.WithdrawalReservation.status:type_name -> aipay.ledger.v1.WithdrawalReservationStatus
-	34, // 17: aipay.ledger.v1.WithdrawalReservation.created_at:type_name -> google.protobuf.Timestamp
-	34, // 18: aipay.ledger.v1.WithdrawalReservation.updated_at:type_name -> google.protobuf.Timestamp
-	33, // 19: aipay.ledger.v1.ReserveWithdrawalRequest.chain:type_name -> aipay.common.v1.Chain
-	17, // 20: aipay.ledger.v1.ReserveWithdrawalResponse.reservation:type_name -> aipay.ledger.v1.WithdrawalReservation
-	17, // 21: aipay.ledger.v1.GetWithdrawalReservationResponse.reservation:type_name -> aipay.ledger.v1.WithdrawalReservation
-	1,  // 22: aipay.ledger.v1.ReservationService.ReserveTrade:input_type -> aipay.ledger.v1.ReserveTradeRequest
-	3,  // 23: aipay.ledger.v1.ReservationService.GetTradeReservation:input_type -> aipay.ledger.v1.GetTradeReservationRequest
-	5,  // 24: aipay.ledger.v1.ReservationService.HoldTradeForRefund:input_type -> aipay.ledger.v1.HoldTradeForRefundRequest
-	7,  // 25: aipay.ledger.v1.ReservationService.HoldTradeForDispute:input_type -> aipay.ledger.v1.HoldTradeForDisputeRequest
-	9,  // 26: aipay.ledger.v1.ReservationService.ReserveRefund:input_type -> aipay.ledger.v1.ReserveRefundRequest
-	11, // 27: aipay.ledger.v1.ReservationService.HoldReleasedTradeForDispute:input_type -> aipay.ledger.v1.HoldReleasedTradeForDisputeRequest
-	13, // 28: aipay.ledger.v1.ReservationService.ResolveReleasedTradeDispute:input_type -> aipay.ledger.v1.ResolveReleasedTradeDisputeRequest
-	15, // 29: aipay.ledger.v1.ReservationService.GetTradeFreezeDetails:input_type -> aipay.ledger.v1.GetTradeFreezeDetailsRequest
-	18, // 30: aipay.ledger.v1.ReservationService.ReserveWithdrawal:input_type -> aipay.ledger.v1.ReserveWithdrawalRequest
-	20, // 31: aipay.ledger.v1.ReservationService.GetWithdrawalReservation:input_type -> aipay.ledger.v1.GetWithdrawalReservationRequest
-	2,  // 32: aipay.ledger.v1.ReservationService.ReserveTrade:output_type -> aipay.ledger.v1.ReserveTradeResponse
-	4,  // 33: aipay.ledger.v1.ReservationService.GetTradeReservation:output_type -> aipay.ledger.v1.GetTradeReservationResponse
-	6,  // 34: aipay.ledger.v1.ReservationService.HoldTradeForRefund:output_type -> aipay.ledger.v1.HoldTradeForRefundResponse
-	8,  // 35: aipay.ledger.v1.ReservationService.HoldTradeForDispute:output_type -> aipay.ledger.v1.HoldTradeForDisputeResponse
-	10, // 36: aipay.ledger.v1.ReservationService.ReserveRefund:output_type -> aipay.ledger.v1.ReserveRefundResponse
-	12, // 37: aipay.ledger.v1.ReservationService.HoldReleasedTradeForDispute:output_type -> aipay.ledger.v1.HoldReleasedTradeForDisputeResponse
-	14, // 38: aipay.ledger.v1.ReservationService.ResolveReleasedTradeDispute:output_type -> aipay.ledger.v1.ResolveReleasedTradeDisputeResponse
-	16, // 39: aipay.ledger.v1.ReservationService.GetTradeFreezeDetails:output_type -> aipay.ledger.v1.GetTradeFreezeDetailsResponse
-	19, // 40: aipay.ledger.v1.ReservationService.ReserveWithdrawal:output_type -> aipay.ledger.v1.ReserveWithdrawalResponse
-	21, // 41: aipay.ledger.v1.ReservationService.GetWithdrawalReservation:output_type -> aipay.ledger.v1.GetWithdrawalReservationResponse
-	32, // [32:42] is the sub-list for method output_type
-	22, // [22:32] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	39, // 17: aipay.ledger.v1.WithdrawalReservation.created_at:type_name -> google.protobuf.Timestamp
+	39, // 18: aipay.ledger.v1.WithdrawalReservation.updated_at:type_name -> google.protobuf.Timestamp
+	38, // 19: aipay.ledger.v1.ReserveWithdrawalRequest.chain:type_name -> aipay.common.v1.Chain
+	18, // 20: aipay.ledger.v1.ReserveWithdrawalResponse.reservation:type_name -> aipay.ledger.v1.WithdrawalReservation
+	18, // 21: aipay.ledger.v1.GetWithdrawalReservationResponse.reservation:type_name -> aipay.ledger.v1.WithdrawalReservation
+	39, // 22: aipay.ledger.v1.HoldTradeForRiskExtensionRequest.pending_until:type_name -> google.protobuf.Timestamp
+	1,  // 23: aipay.ledger.v1.ResolveTradeRiskExtensionRequest.outcome:type_name -> aipay.ledger.v1.TradeRiskExtensionOutcome
+	39, // 24: aipay.ledger.v1.ResolveTradeRiskExtensionRequest.risk_release_at:type_name -> google.protobuf.Timestamp
+	2,  // 25: aipay.ledger.v1.ReservationService.ReserveTrade:input_type -> aipay.ledger.v1.ReserveTradeRequest
+	4,  // 26: aipay.ledger.v1.ReservationService.GetTradeReservation:input_type -> aipay.ledger.v1.GetTradeReservationRequest
+	6,  // 27: aipay.ledger.v1.ReservationService.HoldTradeForRefund:input_type -> aipay.ledger.v1.HoldTradeForRefundRequest
+	8,  // 28: aipay.ledger.v1.ReservationService.HoldTradeForDispute:input_type -> aipay.ledger.v1.HoldTradeForDisputeRequest
+	10, // 29: aipay.ledger.v1.ReservationService.ReserveRefund:input_type -> aipay.ledger.v1.ReserveRefundRequest
+	12, // 30: aipay.ledger.v1.ReservationService.HoldReleasedTradeForDispute:input_type -> aipay.ledger.v1.HoldReleasedTradeForDisputeRequest
+	14, // 31: aipay.ledger.v1.ReservationService.ResolveReleasedTradeDispute:input_type -> aipay.ledger.v1.ResolveReleasedTradeDisputeRequest
+	16, // 32: aipay.ledger.v1.ReservationService.GetTradeFreezeDetails:input_type -> aipay.ledger.v1.GetTradeFreezeDetailsRequest
+	19, // 33: aipay.ledger.v1.ReservationService.ReserveWithdrawal:input_type -> aipay.ledger.v1.ReserveWithdrawalRequest
+	21, // 34: aipay.ledger.v1.ReservationService.GetWithdrawalReservation:input_type -> aipay.ledger.v1.GetWithdrawalReservationRequest
+	23, // 35: aipay.ledger.v1.ReservationService.HoldTradeForRiskExtension:input_type -> aipay.ledger.v1.HoldTradeForRiskExtensionRequest
+	25, // 36: aipay.ledger.v1.ReservationService.ResolveTradeRiskExtension:input_type -> aipay.ledger.v1.ResolveTradeRiskExtensionRequest
+	3,  // 37: aipay.ledger.v1.ReservationService.ReserveTrade:output_type -> aipay.ledger.v1.ReserveTradeResponse
+	5,  // 38: aipay.ledger.v1.ReservationService.GetTradeReservation:output_type -> aipay.ledger.v1.GetTradeReservationResponse
+	7,  // 39: aipay.ledger.v1.ReservationService.HoldTradeForRefund:output_type -> aipay.ledger.v1.HoldTradeForRefundResponse
+	9,  // 40: aipay.ledger.v1.ReservationService.HoldTradeForDispute:output_type -> aipay.ledger.v1.HoldTradeForDisputeResponse
+	11, // 41: aipay.ledger.v1.ReservationService.ReserveRefund:output_type -> aipay.ledger.v1.ReserveRefundResponse
+	13, // 42: aipay.ledger.v1.ReservationService.HoldReleasedTradeForDispute:output_type -> aipay.ledger.v1.HoldReleasedTradeForDisputeResponse
+	15, // 43: aipay.ledger.v1.ReservationService.ResolveReleasedTradeDispute:output_type -> aipay.ledger.v1.ResolveReleasedTradeDisputeResponse
+	17, // 44: aipay.ledger.v1.ReservationService.GetTradeFreezeDetails:output_type -> aipay.ledger.v1.GetTradeFreezeDetailsResponse
+	20, // 45: aipay.ledger.v1.ReservationService.ReserveWithdrawal:output_type -> aipay.ledger.v1.ReserveWithdrawalResponse
+	22, // 46: aipay.ledger.v1.ReservationService.GetWithdrawalReservation:output_type -> aipay.ledger.v1.GetWithdrawalReservationResponse
+	24, // 47: aipay.ledger.v1.ReservationService.HoldTradeForRiskExtension:output_type -> aipay.ledger.v1.HoldTradeForRiskExtensionResponse
+	26, // 48: aipay.ledger.v1.ReservationService.ResolveTradeRiskExtension:output_type -> aipay.ledger.v1.ResolveTradeRiskExtensionResponse
+	37, // [37:49] is the sub-list for method output_type
+	25, // [25:37] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_aipay_ledger_v1_reservation_service_proto_init() }
@@ -1873,13 +2256,14 @@ func file_aipay_ledger_v1_reservation_service_proto_init() {
 		(*GetWithdrawalReservationRequest_WithdrawalId)(nil),
 		(*GetWithdrawalReservationRequest_ReservationId)(nil),
 	}
+	file_aipay_ledger_v1_reservation_service_proto_msgTypes[23].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_ledger_v1_reservation_service_proto_rawDesc), len(file_aipay_ledger_v1_reservation_service_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   21,
+			NumEnums:      2,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

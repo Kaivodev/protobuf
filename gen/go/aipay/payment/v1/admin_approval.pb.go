@@ -79,6 +79,275 @@ func (DisputeRulingOutcome) EnumDescriptor() ([]byte, []int) {
 	return file_aipay_payment_v1_admin_approval_proto_rawDescGZIP(), []int{0}
 }
 
+type RiskExtensionOrigin int32
+
+const (
+	RiskExtensionOrigin_RISK_EXTENSION_ORIGIN_UNSPECIFIED RiskExtensionOrigin = 0
+	RiskExtensionOrigin_RISK_EXTENSION_ORIGIN_PLATFORM    RiskExtensionOrigin = 1
+	RiskExtensionOrigin_RISK_EXTENSION_ORIGIN_SELLER      RiskExtensionOrigin = 2
+)
+
+// Enum value maps for RiskExtensionOrigin.
+var (
+	RiskExtensionOrigin_name = map[int32]string{
+		0: "RISK_EXTENSION_ORIGIN_UNSPECIFIED",
+		1: "RISK_EXTENSION_ORIGIN_PLATFORM",
+		2: "RISK_EXTENSION_ORIGIN_SELLER",
+	}
+	RiskExtensionOrigin_value = map[string]int32{
+		"RISK_EXTENSION_ORIGIN_UNSPECIFIED": 0,
+		"RISK_EXTENSION_ORIGIN_PLATFORM":    1,
+		"RISK_EXTENSION_ORIGIN_SELLER":      2,
+	}
+)
+
+func (x RiskExtensionOrigin) Enum() *RiskExtensionOrigin {
+	p := new(RiskExtensionOrigin)
+	*p = x
+	return p
+}
+
+func (x RiskExtensionOrigin) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RiskExtensionOrigin) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_admin_approval_proto_enumTypes[1].Descriptor()
+}
+
+func (RiskExtensionOrigin) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_admin_approval_proto_enumTypes[1]
+}
+
+func (x RiskExtensionOrigin) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RiskExtensionOrigin.Descriptor instead.
+func (RiskExtensionOrigin) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_admin_approval_proto_rawDescGZIP(), []int{1}
+}
+
+type RiskExtensionReason int32
+
+const (
+	RiskExtensionReason_RISK_EXTENSION_REASON_UNSPECIFIED            RiskExtensionReason = 0
+	RiskExtensionReason_RISK_EXTENSION_REASON_SELLER_FUNDS_FROZEN    RiskExtensionReason = 1
+	RiskExtensionReason_RISK_EXTENSION_REASON_PAYER_MISMATCH         RiskExtensionReason = 2
+	RiskExtensionReason_RISK_EXTENSION_REASON_REVERSAL_RISK          RiskExtensionReason = 3
+	RiskExtensionReason_RISK_EXTENSION_REASON_UPSTREAM_INVESTIGATION RiskExtensionReason = 4
+	RiskExtensionReason_RISK_EXTENSION_REASON_PLATFORM_REVIEW        RiskExtensionReason = 5
+	// Requires a reason of at least 20 characters.
+	RiskExtensionReason_RISK_EXTENSION_REASON_OTHER RiskExtensionReason = 6
+)
+
+// Enum value maps for RiskExtensionReason.
+var (
+	RiskExtensionReason_name = map[int32]string{
+		0: "RISK_EXTENSION_REASON_UNSPECIFIED",
+		1: "RISK_EXTENSION_REASON_SELLER_FUNDS_FROZEN",
+		2: "RISK_EXTENSION_REASON_PAYER_MISMATCH",
+		3: "RISK_EXTENSION_REASON_REVERSAL_RISK",
+		4: "RISK_EXTENSION_REASON_UPSTREAM_INVESTIGATION",
+		5: "RISK_EXTENSION_REASON_PLATFORM_REVIEW",
+		6: "RISK_EXTENSION_REASON_OTHER",
+	}
+	RiskExtensionReason_value = map[string]int32{
+		"RISK_EXTENSION_REASON_UNSPECIFIED":            0,
+		"RISK_EXTENSION_REASON_SELLER_FUNDS_FROZEN":    1,
+		"RISK_EXTENSION_REASON_PAYER_MISMATCH":         2,
+		"RISK_EXTENSION_REASON_REVERSAL_RISK":          3,
+		"RISK_EXTENSION_REASON_UPSTREAM_INVESTIGATION": 4,
+		"RISK_EXTENSION_REASON_PLATFORM_REVIEW":        5,
+		"RISK_EXTENSION_REASON_OTHER":                  6,
+	}
+)
+
+func (x RiskExtensionReason) Enum() *RiskExtensionReason {
+	p := new(RiskExtensionReason)
+	*p = x
+	return p
+}
+
+func (x RiskExtensionReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RiskExtensionReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_admin_approval_proto_enumTypes[2].Descriptor()
+}
+
+func (RiskExtensionReason) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_admin_approval_proto_enumTypes[2]
+}
+
+func (x RiskExtensionReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RiskExtensionReason.Descriptor instead.
+func (RiskExtensionReason) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_admin_approval_proto_rawDescGZIP(), []int{2}
+}
+
+type AmountMismatchSource int32
+
+const (
+	AmountMismatchSource_AMOUNT_MISMATCH_SOURCE_UNSPECIFIED AmountMismatchSource = 0
+	AmountMismatchSource_AMOUNT_MISMATCH_SOURCE_QUERY       AmountMismatchSource = 1
+	AmountMismatchSource_AMOUNT_MISMATCH_SOURCE_CREATE      AmountMismatchSource = 2
+	AmountMismatchSource_AMOUNT_MISMATCH_SOURCE_CLOSE       AmountMismatchSource = 3
+	// Backfilled by migration from audit records.
+	AmountMismatchSource_AMOUNT_MISMATCH_SOURCE_LEGACY AmountMismatchSource = 4
+)
+
+// Enum value maps for AmountMismatchSource.
+var (
+	AmountMismatchSource_name = map[int32]string{
+		0: "AMOUNT_MISMATCH_SOURCE_UNSPECIFIED",
+		1: "AMOUNT_MISMATCH_SOURCE_QUERY",
+		2: "AMOUNT_MISMATCH_SOURCE_CREATE",
+		3: "AMOUNT_MISMATCH_SOURCE_CLOSE",
+		4: "AMOUNT_MISMATCH_SOURCE_LEGACY",
+	}
+	AmountMismatchSource_value = map[string]int32{
+		"AMOUNT_MISMATCH_SOURCE_UNSPECIFIED": 0,
+		"AMOUNT_MISMATCH_SOURCE_QUERY":       1,
+		"AMOUNT_MISMATCH_SOURCE_CREATE":      2,
+		"AMOUNT_MISMATCH_SOURCE_CLOSE":       3,
+		"AMOUNT_MISMATCH_SOURCE_LEGACY":      4,
+	}
+)
+
+func (x AmountMismatchSource) Enum() *AmountMismatchSource {
+	p := new(AmountMismatchSource)
+	*p = x
+	return p
+}
+
+func (x AmountMismatchSource) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AmountMismatchSource) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_admin_approval_proto_enumTypes[3].Descriptor()
+}
+
+func (AmountMismatchSource) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_admin_approval_proto_enumTypes[3]
+}
+
+func (x AmountMismatchSource) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AmountMismatchSource.Descriptor instead.
+func (AmountMismatchSource) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_admin_approval_proto_rawDescGZIP(), []int{3}
+}
+
+type AmountMismatchKind int32
+
+const (
+	AmountMismatchKind_AMOUNT_MISMATCH_KIND_UNSPECIFIED AmountMismatchKind = 0
+	// Phase 1 default when the gateway reports a mismatch without an observed amount.
+	AmountMismatchKind_AMOUNT_MISMATCH_KIND_UNKNOWN AmountMismatchKind = 1
+	// Payment found a conflicting upstream order ID locally.
+	AmountMismatchKind_AMOUNT_MISMATCH_KIND_IDENTITY AmountMismatchKind = 2
+)
+
+// Enum value maps for AmountMismatchKind.
+var (
+	AmountMismatchKind_name = map[int32]string{
+		0: "AMOUNT_MISMATCH_KIND_UNSPECIFIED",
+		1: "AMOUNT_MISMATCH_KIND_UNKNOWN",
+		2: "AMOUNT_MISMATCH_KIND_IDENTITY",
+	}
+	AmountMismatchKind_value = map[string]int32{
+		"AMOUNT_MISMATCH_KIND_UNSPECIFIED": 0,
+		"AMOUNT_MISMATCH_KIND_UNKNOWN":     1,
+		"AMOUNT_MISMATCH_KIND_IDENTITY":    2,
+	}
+)
+
+func (x AmountMismatchKind) Enum() *AmountMismatchKind {
+	p := new(AmountMismatchKind)
+	*p = x
+	return p
+}
+
+func (x AmountMismatchKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AmountMismatchKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_admin_approval_proto_enumTypes[4].Descriptor()
+}
+
+func (AmountMismatchKind) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_admin_approval_proto_enumTypes[4]
+}
+
+func (x AmountMismatchKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AmountMismatchKind.Descriptor instead.
+func (AmountMismatchKind) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_admin_approval_proto_rawDescGZIP(), []int{4}
+}
+
+type AmountMismatchOutcome int32
+
+const (
+	AmountMismatchOutcome_AMOUNT_MISMATCH_OUTCOME_UNSPECIFIED AmountMismatchOutcome = 0
+	// Resume querying under the existing release and cancellation evidence rules.
+	AmountMismatchOutcome_AMOUNT_MISMATCH_OUTCOME_REVERIFY AmountMismatchOutcome = 1
+	// Manual refund of the approved amount through the A139 flow.
+	AmountMismatchOutcome_AMOUNT_MISMATCH_OUTCOME_REFUND_OBSERVED AmountMismatchOutcome = 2
+)
+
+// Enum value maps for AmountMismatchOutcome.
+var (
+	AmountMismatchOutcome_name = map[int32]string{
+		0: "AMOUNT_MISMATCH_OUTCOME_UNSPECIFIED",
+		1: "AMOUNT_MISMATCH_OUTCOME_REVERIFY",
+		2: "AMOUNT_MISMATCH_OUTCOME_REFUND_OBSERVED",
+	}
+	AmountMismatchOutcome_value = map[string]int32{
+		"AMOUNT_MISMATCH_OUTCOME_UNSPECIFIED":     0,
+		"AMOUNT_MISMATCH_OUTCOME_REVERIFY":        1,
+		"AMOUNT_MISMATCH_OUTCOME_REFUND_OBSERVED": 2,
+	}
+)
+
+func (x AmountMismatchOutcome) Enum() *AmountMismatchOutcome {
+	p := new(AmountMismatchOutcome)
+	*p = x
+	return p
+}
+
+func (x AmountMismatchOutcome) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AmountMismatchOutcome) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_admin_approval_proto_enumTypes[5].Descriptor()
+}
+
+func (AmountMismatchOutcome) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_admin_approval_proto_enumTypes[5]
+}
+
+func (x AmountMismatchOutcome) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AmountMismatchOutcome.Descriptor instead.
+func (AmountMismatchOutcome) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_admin_approval_proto_rawDescGZIP(), []int{5}
+}
+
 // Full replacement of routing configuration, never a patch to old orders.
 // Credential material is identified by an immutable reference and digest;
 // this message never carries secret bytes.
@@ -1244,7 +1513,8 @@ type SellerRefundReviewMaterial struct {
 	OutRefundNo               *string                      `protobuf:"bytes,7,opt,name=out_refund_no,json=outRefundNo,proto3,oneof" json:"out_refund_no,omitempty"`
 	UpstreamRefundNo          string                       `protobuf:"bytes,8,opt,name=upstream_refund_no,json=upstreamRefundNo,proto3" json:"upstream_refund_no,omitempty"`
 	RefundedAt                *timestamppb.Timestamp       `protobuf:"bytes,9,opt,name=refunded_at,json=refundedAt,proto3" json:"refunded_at,omitempty"`
-	// Equal to the original trade quote in currency and minor units.
+	// Equal to the original fiat quote, or for an AMOUNT_MISMATCH refund,
+	// the approved recovery's refund_amount in the quote currency.
 	RefundedAmount  *v1.Money `protobuf:"bytes,10,opt,name=refunded_amount,json=refundedAmount,proto3" json:"refunded_amount,omitempty"`
 	EvidenceId      string    `protobuf:"bytes,11,opt,name=evidence_id,json=evidenceId,proto3" json:"evidence_id,omitempty"`
 	EvidenceVersion uint64    `protobuf:"varint,12,opt,name=evidence_version,json=evidenceVersion,proto3" json:"evidence_version,omitempty"`
@@ -1621,7 +1891,7 @@ func (x *OrderForcedCloseMaterial) GetEligibleAt() *timestamppb.Timestamp {
 // requested_at/expires_at. Canonical field-order encoding is specified in docs;
 // request_bytes has a length-prefixed "aipay.payment.admin.v1" domain followed
 // by canonical field-order material, NOT protobuf serialization. Unknown fields
-// are rejected. Encode the selected operation field number (6-16) as u32
+// are rejected. Encode the selected operation field number (6-18) as u32
 // before its expanded fields. Different encoding versions require a new domain.
 type PaymentApprovalMaterial struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
@@ -1632,8 +1902,9 @@ type PaymentApprovalMaterial struct {
 	ExpiresAt         *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	// Two distinct platform natural persons must approve, neither equal to
 	// requested_by. For seller_refund this is the submitting seller user. For
-	// seller_refund_failure and forced_close the initiating platform user is
-	// requested_by.
+	// risk_extension this is the initiating platform or seller user. For
+	// seller_refund_failure, forced_close and amount_mismatch_recovery this
+	// is the initiating platform user.
 	//
 	// Types that are valid to be assigned to Operation:
 	//
@@ -1648,6 +1919,8 @@ type PaymentApprovalMaterial struct {
 	//	*PaymentApprovalMaterial_SellerRefund
 	//	*PaymentApprovalMaterial_SellerRefundFailure
 	//	*PaymentApprovalMaterial_ForcedClose
+	//	*PaymentApprovalMaterial_RiskExtension
+	//	*PaymentApprovalMaterial_AmountMismatchRecovery
 	Operation     isPaymentApprovalMaterial_Operation `protobuf_oneof:"operation"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1824,6 +2097,24 @@ func (x *PaymentApprovalMaterial) GetForcedClose() *OrderForcedCloseMaterial {
 	return nil
 }
 
+func (x *PaymentApprovalMaterial) GetRiskExtension() *RiskExtensionMaterial {
+	if x != nil {
+		if x, ok := x.Operation.(*PaymentApprovalMaterial_RiskExtension); ok {
+			return x.RiskExtension
+		}
+	}
+	return nil
+}
+
+func (x *PaymentApprovalMaterial) GetAmountMismatchRecovery() *AmountMismatchRecoveryMaterial {
+	if x != nil {
+		if x, ok := x.Operation.(*PaymentApprovalMaterial_AmountMismatchRecovery); ok {
+			return x.AmountMismatchRecovery
+		}
+	}
+	return nil
+}
+
 type isPaymentApprovalMaterial_Operation interface {
 	isPaymentApprovalMaterial_Operation()
 }
@@ -1872,6 +2163,14 @@ type PaymentApprovalMaterial_ForcedClose struct {
 	ForcedClose *OrderForcedCloseMaterial `protobuf:"bytes,16,opt,name=forced_close,json=forcedClose,proto3,oneof"`
 }
 
+type PaymentApprovalMaterial_RiskExtension struct {
+	RiskExtension *RiskExtensionMaterial `protobuf:"bytes,17,opt,name=risk_extension,json=riskExtension,proto3,oneof"`
+}
+
+type PaymentApprovalMaterial_AmountMismatchRecovery struct {
+	AmountMismatchRecovery *AmountMismatchRecoveryMaterial `protobuf:"bytes,18,opt,name=amount_mismatch_recovery,json=amountMismatchRecovery,proto3,oneof"`
+}
+
 func (*PaymentApprovalMaterial_ChannelAccount) isPaymentApprovalMaterial_Operation() {}
 
 func (*PaymentApprovalMaterial_PaymentMethod) isPaymentApprovalMaterial_Operation() {}
@@ -1893,6 +2192,10 @@ func (*PaymentApprovalMaterial_SellerRefund) isPaymentApprovalMaterial_Operation
 func (*PaymentApprovalMaterial_SellerRefundFailure) isPaymentApprovalMaterial_Operation() {}
 
 func (*PaymentApprovalMaterial_ForcedClose) isPaymentApprovalMaterial_Operation() {}
+
+func (*PaymentApprovalMaterial_RiskExtension) isPaymentApprovalMaterial_Operation() {}
+
+func (*PaymentApprovalMaterial_AmountMismatchRecovery) isPaymentApprovalMaterial_Operation() {}
 
 // Payment stores the original signed evidence without public keys. The stored
 // request_bytes equal str("aipay.payment.admin.v1") || canonical(material).
@@ -1967,6 +2270,347 @@ func (x *PaymentApproval) GetApprovedAt() *timestamppb.Timestamp {
 		return x.ApprovedAt
 	}
 	return nil
+}
+
+// A150. Payment loads the order, its locked risk policy and the ledger hold.
+// The caller identifies the order and escrow, version, duration and reason.
+// Two distinct platform approvers sign, neither equal to requested_by. For
+// SELLER origin, requested_by is the seller user and approvers exclude every
+// member of the seller account.
+type RiskExtensionMaterial struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ExtensionId         string                 `protobuf:"bytes,1,opt,name=extension_id,json=extensionId,proto3" json:"extension_id,omitempty"`
+	Origin              RiskExtensionOrigin    `protobuf:"varint,2,opt,name=origin,proto3,enum=aipay.payment.v1.RiskExtensionOrigin" json:"origin,omitempty"`
+	Trade               *v1.TradeSnapshot      `protobuf:"bytes,3,opt,name=trade,proto3" json:"trade,omitempty"`
+	EscrowReservationId string                 `protobuf:"bytes,4,opt,name=escrow_reservation_id,json=escrowReservationId,proto3" json:"escrow_reservation_id,omitempty"`
+	// Ledger escrow control version after the hold was placed.
+	ExpectedControlVersion uint64 `protobuf:"varint,5,opt,name=expected_control_version,json=expectedControlVersion,proto3" json:"expected_control_version,omitempty"`
+	// Empty only if payment never learned one.
+	UpstreamOrderId string                 `protobuf:"bytes,6,opt,name=upstream_order_id,json=upstreamOrderId,proto3" json:"upstream_order_id,omitempty"`
+	PaidVerifiedAt  *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=paid_verified_at,json=paidVerifiedAt,proto3" json:"paid_verified_at,omitempty"`
+	// Ledger risk_release_at when the hold was placed.
+	CurrentRiskReleaseAt *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=current_risk_release_at,json=currentRiskReleaseAt,proto3" json:"current_risk_release_at,omitempty"`
+	// current_risk_release_at + extension_seconds.
+	RequestedRiskReleaseAt *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=requested_risk_release_at,json=requestedRiskReleaseAt,proto3" json:"requested_risk_release_at,omitempty"`
+	// At least 600.
+	ExtensionSeconds uint64 `protobuf:"varint,10,opt,name=extension_seconds,json=extensionSeconds,proto3" json:"extension_seconds,omitempty"`
+	// 1-based position of this extension among the order's applied ones.
+	Sequence uint32 `protobuf:"varint,11,opt,name=sequence,proto3" json:"sequence,omitempty"`
+	// Sum of previously applied extensions, in seconds.
+	AppliedExtensionSeconds uint64 `protobuf:"varint,12,opt,name=applied_extension_seconds,json=appliedExtensionSeconds,proto3" json:"applied_extension_seconds,omitempty"`
+	RiskPolicyVersion       string `protobuf:"bytes,13,opt,name=risk_policy_version,json=riskPolicyVersion,proto3" json:"risk_policy_version,omitempty"`
+	// min(locked policy exceptional_extension_seconds, 2592000).
+	PolicyExtensionCapSeconds uint64                 `protobuf:"varint,14,opt,name=policy_extension_cap_seconds,json=policyExtensionCapSeconds,proto3" json:"policy_extension_cap_seconds,omitempty"`
+	PendingUntil              *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=pending_until,json=pendingUntil,proto3" json:"pending_until,omitempty"`
+	ReasonCode                RiskExtensionReason    `protobuf:"varint,16,opt,name=reason_code,json=reasonCode,proto3,enum=aipay.payment.v1.RiskExtensionReason" json:"reason_code,omitempty"`
+	// Required, 1-1000 characters.
+	Reason        string `protobuf:"bytes,17,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RiskExtensionMaterial) Reset() {
+	*x = RiskExtensionMaterial{}
+	mi := &file_aipay_payment_v1_admin_approval_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RiskExtensionMaterial) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RiskExtensionMaterial) ProtoMessage() {}
+
+func (x *RiskExtensionMaterial) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_admin_approval_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RiskExtensionMaterial.ProtoReflect.Descriptor instead.
+func (*RiskExtensionMaterial) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_admin_approval_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *RiskExtensionMaterial) GetExtensionId() string {
+	if x != nil {
+		return x.ExtensionId
+	}
+	return ""
+}
+
+func (x *RiskExtensionMaterial) GetOrigin() RiskExtensionOrigin {
+	if x != nil {
+		return x.Origin
+	}
+	return RiskExtensionOrigin_RISK_EXTENSION_ORIGIN_UNSPECIFIED
+}
+
+func (x *RiskExtensionMaterial) GetTrade() *v1.TradeSnapshot {
+	if x != nil {
+		return x.Trade
+	}
+	return nil
+}
+
+func (x *RiskExtensionMaterial) GetEscrowReservationId() string {
+	if x != nil {
+		return x.EscrowReservationId
+	}
+	return ""
+}
+
+func (x *RiskExtensionMaterial) GetExpectedControlVersion() uint64 {
+	if x != nil {
+		return x.ExpectedControlVersion
+	}
+	return 0
+}
+
+func (x *RiskExtensionMaterial) GetUpstreamOrderId() string {
+	if x != nil {
+		return x.UpstreamOrderId
+	}
+	return ""
+}
+
+func (x *RiskExtensionMaterial) GetPaidVerifiedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PaidVerifiedAt
+	}
+	return nil
+}
+
+func (x *RiskExtensionMaterial) GetCurrentRiskReleaseAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CurrentRiskReleaseAt
+	}
+	return nil
+}
+
+func (x *RiskExtensionMaterial) GetRequestedRiskReleaseAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RequestedRiskReleaseAt
+	}
+	return nil
+}
+
+func (x *RiskExtensionMaterial) GetExtensionSeconds() uint64 {
+	if x != nil {
+		return x.ExtensionSeconds
+	}
+	return 0
+}
+
+func (x *RiskExtensionMaterial) GetSequence() uint32 {
+	if x != nil {
+		return x.Sequence
+	}
+	return 0
+}
+
+func (x *RiskExtensionMaterial) GetAppliedExtensionSeconds() uint64 {
+	if x != nil {
+		return x.AppliedExtensionSeconds
+	}
+	return 0
+}
+
+func (x *RiskExtensionMaterial) GetRiskPolicyVersion() string {
+	if x != nil {
+		return x.RiskPolicyVersion
+	}
+	return ""
+}
+
+func (x *RiskExtensionMaterial) GetPolicyExtensionCapSeconds() uint64 {
+	if x != nil {
+		return x.PolicyExtensionCapSeconds
+	}
+	return 0
+}
+
+func (x *RiskExtensionMaterial) GetPendingUntil() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PendingUntil
+	}
+	return nil
+}
+
+func (x *RiskExtensionMaterial) GetReasonCode() RiskExtensionReason {
+	if x != nil {
+		return x.ReasonCode
+	}
+	return RiskExtensionReason_RISK_EXTENSION_REASON_UNSPECIFIED
+}
+
+func (x *RiskExtensionMaterial) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+// A151 phase 1. Payment loads the case and recovery IDs, trade, escrow and
+// version. Two distinct platform approvers sign, neither equal to the initiator.
+type AmountMismatchRecoveryMaterial struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	RecoveryId             string                 `protobuf:"bytes,1,opt,name=recovery_id,json=recoveryId,proto3" json:"recovery_id,omitempty"`
+	CaseId                 string                 `protobuf:"bytes,2,opt,name=case_id,json=caseId,proto3" json:"case_id,omitempty"`
+	Trade                  *v1.TradeSnapshot      `protobuf:"bytes,3,opt,name=trade,proto3" json:"trade,omitempty"`
+	EscrowReservationId    string                 `protobuf:"bytes,4,opt,name=escrow_reservation_id,json=escrowReservationId,proto3" json:"escrow_reservation_id,omitempty"`
+	ExpectedControlVersion uint64                 `protobuf:"varint,5,opt,name=expected_control_version,json=expectedControlVersion,proto3" json:"expected_control_version,omitempty"`
+	// Empty when payment never learned an upstream order ID.
+	UpstreamOrderId string                 `protobuf:"bytes,6,opt,name=upstream_order_id,json=upstreamOrderId,proto3" json:"upstream_order_id,omitempty"`
+	Source          AmountMismatchSource   `protobuf:"varint,7,opt,name=source,proto3,enum=aipay.payment.v1.AmountMismatchSource" json:"source,omitempty"`
+	Kind            AmountMismatchKind     `protobuf:"varint,8,opt,name=kind,proto3,enum=aipay.payment.v1.AmountMismatchKind" json:"kind,omitempty"`
+	DetectedAt      *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=detected_at,json=detectedAt,proto3" json:"detected_at,omitempty"`
+	Outcome         AmountMismatchOutcome  `protobuf:"varint,10,opt,name=outcome,proto3,enum=aipay.payment.v1.AmountMismatchOutcome" json:"outcome,omitempty"`
+	// REFUND_OBSERVED only. Positive minor units in trade.quote.fiat_currency.
+	RefundAmount *int64 `protobuf:"varint,11,opt,name=refund_amount,json=refundAmount,proto3,oneof" json:"refund_amount,omitempty"`
+	// REFUND_OBSERVED only. Identifies the refund payment will create on approval.
+	RefundId *string `protobuf:"bytes,12,opt,name=refund_id,json=refundId,proto3,oneof" json:"refund_id,omitempty"`
+	// REVERIFY only. 1-based attempt number, at most 3.
+	ReverifyAttempt *uint32 `protobuf:"varint,13,opt,name=reverify_attempt,json=reverifyAttempt,proto3,oneof" json:"reverify_attempt,omitempty"`
+	// Required, 1-1000 characters.
+	Reason        string `protobuf:"bytes,14,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AmountMismatchRecoveryMaterial) Reset() {
+	*x = AmountMismatchRecoveryMaterial{}
+	mi := &file_aipay_payment_v1_admin_approval_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AmountMismatchRecoveryMaterial) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AmountMismatchRecoveryMaterial) ProtoMessage() {}
+
+func (x *AmountMismatchRecoveryMaterial) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_admin_approval_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AmountMismatchRecoveryMaterial.ProtoReflect.Descriptor instead.
+func (*AmountMismatchRecoveryMaterial) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_admin_approval_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetRecoveryId() string {
+	if x != nil {
+		return x.RecoveryId
+	}
+	return ""
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetCaseId() string {
+	if x != nil {
+		return x.CaseId
+	}
+	return ""
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetTrade() *v1.TradeSnapshot {
+	if x != nil {
+		return x.Trade
+	}
+	return nil
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetEscrowReservationId() string {
+	if x != nil {
+		return x.EscrowReservationId
+	}
+	return ""
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetExpectedControlVersion() uint64 {
+	if x != nil {
+		return x.ExpectedControlVersion
+	}
+	return 0
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetUpstreamOrderId() string {
+	if x != nil {
+		return x.UpstreamOrderId
+	}
+	return ""
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetSource() AmountMismatchSource {
+	if x != nil {
+		return x.Source
+	}
+	return AmountMismatchSource_AMOUNT_MISMATCH_SOURCE_UNSPECIFIED
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetKind() AmountMismatchKind {
+	if x != nil {
+		return x.Kind
+	}
+	return AmountMismatchKind_AMOUNT_MISMATCH_KIND_UNSPECIFIED
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetDetectedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DetectedAt
+	}
+	return nil
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetOutcome() AmountMismatchOutcome {
+	if x != nil {
+		return x.Outcome
+	}
+	return AmountMismatchOutcome_AMOUNT_MISMATCH_OUTCOME_UNSPECIFIED
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetRefundAmount() int64 {
+	if x != nil && x.RefundAmount != nil {
+		return *x.RefundAmount
+	}
+	return 0
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetRefundId() string {
+	if x != nil && x.RefundId != nil {
+		return *x.RefundId
+	}
+	return ""
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetReverifyAttempt() uint32 {
+	if x != nil && x.ReverifyAttempt != nil {
+		return *x.ReverifyAttempt
+	}
+	return 0
+}
+
+func (x *AmountMismatchRecoveryMaterial) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
 }
 
 var File_aipay_payment_v1_admin_approval_proto protoreflect.FileDescriptor
@@ -2125,7 +2769,8 @@ const file_aipay_payment_v1_admin_approval_proto_rawDesc = "" +
 	"\n" +
 	"never_sent\x18\a \x01(\bR\tneverSent\x12;\n" +
 	"\veligible_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"eligibleAt\"\x82\t\n" +
+	"eligibleAt\"\xc2\n" +
+	"\n" +
 	"\x17PaymentApprovalMaterial\x12.\n" +
 	"\x13approval_request_id\x18\x01 \x01(\tR\x11approvalRequestId\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12!\n" +
@@ -2145,19 +2790,89 @@ const file_aipay_payment_v1_admin_approval_proto_rawDesc = "" +
 	"\x0edispute_ruling\x18\r \x01(\v2'.aipay.payment.v1.DisputeRulingMaterialH\x00R\rdisputeRuling\x12S\n" +
 	"\rseller_refund\x18\x0e \x01(\v2,.aipay.payment.v1.SellerRefundReviewMaterialH\x00R\fsellerRefund\x12c\n" +
 	"\x15seller_refund_failure\x18\x0f \x01(\v2-.aipay.payment.v1.SellerRefundFailureMaterialH\x00R\x13sellerRefundFailure\x12O\n" +
-	"\fforced_close\x18\x10 \x01(\v2*.aipay.payment.v1.OrderForcedCloseMaterialH\x00R\vforcedCloseB\v\n" +
+	"\fforced_close\x18\x10 \x01(\v2*.aipay.payment.v1.OrderForcedCloseMaterialH\x00R\vforcedClose\x12P\n" +
+	"\x0erisk_extension\x18\x11 \x01(\v2'.aipay.payment.v1.RiskExtensionMaterialH\x00R\rriskExtension\x12l\n" +
+	"\x18amount_mismatch_recovery\x18\x12 \x01(\v20.aipay.payment.v1.AmountMismatchRecoveryMaterialH\x00R\x16amountMismatchRecoveryB\v\n" +
 	"\toperation\"\x9f\x02\n" +
 	"\x0fPaymentApproval\x12M\n" +
 	"\x10approval_request\x18\x01 \x01(\v2\".aipay.approval.v1.ApprovalRequestR\x0fapprovalRequest\x12E\n" +
 	"\bmaterial\x18\x02 \x01(\v2).aipay.payment.v1.PaymentApprovalMaterialR\bmaterial\x129\n" +
 	"\tapprovals\x18\x03 \x03(\v2\x1b.aipay.approval.v1.ApprovalR\tapprovals\x12;\n" +
 	"\vapproved_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"approvedAt*\xd1\x01\n" +
+	"approvedAt\"\xd0\a\n" +
+	"\x15RiskExtensionMaterial\x12!\n" +
+	"\fextension_id\x18\x01 \x01(\tR\vextensionId\x12=\n" +
+	"\x06origin\x18\x02 \x01(\x0e2%.aipay.payment.v1.RiskExtensionOriginR\x06origin\x124\n" +
+	"\x05trade\x18\x03 \x01(\v2\x1e.aipay.common.v1.TradeSnapshotR\x05trade\x122\n" +
+	"\x15escrow_reservation_id\x18\x04 \x01(\tR\x13escrowReservationId\x128\n" +
+	"\x18expected_control_version\x18\x05 \x01(\x04R\x16expectedControlVersion\x12*\n" +
+	"\x11upstream_order_id\x18\x06 \x01(\tR\x0fupstreamOrderId\x12D\n" +
+	"\x10paid_verified_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x0epaidVerifiedAt\x12Q\n" +
+	"\x17current_risk_release_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\x14currentRiskReleaseAt\x12U\n" +
+	"\x19requested_risk_release_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x16requestedRiskReleaseAt\x12+\n" +
+	"\x11extension_seconds\x18\n" +
+	" \x01(\x04R\x10extensionSeconds\x12\x1a\n" +
+	"\bsequence\x18\v \x01(\rR\bsequence\x12:\n" +
+	"\x19applied_extension_seconds\x18\f \x01(\x04R\x17appliedExtensionSeconds\x12.\n" +
+	"\x13risk_policy_version\x18\r \x01(\tR\x11riskPolicyVersion\x12?\n" +
+	"\x1cpolicy_extension_cap_seconds\x18\x0e \x01(\x04R\x19policyExtensionCapSeconds\x12?\n" +
+	"\rpending_until\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\fpendingUntil\x12F\n" +
+	"\vreason_code\x18\x10 \x01(\x0e2%.aipay.payment.v1.RiskExtensionReasonR\n" +
+	"reasonCode\x12\x16\n" +
+	"\x06reason\x18\x11 \x01(\tR\x06reason\"\xed\x05\n" +
+	"\x1eAmountMismatchRecoveryMaterial\x12\x1f\n" +
+	"\vrecovery_id\x18\x01 \x01(\tR\n" +
+	"recoveryId\x12\x17\n" +
+	"\acase_id\x18\x02 \x01(\tR\x06caseId\x124\n" +
+	"\x05trade\x18\x03 \x01(\v2\x1e.aipay.common.v1.TradeSnapshotR\x05trade\x122\n" +
+	"\x15escrow_reservation_id\x18\x04 \x01(\tR\x13escrowReservationId\x128\n" +
+	"\x18expected_control_version\x18\x05 \x01(\x04R\x16expectedControlVersion\x12*\n" +
+	"\x11upstream_order_id\x18\x06 \x01(\tR\x0fupstreamOrderId\x12>\n" +
+	"\x06source\x18\a \x01(\x0e2&.aipay.payment.v1.AmountMismatchSourceR\x06source\x128\n" +
+	"\x04kind\x18\b \x01(\x0e2$.aipay.payment.v1.AmountMismatchKindR\x04kind\x12;\n" +
+	"\vdetected_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"detectedAt\x12A\n" +
+	"\aoutcome\x18\n" +
+	" \x01(\x0e2'.aipay.payment.v1.AmountMismatchOutcomeR\aoutcome\x12(\n" +
+	"\rrefund_amount\x18\v \x01(\x03H\x00R\frefundAmount\x88\x01\x01\x12 \n" +
+	"\trefund_id\x18\f \x01(\tH\x01R\brefundId\x88\x01\x01\x12.\n" +
+	"\x10reverify_attempt\x18\r \x01(\rH\x02R\x0freverifyAttempt\x88\x01\x01\x12\x16\n" +
+	"\x06reason\x18\x0e \x01(\tR\x06reasonB\x10\n" +
+	"\x0e_refund_amountB\f\n" +
+	"\n" +
+	"_refund_idB\x13\n" +
+	"\x11_reverify_attempt*\xd1\x01\n" +
 	"\x14DisputeRulingOutcome\x12&\n" +
 	"\"DISPUTE_RULING_OUTCOME_UNSPECIFIED\x10\x00\x128\n" +
 	"4DISPUTE_RULING_OUTCOME_RELEASE_TO_ORIGINAL_RECIPIENT\x10\x01\x124\n" +
 	"0DISPUTE_RULING_OUTCOME_RETURN_TO_ORIGINAL_SELLER\x10\x02\x12!\n" +
-	"\x1dDISPUTE_RULING_OUTCOME_REFUND\x10\x03B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"\x1dDISPUTE_RULING_OUTCOME_REFUND\x10\x03*\x82\x01\n" +
+	"\x13RiskExtensionOrigin\x12%\n" +
+	"!RISK_EXTENSION_ORIGIN_UNSPECIFIED\x10\x00\x12\"\n" +
+	"\x1eRISK_EXTENSION_ORIGIN_PLATFORM\x10\x01\x12 \n" +
+	"\x1cRISK_EXTENSION_ORIGIN_SELLER\x10\x02*\xbc\x02\n" +
+	"\x13RiskExtensionReason\x12%\n" +
+	"!RISK_EXTENSION_REASON_UNSPECIFIED\x10\x00\x12-\n" +
+	")RISK_EXTENSION_REASON_SELLER_FUNDS_FROZEN\x10\x01\x12(\n" +
+	"$RISK_EXTENSION_REASON_PAYER_MISMATCH\x10\x02\x12'\n" +
+	"#RISK_EXTENSION_REASON_REVERSAL_RISK\x10\x03\x120\n" +
+	",RISK_EXTENSION_REASON_UPSTREAM_INVESTIGATION\x10\x04\x12)\n" +
+	"%RISK_EXTENSION_REASON_PLATFORM_REVIEW\x10\x05\x12\x1f\n" +
+	"\x1bRISK_EXTENSION_REASON_OTHER\x10\x06*\xc8\x01\n" +
+	"\x14AmountMismatchSource\x12&\n" +
+	"\"AMOUNT_MISMATCH_SOURCE_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cAMOUNT_MISMATCH_SOURCE_QUERY\x10\x01\x12!\n" +
+	"\x1dAMOUNT_MISMATCH_SOURCE_CREATE\x10\x02\x12 \n" +
+	"\x1cAMOUNT_MISMATCH_SOURCE_CLOSE\x10\x03\x12!\n" +
+	"\x1dAMOUNT_MISMATCH_SOURCE_LEGACY\x10\x04*\x7f\n" +
+	"\x12AmountMismatchKind\x12$\n" +
+	" AMOUNT_MISMATCH_KIND_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cAMOUNT_MISMATCH_KIND_UNKNOWN\x10\x01\x12!\n" +
+	"\x1dAMOUNT_MISMATCH_KIND_IDENTITY\x10\x02*\x93\x01\n" +
+	"\x15AmountMismatchOutcome\x12'\n" +
+	"#AMOUNT_MISMATCH_OUTCOME_UNSPECIFIED\x10\x00\x12$\n" +
+	" AMOUNT_MISMATCH_OUTCOME_REVERIFY\x10\x01\x12+\n" +
+	"'AMOUNT_MISMATCH_OUTCOME_REFUND_OBSERVED\x10\x02B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_aipay_payment_v1_admin_approval_proto_rawDescOnce sync.Once
@@ -2171,80 +2886,101 @@ func file_aipay_payment_v1_admin_approval_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_admin_approval_proto_rawDescData
 }
 
-var file_aipay_payment_v1_admin_approval_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_aipay_payment_v1_admin_approval_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_aipay_payment_v1_admin_approval_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_aipay_payment_v1_admin_approval_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_aipay_payment_v1_admin_approval_proto_goTypes = []any{
-	(DisputeRulingOutcome)(0),           // 0: aipay.payment.v1.DisputeRulingOutcome
-	(*ChannelAccountConfiguration)(nil), // 1: aipay.payment.v1.ChannelAccountConfiguration
-	(*ChannelAccountChange)(nil),        // 2: aipay.payment.v1.ChannelAccountChange
-	(*PaymentMethodChange)(nil),         // 3: aipay.payment.v1.PaymentMethodChange
-	(*RiskPolicyChange)(nil),            // 4: aipay.payment.v1.RiskPolicyChange
-	(*PricingDraft)(nil),                // 5: aipay.payment.v1.PricingDraft
-	(*PricingVersionChange)(nil),        // 6: aipay.payment.v1.PricingVersionChange
-	(*PluginFixture)(nil),               // 7: aipay.payment.v1.PluginFixture
-	(*PluginVersionMaterial)(nil),       // 8: aipay.payment.v1.PluginVersionMaterial
-	(*PluginEnableChange)(nil),          // 9: aipay.payment.v1.PluginEnableChange
-	(*ReversalMaterial)(nil),            // 10: aipay.payment.v1.ReversalMaterial
-	(*DisputeEvidence)(nil),             // 11: aipay.payment.v1.DisputeEvidence
-	(*DisputeRulingMaterial)(nil),       // 12: aipay.payment.v1.DisputeRulingMaterial
-	(*SellerRefundSubject)(nil),         // 13: aipay.payment.v1.SellerRefundSubject
-	(*SellerRefundReviewMaterial)(nil),  // 14: aipay.payment.v1.SellerRefundReviewMaterial
-	(*SellerRefundFailureMaterial)(nil), // 15: aipay.payment.v1.SellerRefundFailureMaterial
-	(*OrderForcedCloseMaterial)(nil),    // 16: aipay.payment.v1.OrderForcedCloseMaterial
-	(*PaymentApprovalMaterial)(nil),     // 17: aipay.payment.v1.PaymentApprovalMaterial
-	(*PaymentApproval)(nil),             // 18: aipay.payment.v1.PaymentApproval
-	(*timestamppb.Timestamp)(nil),       // 19: google.protobuf.Timestamp
-	(*PricingConfiguration)(nil),        // 20: aipay.payment.v1.PricingConfiguration
-	(*v1.TradeSnapshot)(nil),            // 21: aipay.common.v1.TradeSnapshot
-	(v11.RefundReservationBranch)(0),    // 22: aipay.ledger.v1.RefundReservationBranch
-	(*v1.Money)(nil),                    // 23: aipay.common.v1.Money
-	(OrderStatus)(0),                    // 24: aipay.payment.v1.OrderStatus
-	(*v12.ApprovalRequest)(nil),         // 25: aipay.approval.v1.ApprovalRequest
-	(*v12.Approval)(nil),                // 26: aipay.approval.v1.Approval
+	(DisputeRulingOutcome)(0),              // 0: aipay.payment.v1.DisputeRulingOutcome
+	(RiskExtensionOrigin)(0),               // 1: aipay.payment.v1.RiskExtensionOrigin
+	(RiskExtensionReason)(0),               // 2: aipay.payment.v1.RiskExtensionReason
+	(AmountMismatchSource)(0),              // 3: aipay.payment.v1.AmountMismatchSource
+	(AmountMismatchKind)(0),                // 4: aipay.payment.v1.AmountMismatchKind
+	(AmountMismatchOutcome)(0),             // 5: aipay.payment.v1.AmountMismatchOutcome
+	(*ChannelAccountConfiguration)(nil),    // 6: aipay.payment.v1.ChannelAccountConfiguration
+	(*ChannelAccountChange)(nil),           // 7: aipay.payment.v1.ChannelAccountChange
+	(*PaymentMethodChange)(nil),            // 8: aipay.payment.v1.PaymentMethodChange
+	(*RiskPolicyChange)(nil),               // 9: aipay.payment.v1.RiskPolicyChange
+	(*PricingDraft)(nil),                   // 10: aipay.payment.v1.PricingDraft
+	(*PricingVersionChange)(nil),           // 11: aipay.payment.v1.PricingVersionChange
+	(*PluginFixture)(nil),                  // 12: aipay.payment.v1.PluginFixture
+	(*PluginVersionMaterial)(nil),          // 13: aipay.payment.v1.PluginVersionMaterial
+	(*PluginEnableChange)(nil),             // 14: aipay.payment.v1.PluginEnableChange
+	(*ReversalMaterial)(nil),               // 15: aipay.payment.v1.ReversalMaterial
+	(*DisputeEvidence)(nil),                // 16: aipay.payment.v1.DisputeEvidence
+	(*DisputeRulingMaterial)(nil),          // 17: aipay.payment.v1.DisputeRulingMaterial
+	(*SellerRefundSubject)(nil),            // 18: aipay.payment.v1.SellerRefundSubject
+	(*SellerRefundReviewMaterial)(nil),     // 19: aipay.payment.v1.SellerRefundReviewMaterial
+	(*SellerRefundFailureMaterial)(nil),    // 20: aipay.payment.v1.SellerRefundFailureMaterial
+	(*OrderForcedCloseMaterial)(nil),       // 21: aipay.payment.v1.OrderForcedCloseMaterial
+	(*PaymentApprovalMaterial)(nil),        // 22: aipay.payment.v1.PaymentApprovalMaterial
+	(*PaymentApproval)(nil),                // 23: aipay.payment.v1.PaymentApproval
+	(*RiskExtensionMaterial)(nil),          // 24: aipay.payment.v1.RiskExtensionMaterial
+	(*AmountMismatchRecoveryMaterial)(nil), // 25: aipay.payment.v1.AmountMismatchRecoveryMaterial
+	(*timestamppb.Timestamp)(nil),          // 26: google.protobuf.Timestamp
+	(*PricingConfiguration)(nil),           // 27: aipay.payment.v1.PricingConfiguration
+	(*v1.TradeSnapshot)(nil),               // 28: aipay.common.v1.TradeSnapshot
+	(v11.RefundReservationBranch)(0),       // 29: aipay.ledger.v1.RefundReservationBranch
+	(*v1.Money)(nil),                       // 30: aipay.common.v1.Money
+	(OrderStatus)(0),                       // 31: aipay.payment.v1.OrderStatus
+	(*v12.ApprovalRequest)(nil),            // 32: aipay.approval.v1.ApprovalRequest
+	(*v12.Approval)(nil),                   // 33: aipay.approval.v1.Approval
 }
 var file_aipay_payment_v1_admin_approval_proto_depIdxs = []int32{
-	1,  // 0: aipay.payment.v1.ChannelAccountChange.configuration:type_name -> aipay.payment.v1.ChannelAccountConfiguration
-	19, // 1: aipay.payment.v1.RiskPolicyChange.effective_at:type_name -> google.protobuf.Timestamp
-	20, // 2: aipay.payment.v1.PricingDraft.configuration:type_name -> aipay.payment.v1.PricingConfiguration
-	19, // 3: aipay.payment.v1.PricingDraft.effective_at:type_name -> google.protobuf.Timestamp
-	5,  // 4: aipay.payment.v1.PricingVersionChange.draft:type_name -> aipay.payment.v1.PricingDraft
-	7,  // 5: aipay.payment.v1.PluginVersionMaterial.fixtures:type_name -> aipay.payment.v1.PluginFixture
-	21, // 6: aipay.payment.v1.ReversalMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
-	21, // 7: aipay.payment.v1.DisputeRulingMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
+	6,  // 0: aipay.payment.v1.ChannelAccountChange.configuration:type_name -> aipay.payment.v1.ChannelAccountConfiguration
+	26, // 1: aipay.payment.v1.RiskPolicyChange.effective_at:type_name -> google.protobuf.Timestamp
+	27, // 2: aipay.payment.v1.PricingDraft.configuration:type_name -> aipay.payment.v1.PricingConfiguration
+	26, // 3: aipay.payment.v1.PricingDraft.effective_at:type_name -> google.protobuf.Timestamp
+	10, // 4: aipay.payment.v1.PricingVersionChange.draft:type_name -> aipay.payment.v1.PricingDraft
+	12, // 5: aipay.payment.v1.PluginVersionMaterial.fixtures:type_name -> aipay.payment.v1.PluginFixture
+	28, // 6: aipay.payment.v1.ReversalMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
+	28, // 7: aipay.payment.v1.DisputeRulingMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
 	0,  // 8: aipay.payment.v1.DisputeRulingMaterial.outcome:type_name -> aipay.payment.v1.DisputeRulingOutcome
-	13, // 9: aipay.payment.v1.SellerRefundReviewMaterial.subject:type_name -> aipay.payment.v1.SellerRefundSubject
-	21, // 10: aipay.payment.v1.SellerRefundReviewMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
-	22, // 11: aipay.payment.v1.SellerRefundReviewMaterial.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
-	19, // 12: aipay.payment.v1.SellerRefundReviewMaterial.refunded_at:type_name -> google.protobuf.Timestamp
-	23, // 13: aipay.payment.v1.SellerRefundReviewMaterial.refunded_amount:type_name -> aipay.common.v1.Money
-	13, // 14: aipay.payment.v1.SellerRefundFailureMaterial.subject:type_name -> aipay.payment.v1.SellerRefundSubject
-	21, // 15: aipay.payment.v1.SellerRefundFailureMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
-	22, // 16: aipay.payment.v1.SellerRefundFailureMaterial.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
-	21, // 17: aipay.payment.v1.OrderForcedCloseMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
-	24, // 18: aipay.payment.v1.OrderForcedCloseMaterial.status:type_name -> aipay.payment.v1.OrderStatus
-	19, // 19: aipay.payment.v1.OrderForcedCloseMaterial.eligible_at:type_name -> google.protobuf.Timestamp
-	19, // 20: aipay.payment.v1.PaymentApprovalMaterial.requested_at:type_name -> google.protobuf.Timestamp
-	19, // 21: aipay.payment.v1.PaymentApprovalMaterial.expires_at:type_name -> google.protobuf.Timestamp
-	2,  // 22: aipay.payment.v1.PaymentApprovalMaterial.channel_account:type_name -> aipay.payment.v1.ChannelAccountChange
-	3,  // 23: aipay.payment.v1.PaymentApprovalMaterial.payment_method:type_name -> aipay.payment.v1.PaymentMethodChange
-	4,  // 24: aipay.payment.v1.PaymentApprovalMaterial.risk_policy:type_name -> aipay.payment.v1.RiskPolicyChange
-	6,  // 25: aipay.payment.v1.PaymentApprovalMaterial.pricing_version:type_name -> aipay.payment.v1.PricingVersionChange
-	8,  // 26: aipay.payment.v1.PaymentApprovalMaterial.plugin_version:type_name -> aipay.payment.v1.PluginVersionMaterial
-	9,  // 27: aipay.payment.v1.PaymentApprovalMaterial.plugin_enable:type_name -> aipay.payment.v1.PluginEnableChange
-	10, // 28: aipay.payment.v1.PaymentApprovalMaterial.reversal:type_name -> aipay.payment.v1.ReversalMaterial
-	12, // 29: aipay.payment.v1.PaymentApprovalMaterial.dispute_ruling:type_name -> aipay.payment.v1.DisputeRulingMaterial
-	14, // 30: aipay.payment.v1.PaymentApprovalMaterial.seller_refund:type_name -> aipay.payment.v1.SellerRefundReviewMaterial
-	15, // 31: aipay.payment.v1.PaymentApprovalMaterial.seller_refund_failure:type_name -> aipay.payment.v1.SellerRefundFailureMaterial
-	16, // 32: aipay.payment.v1.PaymentApprovalMaterial.forced_close:type_name -> aipay.payment.v1.OrderForcedCloseMaterial
-	25, // 33: aipay.payment.v1.PaymentApproval.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
-	17, // 34: aipay.payment.v1.PaymentApproval.material:type_name -> aipay.payment.v1.PaymentApprovalMaterial
-	26, // 35: aipay.payment.v1.PaymentApproval.approvals:type_name -> aipay.approval.v1.Approval
-	19, // 36: aipay.payment.v1.PaymentApproval.approved_at:type_name -> google.protobuf.Timestamp
-	37, // [37:37] is the sub-list for method output_type
-	37, // [37:37] is the sub-list for method input_type
-	37, // [37:37] is the sub-list for extension type_name
-	37, // [37:37] is the sub-list for extension extendee
-	0,  // [0:37] is the sub-list for field type_name
+	18, // 9: aipay.payment.v1.SellerRefundReviewMaterial.subject:type_name -> aipay.payment.v1.SellerRefundSubject
+	28, // 10: aipay.payment.v1.SellerRefundReviewMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
+	29, // 11: aipay.payment.v1.SellerRefundReviewMaterial.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
+	26, // 12: aipay.payment.v1.SellerRefundReviewMaterial.refunded_at:type_name -> google.protobuf.Timestamp
+	30, // 13: aipay.payment.v1.SellerRefundReviewMaterial.refunded_amount:type_name -> aipay.common.v1.Money
+	18, // 14: aipay.payment.v1.SellerRefundFailureMaterial.subject:type_name -> aipay.payment.v1.SellerRefundSubject
+	28, // 15: aipay.payment.v1.SellerRefundFailureMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
+	29, // 16: aipay.payment.v1.SellerRefundFailureMaterial.branch:type_name -> aipay.ledger.v1.RefundReservationBranch
+	28, // 17: aipay.payment.v1.OrderForcedCloseMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
+	31, // 18: aipay.payment.v1.OrderForcedCloseMaterial.status:type_name -> aipay.payment.v1.OrderStatus
+	26, // 19: aipay.payment.v1.OrderForcedCloseMaterial.eligible_at:type_name -> google.protobuf.Timestamp
+	26, // 20: aipay.payment.v1.PaymentApprovalMaterial.requested_at:type_name -> google.protobuf.Timestamp
+	26, // 21: aipay.payment.v1.PaymentApprovalMaterial.expires_at:type_name -> google.protobuf.Timestamp
+	7,  // 22: aipay.payment.v1.PaymentApprovalMaterial.channel_account:type_name -> aipay.payment.v1.ChannelAccountChange
+	8,  // 23: aipay.payment.v1.PaymentApprovalMaterial.payment_method:type_name -> aipay.payment.v1.PaymentMethodChange
+	9,  // 24: aipay.payment.v1.PaymentApprovalMaterial.risk_policy:type_name -> aipay.payment.v1.RiskPolicyChange
+	11, // 25: aipay.payment.v1.PaymentApprovalMaterial.pricing_version:type_name -> aipay.payment.v1.PricingVersionChange
+	13, // 26: aipay.payment.v1.PaymentApprovalMaterial.plugin_version:type_name -> aipay.payment.v1.PluginVersionMaterial
+	14, // 27: aipay.payment.v1.PaymentApprovalMaterial.plugin_enable:type_name -> aipay.payment.v1.PluginEnableChange
+	15, // 28: aipay.payment.v1.PaymentApprovalMaterial.reversal:type_name -> aipay.payment.v1.ReversalMaterial
+	17, // 29: aipay.payment.v1.PaymentApprovalMaterial.dispute_ruling:type_name -> aipay.payment.v1.DisputeRulingMaterial
+	19, // 30: aipay.payment.v1.PaymentApprovalMaterial.seller_refund:type_name -> aipay.payment.v1.SellerRefundReviewMaterial
+	20, // 31: aipay.payment.v1.PaymentApprovalMaterial.seller_refund_failure:type_name -> aipay.payment.v1.SellerRefundFailureMaterial
+	21, // 32: aipay.payment.v1.PaymentApprovalMaterial.forced_close:type_name -> aipay.payment.v1.OrderForcedCloseMaterial
+	24, // 33: aipay.payment.v1.PaymentApprovalMaterial.risk_extension:type_name -> aipay.payment.v1.RiskExtensionMaterial
+	25, // 34: aipay.payment.v1.PaymentApprovalMaterial.amount_mismatch_recovery:type_name -> aipay.payment.v1.AmountMismatchRecoveryMaterial
+	32, // 35: aipay.payment.v1.PaymentApproval.approval_request:type_name -> aipay.approval.v1.ApprovalRequest
+	22, // 36: aipay.payment.v1.PaymentApproval.material:type_name -> aipay.payment.v1.PaymentApprovalMaterial
+	33, // 37: aipay.payment.v1.PaymentApproval.approvals:type_name -> aipay.approval.v1.Approval
+	26, // 38: aipay.payment.v1.PaymentApproval.approved_at:type_name -> google.protobuf.Timestamp
+	1,  // 39: aipay.payment.v1.RiskExtensionMaterial.origin:type_name -> aipay.payment.v1.RiskExtensionOrigin
+	28, // 40: aipay.payment.v1.RiskExtensionMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
+	26, // 41: aipay.payment.v1.RiskExtensionMaterial.paid_verified_at:type_name -> google.protobuf.Timestamp
+	26, // 42: aipay.payment.v1.RiskExtensionMaterial.current_risk_release_at:type_name -> google.protobuf.Timestamp
+	26, // 43: aipay.payment.v1.RiskExtensionMaterial.requested_risk_release_at:type_name -> google.protobuf.Timestamp
+	26, // 44: aipay.payment.v1.RiskExtensionMaterial.pending_until:type_name -> google.protobuf.Timestamp
+	2,  // 45: aipay.payment.v1.RiskExtensionMaterial.reason_code:type_name -> aipay.payment.v1.RiskExtensionReason
+	28, // 46: aipay.payment.v1.AmountMismatchRecoveryMaterial.trade:type_name -> aipay.common.v1.TradeSnapshot
+	3,  // 47: aipay.payment.v1.AmountMismatchRecoveryMaterial.source:type_name -> aipay.payment.v1.AmountMismatchSource
+	4,  // 48: aipay.payment.v1.AmountMismatchRecoveryMaterial.kind:type_name -> aipay.payment.v1.AmountMismatchKind
+	26, // 49: aipay.payment.v1.AmountMismatchRecoveryMaterial.detected_at:type_name -> google.protobuf.Timestamp
+	5,  // 50: aipay.payment.v1.AmountMismatchRecoveryMaterial.outcome:type_name -> aipay.payment.v1.AmountMismatchOutcome
+	51, // [51:51] is the sub-list for method output_type
+	51, // [51:51] is the sub-list for method input_type
+	51, // [51:51] is the sub-list for extension type_name
+	51, // [51:51] is the sub-list for extension extendee
+	0,  // [0:51] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_admin_approval_proto_init() }
@@ -2276,14 +3012,17 @@ func file_aipay_payment_v1_admin_approval_proto_init() {
 		(*PaymentApprovalMaterial_SellerRefund)(nil),
 		(*PaymentApprovalMaterial_SellerRefundFailure)(nil),
 		(*PaymentApprovalMaterial_ForcedClose)(nil),
+		(*PaymentApprovalMaterial_RiskExtension)(nil),
+		(*PaymentApprovalMaterial_AmountMismatchRecovery)(nil),
 	}
+	file_aipay_payment_v1_admin_approval_proto_msgTypes[19].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_admin_approval_proto_rawDesc), len(file_aipay_payment_v1_admin_approval_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   18,
+			NumEnums:      6,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

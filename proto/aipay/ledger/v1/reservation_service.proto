@@ -222,6 +222,51 @@ message GetWithdrawalReservationResponse {
   WithdrawalReservation reservation = 1;
 }
 
+message HoldTradeForRiskExtensionRequest {
+  string idempotency_key = 1;
+  string order_id = 2;
+  string escrow_reservation_id = 3;
+  uint64 expected_control_version = 4;
+  string extension_id = 5;
+  // After ledger time and at most 25 hours after it.
+  google.protobuf.Timestamp pending_until = 6;
+  // 1 to 1000 characters. Payment retains the initiating authority and audit.
+  string reason = 7;
+}
+
+message HoldTradeForRiskExtensionResponse {
+  // New version, returned only after the hold has been persisted.
+  uint64 control_version = 1;
+}
+
+enum TradeRiskExtensionOutcome {
+  TRADE_RISK_EXTENSION_OUTCOME_UNSPECIFIED = 0;
+  // Move risk_release_at later and clear the hold.
+  TRADE_RISK_EXTENSION_OUTCOME_APPLY = 1;
+  // Clear the hold and keep risk_release_at.
+  TRADE_RISK_EXTENSION_OUTCOME_WITHDRAW = 2;
+}
+
+message ResolveTradeRiskExtensionRequest {
+  string idempotency_key = 1;
+  string order_id = 2;
+  string escrow_reservation_id = 3;
+  uint64 expected_control_version = 4;
+  // Must match the recorded extension hold.
+  string extension_id = 5;
+  TradeRiskExtensionOutcome outcome = 6;
+  // Required for APPLY, absent for WITHDRAW. Later than the current deadline.
+  // risk_release_at - paid_verified_at <= hold_duration_seconds + policy_extension_cap_seconds.
+  google.protobuf.Timestamp risk_release_at = 7;
+  // Required for APPLY, absent for WITHDRAW. The extension cap of the order's
+  // locked risk policy, at most the ledger hard limit (30 days).
+  optional uint64 policy_extension_cap_seconds = 8;
+}
+
+message ResolveTradeRiskExtensionResponse {
+  uint64 control_version = 1;
+}
+
 // Service-only commands, with no user assertion. Payment first checks the
 // initiating refund/dispute authority. Queries also allow reconciliation to
 // independently verify the actual escrow. Every change serializes on the
@@ -239,6 +284,11 @@ message GetWithdrawalReservationResponse {
 // RPC. ReserveWithdrawal is settlement-only and idempotent by withdrawal ID.
 // Command digests use the field-order encoding in docs contracts.md, not proto
 // serialization.
+// For HoldTradeForRiskExtension and ResolveTradeRiskExtension, ledger uses
+// AIPAY-LEDGER-COMMAND-V1 with idempotency_key as the outer key. Encode the
+// inner fields in field-number order, skipping that key. Encode Timestamp
+// as i64 Unix microseconds and reject sub-microsecond precision. Encode an
+// optional scalar as u8 0 for absent or u8 1 followed by the value for present.
 //
 // A119 HoldReleasedTradeForDispute requires original escrow RELEASED, no other
 // active dispute/refund occupation and positive matching CAS. Reserve H=min(N,
@@ -342,6 +392,33 @@ service ReservationService {
           "settlement",
           "reconciliation"
         ]
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Require matching CAS and a RESERVED, unreleased escrow with recorded
+  // payment, no dispute or refund hold, and no unexpired extension hold.
+  // Ledger time < pending_until <= ledger time + 25 hours. On success record
+  // HELD and increment control_version without a journal entry.
+  rpc HoldTradeForRiskExtension(HoldTradeForRiskExtensionRequest) returns (HoldTradeForRiskExtensionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  // Require matching CAS and extension_id. APPLY requires RESERVED, recorded
+  // payment, unreleased funds, fewer than five prior applied extensions and
+  // a later deadline within the locked duration plus the bounded policy cap.
+  // WITHDRAW accepts RESERVED, DISPUTED or REFUND_PENDING. For other states
+  // it returns FAILED_PRECONDITION with reason RISK_EXTENSION_MOOT without
+  // changing the escrow. Each success clears the hold, records APPLIED or
+  // WITHDRAWN, and increments control_version without a journal entry.
+  rpc ResolveTradeRiskExtension(ResolveTradeRiskExtensionRequest) returns (ResolveTradeRiskExtensionResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "payment"
         assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
       }
     };

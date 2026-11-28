@@ -127,7 +127,7 @@ type MerchantRefundNoticeKind int32
 
 const (
 	MerchantRefundNoticeKind_MERCHANT_REFUND_NOTICE_KIND_UNSPECIFIED MerchantRefundNoticeKind = 0
-	// Platform- or dispute-initiated refund.
+	// Platform-, dispute- or amount-mismatch-initiated refund.
 	MerchantRefundNoticeKind_MERCHANT_REFUND_NOTICE_KIND_CREATED    MerchantRefundNoticeKind = 1
 	MerchantRefundNoticeKind_MERCHANT_REFUND_NOTICE_KIND_CONFIRMING MerchantRefundNoticeKind = 2
 	MerchantRefundNoticeKind_MERCHANT_REFUND_NOTICE_KIND_SUCCEEDED  MerchantRefundNoticeKind = 3
@@ -228,6 +228,64 @@ func (x SellerDisputeNoticeKind) Number() protoreflect.EnumNumber {
 // Deprecated: Use SellerDisputeNoticeKind.Descriptor instead.
 func (SellerDisputeNoticeKind) EnumDescriptor() ([]byte, []int) {
 	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{3}
+}
+
+type RiskExtensionNoticeKind int32
+
+const (
+	RiskExtensionNoticeKind_RISK_EXTENSION_NOTICE_KIND_UNSPECIFIED RiskExtensionNoticeKind = 0
+	// Seller only, for the seller's own request.
+	RiskExtensionNoticeKind_RISK_EXTENSION_NOTICE_KIND_SUBMITTED RiskExtensionNoticeKind = 1
+	RiskExtensionNoticeKind_RISK_EXTENSION_NOTICE_KIND_APPLIED   RiskExtensionNoticeKind = 2
+	// Seller only.
+	RiskExtensionNoticeKind_RISK_EXTENSION_NOTICE_KIND_REJECTED RiskExtensionNoticeKind = 3
+	// Seller only.
+	RiskExtensionNoticeKind_RISK_EXTENSION_NOTICE_KIND_EXPIRED RiskExtensionNoticeKind = 4
+)
+
+// Enum value maps for RiskExtensionNoticeKind.
+var (
+	RiskExtensionNoticeKind_name = map[int32]string{
+		0: "RISK_EXTENSION_NOTICE_KIND_UNSPECIFIED",
+		1: "RISK_EXTENSION_NOTICE_KIND_SUBMITTED",
+		2: "RISK_EXTENSION_NOTICE_KIND_APPLIED",
+		3: "RISK_EXTENSION_NOTICE_KIND_REJECTED",
+		4: "RISK_EXTENSION_NOTICE_KIND_EXPIRED",
+	}
+	RiskExtensionNoticeKind_value = map[string]int32{
+		"RISK_EXTENSION_NOTICE_KIND_UNSPECIFIED": 0,
+		"RISK_EXTENSION_NOTICE_KIND_SUBMITTED":   1,
+		"RISK_EXTENSION_NOTICE_KIND_APPLIED":     2,
+		"RISK_EXTENSION_NOTICE_KIND_REJECTED":    3,
+		"RISK_EXTENSION_NOTICE_KIND_EXPIRED":     4,
+	}
+)
+
+func (x RiskExtensionNoticeKind) Enum() *RiskExtensionNoticeKind {
+	p := new(RiskExtensionNoticeKind)
+	*p = x
+	return p
+}
+
+func (x RiskExtensionNoticeKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RiskExtensionNoticeKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_account_notice_events_proto_enumTypes[4].Descriptor()
+}
+
+func (RiskExtensionNoticeKind) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_account_notice_events_proto_enumTypes[4]
+}
+
+func (x RiskExtensionNoticeKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RiskExtensionNoticeKind.Descriptor instead.
+func (RiskExtensionNoticeKind) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{4}
 }
 
 // MerchantPaymentReceived v1 on payment.account_notices. Payment writes it with
@@ -556,12 +614,14 @@ type SellerRefundNotice struct {
 	OrderId          string                 `protobuf:"bytes,3,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	TradeNo          string                 `protobuf:"bytes,4,opt,name=trade_no,json=tradeNo,proto3" json:"trade_no,omitempty"`
 	ChannelAccountId string                 `protobuf:"bytes,5,opt,name=channel_account_id,json=channelAccountId,proto3" json:"channel_account_id,omitempty"`
-	// Original positive fiat amount in minor units.
-	FiatAmount    int64                  `protobuf:"varint,6,opt,name=fiat_amount,json=fiatAmount,proto3" json:"fiat_amount,omitempty"`
-	FiatCurrency  string                 `protobuf:"bytes,7,opt,name=fiat_currency,json=fiatCurrency,proto3" json:"fiat_currency,omitempty"`
-	SellerDueAt   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=seller_due_at,json=sellerDueAt,proto3" json:"seller_due_at,omitempty"`
-	Kind          SellerRefundNoticeKind `protobuf:"varint,9,opt,name=kind,proto3,enum=aipay.payment.v1.SellerRefundNoticeKind" json:"kind,omitempty"`
-	OccurredAt    *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	// Amount the seller must refund, in positive minor units of fiat_currency.
+	FiatAmount   int64                  `protobuf:"varint,6,opt,name=fiat_amount,json=fiatAmount,proto3" json:"fiat_amount,omitempty"`
+	FiatCurrency string                 `protobuf:"bytes,7,opt,name=fiat_currency,json=fiatCurrency,proto3" json:"fiat_currency,omitempty"`
+	SellerDueAt  *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=seller_due_at,json=sellerDueAt,proto3" json:"seller_due_at,omitempty"`
+	Kind         SellerRefundNoticeKind `protobuf:"varint,9,opt,name=kind,proto3,enum=aipay.payment.v1.SellerRefundNoticeKind" json:"kind,omitempty"`
+	OccurredAt   *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	// Origin for a refund subject. Earlier v1 notices omit this field.
+	Origin        RefundOrigin `protobuf:"varint,11,opt,name=origin,proto3,enum=aipay.payment.v1.RefundOrigin" json:"origin,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -666,6 +726,13 @@ func (x *SellerRefundNotice) GetOccurredAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *SellerRefundNotice) GetOrigin() RefundOrigin {
+	if x != nil {
+		return x.Origin
+	}
+	return RefundOrigin_REFUND_ORIGIN_UNSPECIFIED
+}
+
 // MerchantRefundNotice v1 on payment.account_notices. Backend is the sole
 // receiver. Notify the original recipient account. SUCCEEDED follows ledger
 // settlement. Bot notice only, never funds evidence. Excludes buyer details,
@@ -686,8 +753,10 @@ type MerchantRefundNotice struct {
 	ObjectionDeadline *timestamppb.Timestamp   `protobuf:"bytes,10,opt,name=objection_deadline,json=objectionDeadline,proto3" json:"objection_deadline,omitempty"`
 	Kind              MerchantRefundNoticeKind `protobuf:"varint,11,opt,name=kind,proto3,enum=aipay.payment.v1.MerchantRefundNoticeKind" json:"kind,omitempty"`
 	OccurredAt        *timestamppb.Timestamp   `protobuf:"bytes,12,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Earlier v1 notices omit this field.
+	Origin        RefundOrigin `protobuf:"varint,13,opt,name=origin,proto3,enum=aipay.payment.v1.RefundOrigin" json:"origin,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *MerchantRefundNotice) Reset() {
@@ -802,6 +871,13 @@ func (x *MerchantRefundNotice) GetOccurredAt() *timestamppb.Timestamp {
 		return x.OccurredAt
 	}
 	return nil
+}
+
+func (x *MerchantRefundNotice) GetOrigin() RefundOrigin {
+	if x != nil {
+		return x.Origin
+	}
+	return RefundOrigin_REFUND_ORIGIN_UNSPECIFIED
 }
 
 // Payment writes SellerOrderAssigned in the local transaction that first records
@@ -1119,11 +1195,225 @@ func (x *SellerDisputeNotice) GetOccurredAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// SellerRiskExtensionNotice v1 on payment.account_notices. Backend delivers
+// it through the upstream bot. Excludes approver identities and reasons.
+type SellerRiskExtensionNotice struct {
+	state                 protoimpl.MessageState  `protogen:"open.v1"`
+	SellerAccountId       string                  `protobuf:"bytes,1,opt,name=seller_account_id,json=sellerAccountId,proto3" json:"seller_account_id,omitempty"`
+	OrderId               string                  `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	TradeNo               string                  `protobuf:"bytes,3,opt,name=trade_no,json=tradeNo,proto3" json:"trade_no,omitempty"`
+	ChannelAccountId      string                  `protobuf:"bytes,4,opt,name=channel_account_id,json=channelAccountId,proto3" json:"channel_account_id,omitempty"`
+	ExtensionId           string                  `protobuf:"bytes,5,opt,name=extension_id,json=extensionId,proto3" json:"extension_id,omitempty"`
+	Kind                  RiskExtensionNoticeKind `protobuf:"varint,6,opt,name=kind,proto3,enum=aipay.payment.v1.RiskExtensionNoticeKind" json:"kind,omitempty"`
+	PreviousRiskReleaseAt *timestamppb.Timestamp  `protobuf:"bytes,7,opt,name=previous_risk_release_at,json=previousRiskReleaseAt,proto3" json:"previous_risk_release_at,omitempty"`
+	// Present exactly for APPLIED.
+	RiskReleaseAt *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=risk_release_at,json=riskReleaseAt,proto3" json:"risk_release_at,omitempty"`
+	OccurredAt    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SellerRiskExtensionNotice) Reset() {
+	*x = SellerRiskExtensionNotice{}
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SellerRiskExtensionNotice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SellerRiskExtensionNotice) ProtoMessage() {}
+
+func (x *SellerRiskExtensionNotice) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SellerRiskExtensionNotice.ProtoReflect.Descriptor instead.
+func (*SellerRiskExtensionNotice) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *SellerRiskExtensionNotice) GetSellerAccountId() string {
+	if x != nil {
+		return x.SellerAccountId
+	}
+	return ""
+}
+
+func (x *SellerRiskExtensionNotice) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *SellerRiskExtensionNotice) GetTradeNo() string {
+	if x != nil {
+		return x.TradeNo
+	}
+	return ""
+}
+
+func (x *SellerRiskExtensionNotice) GetChannelAccountId() string {
+	if x != nil {
+		return x.ChannelAccountId
+	}
+	return ""
+}
+
+func (x *SellerRiskExtensionNotice) GetExtensionId() string {
+	if x != nil {
+		return x.ExtensionId
+	}
+	return ""
+}
+
+func (x *SellerRiskExtensionNotice) GetKind() RiskExtensionNoticeKind {
+	if x != nil {
+		return x.Kind
+	}
+	return RiskExtensionNoticeKind_RISK_EXTENSION_NOTICE_KIND_UNSPECIFIED
+}
+
+func (x *SellerRiskExtensionNotice) GetPreviousRiskReleaseAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PreviousRiskReleaseAt
+	}
+	return nil
+}
+
+func (x *SellerRiskExtensionNotice) GetRiskReleaseAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RiskReleaseAt
+	}
+	return nil
+}
+
+func (x *SellerRiskExtensionNotice) GetOccurredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.OccurredAt
+	}
+	return nil
+}
+
+// MerchantRiskExtensionNotice v1 on payment.account_notices. Backend delivers
+// it only for APPLIED, to the original recipient account. Carries the new
+// expected availability time and no reason.
+type MerchantRiskExtensionNotice struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccountId     string                 `protobuf:"bytes,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	BusinessId    string                 `protobuf:"bytes,2,opt,name=business_id,json=businessId,proto3" json:"business_id,omitempty"`
+	ApplicationId string                 `protobuf:"bytes,3,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	OrderId       string                 `protobuf:"bytes,4,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	TradeNo       string                 `protobuf:"bytes,5,opt,name=trade_no,json=tradeNo,proto3" json:"trade_no,omitempty"`
+	OutTradeNo    string                 `protobuf:"bytes,6,opt,name=out_trade_no,json=outTradeNo,proto3" json:"out_trade_no,omitempty"`
+	RiskReleaseAt *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=risk_release_at,json=riskReleaseAt,proto3" json:"risk_release_at,omitempty"`
+	OccurredAt    *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MerchantRiskExtensionNotice) Reset() {
+	*x = MerchantRiskExtensionNotice{}
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MerchantRiskExtensionNotice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MerchantRiskExtensionNotice) ProtoMessage() {}
+
+func (x *MerchantRiskExtensionNotice) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MerchantRiskExtensionNotice.ProtoReflect.Descriptor instead.
+func (*MerchantRiskExtensionNotice) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *MerchantRiskExtensionNotice) GetAccountId() string {
+	if x != nil {
+		return x.AccountId
+	}
+	return ""
+}
+
+func (x *MerchantRiskExtensionNotice) GetBusinessId() string {
+	if x != nil {
+		return x.BusinessId
+	}
+	return ""
+}
+
+func (x *MerchantRiskExtensionNotice) GetApplicationId() string {
+	if x != nil {
+		return x.ApplicationId
+	}
+	return ""
+}
+
+func (x *MerchantRiskExtensionNotice) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *MerchantRiskExtensionNotice) GetTradeNo() string {
+	if x != nil {
+		return x.TradeNo
+	}
+	return ""
+}
+
+func (x *MerchantRiskExtensionNotice) GetOutTradeNo() string {
+	if x != nil {
+		return x.OutTradeNo
+	}
+	return ""
+}
+
+func (x *MerchantRiskExtensionNotice) GetRiskReleaseAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RiskReleaseAt
+	}
+	return nil
+}
+
+func (x *MerchantRiskExtensionNotice) GetOccurredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.OccurredAt
+	}
+	return nil
+}
+
 var File_aipay_payment_v1_account_notice_events_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_account_notice_events_proto_rawDesc = "" +
 	"\n" +
-	",aipay/payment/v1/account_notice_events.proto\x12\x10aipay.payment.v1\x1a%aipay/payment/v1/admin_approval.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd3\x02\n" +
+	",aipay/payment/v1/account_notice_events.proto\x12\x10aipay.payment.v1\x1a%aipay/payment/v1/admin_approval.proto\x1a%aipay/payment/v1/refund_service.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd3\x02\n" +
 	"\x17MerchantPaymentReceived\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\tR\taccountId\x12\x1f\n" +
@@ -1161,7 +1451,7 @@ const file_aipay_payment_v1_account_notice_events_proto_rawDesc = "" +
 	"\x06method\x18\x05 \x01(\tR\x06method\x12C\n" +
 	"\x06result\x18\x06 \x01(\x0e2+.aipay.payment.v1.PaymentAccessReviewResultR\x06result\x12;\n" +
 	"\vreviewed_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"reviewedAt\"\xe6\x03\n" +
+	"reviewedAt\"\x9e\x04\n" +
 	"\x12SellerRefundNotice\x12*\n" +
 	"\x11seller_account_id\x18\x01 \x01(\tR\x0fsellerAccountId\x12?\n" +
 	"\asubject\x18\x02 \x01(\v2%.aipay.payment.v1.SellerRefundSubjectR\asubject\x12\x19\n" +
@@ -1175,7 +1465,8 @@ const file_aipay_payment_v1_account_notice_events_proto_rawDesc = "" +
 	"\x04kind\x18\t \x01(\x0e2(.aipay.payment.v1.SellerRefundNoticeKindR\x04kind\x12;\n" +
 	"\voccurred_at\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"occurredAt\"\x87\x04\n" +
+	"occurredAt\x126\n" +
+	"\x06origin\x18\v \x01(\x0e2\x1e.aipay.payment.v1.RefundOriginR\x06origin\"\xbf\x04\n" +
 	"\x14MerchantRefundNotice\x12\x1d\n" +
 	"\n" +
 	"account_id\x18\x01 \x01(\tR\taccountId\x12\x1f\n" +
@@ -1194,7 +1485,8 @@ const file_aipay_payment_v1_account_notice_events_proto_rawDesc = "" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\x11objectionDeadline\x12>\n" +
 	"\x04kind\x18\v \x01(\x0e2*.aipay.payment.v1.MerchantRefundNoticeKindR\x04kind\x12;\n" +
 	"\voccurred_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"occurredAt\"\x9b\x03\n" +
+	"occurredAt\x126\n" +
+	"\x06origin\x18\r \x01(\x0e2\x1e.aipay.payment.v1.RefundOriginR\x06origin\"\x9b\x03\n" +
 	"\x13SellerOrderAssigned\x12*\n" +
 	"\x11seller_account_id\x18\x01 \x01(\tR\x0fsellerAccountId\x12,\n" +
 	"\x12channel_account_id\x18\x02 \x01(\tR\x10channelAccountId\x12\x19\n" +
@@ -1231,7 +1523,31 @@ const file_aipay_payment_v1_account_notice_events_proto_rawDesc = "" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"occurredAtB\n" +
 	"\n" +
-	"\b_outcome*\x9f\x01\n" +
+	"\b_outcome\"\xe3\x03\n" +
+	"\x19SellerRiskExtensionNotice\x12*\n" +
+	"\x11seller_account_id\x18\x01 \x01(\tR\x0fsellerAccountId\x12\x19\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x12\x19\n" +
+	"\btrade_no\x18\x03 \x01(\tR\atradeNo\x12,\n" +
+	"\x12channel_account_id\x18\x04 \x01(\tR\x10channelAccountId\x12!\n" +
+	"\fextension_id\x18\x05 \x01(\tR\vextensionId\x12=\n" +
+	"\x04kind\x18\x06 \x01(\x0e2).aipay.payment.v1.RiskExtensionNoticeKindR\x04kind\x12S\n" +
+	"\x18previous_risk_release_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x15previousRiskReleaseAt\x12B\n" +
+	"\x0frisk_release_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\rriskReleaseAt\x12;\n" +
+	"\voccurred_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAt\"\xdd\x02\n" +
+	"\x1bMerchantRiskExtensionNotice\x12\x1d\n" +
+	"\n" +
+	"account_id\x18\x01 \x01(\tR\taccountId\x12\x1f\n" +
+	"\vbusiness_id\x18\x02 \x01(\tR\n" +
+	"businessId\x12%\n" +
+	"\x0eapplication_id\x18\x03 \x01(\tR\rapplicationId\x12\x19\n" +
+	"\border_id\x18\x04 \x01(\tR\aorderId\x12\x19\n" +
+	"\btrade_no\x18\x05 \x01(\tR\atradeNo\x12 \n" +
+	"\fout_trade_no\x18\x06 \x01(\tR\n" +
+	"outTradeNo\x12B\n" +
+	"\x0frisk_release_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\rriskReleaseAt\x12;\n" +
+	"\voccurred_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAt*\x9f\x01\n" +
 	"\x19PaymentAccessReviewResult\x12,\n" +
 	"(PAYMENT_ACCESS_REVIEW_RESULT_UNSPECIFIED\x10\x00\x12)\n" +
 	"%PAYMENT_ACCESS_REVIEW_RESULT_APPROVED\x10\x01\x12)\n" +
@@ -1250,7 +1566,13 @@ const file_aipay_payment_v1_account_notice_events_proto_rawDesc = "" +
 	"\x17SellerDisputeNoticeKind\x12*\n" +
 	"&SELLER_DISPUTE_NOTICE_KIND_UNSPECIFIED\x10\x00\x12%\n" +
 	"!SELLER_DISPUTE_NOTICE_KIND_OPENED\x10\x01\x12'\n" +
-	"#SELLER_DISPUTE_NOTICE_KIND_RESOLVED\x10\x02B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"#SELLER_DISPUTE_NOTICE_KIND_RESOLVED\x10\x02*\xe8\x01\n" +
+	"\x17RiskExtensionNoticeKind\x12*\n" +
+	"&RISK_EXTENSION_NOTICE_KIND_UNSPECIFIED\x10\x00\x12(\n" +
+	"$RISK_EXTENSION_NOTICE_KIND_SUBMITTED\x10\x01\x12&\n" +
+	"\"RISK_EXTENSION_NOTICE_KIND_APPLIED\x10\x02\x12'\n" +
+	"#RISK_EXTENSION_NOTICE_KIND_REJECTED\x10\x03\x12&\n" +
+	"\"RISK_EXTENSION_NOTICE_KIND_EXPIRED\x10\x04B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_aipay_payment_v1_account_notice_events_proto_rawDescOnce sync.Once
@@ -1264,48 +1586,60 @@ func file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_account_notice_events_proto_rawDescData
 }
 
-var file_aipay_payment_v1_account_notice_events_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_aipay_payment_v1_account_notice_events_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_aipay_payment_v1_account_notice_events_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_aipay_payment_v1_account_notice_events_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_aipay_payment_v1_account_notice_events_proto_goTypes = []any{
-	(PaymentAccessReviewResult)(0),  // 0: aipay.payment.v1.PaymentAccessReviewResult
-	(SellerRefundNoticeKind)(0),     // 1: aipay.payment.v1.SellerRefundNoticeKind
-	(MerchantRefundNoticeKind)(0),   // 2: aipay.payment.v1.MerchantRefundNoticeKind
-	(SellerDisputeNoticeKind)(0),    // 3: aipay.payment.v1.SellerDisputeNoticeKind
-	(*MerchantPaymentReceived)(nil), // 4: aipay.payment.v1.MerchantPaymentReceived
-	(*MerchantFundsAvailable)(nil),  // 5: aipay.payment.v1.MerchantFundsAvailable
-	(*PaymentAccessReviewed)(nil),   // 6: aipay.payment.v1.PaymentAccessReviewed
-	(*SellerRefundNotice)(nil),      // 7: aipay.payment.v1.SellerRefundNotice
-	(*MerchantRefundNotice)(nil),    // 8: aipay.payment.v1.MerchantRefundNotice
-	(*SellerOrderAssigned)(nil),     // 9: aipay.payment.v1.SellerOrderAssigned
-	(*SellerInventoryLow)(nil),      // 10: aipay.payment.v1.SellerInventoryLow
-	(*SellerDisputeNotice)(nil),     // 11: aipay.payment.v1.SellerDisputeNotice
-	(*timestamppb.Timestamp)(nil),   // 12: google.protobuf.Timestamp
-	(*SellerRefundSubject)(nil),     // 13: aipay.payment.v1.SellerRefundSubject
-	(DisputeRulingOutcome)(0),       // 14: aipay.payment.v1.DisputeRulingOutcome
+	(PaymentAccessReviewResult)(0),      // 0: aipay.payment.v1.PaymentAccessReviewResult
+	(SellerRefundNoticeKind)(0),         // 1: aipay.payment.v1.SellerRefundNoticeKind
+	(MerchantRefundNoticeKind)(0),       // 2: aipay.payment.v1.MerchantRefundNoticeKind
+	(SellerDisputeNoticeKind)(0),        // 3: aipay.payment.v1.SellerDisputeNoticeKind
+	(RiskExtensionNoticeKind)(0),        // 4: aipay.payment.v1.RiskExtensionNoticeKind
+	(*MerchantPaymentReceived)(nil),     // 5: aipay.payment.v1.MerchantPaymentReceived
+	(*MerchantFundsAvailable)(nil),      // 6: aipay.payment.v1.MerchantFundsAvailable
+	(*PaymentAccessReviewed)(nil),       // 7: aipay.payment.v1.PaymentAccessReviewed
+	(*SellerRefundNotice)(nil),          // 8: aipay.payment.v1.SellerRefundNotice
+	(*MerchantRefundNotice)(nil),        // 9: aipay.payment.v1.MerchantRefundNotice
+	(*SellerOrderAssigned)(nil),         // 10: aipay.payment.v1.SellerOrderAssigned
+	(*SellerInventoryLow)(nil),          // 11: aipay.payment.v1.SellerInventoryLow
+	(*SellerDisputeNotice)(nil),         // 12: aipay.payment.v1.SellerDisputeNotice
+	(*SellerRiskExtensionNotice)(nil),   // 13: aipay.payment.v1.SellerRiskExtensionNotice
+	(*MerchantRiskExtensionNotice)(nil), // 14: aipay.payment.v1.MerchantRiskExtensionNotice
+	(*timestamppb.Timestamp)(nil),       // 15: google.protobuf.Timestamp
+	(*SellerRefundSubject)(nil),         // 16: aipay.payment.v1.SellerRefundSubject
+	(RefundOrigin)(0),                   // 17: aipay.payment.v1.RefundOrigin
+	(DisputeRulingOutcome)(0),           // 18: aipay.payment.v1.DisputeRulingOutcome
 }
 var file_aipay_payment_v1_account_notice_events_proto_depIdxs = []int32{
-	12, // 0: aipay.payment.v1.MerchantPaymentReceived.paid_at:type_name -> google.protobuf.Timestamp
-	12, // 1: aipay.payment.v1.MerchantFundsAvailable.released_at:type_name -> google.protobuf.Timestamp
+	15, // 0: aipay.payment.v1.MerchantPaymentReceived.paid_at:type_name -> google.protobuf.Timestamp
+	15, // 1: aipay.payment.v1.MerchantFundsAvailable.released_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: aipay.payment.v1.PaymentAccessReviewed.result:type_name -> aipay.payment.v1.PaymentAccessReviewResult
-	12, // 3: aipay.payment.v1.PaymentAccessReviewed.reviewed_at:type_name -> google.protobuf.Timestamp
-	13, // 4: aipay.payment.v1.SellerRefundNotice.subject:type_name -> aipay.payment.v1.SellerRefundSubject
-	12, // 5: aipay.payment.v1.SellerRefundNotice.seller_due_at:type_name -> google.protobuf.Timestamp
+	15, // 3: aipay.payment.v1.PaymentAccessReviewed.reviewed_at:type_name -> google.protobuf.Timestamp
+	16, // 4: aipay.payment.v1.SellerRefundNotice.subject:type_name -> aipay.payment.v1.SellerRefundSubject
+	15, // 5: aipay.payment.v1.SellerRefundNotice.seller_due_at:type_name -> google.protobuf.Timestamp
 	1,  // 6: aipay.payment.v1.SellerRefundNotice.kind:type_name -> aipay.payment.v1.SellerRefundNoticeKind
-	12, // 7: aipay.payment.v1.SellerRefundNotice.occurred_at:type_name -> google.protobuf.Timestamp
-	12, // 8: aipay.payment.v1.MerchantRefundNotice.objection_deadline:type_name -> google.protobuf.Timestamp
-	2,  // 9: aipay.payment.v1.MerchantRefundNotice.kind:type_name -> aipay.payment.v1.MerchantRefundNoticeKind
-	12, // 10: aipay.payment.v1.MerchantRefundNotice.occurred_at:type_name -> google.protobuf.Timestamp
-	12, // 11: aipay.payment.v1.SellerOrderAssigned.instruction_expires_at:type_name -> google.protobuf.Timestamp
-	12, // 12: aipay.payment.v1.SellerOrderAssigned.occurred_at:type_name -> google.protobuf.Timestamp
-	12, // 13: aipay.payment.v1.SellerInventoryLow.occurred_at:type_name -> google.protobuf.Timestamp
-	3,  // 14: aipay.payment.v1.SellerDisputeNotice.kind:type_name -> aipay.payment.v1.SellerDisputeNoticeKind
-	14, // 15: aipay.payment.v1.SellerDisputeNotice.outcome:type_name -> aipay.payment.v1.DisputeRulingOutcome
-	12, // 16: aipay.payment.v1.SellerDisputeNotice.occurred_at:type_name -> google.protobuf.Timestamp
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	15, // 7: aipay.payment.v1.SellerRefundNotice.occurred_at:type_name -> google.protobuf.Timestamp
+	17, // 8: aipay.payment.v1.SellerRefundNotice.origin:type_name -> aipay.payment.v1.RefundOrigin
+	15, // 9: aipay.payment.v1.MerchantRefundNotice.objection_deadline:type_name -> google.protobuf.Timestamp
+	2,  // 10: aipay.payment.v1.MerchantRefundNotice.kind:type_name -> aipay.payment.v1.MerchantRefundNoticeKind
+	15, // 11: aipay.payment.v1.MerchantRefundNotice.occurred_at:type_name -> google.protobuf.Timestamp
+	17, // 12: aipay.payment.v1.MerchantRefundNotice.origin:type_name -> aipay.payment.v1.RefundOrigin
+	15, // 13: aipay.payment.v1.SellerOrderAssigned.instruction_expires_at:type_name -> google.protobuf.Timestamp
+	15, // 14: aipay.payment.v1.SellerOrderAssigned.occurred_at:type_name -> google.protobuf.Timestamp
+	15, // 15: aipay.payment.v1.SellerInventoryLow.occurred_at:type_name -> google.protobuf.Timestamp
+	3,  // 16: aipay.payment.v1.SellerDisputeNotice.kind:type_name -> aipay.payment.v1.SellerDisputeNoticeKind
+	18, // 17: aipay.payment.v1.SellerDisputeNotice.outcome:type_name -> aipay.payment.v1.DisputeRulingOutcome
+	15, // 18: aipay.payment.v1.SellerDisputeNotice.occurred_at:type_name -> google.protobuf.Timestamp
+	4,  // 19: aipay.payment.v1.SellerRiskExtensionNotice.kind:type_name -> aipay.payment.v1.RiskExtensionNoticeKind
+	15, // 20: aipay.payment.v1.SellerRiskExtensionNotice.previous_risk_release_at:type_name -> google.protobuf.Timestamp
+	15, // 21: aipay.payment.v1.SellerRiskExtensionNotice.risk_release_at:type_name -> google.protobuf.Timestamp
+	15, // 22: aipay.payment.v1.SellerRiskExtensionNotice.occurred_at:type_name -> google.protobuf.Timestamp
+	15, // 23: aipay.payment.v1.MerchantRiskExtensionNotice.risk_release_at:type_name -> google.protobuf.Timestamp
+	15, // 24: aipay.payment.v1.MerchantRiskExtensionNotice.occurred_at:type_name -> google.protobuf.Timestamp
+	25, // [25:25] is the sub-list for method output_type
+	25, // [25:25] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_account_notice_events_proto_init() }
@@ -1314,14 +1648,15 @@ func file_aipay_payment_v1_account_notice_events_proto_init() {
 		return
 	}
 	file_aipay_payment_v1_admin_approval_proto_init()
+	file_aipay_payment_v1_refund_service_proto_init()
 	file_aipay_payment_v1_account_notice_events_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_account_notice_events_proto_rawDesc), len(file_aipay_payment_v1_account_notice_events_proto_rawDesc)),
-			NumEnums:      4,
-			NumMessages:   8,
+			NumEnums:      5,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -34,6 +34,10 @@ var (
 	paymentSellerRefundV1 []byte
 	//go:embed payment_forced_close_v1.json
 	paymentForcedCloseV1 []byte
+	//go:embed payment_risk_extension_v1.json
+	paymentRiskExtensionV1 []byte
+	//go:embed payment_amount_mismatch_v1.json
+	paymentAmountMismatchV1 []byte
 	//go:embed reconciliation_coverage_v1.json
 	reconciliationCoverageV1 []byte
 )
@@ -79,6 +83,12 @@ func PaymentSellerRefundV1() []byte { return bytes.Clone(paymentSellerRefundV1) 
 // PaymentForcedCloseV1 holds canonical approval bytes and digests for forced
 // closes of unbound and bound orders.
 func PaymentForcedCloseV1() []byte { return bytes.Clone(paymentForcedCloseV1) }
+
+// PaymentRiskExtensionV1 holds platform and seller risk extension approval bytes and digests.
+func PaymentRiskExtensionV1() []byte { return bytes.Clone(paymentRiskExtensionV1) }
+
+// PaymentAmountMismatchV1 holds re-verification and observed-amount refund approval bytes and digests.
+func PaymentAmountMismatchV1() []byte { return bytes.Clone(paymentAmountMismatchV1) }
 
 // ReconciliationCoverageV1 holds manual coverage approval bytes and digests,
 // evidence digests, address registry versions and revocation challenges.

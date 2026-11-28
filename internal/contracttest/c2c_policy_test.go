@@ -35,6 +35,8 @@ func TestC2CMethodAuthorization(t *testing.T) {
 				"GetTradeFreezeDetails":       {[]string{"reconciliation"}, serviceOnly, ""},
 				"HoldTradeForRefund":          {[]string{"payment"}, serviceOnly, ""},
 				"HoldTradeForDispute":         {[]string{"payment"}, serviceOnly, ""},
+				"HoldTradeForRiskExtension":   {[]string{"payment"}, serviceOnly, ""},
+				"ResolveTradeRiskExtension":   {[]string{"payment"}, serviceOnly, ""},
 				"ReserveRefund":               {[]string{"payment"}, serviceOnly, ""},
 				"HoldReleasedTradeForDispute": {[]string{"payment"}, serviceOnly, ""},
 				"ResolveReleasedTradeDispute": {[]string{"payment"}, serviceOnly, ""},
