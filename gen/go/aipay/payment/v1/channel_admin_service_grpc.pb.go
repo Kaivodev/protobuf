@@ -67,10 +67,10 @@ type ChannelAdminServiceClient interface {
 	ApproveChannelAccount(ctx context.Context, in *ApproveChannelAccountRequest, opts ...grpc.CallOption) (*ApproveChannelAccountResponse, error)
 	// Existing emergency exception: one designated person stops new dispatch only. No funds movement.
 	DisableChannelAccount(ctx context.Context, in *DisableChannelAccountRequest, opts ...grpc.CallOption) (*DisableChannelAccountResponse, error)
-	// Gateway mode only. Embedded mode returns FailedPrecondition. Payment calls
-	// StoreCredentials on the trade gateway outside its local transaction, then
-	// records the verified ref, digest, channel ID/code and credential types by name
-	// in a new transaction. This neither binds nor enables the channel.
+	// Payment calls StoreCredentials on the trade gateway outside its local
+	// transaction, then records the verified ref, digest, channel ID/code and
+	// credential types by name in a new transaction. Storing credentials neither
+	// binds nor enables the channel.
 	// Retry an unknown outcome with the original key. The same key, channel and
 	// content digest return the original result. A different channel or digest
 	// under the same key returns AlreadyExists.
@@ -310,10 +310,10 @@ type ChannelAdminServiceServer interface {
 	ApproveChannelAccount(context.Context, *ApproveChannelAccountRequest) (*ApproveChannelAccountResponse, error)
 	// Existing emergency exception: one designated person stops new dispatch only. No funds movement.
 	DisableChannelAccount(context.Context, *DisableChannelAccountRequest) (*DisableChannelAccountResponse, error)
-	// Gateway mode only. Embedded mode returns FailedPrecondition. Payment calls
-	// StoreCredentials on the trade gateway outside its local transaction, then
-	// records the verified ref, digest, channel ID/code and credential types by name
-	// in a new transaction. This neither binds nor enables the channel.
+	// Payment calls StoreCredentials on the trade gateway outside its local
+	// transaction, then records the verified ref, digest, channel ID/code and
+	// credential types by name in a new transaction. Storing credentials neither
+	// binds nor enables the channel.
 	// Retry an unknown outcome with the original key. The same key, channel and
 	// content digest return the original result. A different channel or digest
 	// under the same key returns AlreadyExists.

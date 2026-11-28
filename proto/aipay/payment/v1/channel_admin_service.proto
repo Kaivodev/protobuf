@@ -142,12 +142,12 @@ message ApprovePricingVersionResponse {
   PaymentApproval approval = 1;
 }
 
-// Gateway mode accepts only ABI v3 packages. ReplayPackage on the trade
-// gateway must reproduce the uploaded package_sha256 before approval.
+// ReplayPackage on the trade gateway must reproduce the uploaded package_sha256
+// before approval.
 message UploadPluginRequest {
   string idempotency_key = 1;
-  // Payment plugins only, without secret values. Gateway mode requires a
-  // canonical manifest with abi_version=3 and Rust build fields (rust_version,
+  // Payment plugins only, without secret values. Supply a canonical manifest
+  // with abi_version=3 and Rust build fields (rust_version,
   // target, wasm_tools_version, source_commit, source_tree_sha256).
   // Reject uncommitted builds.
   bytes manifest_json = 2;
@@ -157,8 +157,7 @@ message UploadPluginRequest {
   repeated PluginFixture fixtures = 4;
   // Recompute from normalized manifest_json || plugin_wasm and compare to CI.
   bytes package_sha256 = 5;
-  // Gateway mode takes a component up to 4 MiB. Embedded mode takes an ABI v2
-  // reactor up to 12 MiB built by CI with a pinned Go wasip1 toolchain.
+  // ABI v3 Rust component up to 4 MiB.
   // Fixtures total at most 3 MiB and the whole request at most 16 MiB.
   bytes plugin_wasm = 6;
 }
@@ -277,10 +276,10 @@ service ChannelAdminService {
       }
     };
   }
-  // Gateway mode only. Embedded mode returns FailedPrecondition. Payment calls
-  // StoreCredentials on the trade gateway outside its local transaction, then
-  // records the verified ref, digest, channel ID/code and credential types by name
-  // in a new transaction. This neither binds nor enables the channel.
+  // Payment calls StoreCredentials on the trade gateway outside its local
+  // transaction, then records the verified ref, digest, channel ID/code and
+  // credential types by name in a new transaction. Storing credentials neither
+  // binds nor enables the channel.
   // Retry an unknown outcome with the original key. The same key, channel and
   // content digest return the original result. A different channel or digest
   // under the same key returns AlreadyExists.

@@ -53,6 +53,13 @@ C2C 命令仅 payment 服务可调用，冻结查询另允许 reconciliation。�
 
 IAM 已有 Telegram/EPay 等签发实现；具体登录来源、密钥托管与撤销能力以其实际交付为准，不因协议存在推断平台管理路径已接通。EPay 证明必须绑定本次请求和权限操作，不能退化为可复用的通用 bearer 凭据。授权的 `allowed` 必须与返回的数据范围约束共同使用，资源服务还需核对真实对象归属及业务状态。
 
+## v0.27.0 merchant and upstream Telegram bots and seller notices (A149, unreleased)
+
+- Backend sets `TelegramCredential.bot` from the verified webhook route. IAM shares one Telegram-to-user link across both bots and scopes sessions, updates and group bindings to each bot. Deploy IAM before enabling the upstream webhook. During rollout, IAM treats an omitted credential or notification bot selector as `MERCHANT`.
+- The merchant bot supports self-registration. Sellers bind the upstream bot with a single-use code from their upstream portal session after recent TOTP authentication. The portal can check `GetBotBinding` and unbind with the user's active TOTP. Unbinding removes the global link only when its last bot binding is gone.
+- Payment publishes `SellerOrderAssigned`, `SellerInventoryLow` and `SellerDisputeNotice` on `payment.account_notices`. Backend delivers all seller notices through the upstream bot and merchant notices through the merchant bot. Funds services must not consume this stream.
+- Since UG-5, payment and reconciliation use their respective gateways for ABI v3 Rust components and refuse to start against databases containing ABI v2 releases. Uploads allow up to 4 MiB per component, 3 MiB of fixtures and 16 MiB for the whole request.
+
 ## v0.26.0 dispute payments and approval assertion reads (A147, A148, unreleased)
 
 - Reconciliation calls `DisputeService.ReportDisputeRulingReview` after it denies or quarantines a pre-release ruling to release funds or return them to the seller. Under its issuance lock, it checks that no authorization exists for the order and control version and records a fence against issuing one carrying this ruling at that version. Payment can then let the ruling lapse immediately. The report never moves funds or grants authorization.

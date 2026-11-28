@@ -228,17 +228,16 @@ func (x *PluginVersion) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
-// Gateway mode accepts only ABI v3 packages. ReplayPackage on the verification
-// gateway must reproduce the uploaded package_sha256 before approval.
+// ReplayPackage on the verification gateway must reproduce the uploaded
+// package_sha256 before approval.
 type UploadPluginRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
-	// Gateway mode requires a canonical manifest with abi_version=3 and Rust
-	// build fields (rust_version, target, wasm_tools_version, source_commit,
-	// source_tree_sha256). Reject uncommitted builds.
+	// Supply a canonical manifest with abi_version=3 and Rust build fields
+	// (rust_version, target, wasm_tools_version, source_commit, source_tree_sha256).
+	// Reject uncommitted builds.
 	ManifestJson []byte `protobuf:"bytes,2,opt,name=manifest_json,json=manifestJson,proto3" json:"manifest_json,omitempty"`
-	// Gateway mode takes a component up to 4 MiB. Embedded mode takes an ABI v2
-	// Go wasip1 reactor up to 12 MiB. The whole request is at most 16 MiB.
+	// ABI v3 Rust component up to 4 MiB. The whole request is at most 16 MiB.
 	PluginWasm []byte `protobuf:"bytes,3,opt,name=plugin_wasm,json=pluginWasm,proto3" json:"plugin_wasm,omitempty"`
 	// Total <=3 MiB, contains no real credentials or personal information.
 	Fixtures      []*PluginFixture `protobuf:"bytes,4,rep,name=fixtures,proto3" json:"fixtures,omitempty"`
@@ -467,9 +466,8 @@ type StoreVerificationCredentialsRequest struct {
 	// Sensitive ingress ONLY, strict JSON reference-name -> secret-value map,
 	// <=64 KiB, no duplicate keys. Backend memory-only pass-through over mTLS;
 	// reconciliation computes the digest and checks the independent read-only
-	// credential attestation before storage. Embedded mode uses KMS envelope
-	// encryption. In gateway mode the verification instance seals the credentials
-	// and reconciliation stores only the ref, digest and credential names.
+	// credential attestation before storage. The verification instance seals the
+	// credentials. Reconciliation stores only the ref, digest and credential names.
 	// No logs/cache/disk, no secrets in config_json or plugin memory.
 	CredentialsJson []byte `protobuf:"bytes,3,opt,name=credentials_json,json=credentialsJson,proto3" json:"credentials_json,omitempty"`
 	unknownFields   protoimpl.UnknownFields
@@ -529,12 +527,11 @@ func (x *StoreVerificationCredentialsRequest) GetCredentialsJson() []byte {
 
 type StoreVerificationCredentialsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// In gateway mode the verification instance generates the immutable ref
-	// with the reconciliation:verification: prefix.
+	// The verification instance generates this immutable ref with the
+	// reconciliation:verification: prefix.
 	CredentialsRef string `protobuf:"bytes,1,opt,name=credentials_ref,json=credentialsRef,proto3" json:"credentials_ref,omitempty"`
-	// Both modes return the same 32-byte SHA-256 of canonical credential JSON.
-	// In gateway mode reconciliation verifies the instance's digest against
-	// the hash of the inbound credentials before returning it.
+	// 32-byte SHA-256 of canonical credential JSON. Reconciliation verifies the
+	// instance's digest against the hash of the inbound credentials before returning it.
 	CredentialsSha256 []byte `protobuf:"bytes,2,opt,name=credentials_sha256,json=credentialsSha256,proto3" json:"credentials_sha256,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache

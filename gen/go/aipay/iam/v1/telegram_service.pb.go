@@ -73,8 +73,10 @@ func (AccountNotificationRecipientKind) EnumDescriptor() ([]byte, []int) {
 	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{0}
 }
 
-// Facts resolved by IAM, never credentials. Each Telegram user and global user
-// has at most one binding. account_id is the user's original personal account.
+// A Telegram user and a global user may each have at most one global link,
+// shared by both bots. Each bot maintains its own binding and session.
+// account_id identifies the user's original personal account.
+// IAM returns these facts after authentication.
 type TelegramBinding struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	TelegramUserId int64                  `protobuf:"varint,1,opt,name=telegram_user_id,json=telegramUserId,proto3" json:"telegram_user_id,omitempty"`
@@ -152,6 +154,14 @@ func (x *TelegramBinding) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// MERCHANT self-registration atomically creates a user, personal account, global
+// link, merchant binding and session. A new account starts with only cryptocurrency
+// acceptance enabled. If a global link already exists, including one created by
+// UPSTREAM, IAM reuses that user and account, adds the merchant binding if needed
+// and starts a new merchant session.
+// UPSTREAM never creates a user, account or link. IAM starts a new upstream
+// session if the user has an upstream binding. Otherwise it returns
+// FAILED_PRECONDITION (NOT_BOUND).
 type RegisterRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
@@ -249,11 +259,14 @@ func (x *RegisterResponse) GetBinding() *TelegramBinding {
 	return nil
 }
 
+// Issues a code redeemable only in the UPSTREAM bot. The user must be
+// upstream-enabled and have no upstream bot binding. A merchant bot binding
+// does not affect eligibility.
 type CreateBindingCodeRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
-	// Sensitive. IAM directly verifies the invited upstream's portal session,
-	// ownership and recent TOTP authentication; never a caller-selected user ID.
+	// Sensitive. IAM verifies the user's upstream portal session, ownership
+	// and recent TOTP authentication.
 	PortalSession *BearerCredential `protobuf:"bytes,2,opt,name=portal_session,json=portalSession,proto3" json:"portal_session,omitempty"`
 	// Sensitive six-digit code; IAM rate limits and consumes its time step once.
 	TotpCode      string `protobuf:"bytes,3,opt,name=totp_code,json=totpCode,proto3" json:"totp_code,omitempty"`
@@ -314,7 +327,8 @@ func (x *CreateBindingCodeRequest) GetTotpCode() string {
 
 type CreateBindingCodeResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Sensitive 256-bit opaque, expiring, single-use code; IAM stores only a hash.
+	// Sensitive, opaque 256-bit code for the UPSTREAM bot only. It expires and
+	// can be used once. IAM stores only its hash.
 	BindingCode   string                 `protobuf:"bytes,1,opt,name=binding_code,json=bindingCode,proto3" json:"binding_code,omitempty"`
 	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -365,12 +379,19 @@ func (x *CreateBindingCodeResponse) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// UPSTREAM only. IAM rejects MERCHANT. The code must be valid, unused and
+// unexpired. Neither the Telegram user nor the user who received the code may
+// already be bound in UPSTREAM. If the Telegram user has no global link, IAM
+// creates one for the code's user. If it already links to that user, IAM reuses
+// it. A link to any other user returns FAILED_PRECONDITION
+// (TELEGRAM_LINKED_TO_OTHER_USER) and leaves the code unused. IAM never merges users.
 type BindRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
 	Telegram       *TelegramCredential    `protobuf:"bytes,2,opt,name=telegram,proto3" json:"telegram,omitempty"`
-	// Sensitive. PRIVATE only; atomically consume the portal-issued code and
-	// establish a bot session for that same global user/personal account.
+	// Sensitive. PRIVATE only. On success IAM atomically consumes the code,
+	// establishes the upstream binding and starts a session for the same user
+	// and personal account.
 	BindingCode   string `protobuf:"bytes,3,opt,name=binding_code,json=bindingCode,proto3" json:"binding_code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -471,12 +492,23 @@ func (x *BindResponse) GetBinding() *TelegramBinding {
 	return nil
 }
 
+// Revokes only the selected bot's session, group bindings, pending group
+// challenges and bot binding. IAM deletes the global link only after the last
+// bot binding is gone. The global user and personal account remain.
 type UnbindRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
 	Authentication *UserAuthentication    `protobuf:"bytes,2,opt,name=authentication,proto3" json:"authentication,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Required with upstream portal bearer authentication and must be UPSTREAM.
+	// With Telegram authentication, use UNSPECIFIED or authentication.telegram.bot.
+	// IAM uses the credential's bot.
+	Bot TelegramBot `protobuf:"varint,3,opt,name=bot,proto3,enum=aipay.iam.v1.TelegramBot" json:"bot,omitempty"`
+	// Sensitive. With bearer authentication, IAM requires exactly six decimal
+	// digits and verifies the user's active TOTP. Omit with Telegram authentication.
+	// Never logged.
+	TotpCode      string `protobuf:"bytes,4,opt,name=totp_code,json=totpCode,proto3" json:"totp_code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UnbindRequest) Reset() {
@@ -523,6 +555,20 @@ func (x *UnbindRequest) GetAuthentication() *UserAuthentication {
 	return nil
 }
 
+func (x *UnbindRequest) GetBot() TelegramBot {
+	if x != nil {
+		return x.Bot
+	}
+	return TelegramBot_TELEGRAM_BOT_UNSPECIFIED
+}
+
+func (x *UnbindRequest) GetTotpCode() string {
+	if x != nil {
+		return x.TotpCode
+	}
+	return ""
+}
+
 type UnbindResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UnboundAt     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=unbound_at,json=unboundAt,proto3" json:"unbound_at,omitempty"`
@@ -567,6 +613,113 @@ func (x *UnbindResponse) GetUnboundAt() *timestamppb.Timestamp {
 	return nil
 }
 
+type GetBotBindingRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Upstream portal session. IAM validates it itself.
+	PortalSession *BearerCredential `protobuf:"bytes,1,opt,name=portal_session,json=portalSession,proto3" json:"portal_session,omitempty"`
+	// Must be UPSTREAM.
+	Bot           TelegramBot `protobuf:"varint,2,opt,name=bot,proto3,enum=aipay.iam.v1.TelegramBot" json:"bot,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBotBindingRequest) Reset() {
+	*x = GetBotBindingRequest{}
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBotBindingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBotBindingRequest) ProtoMessage() {}
+
+func (x *GetBotBindingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBotBindingRequest.ProtoReflect.Descriptor instead.
+func (*GetBotBindingRequest) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GetBotBindingRequest) GetPortalSession() *BearerCredential {
+	if x != nil {
+		return x.PortalSession
+	}
+	return nil
+}
+
+func (x *GetBotBindingRequest) GetBot() TelegramBot {
+	if x != nil {
+		return x.Bot
+	}
+	return TelegramBot_TELEGRAM_BOT_UNSPECIFIED
+}
+
+type GetBotBindingResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Bound bool                   `protobuf:"varint,1,opt,name=bound,proto3" json:"bound,omitempty"`
+	// Present exactly when bound.
+	BoundAt       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=bound_at,json=boundAt,proto3" json:"bound_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBotBindingResponse) Reset() {
+	*x = GetBotBindingResponse{}
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBotBindingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBotBindingResponse) ProtoMessage() {}
+
+func (x *GetBotBindingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBotBindingResponse.ProtoReflect.Descriptor instead.
+func (*GetBotBindingResponse) Descriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetBotBindingResponse) GetBound() bool {
+	if x != nil {
+		return x.Bound
+	}
+	return false
+}
+
+func (x *GetBotBindingResponse) GetBoundAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.BoundAt
+	}
+	return nil
+}
+
 type BeginGroupBindingRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
@@ -578,7 +731,7 @@ type BeginGroupBindingRequest struct {
 
 func (x *BeginGroupBindingRequest) Reset() {
 	*x = BeginGroupBindingRequest{}
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[9]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -590,7 +743,7 @@ func (x *BeginGroupBindingRequest) String() string {
 func (*BeginGroupBindingRequest) ProtoMessage() {}
 
 func (x *BeginGroupBindingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[9]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -603,7 +756,7 @@ func (x *BeginGroupBindingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeginGroupBindingRequest.ProtoReflect.Descriptor instead.
 func (*BeginGroupBindingRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{9}
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *BeginGroupBindingRequest) GetIdempotencyKey() string {
@@ -632,7 +785,7 @@ type BeginGroupBindingResponse struct {
 
 func (x *BeginGroupBindingResponse) Reset() {
 	*x = BeginGroupBindingResponse{}
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[10]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -644,7 +797,7 @@ func (x *BeginGroupBindingResponse) String() string {
 func (*BeginGroupBindingResponse) ProtoMessage() {}
 
 func (x *BeginGroupBindingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[10]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -657,7 +810,7 @@ func (x *BeginGroupBindingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BeginGroupBindingResponse.ProtoReflect.Descriptor instead.
 func (*BeginGroupBindingResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{10}
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *BeginGroupBindingResponse) GetConfirmationToken() string {
@@ -688,7 +841,7 @@ type ConfirmGroupBindingRequest struct {
 
 func (x *ConfirmGroupBindingRequest) Reset() {
 	*x = ConfirmGroupBindingRequest{}
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[11]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -700,7 +853,7 @@ func (x *ConfirmGroupBindingRequest) String() string {
 func (*ConfirmGroupBindingRequest) ProtoMessage() {}
 
 func (x *ConfirmGroupBindingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[11]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -713,7 +866,7 @@ func (x *ConfirmGroupBindingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmGroupBindingRequest.ProtoReflect.Descriptor instead.
 func (*ConfirmGroupBindingRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{11}
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ConfirmGroupBindingRequest) GetIdempotencyKey() string {
@@ -747,7 +900,7 @@ type ConfirmGroupBindingResponse struct {
 
 func (x *ConfirmGroupBindingResponse) Reset() {
 	*x = ConfirmGroupBindingResponse{}
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[12]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -759,7 +912,7 @@ func (x *ConfirmGroupBindingResponse) String() string {
 func (*ConfirmGroupBindingResponse) ProtoMessage() {}
 
 func (x *ConfirmGroupBindingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[12]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -772,7 +925,7 @@ func (x *ConfirmGroupBindingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmGroupBindingResponse.ProtoReflect.Descriptor instead.
 func (*ConfirmGroupBindingResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{12}
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ConfirmGroupBindingResponse) GetGroupChatId() int64 {
@@ -794,7 +947,7 @@ type InvalidateGroupBindingRequest struct {
 
 func (x *InvalidateGroupBindingRequest) Reset() {
 	*x = InvalidateGroupBindingRequest{}
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[13]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -806,7 +959,7 @@ func (x *InvalidateGroupBindingRequest) String() string {
 func (*InvalidateGroupBindingRequest) ProtoMessage() {}
 
 func (x *InvalidateGroupBindingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[13]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -819,7 +972,7 @@ func (x *InvalidateGroupBindingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InvalidateGroupBindingRequest.ProtoReflect.Descriptor instead.
 func (*InvalidateGroupBindingRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{13}
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *InvalidateGroupBindingRequest) GetIdempotencyKey() string {
@@ -845,7 +998,7 @@ type InvalidateGroupBindingResponse struct {
 
 func (x *InvalidateGroupBindingResponse) Reset() {
 	*x = InvalidateGroupBindingResponse{}
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[14]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -857,7 +1010,7 @@ func (x *InvalidateGroupBindingResponse) String() string {
 func (*InvalidateGroupBindingResponse) ProtoMessage() {}
 
 func (x *InvalidateGroupBindingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[14]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -870,7 +1023,7 @@ func (x *InvalidateGroupBindingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InvalidateGroupBindingResponse.ProtoReflect.Descriptor instead.
 func (*InvalidateGroupBindingResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{14}
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *InvalidateGroupBindingResponse) GetInvalidatedAt() *timestamppb.Timestamp {
@@ -891,7 +1044,7 @@ type GetGroupBindingRequest struct {
 
 func (x *GetGroupBindingRequest) Reset() {
 	*x = GetGroupBindingRequest{}
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[15]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -903,7 +1056,7 @@ func (x *GetGroupBindingRequest) String() string {
 func (*GetGroupBindingRequest) ProtoMessage() {}
 
 func (x *GetGroupBindingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[15]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -916,7 +1069,7 @@ func (x *GetGroupBindingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGroupBindingRequest.ProtoReflect.Descriptor instead.
 func (*GetGroupBindingRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{15}
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetGroupBindingRequest) GetTelegram() *TelegramCredential {
@@ -938,7 +1091,7 @@ type GetGroupBindingResponse struct {
 
 func (x *GetGroupBindingResponse) Reset() {
 	*x = GetGroupBindingResponse{}
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[16]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -950,7 +1103,7 @@ func (x *GetGroupBindingResponse) String() string {
 func (*GetGroupBindingResponse) ProtoMessage() {}
 
 func (x *GetGroupBindingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[16]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -963,7 +1116,7 @@ func (x *GetGroupBindingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGroupBindingResponse.ProtoReflect.Descriptor instead.
 func (*GetGroupBindingResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{16}
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetGroupBindingResponse) GetBound() bool {
@@ -992,7 +1145,7 @@ type AccountNotificationRecipient struct {
 
 func (x *AccountNotificationRecipient) Reset() {
 	*x = AccountNotificationRecipient{}
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[17]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1004,7 +1157,7 @@ func (x *AccountNotificationRecipient) String() string {
 func (*AccountNotificationRecipient) ProtoMessage() {}
 
 func (x *AccountNotificationRecipient) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[17]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1017,7 +1170,7 @@ func (x *AccountNotificationRecipient) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountNotificationRecipient.ProtoReflect.Descriptor instead.
 func (*AccountNotificationRecipient) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{17}
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *AccountNotificationRecipient) GetChatId() int64 {
@@ -1037,14 +1190,19 @@ func (x *AccountNotificationRecipient) GetKind() AccountNotificationRecipientKin
 type ListAccountNotificationRecipientsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Required account from the verified notice, resolved by IAM at delivery time.
-	AccountId     string `protobuf:"bytes,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	AccountId string `protobuf:"bytes,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	// Selects recipients for this bot only. Private chat requires the owner's
+	// binding in this bot. Groups must have confirmed bindings in this bot.
+	// UPSTREAM also requires an upstream-enabled owner. During a rolling
+	// upgrade, IAM reads UNSPECIFIED as MERCHANT.
+	Bot           TelegramBot `protobuf:"varint,2,opt,name=bot,proto3,enum=aipay.iam.v1.TelegramBot" json:"bot,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListAccountNotificationRecipientsRequest) Reset() {
 	*x = ListAccountNotificationRecipientsRequest{}
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[18]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1056,7 +1214,7 @@ func (x *ListAccountNotificationRecipientsRequest) String() string {
 func (*ListAccountNotificationRecipientsRequest) ProtoMessage() {}
 
 func (x *ListAccountNotificationRecipientsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[18]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1069,7 +1227,7 @@ func (x *ListAccountNotificationRecipientsRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use ListAccountNotificationRecipientsRequest.ProtoReflect.Descriptor instead.
 func (*ListAccountNotificationRecipientsRequest) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{18}
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ListAccountNotificationRecipientsRequest) GetAccountId() string {
@@ -1077,6 +1235,13 @@ func (x *ListAccountNotificationRecipientsRequest) GetAccountId() string {
 		return x.AccountId
 	}
 	return ""
+}
+
+func (x *ListAccountNotificationRecipientsRequest) GetBot() TelegramBot {
+	if x != nil {
+		return x.Bot
+	}
+	return TelegramBot_TELEGRAM_BOT_UNSPECIFIED
 }
 
 type ListAccountNotificationRecipientsResponse struct {
@@ -1090,7 +1255,7 @@ type ListAccountNotificationRecipientsResponse struct {
 
 func (x *ListAccountNotificationRecipientsResponse) Reset() {
 	*x = ListAccountNotificationRecipientsResponse{}
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[19]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1102,7 +1267,7 @@ func (x *ListAccountNotificationRecipientsResponse) String() string {
 func (*ListAccountNotificationRecipientsResponse) ProtoMessage() {}
 
 func (x *ListAccountNotificationRecipientsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[19]
+	mi := &file_aipay_iam_v1_telegram_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1115,7 +1280,7 @@ func (x *ListAccountNotificationRecipientsResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use ListAccountNotificationRecipientsResponse.ProtoReflect.Descriptor instead.
 func (*ListAccountNotificationRecipientsResponse) Descriptor() ([]byte, []int) {
-	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{19}
+	return file_aipay_iam_v1_telegram_service_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ListAccountNotificationRecipientsResponse) GetRecipients() []*AccountNotificationRecipient {
@@ -1157,13 +1322,21 @@ const file_aipay_iam_v1_telegram_service_proto_rawDesc = "" +
 	"\btelegram\x18\x02 \x01(\v2 .aipay.iam.v1.TelegramCredentialR\btelegram\x12!\n" +
 	"\fbinding_code\x18\x03 \x01(\tR\vbindingCode\"G\n" +
 	"\fBindResponse\x127\n" +
-	"\abinding\x18\x01 \x01(\v2\x1d.aipay.iam.v1.TelegramBindingR\abinding\"\x82\x01\n" +
+	"\abinding\x18\x01 \x01(\v2\x1d.aipay.iam.v1.TelegramBindingR\abinding\"\xcc\x01\n" +
 	"\rUnbindRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12H\n" +
-	"\x0eauthentication\x18\x02 \x01(\v2 .aipay.iam.v1.UserAuthenticationR\x0eauthentication\"K\n" +
+	"\x0eauthentication\x18\x02 \x01(\v2 .aipay.iam.v1.UserAuthenticationR\x0eauthentication\x12+\n" +
+	"\x03bot\x18\x03 \x01(\x0e2\x19.aipay.iam.v1.TelegramBotR\x03bot\x12\x1b\n" +
+	"\ttotp_code\x18\x04 \x01(\tR\btotpCode\"K\n" +
 	"\x0eUnbindResponse\x129\n" +
 	"\n" +
-	"unbound_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tunboundAt\"\x81\x01\n" +
+	"unbound_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tunboundAt\"\x8a\x01\n" +
+	"\x14GetBotBindingRequest\x12E\n" +
+	"\x0eportal_session\x18\x01 \x01(\v2\x1e.aipay.iam.v1.BearerCredentialR\rportalSession\x12+\n" +
+	"\x03bot\x18\x02 \x01(\x0e2\x19.aipay.iam.v1.TelegramBotR\x03bot\"d\n" +
+	"\x15GetBotBindingResponse\x12\x14\n" +
+	"\x05bound\x18\x01 \x01(\bR\x05bound\x125\n" +
+	"\bbound_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\aboundAt\"\x81\x01\n" +
 	"\x18BeginGroupBindingRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12<\n" +
 	"\btelegram\x18\x02 \x01(\v2 .aipay.iam.v1.TelegramCredentialR\btelegram\"\x85\x01\n" +
@@ -1189,10 +1362,11 @@ const file_aipay_iam_v1_telegram_service_proto_rawDesc = "" +
 	"\bis_owner\x18\x02 \x01(\bR\aisOwner\"{\n" +
 	"\x1cAccountNotificationRecipient\x12\x17\n" +
 	"\achat_id\x18\x01 \x01(\x03R\x06chatId\x12B\n" +
-	"\x04kind\x18\x02 \x01(\x0e2..aipay.iam.v1.AccountNotificationRecipientKindR\x04kind\"I\n" +
+	"\x04kind\x18\x02 \x01(\x0e2..aipay.iam.v1.AccountNotificationRecipientKindR\x04kind\"v\n" +
 	"(ListAccountNotificationRecipientsRequest\x12\x1d\n" +
 	"\n" +
-	"account_id\x18\x01 \x01(\tR\taccountId\"w\n" +
+	"account_id\x18\x01 \x01(\tR\taccountId\x12+\n" +
+	"\x03bot\x18\x02 \x01(\x0e2\x19.aipay.iam.v1.TelegramBotR\x03bot\"w\n" +
 	")ListAccountNotificationRecipientsResponse\x12J\n" +
 	"\n" +
 	"recipients\x18\x01 \x03(\v2*.aipay.iam.v1.AccountNotificationRecipientR\n" +
@@ -1200,12 +1374,15 @@ const file_aipay_iam_v1_telegram_service_proto_rawDesc = "" +
 	" AccountNotificationRecipientKind\x123\n" +
 	"/ACCOUNT_NOTIFICATION_RECIPIENT_KIND_UNSPECIFIED\x10\x00\x12/\n" +
 	"+ACCOUNT_NOTIFICATION_RECIPIENT_KIND_PRIVATE\x10\x01\x12-\n" +
-	")ACCOUNT_NOTIFICATION_RECIPIENT_KIND_GROUP\x10\x022\xb0\b\n" +
+	")ACCOUNT_NOTIFICATION_RECIPIENT_KIND_GROUP\x10\x022\x9d\t\n" +
 	"\x0fTelegramService\x12\\\n" +
 	"\bRegister\x12\x1d.aipay.iam.v1.RegisterRequest\x1a\x1e.aipay.iam.v1.RegisterResponse\"\x11\xc2\xf3\x18\r\n" +
 	"\v\n" +
 	"\abackend\x10\x01\x12w\n" +
 	"\x11CreateBindingCode\x12&.aipay.iam.v1.CreateBindingCodeRequest\x1a'.aipay.iam.v1.CreateBindingCodeResponse\"\x11\xc2\xf3\x18\r\n" +
+	"\v\n" +
+	"\abackend\x10\x01\x12k\n" +
+	"\rGetBotBinding\x12\".aipay.iam.v1.GetBotBindingRequest\x1a#.aipay.iam.v1.GetBotBindingResponse\"\x11\xc2\xf3\x18\r\n" +
 	"\v\n" +
 	"\abackend\x10\x01\x12P\n" +
 	"\x04Bind\x12\x19.aipay.iam.v1.BindRequest\x1a\x1a.aipay.iam.v1.BindResponse\"\x11\xc2\xf3\x18\r\n" +
@@ -1243,7 +1420,7 @@ func file_aipay_iam_v1_telegram_service_proto_rawDescGZIP() []byte {
 }
 
 var file_aipay_iam_v1_telegram_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_aipay_iam_v1_telegram_service_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_aipay_iam_v1_telegram_service_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_aipay_iam_v1_telegram_service_proto_goTypes = []any{
 	(AccountNotificationRecipientKind)(0),             // 0: aipay.iam.v1.AccountNotificationRecipientKind
 	(*TelegramBinding)(nil),                           // 1: aipay.iam.v1.TelegramBinding
@@ -1255,63 +1432,73 @@ var file_aipay_iam_v1_telegram_service_proto_goTypes = []any{
 	(*BindResponse)(nil),                              // 7: aipay.iam.v1.BindResponse
 	(*UnbindRequest)(nil),                             // 8: aipay.iam.v1.UnbindRequest
 	(*UnbindResponse)(nil),                            // 9: aipay.iam.v1.UnbindResponse
-	(*BeginGroupBindingRequest)(nil),                  // 10: aipay.iam.v1.BeginGroupBindingRequest
-	(*BeginGroupBindingResponse)(nil),                 // 11: aipay.iam.v1.BeginGroupBindingResponse
-	(*ConfirmGroupBindingRequest)(nil),                // 12: aipay.iam.v1.ConfirmGroupBindingRequest
-	(*ConfirmGroupBindingResponse)(nil),               // 13: aipay.iam.v1.ConfirmGroupBindingResponse
-	(*InvalidateGroupBindingRequest)(nil),             // 14: aipay.iam.v1.InvalidateGroupBindingRequest
-	(*InvalidateGroupBindingResponse)(nil),            // 15: aipay.iam.v1.InvalidateGroupBindingResponse
-	(*GetGroupBindingRequest)(nil),                    // 16: aipay.iam.v1.GetGroupBindingRequest
-	(*GetGroupBindingResponse)(nil),                   // 17: aipay.iam.v1.GetGroupBindingResponse
-	(*AccountNotificationRecipient)(nil),              // 18: aipay.iam.v1.AccountNotificationRecipient
-	(*ListAccountNotificationRecipientsRequest)(nil),  // 19: aipay.iam.v1.ListAccountNotificationRecipientsRequest
-	(*ListAccountNotificationRecipientsResponse)(nil), // 20: aipay.iam.v1.ListAccountNotificationRecipientsResponse
-	(*timestamppb.Timestamp)(nil),                     // 21: google.protobuf.Timestamp
-	(*TelegramCredential)(nil),                        // 22: aipay.iam.v1.TelegramCredential
-	(*BearerCredential)(nil),                          // 23: aipay.iam.v1.BearerCredential
-	(*UserAuthentication)(nil),                        // 24: aipay.iam.v1.UserAuthentication
+	(*GetBotBindingRequest)(nil),                      // 10: aipay.iam.v1.GetBotBindingRequest
+	(*GetBotBindingResponse)(nil),                     // 11: aipay.iam.v1.GetBotBindingResponse
+	(*BeginGroupBindingRequest)(nil),                  // 12: aipay.iam.v1.BeginGroupBindingRequest
+	(*BeginGroupBindingResponse)(nil),                 // 13: aipay.iam.v1.BeginGroupBindingResponse
+	(*ConfirmGroupBindingRequest)(nil),                // 14: aipay.iam.v1.ConfirmGroupBindingRequest
+	(*ConfirmGroupBindingResponse)(nil),               // 15: aipay.iam.v1.ConfirmGroupBindingResponse
+	(*InvalidateGroupBindingRequest)(nil),             // 16: aipay.iam.v1.InvalidateGroupBindingRequest
+	(*InvalidateGroupBindingResponse)(nil),            // 17: aipay.iam.v1.InvalidateGroupBindingResponse
+	(*GetGroupBindingRequest)(nil),                    // 18: aipay.iam.v1.GetGroupBindingRequest
+	(*GetGroupBindingResponse)(nil),                   // 19: aipay.iam.v1.GetGroupBindingResponse
+	(*AccountNotificationRecipient)(nil),              // 20: aipay.iam.v1.AccountNotificationRecipient
+	(*ListAccountNotificationRecipientsRequest)(nil),  // 21: aipay.iam.v1.ListAccountNotificationRecipientsRequest
+	(*ListAccountNotificationRecipientsResponse)(nil), // 22: aipay.iam.v1.ListAccountNotificationRecipientsResponse
+	(*timestamppb.Timestamp)(nil),                     // 23: google.protobuf.Timestamp
+	(*TelegramCredential)(nil),                        // 24: aipay.iam.v1.TelegramCredential
+	(*BearerCredential)(nil),                          // 25: aipay.iam.v1.BearerCredential
+	(*UserAuthentication)(nil),                        // 26: aipay.iam.v1.UserAuthentication
+	(TelegramBot)(0),                                  // 27: aipay.iam.v1.TelegramBot
 }
 var file_aipay_iam_v1_telegram_service_proto_depIdxs = []int32{
-	21, // 0: aipay.iam.v1.TelegramBinding.expires_at:type_name -> google.protobuf.Timestamp
-	22, // 1: aipay.iam.v1.RegisterRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
+	23, // 0: aipay.iam.v1.TelegramBinding.expires_at:type_name -> google.protobuf.Timestamp
+	24, // 1: aipay.iam.v1.RegisterRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
 	1,  // 2: aipay.iam.v1.RegisterResponse.binding:type_name -> aipay.iam.v1.TelegramBinding
-	23, // 3: aipay.iam.v1.CreateBindingCodeRequest.portal_session:type_name -> aipay.iam.v1.BearerCredential
-	21, // 4: aipay.iam.v1.CreateBindingCodeResponse.expires_at:type_name -> google.protobuf.Timestamp
-	22, // 5: aipay.iam.v1.BindRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
+	25, // 3: aipay.iam.v1.CreateBindingCodeRequest.portal_session:type_name -> aipay.iam.v1.BearerCredential
+	23, // 4: aipay.iam.v1.CreateBindingCodeResponse.expires_at:type_name -> google.protobuf.Timestamp
+	24, // 5: aipay.iam.v1.BindRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
 	1,  // 6: aipay.iam.v1.BindResponse.binding:type_name -> aipay.iam.v1.TelegramBinding
-	24, // 7: aipay.iam.v1.UnbindRequest.authentication:type_name -> aipay.iam.v1.UserAuthentication
-	21, // 8: aipay.iam.v1.UnbindResponse.unbound_at:type_name -> google.protobuf.Timestamp
-	22, // 9: aipay.iam.v1.BeginGroupBindingRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
-	21, // 10: aipay.iam.v1.BeginGroupBindingResponse.expires_at:type_name -> google.protobuf.Timestamp
-	22, // 11: aipay.iam.v1.ConfirmGroupBindingRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
-	22, // 12: aipay.iam.v1.InvalidateGroupBindingRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
-	21, // 13: aipay.iam.v1.InvalidateGroupBindingResponse.invalidated_at:type_name -> google.protobuf.Timestamp
-	22, // 14: aipay.iam.v1.GetGroupBindingRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
-	0,  // 15: aipay.iam.v1.AccountNotificationRecipient.kind:type_name -> aipay.iam.v1.AccountNotificationRecipientKind
-	18, // 16: aipay.iam.v1.ListAccountNotificationRecipientsResponse.recipients:type_name -> aipay.iam.v1.AccountNotificationRecipient
-	2,  // 17: aipay.iam.v1.TelegramService.Register:input_type -> aipay.iam.v1.RegisterRequest
-	4,  // 18: aipay.iam.v1.TelegramService.CreateBindingCode:input_type -> aipay.iam.v1.CreateBindingCodeRequest
-	6,  // 19: aipay.iam.v1.TelegramService.Bind:input_type -> aipay.iam.v1.BindRequest
-	8,  // 20: aipay.iam.v1.TelegramService.Unbind:input_type -> aipay.iam.v1.UnbindRequest
-	10, // 21: aipay.iam.v1.TelegramService.BeginGroupBinding:input_type -> aipay.iam.v1.BeginGroupBindingRequest
-	12, // 22: aipay.iam.v1.TelegramService.ConfirmGroupBinding:input_type -> aipay.iam.v1.ConfirmGroupBindingRequest
-	14, // 23: aipay.iam.v1.TelegramService.InvalidateGroupBinding:input_type -> aipay.iam.v1.InvalidateGroupBindingRequest
-	16, // 24: aipay.iam.v1.TelegramService.GetGroupBinding:input_type -> aipay.iam.v1.GetGroupBindingRequest
-	19, // 25: aipay.iam.v1.TelegramService.ListAccountNotificationRecipients:input_type -> aipay.iam.v1.ListAccountNotificationRecipientsRequest
-	3,  // 26: aipay.iam.v1.TelegramService.Register:output_type -> aipay.iam.v1.RegisterResponse
-	5,  // 27: aipay.iam.v1.TelegramService.CreateBindingCode:output_type -> aipay.iam.v1.CreateBindingCodeResponse
-	7,  // 28: aipay.iam.v1.TelegramService.Bind:output_type -> aipay.iam.v1.BindResponse
-	9,  // 29: aipay.iam.v1.TelegramService.Unbind:output_type -> aipay.iam.v1.UnbindResponse
-	11, // 30: aipay.iam.v1.TelegramService.BeginGroupBinding:output_type -> aipay.iam.v1.BeginGroupBindingResponse
-	13, // 31: aipay.iam.v1.TelegramService.ConfirmGroupBinding:output_type -> aipay.iam.v1.ConfirmGroupBindingResponse
-	15, // 32: aipay.iam.v1.TelegramService.InvalidateGroupBinding:output_type -> aipay.iam.v1.InvalidateGroupBindingResponse
-	17, // 33: aipay.iam.v1.TelegramService.GetGroupBinding:output_type -> aipay.iam.v1.GetGroupBindingResponse
-	20, // 34: aipay.iam.v1.TelegramService.ListAccountNotificationRecipients:output_type -> aipay.iam.v1.ListAccountNotificationRecipientsResponse
-	26, // [26:35] is the sub-list for method output_type
-	17, // [17:26] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	26, // 7: aipay.iam.v1.UnbindRequest.authentication:type_name -> aipay.iam.v1.UserAuthentication
+	27, // 8: aipay.iam.v1.UnbindRequest.bot:type_name -> aipay.iam.v1.TelegramBot
+	23, // 9: aipay.iam.v1.UnbindResponse.unbound_at:type_name -> google.protobuf.Timestamp
+	25, // 10: aipay.iam.v1.GetBotBindingRequest.portal_session:type_name -> aipay.iam.v1.BearerCredential
+	27, // 11: aipay.iam.v1.GetBotBindingRequest.bot:type_name -> aipay.iam.v1.TelegramBot
+	23, // 12: aipay.iam.v1.GetBotBindingResponse.bound_at:type_name -> google.protobuf.Timestamp
+	24, // 13: aipay.iam.v1.BeginGroupBindingRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
+	23, // 14: aipay.iam.v1.BeginGroupBindingResponse.expires_at:type_name -> google.protobuf.Timestamp
+	24, // 15: aipay.iam.v1.ConfirmGroupBindingRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
+	24, // 16: aipay.iam.v1.InvalidateGroupBindingRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
+	23, // 17: aipay.iam.v1.InvalidateGroupBindingResponse.invalidated_at:type_name -> google.protobuf.Timestamp
+	24, // 18: aipay.iam.v1.GetGroupBindingRequest.telegram:type_name -> aipay.iam.v1.TelegramCredential
+	0,  // 19: aipay.iam.v1.AccountNotificationRecipient.kind:type_name -> aipay.iam.v1.AccountNotificationRecipientKind
+	27, // 20: aipay.iam.v1.ListAccountNotificationRecipientsRequest.bot:type_name -> aipay.iam.v1.TelegramBot
+	20, // 21: aipay.iam.v1.ListAccountNotificationRecipientsResponse.recipients:type_name -> aipay.iam.v1.AccountNotificationRecipient
+	2,  // 22: aipay.iam.v1.TelegramService.Register:input_type -> aipay.iam.v1.RegisterRequest
+	4,  // 23: aipay.iam.v1.TelegramService.CreateBindingCode:input_type -> aipay.iam.v1.CreateBindingCodeRequest
+	10, // 24: aipay.iam.v1.TelegramService.GetBotBinding:input_type -> aipay.iam.v1.GetBotBindingRequest
+	6,  // 25: aipay.iam.v1.TelegramService.Bind:input_type -> aipay.iam.v1.BindRequest
+	8,  // 26: aipay.iam.v1.TelegramService.Unbind:input_type -> aipay.iam.v1.UnbindRequest
+	12, // 27: aipay.iam.v1.TelegramService.BeginGroupBinding:input_type -> aipay.iam.v1.BeginGroupBindingRequest
+	14, // 28: aipay.iam.v1.TelegramService.ConfirmGroupBinding:input_type -> aipay.iam.v1.ConfirmGroupBindingRequest
+	16, // 29: aipay.iam.v1.TelegramService.InvalidateGroupBinding:input_type -> aipay.iam.v1.InvalidateGroupBindingRequest
+	18, // 30: aipay.iam.v1.TelegramService.GetGroupBinding:input_type -> aipay.iam.v1.GetGroupBindingRequest
+	21, // 31: aipay.iam.v1.TelegramService.ListAccountNotificationRecipients:input_type -> aipay.iam.v1.ListAccountNotificationRecipientsRequest
+	3,  // 32: aipay.iam.v1.TelegramService.Register:output_type -> aipay.iam.v1.RegisterResponse
+	5,  // 33: aipay.iam.v1.TelegramService.CreateBindingCode:output_type -> aipay.iam.v1.CreateBindingCodeResponse
+	11, // 34: aipay.iam.v1.TelegramService.GetBotBinding:output_type -> aipay.iam.v1.GetBotBindingResponse
+	7,  // 35: aipay.iam.v1.TelegramService.Bind:output_type -> aipay.iam.v1.BindResponse
+	9,  // 36: aipay.iam.v1.TelegramService.Unbind:output_type -> aipay.iam.v1.UnbindResponse
+	13, // 37: aipay.iam.v1.TelegramService.BeginGroupBinding:output_type -> aipay.iam.v1.BeginGroupBindingResponse
+	15, // 38: aipay.iam.v1.TelegramService.ConfirmGroupBinding:output_type -> aipay.iam.v1.ConfirmGroupBindingResponse
+	17, // 39: aipay.iam.v1.TelegramService.InvalidateGroupBinding:output_type -> aipay.iam.v1.InvalidateGroupBindingResponse
+	19, // 40: aipay.iam.v1.TelegramService.GetGroupBinding:output_type -> aipay.iam.v1.GetGroupBindingResponse
+	22, // 41: aipay.iam.v1.TelegramService.ListAccountNotificationRecipients:output_type -> aipay.iam.v1.ListAccountNotificationRecipientsResponse
+	32, // [32:42] is the sub-list for method output_type
+	22, // [22:32] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_aipay_iam_v1_telegram_service_proto_init() }
@@ -1326,7 +1513,7 @@ func file_aipay_iam_v1_telegram_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_iam_v1_telegram_service_proto_rawDesc), len(file_aipay_iam_v1_telegram_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   20,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -12,6 +12,11 @@ option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymen
 // These account bot notifications are never payment or funds evidence.
 // Funds services must not subscribe. Backend verifies the envelope and chain,
 // deduplicates by event_id, and records deliveries per (event_id, chat_id).
+// Backend routes MerchantPaymentReceived, MerchantFundsAvailable,
+// PaymentAccessReviewed and MerchantRefundNotice to the merchant bot, and every
+// Seller* event to the upstream bot. Seller payloads exclude buyer and merchant
+// identity, item names, evidence, dispute reasons, investigation text, approver
+// identities and upstream order numbers.
 // All fields are required unless specified. Timestamps are UTC with microsecond precision.
 
 // MerchantPaymentReceived v1 on payment.account_notices. Payment writes it with
@@ -121,4 +126,60 @@ message MerchantRefundNotice {
   google.protobuf.Timestamp objection_deadline = 10;
   MerchantRefundNoticeKind kind = 11;
   google.protobuf.Timestamp occurred_at = 12;
+}
+
+// Payment writes SellerOrderAssigned in the local transaction that first records
+// a usable buyer payment instruction for the order. At most once per order.
+message SellerOrderAssigned {
+  string seller_account_id = 1;
+  string channel_account_id = 2;
+  string order_id = 3;
+  string trade_no = 4;
+  // Positive amount in minor units of fiat_currency.
+  int64 fiat_amount = 5;
+  string fiat_currency = 6;
+  // Positive seller USDT held for this order, in units of 10^-6 USDT.
+  int64 escrow_usdt = 7;
+  // Present when the payment instruction has an expiry.
+  google.protobuf.Timestamp instruction_expires_at = 8;
+  google.protobuf.Timestamp occurred_at = 9;
+}
+
+// Payment writes SellerInventoryLow when routing skips an otherwise eligible
+// channel solely because the seller's known available USDT is below the order's
+// escrow. At most once per seller per configured interval. Unknown inventory
+// never produces this notice.
+message SellerInventoryLow {
+  string seller_account_id = 1;
+  string channel_account_id = 2;
+  // Nonnegative available inventory in units of 10^-6 USDT.
+  int64 available_usdt = 3;
+  // Required escrow in units of 10^-6 USDT. Greater than available_usdt.
+  int64 required_usdt = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+}
+
+enum SellerDisputeNoticeKind {
+  SELLER_DISPUTE_NOTICE_KIND_UNSPECIFIED = 0;
+  // Written with the dispute registration.
+  SELLER_DISPUTE_NOTICE_KIND_OPENED = 1;
+  // Written when the case becomes RESOLVED (final execution confirmed).
+  SELLER_DISPUTE_NOTICE_KIND_RESOLVED = 2;
+}
+
+// Payment writes at most one notice per (dispute_id, kind).
+message SellerDisputeNotice {
+  string seller_account_id = 1;
+  string dispute_id = 2;
+  string order_id = 3;
+  string trade_no = 4;
+  string channel_account_id = 5;
+  // Positive amount in minor units of fiat_currency.
+  int64 fiat_amount = 6;
+  string fiat_currency = 7;
+  // Required. Reject UNSPECIFIED and unknown values.
+  SellerDisputeNoticeKind kind = 8;
+  // Present exactly when kind is RESOLVED.
+  optional DisputeRulingOutcome outcome = 9;
+  google.protobuf.Timestamp occurred_at = 10;
 }

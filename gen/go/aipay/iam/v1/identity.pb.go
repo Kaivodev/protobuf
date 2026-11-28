@@ -127,6 +127,59 @@ func (TelegramChatType) EnumDescriptor() ([]byte, []int) {
 	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{1}
 }
 
+// Identifies the Kaivo bot that received the update. During a rolling upgrade,
+// IAM reads UNSPECIFIED as MERCHANT for single-bot backends. Current backends
+// always set the bot. A later contract version will reject UNSPECIFIED.
+// IAM rejects unknown values.
+type TelegramBot int32
+
+const (
+	TelegramBot_TELEGRAM_BOT_UNSPECIFIED TelegramBot = 0
+	TelegramBot_TELEGRAM_BOT_MERCHANT    TelegramBot = 1
+	TelegramBot_TELEGRAM_BOT_UPSTREAM    TelegramBot = 2
+)
+
+// Enum value maps for TelegramBot.
+var (
+	TelegramBot_name = map[int32]string{
+		0: "TELEGRAM_BOT_UNSPECIFIED",
+		1: "TELEGRAM_BOT_MERCHANT",
+		2: "TELEGRAM_BOT_UPSTREAM",
+	}
+	TelegramBot_value = map[string]int32{
+		"TELEGRAM_BOT_UNSPECIFIED": 0,
+		"TELEGRAM_BOT_MERCHANT":    1,
+		"TELEGRAM_BOT_UPSTREAM":    2,
+	}
+)
+
+func (x TelegramBot) Enum() *TelegramBot {
+	p := new(TelegramBot)
+	*p = x
+	return p
+}
+
+func (x TelegramBot) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TelegramBot) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_iam_v1_identity_proto_enumTypes[2].Descriptor()
+}
+
+func (TelegramBot) Type() protoreflect.EnumType {
+	return &file_aipay_iam_v1_identity_proto_enumTypes[2]
+}
+
+func (x TelegramBot) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TelegramBot.Descriptor instead.
+func (TelegramBot) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_iam_v1_identity_proto_rawDescGZIP(), []int{2}
+}
+
 type Principal struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -259,11 +312,13 @@ func (x *BearerCredential) GetReauthenticationId() string {
 // secret validation. Reject sender_chat, anonymous administrators and channels;
 // never infer the sender from forwarded content. These facts and their digest
 // are not an independent Telegram signature or caller-selected user authority.
-// Deduplicate update_id in the configured bot namespace, bind it to these facts
-// and reject changed content; out-of-order updates cannot overwrite new state.
+// IAM deduplicates update_id per bot and rejects changed facts for the same
+// update. Out-of-order updates cannot overwrite new state. IAM uses only the
+// receiving bot's binding and session. It rejects request bindings whose HTTP
+// path falls outside /bot/ for MERCHANT or /upstream-bot/ for UPSTREAM.
 type TelegramCredential struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Positive Telegram user ID, resolved through IAM's unique binding.
+	// Positive Telegram user ID. IAM resolves its global link and per-bot binding.
 	TelegramUserId int64 `protobuf:"varint,1,opt,name=telegram_user_id,json=telegramUserId,proto3" json:"telegram_user_id,omitempty"`
 	// Nonzero signed ID; group IDs can be negative.
 	ChatId   int64            `protobuf:"varint,2,opt,name=chat_id,json=chatId,proto3" json:"chat_id,omitempty"`
@@ -272,8 +327,11 @@ type TelegramCredential struct {
 	UpdateId *int64 `protobuf:"varint,4,opt,name=update_id,json=updateId,proto3,oneof" json:"update_id,omitempty"`
 	// Exactly 32 bytes: SHA-256 of the original webhook HTTP body bytes.
 	UpdateBodySha256 []byte `protobuf:"bytes,5,opt,name=update_body_sha256,json=updateBodySha256,proto3" json:"update_body_sha256,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Backend sets this from the webhook route. Each bot has its own route and
+	// secret. Never derive it from update content, commands or chat IDs.
+	Bot           TelegramBot `protobuf:"varint,6,opt,name=bot,proto3,enum=aipay.iam.v1.TelegramBot" json:"bot,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TelegramCredential) Reset() {
@@ -339,6 +397,13 @@ func (x *TelegramCredential) GetUpdateBodySha256() []byte {
 		return x.UpdateBodySha256
 	}
 	return nil
+}
+
+func (x *TelegramCredential) GetBot() TelegramBot {
+	if x != nil {
+		return x.Bot
+	}
+	return TelegramBot_TELEGRAM_BOT_UNSPECIFIED
 }
 
 // IAM validates the credential itself. Only a human user's session or unique
@@ -765,13 +830,14 @@ const file_aipay_iam_v1_identity_proto_rawDesc = "" +
 	"\x10BearerCredential\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12,\n" +
 	"\x05entry\x18\x02 \x01(\x0e2\x16.aipay.iam.v1.WebEntryR\x05entry\x12/\n" +
-	"\x13reauthentication_id\x18\x03 \x01(\tR\x12reauthenticationId\"\xf2\x01\n" +
+	"\x13reauthentication_id\x18\x03 \x01(\tR\x12reauthenticationId\"\x9f\x02\n" +
 	"\x12TelegramCredential\x12(\n" +
 	"\x10telegram_user_id\x18\x01 \x01(\x03R\x0etelegramUserId\x12\x17\n" +
 	"\achat_id\x18\x02 \x01(\x03R\x06chatId\x12;\n" +
 	"\tchat_type\x18\x03 \x01(\x0e2\x1e.aipay.iam.v1.TelegramChatTypeR\bchatType\x12 \n" +
 	"\tupdate_id\x18\x04 \x01(\x03H\x00R\bupdateId\x88\x01\x01\x12,\n" +
-	"\x12update_body_sha256\x18\x05 \x01(\fR\x10updateBodySha256B\f\n" +
+	"\x12update_body_sha256\x18\x05 \x01(\fR\x10updateBodySha256\x12+\n" +
+	"\x03bot\x18\x06 \x01(\x0e2\x19.aipay.iam.v1.TelegramBotR\x03botB\f\n" +
 	"\n" +
 	"_update_id\"\x9c\x01\n" +
 	"\x12UserAuthentication\x128\n" +
@@ -815,7 +881,11 @@ const file_aipay_iam_v1_identity_proto_rawDesc = "" +
 	"\x1eTELEGRAM_CHAT_TYPE_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aTELEGRAM_CHAT_TYPE_PRIVATE\x10\x01\x12\x1c\n" +
 	"\x18TELEGRAM_CHAT_TYPE_GROUP\x10\x02\x12!\n" +
-	"\x1dTELEGRAM_CHAT_TYPE_SUPERGROUP\x10\x03B8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
+	"\x1dTELEGRAM_CHAT_TYPE_SUPERGROUP\x10\x03*a\n" +
+	"\vTelegramBot\x12\x1c\n" +
+	"\x18TELEGRAM_BOT_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15TELEGRAM_BOT_MERCHANT\x10\x01\x12\x19\n" +
+	"\x15TELEGRAM_BOT_UPSTREAM\x10\x02B8Z6github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1b\x06proto3"
 
 var (
 	file_aipay_iam_v1_identity_proto_rawDescOnce sync.Once
@@ -829,38 +899,40 @@ func file_aipay_iam_v1_identity_proto_rawDescGZIP() []byte {
 	return file_aipay_iam_v1_identity_proto_rawDescData
 }
 
-var file_aipay_iam_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_aipay_iam_v1_identity_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_aipay_iam_v1_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_aipay_iam_v1_identity_proto_goTypes = []any{
 	(PrincipalType)(0),                 // 0: aipay.iam.v1.PrincipalType
 	(TelegramChatType)(0),              // 1: aipay.iam.v1.TelegramChatType
-	(*Principal)(nil),                  // 2: aipay.iam.v1.Principal
-	(*BearerCredential)(nil),           // 3: aipay.iam.v1.BearerCredential
-	(*TelegramCredential)(nil),         // 4: aipay.iam.v1.TelegramCredential
-	(*UserAuthentication)(nil),         // 5: aipay.iam.v1.UserAuthentication
-	(*EPayParameter)(nil),              // 6: aipay.iam.v1.EPayParameter
-	(*EPayV1SignatureCredential)(nil),  // 7: aipay.iam.v1.EPayV1SignatureCredential
-	(*EPayV1KeyCredential)(nil),        // 8: aipay.iam.v1.EPayV1KeyCredential
-	(*EPayV2SignatureCredential)(nil),  // 9: aipay.iam.v1.EPayV2SignatureCredential
-	(*WorkloadIdentityCredential)(nil), // 10: aipay.iam.v1.WorkloadIdentityCredential
-	(*RequestBinding)(nil),             // 11: aipay.iam.v1.RequestBinding
-	(*v1.Scope)(nil),                   // 12: aipay.common.v1.Scope
-	(WebEntry)(0),                      // 13: aipay.iam.v1.WebEntry
+	(TelegramBot)(0),                   // 2: aipay.iam.v1.TelegramBot
+	(*Principal)(nil),                  // 3: aipay.iam.v1.Principal
+	(*BearerCredential)(nil),           // 4: aipay.iam.v1.BearerCredential
+	(*TelegramCredential)(nil),         // 5: aipay.iam.v1.TelegramCredential
+	(*UserAuthentication)(nil),         // 6: aipay.iam.v1.UserAuthentication
+	(*EPayParameter)(nil),              // 7: aipay.iam.v1.EPayParameter
+	(*EPayV1SignatureCredential)(nil),  // 8: aipay.iam.v1.EPayV1SignatureCredential
+	(*EPayV1KeyCredential)(nil),        // 9: aipay.iam.v1.EPayV1KeyCredential
+	(*EPayV2SignatureCredential)(nil),  // 10: aipay.iam.v1.EPayV2SignatureCredential
+	(*WorkloadIdentityCredential)(nil), // 11: aipay.iam.v1.WorkloadIdentityCredential
+	(*RequestBinding)(nil),             // 12: aipay.iam.v1.RequestBinding
+	(*v1.Scope)(nil),                   // 13: aipay.common.v1.Scope
+	(WebEntry)(0),                      // 14: aipay.iam.v1.WebEntry
 }
 var file_aipay_iam_v1_identity_proto_depIdxs = []int32{
 	0,  // 0: aipay.iam.v1.Principal.type:type_name -> aipay.iam.v1.PrincipalType
-	12, // 1: aipay.iam.v1.Principal.bound_scope:type_name -> aipay.common.v1.Scope
-	13, // 2: aipay.iam.v1.BearerCredential.entry:type_name -> aipay.iam.v1.WebEntry
+	13, // 1: aipay.iam.v1.Principal.bound_scope:type_name -> aipay.common.v1.Scope
+	14, // 2: aipay.iam.v1.BearerCredential.entry:type_name -> aipay.iam.v1.WebEntry
 	1,  // 3: aipay.iam.v1.TelegramCredential.chat_type:type_name -> aipay.iam.v1.TelegramChatType
-	3,  // 4: aipay.iam.v1.UserAuthentication.bearer:type_name -> aipay.iam.v1.BearerCredential
-	4,  // 5: aipay.iam.v1.UserAuthentication.telegram:type_name -> aipay.iam.v1.TelegramCredential
-	6,  // 6: aipay.iam.v1.EPayV1SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
-	6,  // 7: aipay.iam.v1.EPayV2SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
-	8,  // [8:8] is the sub-list for method output_type
-	8,  // [8:8] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	2,  // 4: aipay.iam.v1.TelegramCredential.bot:type_name -> aipay.iam.v1.TelegramBot
+	4,  // 5: aipay.iam.v1.UserAuthentication.bearer:type_name -> aipay.iam.v1.BearerCredential
+	5,  // 6: aipay.iam.v1.UserAuthentication.telegram:type_name -> aipay.iam.v1.TelegramCredential
+	7,  // 7: aipay.iam.v1.EPayV1SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
+	7,  // 8: aipay.iam.v1.EPayV2SignatureCredential.parameters:type_name -> aipay.iam.v1.EPayParameter
+	9,  // [9:9] is the sub-list for method output_type
+	9,  // [9:9] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_aipay_iam_v1_identity_proto_init() }
@@ -880,7 +952,7 @@ func file_aipay_iam_v1_identity_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_iam_v1_identity_proto_rawDesc), len(file_aipay_iam_v1_identity_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   0,

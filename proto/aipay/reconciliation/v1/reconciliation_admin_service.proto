@@ -38,16 +38,15 @@ message PluginVersion {
   google.protobuf.Timestamp created_at = 11;
 }
 
-// Gateway mode accepts only ABI v3 packages. ReplayPackage on the verification
-// gateway must reproduce the uploaded package_sha256 before approval.
+// ReplayPackage on the verification gateway must reproduce the uploaded
+// package_sha256 before approval.
 message UploadPluginRequest {
   string idempotency_key = 1;
-  // Gateway mode requires a canonical manifest with abi_version=3 and Rust
-  // build fields (rust_version, target, wasm_tools_version, source_commit,
-  // source_tree_sha256). Reject uncommitted builds.
+  // Supply a canonical manifest with abi_version=3 and Rust build fields
+  // (rust_version, target, wasm_tools_version, source_commit, source_tree_sha256).
+  // Reject uncommitted builds.
   bytes manifest_json = 2;
-  // Gateway mode takes a component up to 4 MiB. Embedded mode takes an ABI v2
-  // Go wasip1 reactor up to 12 MiB. The whole request is at most 16 MiB.
+  // ABI v3 Rust component up to 4 MiB. The whole request is at most 16 MiB.
   bytes plugin_wasm = 3;
   // Total <=3 MiB, contains no real credentials or personal information.
   repeated PluginFixture fixtures = 4;
@@ -74,20 +73,18 @@ message StoreVerificationCredentialsRequest {
   // Sensitive ingress ONLY, strict JSON reference-name -> secret-value map,
   // <=64 KiB, no duplicate keys. Backend memory-only pass-through over mTLS;
   // reconciliation computes the digest and checks the independent read-only
-  // credential attestation before storage. Embedded mode uses KMS envelope
-  // encryption. In gateway mode the verification instance seals the credentials
-  // and reconciliation stores only the ref, digest and credential names.
+  // credential attestation before storage. The verification instance seals the
+  // credentials. Reconciliation stores only the ref, digest and credential names.
   // No logs/cache/disk, no secrets in config_json or plugin memory.
   bytes credentials_json = 3;
 }
 
 message StoreVerificationCredentialsResponse {
-  // In gateway mode the verification instance generates the immutable ref
-  // with the reconciliation:verification: prefix.
+  // The verification instance generates this immutable ref with the
+  // reconciliation:verification: prefix.
   string credentials_ref = 1;
-  // Both modes return the same 32-byte SHA-256 of canonical credential JSON.
-  // In gateway mode reconciliation verifies the instance's digest against
-  // the hash of the inbound credentials before returning it.
+  // 32-byte SHA-256 of canonical credential JSON. Reconciliation verifies the
+  // instance's digest against the hash of the inbound credentials before returning it.
   bytes credentials_sha256 = 2;
 }
 

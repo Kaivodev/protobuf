@@ -42,14 +42,26 @@ enum TelegramChatType {
   TELEGRAM_CHAT_TYPE_SUPERGROUP = 3;
 }
 
+// Identifies the Kaivo bot that received the update. During a rolling upgrade,
+// IAM reads UNSPECIFIED as MERCHANT for single-bot backends. Current backends
+// always set the bot. A later contract version will reject UNSPECIFIED.
+// IAM rejects unknown values.
+enum TelegramBot {
+  TELEGRAM_BOT_UNSPECIFIED = 0;
+  TELEGRAM_BOT_MERCHANT = 1;
+  TELEGRAM_BOT_UPSTREAM = 2;
+}
+
 // Update facts supplied only by backend's configured bot module after webhook
 // secret validation. Reject sender_chat, anonymous administrators and channels;
 // never infer the sender from forwarded content. These facts and their digest
 // are not an independent Telegram signature or caller-selected user authority.
-// Deduplicate update_id in the configured bot namespace, bind it to these facts
-// and reject changed content; out-of-order updates cannot overwrite new state.
+// IAM deduplicates update_id per bot and rejects changed facts for the same
+// update. Out-of-order updates cannot overwrite new state. IAM uses only the
+// receiving bot's binding and session. It rejects request bindings whose HTTP
+// path falls outside /bot/ for MERCHANT or /upstream-bot/ for UPSTREAM.
 message TelegramCredential {
-  // Positive Telegram user ID, resolved through IAM's unique binding.
+  // Positive Telegram user ID. IAM resolves its global link and per-bot binding.
   int64 telegram_user_id = 1;
   // Nonzero signed ID; group IDs can be negative.
   int64 chat_id = 2;
@@ -58,6 +70,9 @@ message TelegramCredential {
   optional int64 update_id = 4;
   // Exactly 32 bytes: SHA-256 of the original webhook HTTP body bytes.
   bytes update_body_sha256 = 5;
+  // Backend sets this from the webhook route. Each bot has its own route and
+  // secret. Never derive it from update content, commands or chat IDs.
+  TelegramBot bot = 6;
 }
 
 // IAM validates the credential itself. Only a human user's session or unique

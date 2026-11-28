@@ -1225,13 +1225,13 @@ func (x *ApprovePricingVersionResponse) GetApproval() *PaymentApproval {
 	return nil
 }
 
-// Gateway mode accepts only ABI v3 packages. ReplayPackage on the trade
-// gateway must reproduce the uploaded package_sha256 before approval.
+// ReplayPackage on the trade gateway must reproduce the uploaded package_sha256
+// before approval.
 type UploadPluginRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
-	// Payment plugins only, without secret values. Gateway mode requires a
-	// canonical manifest with abi_version=3 and Rust build fields (rust_version,
+	// Payment plugins only, without secret values. Supply a canonical manifest
+	// with abi_version=3 and Rust build fields (rust_version,
 	// target, wasm_tools_version, source_commit, source_tree_sha256).
 	// Reject uncommitted builds.
 	ManifestJson []byte `protobuf:"bytes,2,opt,name=manifest_json,json=manifestJson,proto3" json:"manifest_json,omitempty"`
@@ -1243,8 +1243,7 @@ type UploadPluginRequest struct {
 	Fixtures []*PluginFixture `protobuf:"bytes,4,rep,name=fixtures,proto3" json:"fixtures,omitempty"`
 	// Recompute from normalized manifest_json || plugin_wasm and compare to CI.
 	PackageSha256 []byte `protobuf:"bytes,5,opt,name=package_sha256,json=packageSha256,proto3" json:"package_sha256,omitempty"`
-	// Gateway mode takes a component up to 4 MiB. Embedded mode takes an ABI v2
-	// reactor up to 12 MiB built by CI with a pinned Go wasip1 toolchain.
+	// ABI v3 Rust component up to 4 MiB.
 	// Fixtures total at most 3 MiB and the whole request at most 16 MiB.
 	PluginWasm    []byte `protobuf:"bytes,6,opt,name=plugin_wasm,json=pluginWasm,proto3" json:"plugin_wasm,omitempty"`
 	unknownFields protoimpl.UnknownFields

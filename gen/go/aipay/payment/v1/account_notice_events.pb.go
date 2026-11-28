@@ -179,6 +179,57 @@ func (MerchantRefundNoticeKind) EnumDescriptor() ([]byte, []int) {
 	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{2}
 }
 
+type SellerDisputeNoticeKind int32
+
+const (
+	SellerDisputeNoticeKind_SELLER_DISPUTE_NOTICE_KIND_UNSPECIFIED SellerDisputeNoticeKind = 0
+	// Written with the dispute registration.
+	SellerDisputeNoticeKind_SELLER_DISPUTE_NOTICE_KIND_OPENED SellerDisputeNoticeKind = 1
+	// Written when the case becomes RESOLVED (final execution confirmed).
+	SellerDisputeNoticeKind_SELLER_DISPUTE_NOTICE_KIND_RESOLVED SellerDisputeNoticeKind = 2
+)
+
+// Enum value maps for SellerDisputeNoticeKind.
+var (
+	SellerDisputeNoticeKind_name = map[int32]string{
+		0: "SELLER_DISPUTE_NOTICE_KIND_UNSPECIFIED",
+		1: "SELLER_DISPUTE_NOTICE_KIND_OPENED",
+		2: "SELLER_DISPUTE_NOTICE_KIND_RESOLVED",
+	}
+	SellerDisputeNoticeKind_value = map[string]int32{
+		"SELLER_DISPUTE_NOTICE_KIND_UNSPECIFIED": 0,
+		"SELLER_DISPUTE_NOTICE_KIND_OPENED":      1,
+		"SELLER_DISPUTE_NOTICE_KIND_RESOLVED":    2,
+	}
+)
+
+func (x SellerDisputeNoticeKind) Enum() *SellerDisputeNoticeKind {
+	p := new(SellerDisputeNoticeKind)
+	*p = x
+	return p
+}
+
+func (x SellerDisputeNoticeKind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SellerDisputeNoticeKind) Descriptor() protoreflect.EnumDescriptor {
+	return file_aipay_payment_v1_account_notice_events_proto_enumTypes[3].Descriptor()
+}
+
+func (SellerDisputeNoticeKind) Type() protoreflect.EnumType {
+	return &file_aipay_payment_v1_account_notice_events_proto_enumTypes[3]
+}
+
+func (x SellerDisputeNoticeKind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SellerDisputeNoticeKind.Descriptor instead.
+func (SellerDisputeNoticeKind) EnumDescriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{3}
+}
+
 // MerchantPaymentReceived v1 on payment.account_notices. Payment writes it with
 // OrderPaid v2 in one local transaction. Only backend receives this bot notice.
 // It provides no payment or funds evidence.
@@ -753,6 +804,321 @@ func (x *MerchantRefundNotice) GetOccurredAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// Payment writes SellerOrderAssigned in the local transaction that first records
+// a usable buyer payment instruction for the order. At most once per order.
+type SellerOrderAssigned struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	SellerAccountId  string                 `protobuf:"bytes,1,opt,name=seller_account_id,json=sellerAccountId,proto3" json:"seller_account_id,omitempty"`
+	ChannelAccountId string                 `protobuf:"bytes,2,opt,name=channel_account_id,json=channelAccountId,proto3" json:"channel_account_id,omitempty"`
+	OrderId          string                 `protobuf:"bytes,3,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	TradeNo          string                 `protobuf:"bytes,4,opt,name=trade_no,json=tradeNo,proto3" json:"trade_no,omitempty"`
+	// Positive amount in minor units of fiat_currency.
+	FiatAmount   int64  `protobuf:"varint,5,opt,name=fiat_amount,json=fiatAmount,proto3" json:"fiat_amount,omitempty"`
+	FiatCurrency string `protobuf:"bytes,6,opt,name=fiat_currency,json=fiatCurrency,proto3" json:"fiat_currency,omitempty"`
+	// Positive seller USDT held for this order, in units of 10^-6 USDT.
+	EscrowUsdt int64 `protobuf:"varint,7,opt,name=escrow_usdt,json=escrowUsdt,proto3" json:"escrow_usdt,omitempty"`
+	// Present when the payment instruction has an expiry.
+	InstructionExpiresAt *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=instruction_expires_at,json=instructionExpiresAt,proto3" json:"instruction_expires_at,omitempty"`
+	OccurredAt           *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *SellerOrderAssigned) Reset() {
+	*x = SellerOrderAssigned{}
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SellerOrderAssigned) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SellerOrderAssigned) ProtoMessage() {}
+
+func (x *SellerOrderAssigned) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SellerOrderAssigned.ProtoReflect.Descriptor instead.
+func (*SellerOrderAssigned) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *SellerOrderAssigned) GetSellerAccountId() string {
+	if x != nil {
+		return x.SellerAccountId
+	}
+	return ""
+}
+
+func (x *SellerOrderAssigned) GetChannelAccountId() string {
+	if x != nil {
+		return x.ChannelAccountId
+	}
+	return ""
+}
+
+func (x *SellerOrderAssigned) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *SellerOrderAssigned) GetTradeNo() string {
+	if x != nil {
+		return x.TradeNo
+	}
+	return ""
+}
+
+func (x *SellerOrderAssigned) GetFiatAmount() int64 {
+	if x != nil {
+		return x.FiatAmount
+	}
+	return 0
+}
+
+func (x *SellerOrderAssigned) GetFiatCurrency() string {
+	if x != nil {
+		return x.FiatCurrency
+	}
+	return ""
+}
+
+func (x *SellerOrderAssigned) GetEscrowUsdt() int64 {
+	if x != nil {
+		return x.EscrowUsdt
+	}
+	return 0
+}
+
+func (x *SellerOrderAssigned) GetInstructionExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.InstructionExpiresAt
+	}
+	return nil
+}
+
+func (x *SellerOrderAssigned) GetOccurredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.OccurredAt
+	}
+	return nil
+}
+
+// Payment writes SellerInventoryLow when routing skips an otherwise eligible
+// channel solely because the seller's known available USDT is below the order's
+// escrow. At most once per seller per configured interval. Unknown inventory
+// never produces this notice.
+type SellerInventoryLow struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	SellerAccountId  string                 `protobuf:"bytes,1,opt,name=seller_account_id,json=sellerAccountId,proto3" json:"seller_account_id,omitempty"`
+	ChannelAccountId string                 `protobuf:"bytes,2,opt,name=channel_account_id,json=channelAccountId,proto3" json:"channel_account_id,omitempty"`
+	// Nonnegative available inventory in units of 10^-6 USDT.
+	AvailableUsdt int64 `protobuf:"varint,3,opt,name=available_usdt,json=availableUsdt,proto3" json:"available_usdt,omitempty"`
+	// Required escrow in units of 10^-6 USDT. Greater than available_usdt.
+	RequiredUsdt  int64                  `protobuf:"varint,4,opt,name=required_usdt,json=requiredUsdt,proto3" json:"required_usdt,omitempty"`
+	OccurredAt    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SellerInventoryLow) Reset() {
+	*x = SellerInventoryLow{}
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SellerInventoryLow) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SellerInventoryLow) ProtoMessage() {}
+
+func (x *SellerInventoryLow) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SellerInventoryLow.ProtoReflect.Descriptor instead.
+func (*SellerInventoryLow) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *SellerInventoryLow) GetSellerAccountId() string {
+	if x != nil {
+		return x.SellerAccountId
+	}
+	return ""
+}
+
+func (x *SellerInventoryLow) GetChannelAccountId() string {
+	if x != nil {
+		return x.ChannelAccountId
+	}
+	return ""
+}
+
+func (x *SellerInventoryLow) GetAvailableUsdt() int64 {
+	if x != nil {
+		return x.AvailableUsdt
+	}
+	return 0
+}
+
+func (x *SellerInventoryLow) GetRequiredUsdt() int64 {
+	if x != nil {
+		return x.RequiredUsdt
+	}
+	return 0
+}
+
+func (x *SellerInventoryLow) GetOccurredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.OccurredAt
+	}
+	return nil
+}
+
+// Payment writes at most one notice per (dispute_id, kind).
+type SellerDisputeNotice struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	SellerAccountId  string                 `protobuf:"bytes,1,opt,name=seller_account_id,json=sellerAccountId,proto3" json:"seller_account_id,omitempty"`
+	DisputeId        string                 `protobuf:"bytes,2,opt,name=dispute_id,json=disputeId,proto3" json:"dispute_id,omitempty"`
+	OrderId          string                 `protobuf:"bytes,3,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	TradeNo          string                 `protobuf:"bytes,4,opt,name=trade_no,json=tradeNo,proto3" json:"trade_no,omitempty"`
+	ChannelAccountId string                 `protobuf:"bytes,5,opt,name=channel_account_id,json=channelAccountId,proto3" json:"channel_account_id,omitempty"`
+	// Positive amount in minor units of fiat_currency.
+	FiatAmount   int64  `protobuf:"varint,6,opt,name=fiat_amount,json=fiatAmount,proto3" json:"fiat_amount,omitempty"`
+	FiatCurrency string `protobuf:"bytes,7,opt,name=fiat_currency,json=fiatCurrency,proto3" json:"fiat_currency,omitempty"`
+	// Required. Reject UNSPECIFIED and unknown values.
+	Kind SellerDisputeNoticeKind `protobuf:"varint,8,opt,name=kind,proto3,enum=aipay.payment.v1.SellerDisputeNoticeKind" json:"kind,omitempty"`
+	// Present exactly when kind is RESOLVED.
+	Outcome       *DisputeRulingOutcome  `protobuf:"varint,9,opt,name=outcome,proto3,enum=aipay.payment.v1.DisputeRulingOutcome,oneof" json:"outcome,omitempty"`
+	OccurredAt    *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SellerDisputeNotice) Reset() {
+	*x = SellerDisputeNotice{}
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SellerDisputeNotice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SellerDisputeNotice) ProtoMessage() {}
+
+func (x *SellerDisputeNotice) ProtoReflect() protoreflect.Message {
+	mi := &file_aipay_payment_v1_account_notice_events_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SellerDisputeNotice.ProtoReflect.Descriptor instead.
+func (*SellerDisputeNotice) Descriptor() ([]byte, []int) {
+	return file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *SellerDisputeNotice) GetSellerAccountId() string {
+	if x != nil {
+		return x.SellerAccountId
+	}
+	return ""
+}
+
+func (x *SellerDisputeNotice) GetDisputeId() string {
+	if x != nil {
+		return x.DisputeId
+	}
+	return ""
+}
+
+func (x *SellerDisputeNotice) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *SellerDisputeNotice) GetTradeNo() string {
+	if x != nil {
+		return x.TradeNo
+	}
+	return ""
+}
+
+func (x *SellerDisputeNotice) GetChannelAccountId() string {
+	if x != nil {
+		return x.ChannelAccountId
+	}
+	return ""
+}
+
+func (x *SellerDisputeNotice) GetFiatAmount() int64 {
+	if x != nil {
+		return x.FiatAmount
+	}
+	return 0
+}
+
+func (x *SellerDisputeNotice) GetFiatCurrency() string {
+	if x != nil {
+		return x.FiatCurrency
+	}
+	return ""
+}
+
+func (x *SellerDisputeNotice) GetKind() SellerDisputeNoticeKind {
+	if x != nil {
+		return x.Kind
+	}
+	return SellerDisputeNoticeKind_SELLER_DISPUTE_NOTICE_KIND_UNSPECIFIED
+}
+
+func (x *SellerDisputeNotice) GetOutcome() DisputeRulingOutcome {
+	if x != nil && x.Outcome != nil {
+		return *x.Outcome
+	}
+	return DisputeRulingOutcome_DISPUTE_RULING_OUTCOME_UNSPECIFIED
+}
+
+func (x *SellerDisputeNotice) GetOccurredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.OccurredAt
+	}
+	return nil
+}
+
 var File_aipay_payment_v1_account_notice_events_proto protoreflect.FileDescriptor
 
 const file_aipay_payment_v1_account_notice_events_proto_rawDesc = "" +
@@ -828,7 +1194,44 @@ const file_aipay_payment_v1_account_notice_events_proto_rawDesc = "" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\x11objectionDeadline\x12>\n" +
 	"\x04kind\x18\v \x01(\x0e2*.aipay.payment.v1.MerchantRefundNoticeKindR\x04kind\x12;\n" +
 	"\voccurred_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"occurredAt*\x9f\x01\n" +
+	"occurredAt\"\x9b\x03\n" +
+	"\x13SellerOrderAssigned\x12*\n" +
+	"\x11seller_account_id\x18\x01 \x01(\tR\x0fsellerAccountId\x12,\n" +
+	"\x12channel_account_id\x18\x02 \x01(\tR\x10channelAccountId\x12\x19\n" +
+	"\border_id\x18\x03 \x01(\tR\aorderId\x12\x19\n" +
+	"\btrade_no\x18\x04 \x01(\tR\atradeNo\x12\x1f\n" +
+	"\vfiat_amount\x18\x05 \x01(\x03R\n" +
+	"fiatAmount\x12#\n" +
+	"\rfiat_currency\x18\x06 \x01(\tR\ffiatCurrency\x12\x1f\n" +
+	"\vescrow_usdt\x18\a \x01(\x03R\n" +
+	"escrowUsdt\x12P\n" +
+	"\x16instruction_expires_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\x14instructionExpiresAt\x12;\n" +
+	"\voccurred_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAt\"\xf7\x01\n" +
+	"\x12SellerInventoryLow\x12*\n" +
+	"\x11seller_account_id\x18\x01 \x01(\tR\x0fsellerAccountId\x12,\n" +
+	"\x12channel_account_id\x18\x02 \x01(\tR\x10channelAccountId\x12%\n" +
+	"\x0eavailable_usdt\x18\x03 \x01(\x03R\ravailableUsdt\x12#\n" +
+	"\rrequired_usdt\x18\x04 \x01(\x03R\frequiredUsdt\x12;\n" +
+	"\voccurred_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAt\"\xd9\x03\n" +
+	"\x13SellerDisputeNotice\x12*\n" +
+	"\x11seller_account_id\x18\x01 \x01(\tR\x0fsellerAccountId\x12\x1d\n" +
+	"\n" +
+	"dispute_id\x18\x02 \x01(\tR\tdisputeId\x12\x19\n" +
+	"\border_id\x18\x03 \x01(\tR\aorderId\x12\x19\n" +
+	"\btrade_no\x18\x04 \x01(\tR\atradeNo\x12,\n" +
+	"\x12channel_account_id\x18\x05 \x01(\tR\x10channelAccountId\x12\x1f\n" +
+	"\vfiat_amount\x18\x06 \x01(\x03R\n" +
+	"fiatAmount\x12#\n" +
+	"\rfiat_currency\x18\a \x01(\tR\ffiatCurrency\x12=\n" +
+	"\x04kind\x18\b \x01(\x0e2).aipay.payment.v1.SellerDisputeNoticeKindR\x04kind\x12E\n" +
+	"\aoutcome\x18\t \x01(\x0e2&.aipay.payment.v1.DisputeRulingOutcomeH\x00R\aoutcome\x88\x01\x01\x12;\n" +
+	"\voccurred_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAtB\n" +
+	"\n" +
+	"\b_outcome*\x9f\x01\n" +
 	"\x19PaymentAccessReviewResult\x12,\n" +
 	"(PAYMENT_ACCESS_REVIEW_RESULT_UNSPECIFIED\x10\x00\x12)\n" +
 	"%PAYMENT_ACCESS_REVIEW_RESULT_APPROVED\x10\x01\x12)\n" +
@@ -843,7 +1246,11 @@ const file_aipay_payment_v1_account_notice_events_proto_rawDesc = "" +
 	"#MERCHANT_REFUND_NOTICE_KIND_CREATED\x10\x01\x12*\n" +
 	"&MERCHANT_REFUND_NOTICE_KIND_CONFIRMING\x10\x02\x12)\n" +
 	"%MERCHANT_REFUND_NOTICE_KIND_SUCCEEDED\x10\x03\x12&\n" +
-	"\"MERCHANT_REFUND_NOTICE_KIND_FAILED\x10\x04B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
+	"\"MERCHANT_REFUND_NOTICE_KIND_FAILED\x10\x04*\x95\x01\n" +
+	"\x17SellerDisputeNoticeKind\x12*\n" +
+	"&SELLER_DISPUTE_NOTICE_KIND_UNSPECIFIED\x10\x00\x12%\n" +
+	"!SELLER_DISPUTE_NOTICE_KIND_OPENED\x10\x01\x12'\n" +
+	"#SELLER_DISPUTE_NOTICE_KIND_RESOLVED\x10\x02B@Z>github.com/Kaivodev/protobuf/gen/go/aipay/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_aipay_payment_v1_account_notice_events_proto_rawDescOnce sync.Once
@@ -857,37 +1264,48 @@ func file_aipay_payment_v1_account_notice_events_proto_rawDescGZIP() []byte {
 	return file_aipay_payment_v1_account_notice_events_proto_rawDescData
 }
 
-var file_aipay_payment_v1_account_notice_events_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_aipay_payment_v1_account_notice_events_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_aipay_payment_v1_account_notice_events_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_aipay_payment_v1_account_notice_events_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_aipay_payment_v1_account_notice_events_proto_goTypes = []any{
 	(PaymentAccessReviewResult)(0),  // 0: aipay.payment.v1.PaymentAccessReviewResult
 	(SellerRefundNoticeKind)(0),     // 1: aipay.payment.v1.SellerRefundNoticeKind
 	(MerchantRefundNoticeKind)(0),   // 2: aipay.payment.v1.MerchantRefundNoticeKind
-	(*MerchantPaymentReceived)(nil), // 3: aipay.payment.v1.MerchantPaymentReceived
-	(*MerchantFundsAvailable)(nil),  // 4: aipay.payment.v1.MerchantFundsAvailable
-	(*PaymentAccessReviewed)(nil),   // 5: aipay.payment.v1.PaymentAccessReviewed
-	(*SellerRefundNotice)(nil),      // 6: aipay.payment.v1.SellerRefundNotice
-	(*MerchantRefundNotice)(nil),    // 7: aipay.payment.v1.MerchantRefundNotice
-	(*timestamppb.Timestamp)(nil),   // 8: google.protobuf.Timestamp
-	(*SellerRefundSubject)(nil),     // 9: aipay.payment.v1.SellerRefundSubject
+	(SellerDisputeNoticeKind)(0),    // 3: aipay.payment.v1.SellerDisputeNoticeKind
+	(*MerchantPaymentReceived)(nil), // 4: aipay.payment.v1.MerchantPaymentReceived
+	(*MerchantFundsAvailable)(nil),  // 5: aipay.payment.v1.MerchantFundsAvailable
+	(*PaymentAccessReviewed)(nil),   // 6: aipay.payment.v1.PaymentAccessReviewed
+	(*SellerRefundNotice)(nil),      // 7: aipay.payment.v1.SellerRefundNotice
+	(*MerchantRefundNotice)(nil),    // 8: aipay.payment.v1.MerchantRefundNotice
+	(*SellerOrderAssigned)(nil),     // 9: aipay.payment.v1.SellerOrderAssigned
+	(*SellerInventoryLow)(nil),      // 10: aipay.payment.v1.SellerInventoryLow
+	(*SellerDisputeNotice)(nil),     // 11: aipay.payment.v1.SellerDisputeNotice
+	(*timestamppb.Timestamp)(nil),   // 12: google.protobuf.Timestamp
+	(*SellerRefundSubject)(nil),     // 13: aipay.payment.v1.SellerRefundSubject
+	(DisputeRulingOutcome)(0),       // 14: aipay.payment.v1.DisputeRulingOutcome
 }
 var file_aipay_payment_v1_account_notice_events_proto_depIdxs = []int32{
-	8,  // 0: aipay.payment.v1.MerchantPaymentReceived.paid_at:type_name -> google.protobuf.Timestamp
-	8,  // 1: aipay.payment.v1.MerchantFundsAvailable.released_at:type_name -> google.protobuf.Timestamp
+	12, // 0: aipay.payment.v1.MerchantPaymentReceived.paid_at:type_name -> google.protobuf.Timestamp
+	12, // 1: aipay.payment.v1.MerchantFundsAvailable.released_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: aipay.payment.v1.PaymentAccessReviewed.result:type_name -> aipay.payment.v1.PaymentAccessReviewResult
-	8,  // 3: aipay.payment.v1.PaymentAccessReviewed.reviewed_at:type_name -> google.protobuf.Timestamp
-	9,  // 4: aipay.payment.v1.SellerRefundNotice.subject:type_name -> aipay.payment.v1.SellerRefundSubject
-	8,  // 5: aipay.payment.v1.SellerRefundNotice.seller_due_at:type_name -> google.protobuf.Timestamp
+	12, // 3: aipay.payment.v1.PaymentAccessReviewed.reviewed_at:type_name -> google.protobuf.Timestamp
+	13, // 4: aipay.payment.v1.SellerRefundNotice.subject:type_name -> aipay.payment.v1.SellerRefundSubject
+	12, // 5: aipay.payment.v1.SellerRefundNotice.seller_due_at:type_name -> google.protobuf.Timestamp
 	1,  // 6: aipay.payment.v1.SellerRefundNotice.kind:type_name -> aipay.payment.v1.SellerRefundNoticeKind
-	8,  // 7: aipay.payment.v1.SellerRefundNotice.occurred_at:type_name -> google.protobuf.Timestamp
-	8,  // 8: aipay.payment.v1.MerchantRefundNotice.objection_deadline:type_name -> google.protobuf.Timestamp
+	12, // 7: aipay.payment.v1.SellerRefundNotice.occurred_at:type_name -> google.protobuf.Timestamp
+	12, // 8: aipay.payment.v1.MerchantRefundNotice.objection_deadline:type_name -> google.protobuf.Timestamp
 	2,  // 9: aipay.payment.v1.MerchantRefundNotice.kind:type_name -> aipay.payment.v1.MerchantRefundNoticeKind
-	8,  // 10: aipay.payment.v1.MerchantRefundNotice.occurred_at:type_name -> google.protobuf.Timestamp
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	12, // 10: aipay.payment.v1.MerchantRefundNotice.occurred_at:type_name -> google.protobuf.Timestamp
+	12, // 11: aipay.payment.v1.SellerOrderAssigned.instruction_expires_at:type_name -> google.protobuf.Timestamp
+	12, // 12: aipay.payment.v1.SellerOrderAssigned.occurred_at:type_name -> google.protobuf.Timestamp
+	12, // 13: aipay.payment.v1.SellerInventoryLow.occurred_at:type_name -> google.protobuf.Timestamp
+	3,  // 14: aipay.payment.v1.SellerDisputeNotice.kind:type_name -> aipay.payment.v1.SellerDisputeNoticeKind
+	14, // 15: aipay.payment.v1.SellerDisputeNotice.outcome:type_name -> aipay.payment.v1.DisputeRulingOutcome
+	12, // 16: aipay.payment.v1.SellerDisputeNotice.occurred_at:type_name -> google.protobuf.Timestamp
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_aipay_payment_v1_account_notice_events_proto_init() }
@@ -896,13 +1314,14 @@ func file_aipay_payment_v1_account_notice_events_proto_init() {
 		return
 	}
 	file_aipay_payment_v1_admin_approval_proto_init()
+	file_aipay_payment_v1_account_notice_events_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_aipay_payment_v1_account_notice_events_proto_rawDesc), len(file_aipay_payment_v1_account_notice_events_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   5,
+			NumEnums:      4,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

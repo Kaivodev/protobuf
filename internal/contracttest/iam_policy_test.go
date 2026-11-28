@@ -21,7 +21,7 @@ func TestIAMMethodAuthorization(t *testing.T) {
 		{iamv1.File_aipay_iam_v1_authorization_proto, "AuthorizationService", []protoreflect.Name{"Authorize"}},
 		{iamv1.File_aipay_iam_v1_telegram_service_proto, "TelegramService", []protoreflect.Name{
 			"Register", "CreateBindingCode", "Bind", "Unbind", "BeginGroupBinding", "ConfirmGroupBinding", "InvalidateGroupBinding", "GetGroupBinding",
-			"ListAccountNotificationRecipients",
+			"ListAccountNotificationRecipients", "GetBotBinding",
 		}},
 		{iamv1.File_aipay_iam_v1_mfa_service_proto, "MfaService", []protoreflect.Name{
 			"IssueTotpEnrollmentToken", "GetTotpEnrollment", "CompleteTotpEnrollment", "UseRecoveryCode", "ResetTotp",
@@ -98,6 +98,7 @@ func TestIAMTelegramCredentialBoundary(t *testing.T) {
 		names []protoreflect.Name
 	}{
 		{iamv1.TelegramChatType(0).Descriptor(), []protoreflect.Name{"TELEGRAM_CHAT_TYPE_UNSPECIFIED", "TELEGRAM_CHAT_TYPE_PRIVATE", "TELEGRAM_CHAT_TYPE_GROUP", "TELEGRAM_CHAT_TYPE_SUPERGROUP"}},
+		{iamv1.TelegramBot(0).Descriptor(), []protoreflect.Name{"TELEGRAM_BOT_UNSPECIFIED", "TELEGRAM_BOT_MERCHANT", "TELEGRAM_BOT_UPSTREAM"}},
 		{iamv1.TotpResetReason(0).Descriptor(), []protoreflect.Name{"TOTP_RESET_REASON_UNSPECIFIED", "TOTP_RESET_REASON_RECOVERY_CODE", "TOTP_RESET_REASON_PLATFORM_RESET"}},
 	} {
 		if want.enum.Values().Len() != len(want.names) {

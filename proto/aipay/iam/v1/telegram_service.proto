@@ -8,8 +8,10 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/Kaivodev/protobuf/gen/go/aipay/iam/v1;iamv1";
 
-// Facts resolved by IAM, never credentials. Each Telegram user and global user
-// has at most one binding. account_id is the user's original personal account.
+// A Telegram user and a global user may each have at most one global link,
+// shared by both bots. Each bot maintains its own binding and session.
+// account_id identifies the user's original personal account.
+// IAM returns these facts after authentication.
 message TelegramBinding {
   int64 telegram_user_id = 1;
   string user_id = 2;
@@ -19,6 +21,14 @@ message TelegramBinding {
   google.protobuf.Timestamp expires_at = 5;
 }
 
+// MERCHANT self-registration atomically creates a user, personal account, global
+// link, merchant binding and session. A new account starts with only cryptocurrency
+// acceptance enabled. If a global link already exists, including one created by
+// UPSTREAM, IAM reuses that user and account, adds the merchant binding if needed
+// and starts a new merchant session.
+// UPSTREAM never creates a user, account or link. IAM starts a new upstream
+// session if the user has an upstream binding. Otherwise it returns
+// FAILED_PRECONDITION (NOT_BOUND).
 message RegisterRequest {
   string idempotency_key = 1;
   // PRIVATE /start only. Rate limited by Telegram user and globally.
@@ -29,26 +39,37 @@ message RegisterResponse {
   TelegramBinding binding = 1;
 }
 
+// Issues a code redeemable only in the UPSTREAM bot. The user must be
+// upstream-enabled and have no upstream bot binding. A merchant bot binding
+// does not affect eligibility.
 message CreateBindingCodeRequest {
   string idempotency_key = 1;
-  // Sensitive. IAM directly verifies the invited upstream's portal session,
-  // ownership and recent TOTP authentication; never a caller-selected user ID.
+  // Sensitive. IAM verifies the user's upstream portal session, ownership
+  // and recent TOTP authentication.
   BearerCredential portal_session = 2;
   // Sensitive six-digit code; IAM rate limits and consumes its time step once.
   string totp_code = 3;
 }
 
 message CreateBindingCodeResponse {
-  // Sensitive 256-bit opaque, expiring, single-use code; IAM stores only a hash.
+  // Sensitive, opaque 256-bit code for the UPSTREAM bot only. It expires and
+  // can be used once. IAM stores only its hash.
   string binding_code = 1;
   google.protobuf.Timestamp expires_at = 2;
 }
 
+// UPSTREAM only. IAM rejects MERCHANT. The code must be valid, unused and
+// unexpired. Neither the Telegram user nor the user who received the code may
+// already be bound in UPSTREAM. If the Telegram user has no global link, IAM
+// creates one for the code's user. If it already links to that user, IAM reuses
+// it. A link to any other user returns FAILED_PRECONDITION
+// (TELEGRAM_LINKED_TO_OTHER_USER) and leaves the code unused. IAM never merges users.
 message BindRequest {
   string idempotency_key = 1;
   TelegramCredential telegram = 2;
-  // Sensitive. PRIVATE only; atomically consume the portal-issued code and
-  // establish a bot session for that same global user/personal account.
+  // Sensitive. PRIVATE only. On success IAM atomically consumes the code,
+  // establishes the upstream binding and starts a session for the same user
+  // and personal account.
   string binding_code = 3;
 }
 
@@ -56,13 +77,37 @@ message BindResponse {
   TelegramBinding binding = 1;
 }
 
+// Revokes only the selected bot's session, group bindings, pending group
+// challenges and bot binding. IAM deletes the global link only after the last
+// bot binding is gone. The global user and personal account remain.
 message UnbindRequest {
   string idempotency_key = 1;
   UserAuthentication authentication = 2;
+  // Required with upstream portal bearer authentication and must be UPSTREAM.
+  // With Telegram authentication, use UNSPECIFIED or authentication.telegram.bot.
+  // IAM uses the credential's bot.
+  TelegramBot bot = 3;
+  // Sensitive. With bearer authentication, IAM requires exactly six decimal
+  // digits and verifies the user's active TOTP. Omit with Telegram authentication.
+  // Never logged.
+  string totp_code = 4;
 }
 
 message UnbindResponse {
   google.protobuf.Timestamp unbound_at = 1;
+}
+
+message GetBotBindingRequest {
+  // Upstream portal session. IAM validates it itself.
+  BearerCredential portal_session = 1;
+  // Must be UPSTREAM.
+  TelegramBot bot = 2;
+}
+
+message GetBotBindingResponse {
+  bool bound = 1;
+  // Present exactly when bound.
+  google.protobuf.Timestamp bound_at = 2;
 }
 
 message BeginGroupBindingRequest {
@@ -133,6 +178,11 @@ message AccountNotificationRecipient {
 message ListAccountNotificationRecipientsRequest {
   // Required account from the verified notice, resolved by IAM at delivery time.
   string account_id = 1;
+  // Selects recipients for this bot only. Private chat requires the owner's
+  // binding in this bot. Groups must have confirmed bindings in this bot.
+  // UPSTREAM also requires an upstream-enabled owner. During a rolling
+  // upgrade, IAM reads UNSPECIFIED as MERCHANT.
+  TelegramBot bot = 2;
 }
 
 message ListAccountNotificationRecipientsResponse {
@@ -141,10 +191,11 @@ message ListAccountNotificationRecipientsResponse {
   repeated AccountNotificationRecipient recipients = 1;
 }
 
-// backend includes the bot module (A116); no separate bot service identity.
+// Backend hosts both bots under its service identity (A116, A149).
 // IAM checks credentials directly, so no metadata assertion is accepted.
-// Required IDs/messages/timestamps/digests must be present, enum 0/unknown is
-// rejected. Never log credentials, codes, tokens or original update bodies.
+// Required IDs/messages/timestamps/digests must be present. Reject unknown
+// enum values and reject zero unless explicitly allowed. Never log credentials,
+// codes, tokens or original update bodies.
 // Writes are idempotent per method/verified identity/key; changed content is
 // AlreadyExists. Revalidate current access before returning an original result.
 // If success revoked the binding/session, an exact original request matching
@@ -153,13 +204,10 @@ message ListAccountNotificationRecipientsResponse {
 // Persist identity/binding/session changes and the result in one transaction.
 // Unknown outcomes retry the original key; do not create a second identity.
 //
-// Register creates the global user, unique personal account, binding and bot
-// session atomically; only cryptocurrency acceptance is enabled by default.
-// Existing bindings retain their user/account and only an explicit new /start
-// may reopen a session under IAM policy. Disabled users/accounts always fail.
-// Bind rejects either side already bound; never merges two global users.
-// Unbind revokes bot sessions, all group bindings and pending challenges while
-// preserving the global user/account. Account disable also invalidates groups.
+// Sessions, update deduplication heads, group bindings and pending group
+// challenges are scoped to the receiving bot. Only an explicit new /start may
+// reopen a session under IAM policy. Disabled users/accounts always fail.
+// Account disable invalidates group bindings across both bots.
 // Group notifications/queries are owner-only; TOTP, API keys and enrollment
 // links always move to PRIVATE. Owner departure invalidates its group promptly.
 service TelegramService {
@@ -172,6 +220,14 @@ service TelegramService {
     };
   }
   rpc CreateBindingCode(CreateBindingCodeRequest) returns (CreateBindingCodeResponse) {
+    option (aipay.authz.v1.policy) = {
+      rules: {
+        callers: "backend"
+        assertion: ASSERTION_REQUIREMENT_NOT_REQUIRED
+      }
+    };
+  }
+  rpc GetBotBinding(GetBotBindingRequest) returns (GetBotBindingResponse) {
     option (aipay.authz.v1.policy) = {
       rules: {
         callers: "backend"

@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	TelegramService_Register_FullMethodName                          = "/aipay.iam.v1.TelegramService/Register"
 	TelegramService_CreateBindingCode_FullMethodName                 = "/aipay.iam.v1.TelegramService/CreateBindingCode"
+	TelegramService_GetBotBinding_FullMethodName                     = "/aipay.iam.v1.TelegramService/GetBotBinding"
 	TelegramService_Bind_FullMethodName                              = "/aipay.iam.v1.TelegramService/Bind"
 	TelegramService_Unbind_FullMethodName                            = "/aipay.iam.v1.TelegramService/Unbind"
 	TelegramService_BeginGroupBinding_FullMethodName                 = "/aipay.iam.v1.TelegramService/BeginGroupBinding"
@@ -34,10 +35,11 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// backend includes the bot module (A116); no separate bot service identity.
+// Backend hosts both bots under its service identity (A116, A149).
 // IAM checks credentials directly, so no metadata assertion is accepted.
-// Required IDs/messages/timestamps/digests must be present, enum 0/unknown is
-// rejected. Never log credentials, codes, tokens or original update bodies.
+// Required IDs/messages/timestamps/digests must be present. Reject unknown
+// enum values and reject zero unless explicitly allowed. Never log credentials,
+// codes, tokens or original update bodies.
 // Writes are idempotent per method/verified identity/key; changed content is
 // AlreadyExists. Revalidate current access before returning an original result.
 // If success revoked the binding/session, an exact original request matching
@@ -46,18 +48,16 @@ const (
 // Persist identity/binding/session changes and the result in one transaction.
 // Unknown outcomes retry the original key; do not create a second identity.
 //
-// Register creates the global user, unique personal account, binding and bot
-// session atomically; only cryptocurrency acceptance is enabled by default.
-// Existing bindings retain their user/account and only an explicit new /start
-// may reopen a session under IAM policy. Disabled users/accounts always fail.
-// Bind rejects either side already bound; never merges two global users.
-// Unbind revokes bot sessions, all group bindings and pending challenges while
-// preserving the global user/account. Account disable also invalidates groups.
+// Sessions, update deduplication heads, group bindings and pending group
+// challenges are scoped to the receiving bot. Only an explicit new /start may
+// reopen a session under IAM policy. Disabled users/accounts always fail.
+// Account disable invalidates group bindings across both bots.
 // Group notifications/queries are owner-only; TOTP, API keys and enrollment
 // links always move to PRIVATE. Owner departure invalidates its group promptly.
 type TelegramServiceClient interface {
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	CreateBindingCode(ctx context.Context, in *CreateBindingCodeRequest, opts ...grpc.CallOption) (*CreateBindingCodeResponse, error)
+	GetBotBinding(ctx context.Context, in *GetBotBindingRequest, opts ...grpc.CallOption) (*GetBotBindingResponse, error)
 	Bind(ctx context.Context, in *BindRequest, opts ...grpc.CallOption) (*BindResponse, error)
 	Unbind(ctx context.Context, in *UnbindRequest, opts ...grpc.CallOption) (*UnbindResponse, error)
 	BeginGroupBinding(ctx context.Context, in *BeginGroupBindingRequest, opts ...grpc.CallOption) (*BeginGroupBindingResponse, error)
@@ -90,6 +90,16 @@ func (c *telegramServiceClient) CreateBindingCode(ctx context.Context, in *Creat
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateBindingCodeResponse)
 	err := c.cc.Invoke(ctx, TelegramService_CreateBindingCode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *telegramServiceClient) GetBotBinding(ctx context.Context, in *GetBotBindingRequest, opts ...grpc.CallOption) (*GetBotBindingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBotBindingResponse)
+	err := c.cc.Invoke(ctx, TelegramService_GetBotBinding_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -170,10 +180,11 @@ func (c *telegramServiceClient) ListAccountNotificationRecipients(ctx context.Co
 // All implementations must embed UnimplementedTelegramServiceServer
 // for forward compatibility.
 //
-// backend includes the bot module (A116); no separate bot service identity.
+// Backend hosts both bots under its service identity (A116, A149).
 // IAM checks credentials directly, so no metadata assertion is accepted.
-// Required IDs/messages/timestamps/digests must be present, enum 0/unknown is
-// rejected. Never log credentials, codes, tokens or original update bodies.
+// Required IDs/messages/timestamps/digests must be present. Reject unknown
+// enum values and reject zero unless explicitly allowed. Never log credentials,
+// codes, tokens or original update bodies.
 // Writes are idempotent per method/verified identity/key; changed content is
 // AlreadyExists. Revalidate current access before returning an original result.
 // If success revoked the binding/session, an exact original request matching
@@ -182,18 +193,16 @@ func (c *telegramServiceClient) ListAccountNotificationRecipients(ctx context.Co
 // Persist identity/binding/session changes and the result in one transaction.
 // Unknown outcomes retry the original key; do not create a second identity.
 //
-// Register creates the global user, unique personal account, binding and bot
-// session atomically; only cryptocurrency acceptance is enabled by default.
-// Existing bindings retain their user/account and only an explicit new /start
-// may reopen a session under IAM policy. Disabled users/accounts always fail.
-// Bind rejects either side already bound; never merges two global users.
-// Unbind revokes bot sessions, all group bindings and pending challenges while
-// preserving the global user/account. Account disable also invalidates groups.
+// Sessions, update deduplication heads, group bindings and pending group
+// challenges are scoped to the receiving bot. Only an explicit new /start may
+// reopen a session under IAM policy. Disabled users/accounts always fail.
+// Account disable invalidates group bindings across both bots.
 // Group notifications/queries are owner-only; TOTP, API keys and enrollment
 // links always move to PRIVATE. Owner departure invalidates its group promptly.
 type TelegramServiceServer interface {
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
 	CreateBindingCode(context.Context, *CreateBindingCodeRequest) (*CreateBindingCodeResponse, error)
+	GetBotBinding(context.Context, *GetBotBindingRequest) (*GetBotBindingResponse, error)
 	Bind(context.Context, *BindRequest) (*BindResponse, error)
 	Unbind(context.Context, *UnbindRequest) (*UnbindResponse, error)
 	BeginGroupBinding(context.Context, *BeginGroupBindingRequest) (*BeginGroupBindingResponse, error)
@@ -217,6 +226,9 @@ func (UnimplementedTelegramServiceServer) Register(context.Context, *RegisterReq
 }
 func (UnimplementedTelegramServiceServer) CreateBindingCode(context.Context, *CreateBindingCodeRequest) (*CreateBindingCodeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateBindingCode not implemented")
+}
+func (UnimplementedTelegramServiceServer) GetBotBinding(context.Context, *GetBotBindingRequest) (*GetBotBindingResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetBotBinding not implemented")
 }
 func (UnimplementedTelegramServiceServer) Bind(context.Context, *BindRequest) (*BindResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Bind not implemented")
@@ -292,6 +304,24 @@ func _TelegramService_CreateBindingCode_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TelegramServiceServer).CreateBindingCode(ctx, req.(*CreateBindingCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TelegramService_GetBotBinding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBotBindingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TelegramServiceServer).GetBotBinding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TelegramService_GetBotBinding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TelegramServiceServer).GetBotBinding(ctx, req.(*GetBotBindingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -436,6 +466,10 @@ var TelegramService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateBindingCode",
 			Handler:    _TelegramService_CreateBindingCode_Handler,
+		},
+		{
+			MethodName: "GetBotBinding",
+			Handler:    _TelegramService_GetBotBinding_Handler,
 		},
 		{
 			MethodName: "Bind",
